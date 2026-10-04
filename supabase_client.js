@@ -3,8 +3,8 @@
 // Permite sincronização em nuvem automática e independente de dependências
 // ==============================================================================
 
-const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || '';
+const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_KEY || '';
 
 const isConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
