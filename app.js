@@ -641,6 +641,8 @@ class EstudePlusApp {
   init() {
     this.setupNavigation();
     this.initPwa();
+    this.setupKeyboardShortcuts();
+    this.setupThemeWatcher();
     this.renderDashboard();
     this.renderMaterials();
     this.renderSasPdfLibrary();
@@ -1062,7 +1064,13 @@ class EstudePlusApp {
     // 3. Render Agenda Card (Days of the week row + events)
     this.renderAgendaCard();
 
-    // 4. Update top center nav active button
+    // 4. Custom Dashboard Layout (Reordering & Visibility)
+    this.applyDashboardLayout();
+
+    // 5. Smart Statistics Card
+    this.renderSmartStats();
+
+    // 6. Update top center nav active button
     this.updateCenterNavActive();
 
     if (window.lucide) window.lucide.createIcons();
@@ -5474,42 +5482,114 @@ class EstudePlusApp {
   }
 
   filterNotifications(filter) {
+    this.currentNotifFilter = filter;
     document.querySelectorAll('.notification-filter-btn').forEach(btn => {
       btn.classList.toggle('active', btn.id === `btnFilterNotif${filter.charAt(0).toUpperCase() + filter.slice(1)}`);
     });
     this.renderGammonNotifications(filter);
   }
 
-  renderGammonNotifications(filter = 'all') {
+  renderGammonNotifications(filter = null) {
+    if (filter) this.currentNotifFilter = filter;
+    const currentFilter = this.currentNotifFilter || 'all';
+
     const feed = document.getElementById('gammonNotificationsFeed');
     if (!feed) return;
 
-    let list = this.state.notifications || [];
+    let list = [...(this.state.notifications || [])];
+
+    // Integrate PRO Plan Request notifications if present
+    if (this.activePlanRequest) {
+      const proNotifId = `notif-pro-${this.activePlanRequest.id}`;
+      if (!list.some(n => n.id === proNotifId)) {
+        list.unshift({
+          id: proNotifId,
+          type: 'pro',
+          title: `Solicitação do Plano PRO (${this.activePlanRequest.status.toUpperCase()})`,
+          details: `Pedido de ativação de 30 dias registrado via ${this.activePlanRequest.paymentMethod === 'pix' ? 'PIX' : 'Dinheiro Vivo'}.`,
+          timestamp: new Date(this.activePlanRequest.createdAt).toLocaleDateString('pt-BR'),
+          subject: 'Assinatura PRO',
+          source: 'Estude+ Cloud',
+          read: this.activePlanRequest.status !== 'pending',
+          actionTab: 'plans-pricing'
+        });
+      }
+    }
+
+    // If Admin, include pending tickets and plan requests
+    if (this.currentUser?.role === 'admin' || this.currentUser?.username === 'freddie') {
+      if (this.adminOverview?.planRequests) {
+        this.adminOverview.planRequests.forEach(pr => {
+          const id = `admin-req-${pr.id}`;
+          if (!list.some(n => n.id === id)) {
+            list.unshift({
+              id,
+              type: 'pro',
+              title: `👑 Novo Pedido PRO: ${pr.userName || pr.userEmail}`,
+              details: `Aluno solicitou ativação do Plano PRO via ${pr.paymentMethod?.toUpperCase()}. Status: ${pr.status}.`,
+              timestamp: new Date(pr.createdAt).toLocaleDateString('pt-BR'),
+              subject: 'Admin PRO',
+              source: 'Painel Admin',
+              read: pr.status !== 'pending',
+              actionTab: 'admin-modal'
+            });
+          }
+        });
+      }
+
+      if (this.adminOverview?.supportTickets) {
+        this.adminOverview.supportTickets.forEach(st => {
+          const id = `admin-sup-${st.id}`;
+          if (!list.some(n => n.id === id)) {
+            list.unshift({
+              id,
+              type: 'system',
+              title: `🛠️ Chamado de Suporte: ${st.userName || st.userEmail}`,
+              details: `[${st.category?.toUpperCase()}] ${st.subject}: ${st.message?.slice(0, 80)}...`,
+              timestamp: new Date(st.createdAt).toLocaleDateString('pt-BR'),
+              subject: 'Suporte',
+              source: 'Chamado',
+              read: st.status !== 'open',
+              actionTab: 'admin-modal'
+            });
+          }
+        });
+      }
+    }
+
     const countAll = list.length;
+    const countUnread = list.filter(n => !n.read).length;
     const countTpc = list.filter(n => n.type === 'tpc').length;
     const countExam = list.filter(n => n.type === 'exam').length;
-    const countOccur = list.filter(n => n.type === 'occurrence' || n.type === 'announcement').length;
-    const countUnread = list.filter(n => !n.read).length;
+    const countPro = list.filter(n => n.type === 'pro').length;
+    const countSystem = list.filter(n => n.type === 'system' || n.type === 'occurrence' || n.type === 'announcement').length;
 
     // Update count labels
     const elAll = document.getElementById('notifCountAll');
+    const elUnread = document.getElementById('notifCountUnread');
     const elTpc = document.getElementById('notifCountTpc');
     const elExam = document.getElementById('notifCountExam');
-    const elOccur = document.getElementById('notifCountOccur');
+    const elPro = document.getElementById('notifCountPro');
+    const elSystem = document.getElementById('notifCountSystem');
     const topBell = document.getElementById('topBellBadgeCount');
 
     if (elAll) elAll.innerText = countAll;
+    if (elUnread) elUnread.innerText = countUnread;
     if (elTpc) elTpc.innerText = countTpc;
     if (elExam) elExam.innerText = countExam;
-    if (elOccur) elOccur.innerText = countOccur;
+    if (elPro) elPro.innerText = countPro;
+    if (elSystem) elSystem.innerText = countSystem;
     if (topBell) {
       topBell.innerText = countUnread;
       topBell.style.display = countUnread > 0 ? 'inline-flex' : 'none';
     }
 
-    if (filter === 'tpc') list = list.filter(n => n.type === 'tpc');
-    else if (filter === 'exam') list = list.filter(n => n.type === 'exam');
-    else if (filter === 'occurrence') list = list.filter(n => n.type === 'occurrence' || n.type === 'announcement');
+    // Apply active filter
+    if (currentFilter === 'unread') list = list.filter(n => !n.read);
+    else if (currentFilter === 'tpc') list = list.filter(n => n.type === 'tpc');
+    else if (currentFilter === 'exam') list = list.filter(n => n.type === 'exam');
+    else if (currentFilter === 'pro') list = list.filter(n => n.type === 'pro');
+    else if (currentFilter === 'system') list = list.filter(n => n.type === 'system' || n.type === 'occurrence' || n.type === 'announcement');
 
     if (list.length === 0) {
       feed.innerHTML = `
@@ -5525,6 +5605,8 @@ class EstudePlusApp {
     const typeIcons = {
       'tpc': '📋',
       'exam': '📅',
+      'pro': '👑',
+      'system': '🛠️',
       'occurrence': '⚠️',
       'announcement': '📢'
     };
@@ -5549,7 +5631,7 @@ class EstudePlusApp {
               <span class="notif-tag source">${item.source || 'GAMMON+'}</span>
               <button class="notif-btn-action" onclick="app.handleNotificationClick('${item.id}', '${item.actionTab || 'gammon-tpc'}')">
                 <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
-                <span>${item.type === 'tpc' ? 'Ver no TPC' : item.type === 'exam' ? 'Ver no Calendário' : 'Visualizar'}</span>
+                <span>${item.type === 'tpc' ? 'Ver no TPC' : item.type === 'exam' ? 'Ver no Calendário' : item.type === 'pro' ? 'Ver Plano' : 'Visualizar'}</span>
               </button>
             </div>
           </div>
@@ -7267,6 +7349,20 @@ class EstudePlusApp {
     if (!user.motto) user.motto = 'Foco todo dia para mandar bem nas provas do SAS!';
     if (!user.themeMode) user.themeMode = 'light';
     if (!user.fontSize) user.fontSize = 'normal';
+    if (!user.density) user.density = 'comfortable';
+    if (!user.accentColor) user.accentColor = '#4f46e5';
+    if (!user.accentName) user.accentName = 'Índigo Estude+';
+    if (user.reduceMotion === undefined) user.reduceMotion = false;
+    if (!Array.isArray(user.dashboardCards)) {
+      user.dashboardCards = [
+        { id: 'profile-shortcuts', label: '👤 Perfil & Atalhos Rápidos', visible: true, locked: true },
+        { id: 'focus-strip', label: '🎯 Foco de Estudos & Metas', visible: true },
+        { id: 'smart-stats', label: '📊 Estatísticas Inteligentes & Metas', visible: true },
+        { id: 'studies-eureka', label: '🧭 Meus Estudos & Universo Eureka', visible: true },
+        { id: 'news', label: '📰 Notícias & Atualizações', visible: true },
+        { id: 'agenda', label: '📅 Agenda Escolar Gammon+', visible: true }
+      ];
+    }
     if (!user.scheduleWeekly) {
       user.scheduleWeekly = {
         seg: 'Matemática, Português, Geografia, Inglês',
@@ -7368,6 +7464,22 @@ class EstudePlusApp {
       r.checked = r.value === (this.currentUser.fontSize || 'normal');
     });
 
+    const densityRadios = document.querySelectorAll('input[name="cfgDensity"]');
+    densityRadios.forEach(r => {
+      r.checked = r.value === (this.currentUser.density || 'comfortable');
+    });
+
+    const reduceMotionCb = document.getElementById('cfgReduceMotion');
+    if (reduceMotionCb) {
+      reduceMotionCb.checked = Boolean(this.currentUser.reduceMotion);
+    }
+
+    if (this.currentUser.accentColor) {
+      this.selectAccentColor(this.currentUser.accentColor, this.currentUser.accentName || 'Índigo Estude+');
+    } else {
+      this.selectAccentColor('#4f46e5', 'Índigo Estude+');
+    }
+
     // Tab 5: Schedule
     const sched = this.currentUser.scheduleWeekly || {};
     const segInput = document.getElementById('cfgSchedSeg');
@@ -7402,6 +7514,25 @@ class EstudePlusApp {
     });
   }
 
+  selectAccentColor(color, name) {
+    const hidden = document.getElementById('cfgAccentColor');
+    const label = document.getElementById('cfgSelectedAccentName');
+    if (hidden) hidden.value = color;
+    if (label) label.innerText = name || color;
+
+    document.querySelectorAll('.accent-color-btn').forEach(btn => {
+      const match = btn.dataset.color === color;
+      btn.classList.toggle('active', match);
+      btn.innerText = match ? '✓' : '';
+    });
+  }
+
+  applyAccentColor(color) {
+    if (!color) return;
+    document.documentElement.style.setProperty('--primary', color);
+    document.documentElement.style.setProperty('--primary-hover', color);
+  }
+
   handleSaveStudentSettings(e) {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.currentUser) return;
@@ -7426,6 +7557,10 @@ class EstudePlusApp {
 
     const themeMode = document.querySelector('input[name="cfgThemeMode"]:checked')?.value || 'light';
     const fontSize = document.querySelector('input[name="cfgFontSize"]:checked')?.value || 'normal';
+    const density = document.querySelector('input[name="cfgDensity"]:checked')?.value || 'comfortable';
+    const accentColor = document.getElementById('cfgAccentColor')?.value || '#4f46e5';
+    const accentName = document.getElementById('cfgSelectedAccentName')?.innerText || 'Índigo Estude+';
+    const reduceMotion = Boolean(document.getElementById('cfgReduceMotion')?.checked);
 
     const scheduleWeekly = {
       seg: document.getElementById('cfgSchedSeg')?.value.trim() || '',
@@ -7449,7 +7584,19 @@ class EstudePlusApp {
     this.currentUser.motto = motto;
     this.currentUser.themeMode = themeMode;
     this.currentUser.fontSize = fontSize;
+    this.currentUser.density = density;
+    this.currentUser.accentColor = accentColor;
+    this.currentUser.accentName = accentName;
+    this.currentUser.reduceMotion = reduceMotion;
     this.currentUser.scheduleWeekly = scheduleWeekly;
+
+    if (!this.currentUser.preferences) this.currentUser.preferences = {};
+    this.currentUser.preferences.themeMode = themeMode;
+    this.currentUser.preferences.fontSize = fontSize;
+    this.currentUser.preferences.density = density;
+    this.currentUser.preferences.accentColor = accentColor;
+    this.currentUser.preferences.accentName = accentName;
+    this.currentUser.preferences.reduceMotion = reduceMotion;
 
     // Update in users registry
     const idx = this.users.findIndex(u => u.id === this.currentUser.id || u.email === this.currentUser.email);
@@ -7462,11 +7609,12 @@ class EstudePlusApp {
     // Reapply to entire interface
     this.applyStudentSettingsToUI();
     this.closeModal('studentSettingsModal');
+    this.debouncedSyncPush();
 
     if (typeof confetti === 'function') {
       confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
     }
-    alert(`🎉 Preferências salvas com sucesso!\n\n• Aluno: ${name} (${nickname})\n• Série: ${grade}\n• Foco: ${this.currentUser.focusSubjects.length} matérias selecionadas\n• Meta: ${dailyGoalVal} min/dia\n• Tutor IA: ${aiStyle === 'direto' ? 'Super Direto' : aiStyle === 'didatico' ? 'Didático Passo a Passo' : 'Parceiro Gamer'}\n• Tema: ${themeMode === 'dark' ? 'Modo Escuro' : 'Modo Claro'}`);
+    alert(`🎉 Preferências salvas com sucesso!\n\n• Aluno: ${name} (${nickname})\n• Série: ${grade}\n• Foco: ${this.currentUser.focusSubjects.length} matérias selecionadas\n• Meta: ${dailyGoalVal} min/dia\n• Tutor IA: ${aiStyle === 'direto' ? 'Super Direto' : aiStyle === 'didatico' ? 'Didático Passo a Passo' : 'Parceiro Gamer'}\n• Tema: ${themeMode.toUpperCase()} | Cor: ${accentName} | Densidade: ${density.toUpperCase()}`);
   }
 
   resetStudentSettingsToDefault() {
@@ -7483,30 +7631,61 @@ class EstudePlusApp {
     this.currentUser.avatar = '🦄';
     this.currentUser.themeMode = 'light';
     this.currentUser.fontSize = 'normal';
+    this.currentUser.density = 'comfortable';
+    this.currentUser.accentColor = '#4f46e5';
+    this.currentUser.accentName = 'Índigo Estude+';
+    this.currentUser.reduceMotion = false;
 
     this.saveCurrentUser();
     this.applyStudentSettingsToUI();
     this.openStudentSettingsModal();
+    this.debouncedSyncPush();
   }
 
   applyStudentSettingsToUI() {
     if (!this.currentUser) return;
     this.ensureStudentSettings(this.currentUser);
 
-    // 1. Theme mode & Font size
+    // 1. Theme mode (light, dark, system)
+    let isDark = false;
     if (this.currentUser.themeMode === 'dark') {
+      isDark = true;
+    } else if (this.currentUser.themeMode === 'system') {
+      isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    if (isDark) {
       document.body.classList.add('dark-mode');
     } else {
       document.body.classList.remove('dark-mode');
     }
 
+    // 2. Font sizing
     if (this.currentUser.fontSize === 'large') {
       document.body.classList.add('font-large');
     } else {
       document.body.classList.remove('font-large');
     }
 
-    // 2. Dashboard Student Card
+    // 3. Density
+    if (this.currentUser.density === 'compact') {
+      document.body.classList.add('density-compact');
+    } else {
+      document.body.classList.remove('density-compact');
+    }
+
+    // 4. Reduce Motion (Modo Desempenho para PCs modestos)
+    if (this.currentUser.reduceMotion) {
+      document.body.classList.add('reduce-motion');
+    } else {
+      document.body.classList.remove('reduce-motion');
+    }
+
+    // 5. Accent color
+    if (this.currentUser.accentColor) {
+      this.applyAccentColor(this.currentUser.accentColor);
+    }
+
+    // 6. Dashboard Student Card
     const painelAvatar = document.getElementById('painelStudentAvatar');
     const painelName = document.getElementById('painelStudentName');
     const painelRole = document.getElementById('painelStudentRole');
@@ -7517,7 +7696,7 @@ class EstudePlusApp {
     if (painelRole) painelRole.innerText = this.currentUser.role === 'admin' ? 'Administrador & Aluno' : 'Estudante';
     if (painelClass) painelClass.innerHTML = `${this.currentUser.className || '7º ano B • Gammon 2'} &bull; <span style="color:#6366f1; font-weight:700;">${this.currentUser.grade || '7º Ano'}</span>`;
 
-    // 3. Header Profile Pill
+    // 7. Header Profile Pill
     const headerAvatar = document.getElementById('userAvatarText');
     const headerName = document.getElementById('userNameHeaderDisplay');
     if (headerAvatar) {
@@ -7530,7 +7709,7 @@ class EstudePlusApp {
     }
     if (headerName) headerName.innerText = this.currentUser.nickname || this.currentUser.name || 'Freddie Costa';
 
-    // 4. Focus Strip on Dashboard
+    // 8. Focus Strip on Dashboard
     const stripGrade = document.getElementById('stripGradeTag');
     const stripPills = document.getElementById('stripFocusSubjectsList');
     const stripGoal = document.getElementById('stripGoalText');
@@ -7576,7 +7755,341 @@ class EstudePlusApp {
       stripAi.innerText = aiStyles[this.currentUser.aiStyle] || '🤖 Tutor IA Ativo';
     }
 
+    // 9. Reorder Dashboard & Refresh Smart Stats
+    this.applyDashboardLayout();
+    this.renderSmartStats();
+
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  /* ==========================================================================
+     KEYBOARD SHORTCUTS & SYSTEM THEME WATCHER
+     ========================================================================== */
+  setupKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      // Ctrl + K or Cmd + K: Open Command Palette
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        this.openCommandPalette();
+        return;
+      }
+
+      // Esc: Close Command Palette or top modal
+      if (e.key === 'Escape') {
+        const cp = document.getElementById('commandPaletteModal');
+        if (cp && cp.style.display !== 'none') {
+          this.closeCommandPalette();
+          return;
+        }
+      }
+
+      // Skip single keys if focused in input/textarea
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) {
+        return;
+      }
+
+      // ? key: Show keyboard shortcuts guide
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        this.openShortcutsGuideModal();
+        return;
+      }
+
+      // Alt + 1, 2, 3, 4: Quick Tabs
+      if (e.altKey && e.key === '1') { e.preventDefault(); this.switchTab('dashboard'); }
+      if (e.altKey && e.key === '2') { e.preventDefault(); this.switchTab('gemini-chat'); }
+      if (e.altKey && e.key === '3') { e.preventDefault(); this.switchTab('sas-eureka'); }
+      if (e.altKey && e.key === '4') { e.preventDefault(); this.switchTab('gammon-tpc'); }
+    });
+  }
+
+  setupThemeWatcher() {
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (this.currentUser?.themeMode === 'system') {
+          this.applyStudentSettingsToUI();
+        }
+      });
+    }
+  }
+
+  /* ==========================================================================
+     UNIVERSAL SEARCH (COMMAND PALETTE - CTRL + K)
+     ========================================================================== */
+  openCommandPalette() {
+    const cp = document.getElementById('commandPaletteModal');
+    const input = document.getElementById('commandPaletteInput');
+    if (!cp || !input) return;
+    cp.style.display = 'flex';
+    input.value = '';
+    this.handleCommandPaletteInput('');
+    setTimeout(() => input.focus(), 60);
+  }
+
+  closeCommandPalette() {
+    const cp = document.getElementById('commandPaletteModal');
+    if (cp) cp.style.display = 'none';
+  }
+
+  handleCommandPaletteInput(query) {
+    const resultsContainer = document.getElementById('commandPaletteResults');
+    if (!resultsContainer) return;
+    const q = (query || '').toLowerCase().trim();
+
+    const items = [
+      // Navigation
+      { group: 'Navegação', title: 'Página Inicial (Dashboard)', icon: 'home', action: () => this.switchTab('dashboard'), shortcut: 'Alt 1' },
+      { group: 'Navegação', title: 'Chatbot IA Inteligente', icon: 'bot', action: () => this.switchTab('gemini-chat'), shortcut: 'Alt 2' },
+      { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => this.switchTab('sas-eureka'), shortcut: 'Alt 3' },
+      { group: 'Navegação', title: 'TPC Diário & Ocorrências Gammon+', icon: 'clipboard-list', action: () => this.switchTab('gammon-tpc'), shortcut: 'Alt 4' },
+      { group: 'Navegação', title: 'Planos & Assinatura PRO', icon: 'crown', action: () => this.switchTab('plans-pricing'), shortcut: 'PRO' },
+      { group: 'Navegação', title: 'Relatórios de Desempenho e Erros', icon: 'bar-chart-2', action: () => this.switchTab('review') },
+      { group: 'Navegação', title: 'Quiz Diário de 15 Minutos', icon: 'zap', action: () => this.switchTab('quiz') },
+
+      // Quick Actions
+      { group: 'Ações Rápidas', title: 'Personalizar Início do Dashboard', icon: 'layout-grid', action: () => this.openCustomizeDashboardModal() },
+      { group: 'Ações Rápidas', title: 'Minhas Preferências de Estudo & Visual', icon: 'sliders', action: () => this.openStudentSettingsModal() },
+      { group: 'Ações Rápidas', title: 'Central de Novidades & Versões', icon: 'sparkles', action: () => this.openNewsCenterModal() },
+      { group: 'Ações Rápidas', title: 'Central de Notificações GAMMON+', icon: 'bell', action: () => this.openGammonNotificationsModal() },
+      { group: 'Ações Rápidas', title: 'Suporte, Dúvidas & Relatar Erro', icon: 'life-buoy', action: () => this.openSupportModal() },
+      { group: 'Ações Rápidas', title: 'Cadastrar Novo TPC', icon: 'plus-circle', action: () => this.showModal('addTpcModal') },
+      { group: 'Ações Rápidas', title: 'Importar Ocorrências Gammon+', icon: 'clipboard-paste', action: () => this.showModal('importOccurrencesModal') },
+      { group: 'Ações Rápidas', title: 'Guia de Atalhos do Teclado', icon: 'keyboard', action: () => this.openShortcutsGuideModal(), shortcut: '?' }
+    ];
+
+    // If Admin, add Admin Central
+    if (this.currentUser?.role === 'admin' || this.currentUser?.username === 'freddie') {
+      items.push({ group: 'Administração', title: 'Painel Admin Centralizado (Usuários, Assinaturas, Logs)', icon: 'shield-check', action: () => this.showAdminModal() });
+    }
+
+    // Add SAS Books
+    (this.sasBooks || []).forEach(b => {
+      items.push({
+        group: 'Apostilas SAS',
+        title: `${b.title} (${b.category || 'SAS'})`,
+        icon: 'book-open',
+        action: () => {
+          this.switchTab('sas-eureka');
+          this.openSasPdfModal(b.id);
+        }
+      });
+    });
+
+    const filtered = q === '' ? items.slice(0, 10) : items.filter(it => it.title.toLowerCase().includes(q) || (it.group && it.group.toLowerCase().includes(q)));
+
+    if (filtered.length === 0) {
+      resultsContainer.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: #64748b;">
+          <p style="margin: 0; font-size: 0.9rem;">Nenhum resultado encontrado para "<strong>${query}</strong>"</p>
+          <span style="font-size: 0.78rem;">Tente buscar por "Matemática", "TPC", "Apostila", "Admin" ou "Tema".</span>
+        </div>
+      `;
+      return;
+    }
+
+    const grouped = {};
+    filtered.forEach(it => {
+      if (!grouped[it.group]) grouped[it.group] = [];
+      grouped[it.group].push(it);
+    });
+
+    let html = '';
+    window._cpActions = [];
+    let actIndex = 0;
+
+    Object.keys(grouped).forEach(grp => {
+      html += `<div class="command-palette-group-title">${grp}</div>`;
+      grouped[grp].forEach(it => {
+        const id = actIndex++;
+        window._cpActions[id] = it.action;
+        html += `
+          <div class="command-palette-item" onclick="app.executeCommandAction(${id})">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i data-lucide="${it.icon || 'arrow-right'}" style="width: 16px; height: 16px; color: #4f46e5;"></i>
+              <span style="font-size: 0.88rem; font-weight: 600;">${it.title}</span>
+            </div>
+            ${it.shortcut ? `<span class="shortcut-kbd">${it.shortcut}</span>` : `<i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94a3b8;"></i>`}
+          </div>
+        `;
+      });
+    });
+
+    resultsContainer.innerHTML = html;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  executeCommandAction(index) {
+    this.closeCommandPalette();
+    if (window._cpActions && typeof window._cpActions[index] === 'function') {
+      window._cpActions[index]();
+    }
+  }
+
+  /* ==========================================================================
+     NEWS CENTER & SHORTCUTS GUIDE MODALS
+     ========================================================================== */
+  openNewsCenterModal() {
+    this.showModal('newsCenterModal');
+  }
+
+  openShortcutsGuideModal() {
+    this.showModal('shortcutsGuideModal');
+  }
+
+  /* ==========================================================================
+     CUSTOMIZE DASHBOARD (ORGANIZAR, OCULTAR E RESTAURAR BLOCOS)
+     ========================================================================== */
+  openCustomizeDashboardModal() {
+    if (!this.currentUser) return;
+    this.ensureStudentSettings(this.currentUser);
+    this.renderDashboardCustomizerList();
+    this.showModal('customizeDashboardModal');
+  }
+
+  renderDashboardCustomizerList() {
+    const listEl = document.getElementById('dashReorderList');
+    if (!listEl) return;
+    const cards = this.currentUser.dashboardCards || [];
+
+    listEl.innerHTML = cards.map((card, idx) => `
+      <div class="dash-reorder-item">
+        <div class="dash-item-drag-handle">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: ${card.locked ? 'not-allowed' : 'pointer'}; margin: 0;">
+            <input type="checkbox" ${card.visible ? 'checked' : ''} ${card.locked ? 'disabled' : ''} onchange="app.toggleDashboardCardVisibility('${card.id}')" style="width: 16px; height: 16px;">
+            <strong style="font-size: 0.88rem; color: #0f172a;">${card.label}</strong>
+          </label>
+          ${card.locked ? `<span style="font-size: 0.7rem; background: #e2e8f0; color: #475569; padding: 1px 6px; border-radius: 4px;">Fixo</span>` : ''}
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="btn-outline" style="padding: 2px 7px; font-size: 0.75rem; cursor: pointer;" onclick="app.moveDashboardCard(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>⬆️</button>
+          <button type="button" class="btn-outline" style="padding: 2px 7px; font-size: 0.75rem; cursor: pointer;" onclick="app.moveDashboardCard(${idx}, 1)" ${idx === cards.length - 1 ? 'disabled' : ''}>⬇️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  moveDashboardCard(index, direction) {
+    const cards = this.currentUser.dashboardCards;
+    const targetIdx = index + direction;
+    if (targetIdx < 0 || targetIdx >= cards.length) return;
+    const temp = cards[index];
+    cards[index] = cards[targetIdx];
+    cards[targetIdx] = temp;
+    this.renderDashboardCustomizerList();
+  }
+
+  toggleDashboardCardVisibility(id) {
+    const card = (this.currentUser.dashboardCards || []).find(c => c.id === id);
+    if (card && !card.locked) {
+      card.visible = !card.visible;
+    }
+  }
+
+  saveDashboardLayout() {
+    this.saveCurrentUser();
+    this.applyDashboardLayout();
+    this.closeModal('customizeDashboardModal');
+    this.debouncedSyncPush();
+    if (typeof confetti === 'function') confetti({ particleCount: 50, spread: 60 });
+    alert('🎉 Organização da tela inicial salva com sucesso!');
+  }
+
+  resetDashboardLayout() {
+    if (!this.currentUser) return;
+    this.currentUser.dashboardCards = [
+      { id: 'profile-shortcuts', label: '👤 Perfil & Atalhos Rápidos', visible: true, locked: true },
+      { id: 'focus-strip', label: '🎯 Foco de Estudos & Metas', visible: true },
+      { id: 'smart-stats', label: '📊 Estatísticas Inteligentes & Metas', visible: true },
+      { id: 'studies-eureka', label: '🧭 Meus Estudos & Universo Eureka', visible: true },
+      { id: 'news', label: '📰 Notícias & Atualizações', visible: true },
+      { id: 'agenda', label: '📅 Agenda Escolar Gammon+', visible: true }
+    ];
+    this.renderDashboardCustomizerList();
+    this.saveDashboardLayout();
+  }
+
+  applyDashboardLayout() {
+    if (!this.currentUser || !Array.isArray(this.currentUser.dashboardCards)) return;
+    const container = document.getElementById('sasPainelMainCol');
+    if (!container) return;
+
+    this.currentUser.dashboardCards.forEach(card => {
+      const el = document.querySelector(`[data-dash-card="${card.id}"]`);
+      if (el) {
+        el.style.display = card.visible ? '' : 'none';
+        if (el.parentElement === container) {
+          container.appendChild(el);
+        }
+      }
+    });
+  }
+
+  /* ==========================================================================
+     SMART STATISTICS CARD (EVOLUÇÃO, METAS E ERROS DO BANCO REAL)
+     ========================================================================== */
+  renderSmartStats() {
+    const kpiToday = document.getElementById('statKpiTodayMinutes');
+    const kpiStreak = document.getElementById('statKpiStreak');
+    const kpiTpc = document.getElementById('statKpiTpcDone');
+    const kpiMistakes = document.getElementById('statKpiMistakesReview');
+    const weeklyChart = document.getElementById('weeklyBarsChart');
+    const weeklyTotal = document.getElementById('weeklyTotalMinutesLabel');
+    const topicsReviewText = document.getElementById('statTopicsToReviewText');
+
+    const todayMins = Number(this.state.todayMinutes || this.currentUser?.todayMinutes || 0);
+    const goalMins = Number(this.currentUser?.dailyGoal || this.currentUser?.dailyGoalMinutes || 15);
+    const streakDays = Number(this.currentUser?.streak || this.state.streak || 0);
+
+    const tpcs = this.state.tpcs || [];
+    const completedTpcIds = this.state.completedTpcIds || [];
+    const doneTpcsCount = tpcs.filter(t => t.status === 'done' || completedTpcIds.includes(t.id)).length;
+    const totalTpcs = tpcs.length;
+
+    const mistakes = this.state.mistakes || [];
+    const pendingMistakes = mistakes.filter(m => m.status === 'pending');
+
+    if (kpiToday) kpiToday.innerText = `${todayMins} / ${goalMins} min`;
+    if (kpiStreak) kpiStreak.innerText = `🔥 ${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}`;
+    if (kpiTpc) kpiTpc.innerText = `${doneTpcsCount} / ${totalTpcs}`;
+    if (kpiMistakes) kpiMistakes.innerText = `${pendingMistakes.length}`;
+
+    // Calculate weekly activity bars
+    const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    const studiedDays = Array.isArray(this.state.studiedDays) ? this.state.studiedDays : [];
+    const now = new Date();
+    const currentDayOfWeek = (now.getDay() + 6) % 7; // 0 = Seg, ..., 6 = Dom
+
+    let totalWeekMins = 0;
+    const weekBarsHtml = dayNames.map((dName, idx) => {
+      let dayMins = 0;
+      if (idx === currentDayOfWeek) {
+        dayMins = todayMins;
+      } else if (studiedDays.some(d => (new Date(d).getDay() + 6) % 7 === idx)) {
+        dayMins = goalMins;
+      }
+      totalWeekMins += dayMins;
+      const heightPct = Math.min(100, Math.max(8, (dayMins / (goalMins || 15)) * 100));
+      const isActive = idx === currentDayOfWeek && dayMins > 0;
+      return `
+        <div class="bar-col" title="${dName}: ${dayMins} min">
+          <div class="bar-pillar ${isActive ? 'active-day' : ''}" style="height: ${heightPct}%;"></div>
+          <span class="bar-col-label">${dName}</span>
+        </div>
+      `;
+    }).join('');
+
+    if (weeklyChart) weeklyChart.innerHTML = weekBarsHtml;
+    if (weeklyTotal) weeklyTotal.innerText = `${totalWeekMins} min nesta semana`;
+
+    if (topicsReviewText) {
+      if (pendingMistakes.length > 0) {
+        const subjects = Array.from(new Set(pendingMistakes.map(m => m.subject || 'Geral')));
+        topicsReviewText.innerHTML = `⚠️ <strong>${pendingMistakes.length} erro(s) pendente(s)</strong> para revisar em: <span style="color:#ef4444; font-weight:700;">${subjects.join(', ')}</span>`;
+      } else {
+        topicsReviewText.innerText = '🎉 Nenhum erro pendente de revisão hoje. Parabéns pelo foco!';
+      }
+    }
   }
 
   formatAnswerByAiStyle(answer) {
@@ -7762,6 +8275,16 @@ class EstudePlusApp {
             if (u.studentSettings) {
               this.currentUser.studentSettings = { ...(this.currentUser.studentSettings || {}), ...u.studentSettings };
             }
+            if (u.preferences) {
+              this.currentUser.preferences = { ...(this.currentUser.preferences || {}), ...u.preferences };
+              if (u.preferences.themeMode) this.currentUser.themeMode = u.preferences.themeMode;
+              if (u.preferences.fontSize) this.currentUser.fontSize = u.preferences.fontSize;
+              if (u.preferences.density) this.currentUser.density = u.preferences.density;
+              if (u.preferences.accentColor) this.currentUser.accentColor = u.preferences.accentColor;
+              if (u.preferences.accentName) this.currentUser.accentName = u.preferences.accentName;
+              if (u.preferences.reduceMotion !== undefined) this.currentUser.reduceMotion = u.preferences.reduceMotion;
+              if (Array.isArray(u.preferences.dashboardCards)) this.currentUser.dashboardCards = u.preferences.dashboardCards;
+            }
 
             // Atualiza estado local sincronizado
             this.state.streak = u.streak || 0;
@@ -7785,6 +8308,7 @@ class EstudePlusApp {
             } catch (e) {}
 
             this.updateUserHeaderUI();
+            this.applyStudentSettingsToUI();
             this.renderPlanStatus();
             this.renderDashboard();
             this.renderTimetable();
@@ -7802,6 +8326,15 @@ class EstudePlusApp {
 
         const payload = {
           studentSettings: this.currentUser.studentSettings || {},
+          preferences: this.currentUser.preferences || {
+            themeMode: this.currentUser.themeMode,
+            fontSize: this.currentUser.fontSize,
+            density: this.currentUser.density,
+            accentColor: this.currentUser.accentColor,
+            accentName: this.currentUser.accentName,
+            reduceMotion: this.currentUser.reduceMotion,
+            dashboardCards: this.currentUser.dashboardCards
+          },
           progress: {
             streak: this.state.streak || this.currentUser.streak || 0,
             bestStreak: this.currentUser.bestStreak || 0,
@@ -10586,16 +11119,7 @@ startxref
   }
 
   showSubscriptionModal() {
-    const isDownloaded = this.state?.appDownloaded || localStorage.getItem('estude_app_downloaded');
-    if (!isDownloaded && (!this.currentUser || this.currentUser.role !== 'admin')) {
-      const wantDownload = confirm('📲 ATENÇÃO: Para assinar o Plano PRO, primeiro você precisa baixar o arquivo do aplicativo no seu dispositivo!\n\nDeseja baixar o arquivo agora?');
-      if (wantDownload) {
-        this.downloadAppFile();
-        return;
-      } else {
-        return;
-      }
-    }
+    this.renderPlanStatus();
     this.showModal('subscriptionModal');
   }
 

@@ -59,16 +59,22 @@
     </nav>
     
     <div class="user-meta">
-      <!-- Direct App File Download Button -->
-      <button class="sas-top-btn download-btn" onclick="app.downloadAppFile()" title="Baixar Arquivo Completo do App (Zip)">
-        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-        <span>Baixar App</span>
+      <!-- Universal Search Button (Ctrl + K) -->
+      <button class="sas-top-btn" onclick="app.openCommandPalette()" title="Busca Universal (Ctrl + K)" style="background: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        <i data-lucide="search" style="width: 14px; height: 14px; color: #475569;"></i>
+        <span>Buscar</span>
+        <span class="shortcut-kbd" style="font-size: 9px; padding: 1px 5px;">Ctrl K</span>
       </button>
 
       <!-- Central de Suporte & Dúvidas (Disponível no Celular, Tablet e PC) -->
       <button class="sas-top-btn" onclick="app.openSupportModal()" title="Central de Ajuda, Dúvidas & Reportar Erro" style="background: #f8fafc; color: #4338ca; border: 1.5px solid #c7d2fe; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
         <i data-lucide="life-buoy" style="width: 14px; height: 14px; color: #4f46e5;"></i>
         <span>Suporte</span>
+      </button>
+
+      <!-- Guia de Atalhos do Teclado -->
+      <button class="sas-top-btn" onclick="app.openShortcutsGuideModal()" title="Atalhos do Teclado (?)" style="background: #f8fafc; color: #475569; border: 1.5px solid #cbd5e1; padding: 6px 9px; border-radius: 999px; font-weight: 700; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center;" aria-label="Atalhos do Teclado">
+        <i data-lucide="keyboard" style="width: 14px; height: 14px;"></i>
       </button>
 
       <!-- Admin Central Management Button (Visible to Freddie Costa) -->
@@ -197,13 +203,29 @@
         <div id="dashboardPendingBanner" style="display: none; margin-bottom: 20px;"></div>
         <div id="subscriptionExpiryBanner" style="display: none; margin-bottom: 20px;"></div>
 
+        <!-- Dashboard Action Toolbar (Personalizar Início, Novidades) -->
+        <div class="dashboard-custom-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">Visão Geral do Aluno</span>
+            <span style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-weight: 700;">Estude+ 2.5</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn-outline" onclick="app.openNewsCenterModal()" style="font-size: 0.76rem; padding: 5px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; color: #0284c7; border-color: #bae6fd; cursor: pointer;">
+              <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i> Novidades & Versões
+            </button>
+            <button type="button" class="btn-outline" onclick="app.openCustomizeDashboardModal()" style="font-size: 0.76rem; padding: 5px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; color: #475569; border-color: #cbd5e1; cursor: pointer;">
+              <i data-lucide="layout-grid" style="width: 13px; height: 13px;"></i> Personalizar Início
+            </button>
+          </div>
+        </div>
+
         <!-- Official SAS Painel Layout matching Screenshot media_1791064566186 -->
-        <div class="sas-painel-grid">
+        <div class="sas-painel-grid" id="sasPainelGrid">
           <!-- Main Left/Center Column -->
-          <div class="sas-painel-main-col">
+          <div class="sas-painel-main-col" id="sasPainelMainCol">
             
             <!-- Top Row: Student Profile Card + Atalhos Rápidos -->
-            <div class="sas-profile-shortcuts-row">
+            <div class="sas-profile-shortcuts-row" data-dash-card="profile-shortcuts">
               <!-- 1. Student Profile Card matching image -->
               <div class="sas-student-card" onclick="app.openStudentSettingsModal()" style="cursor: pointer;" title="Clique para personalizar suas preferências de estudo">
                 <div class="sas-student-art" id="painelStudentAvatar">
@@ -255,7 +277,7 @@
             </div>
 
             <!-- Dynamic Student Preferences & Focus Banner -->
-            <div class="student-focus-strip" id="studentFocusStrip" onclick="app.openStudentSettingsModal()" style="cursor: pointer;" title="Suas preferências de estudo personalizadas (Clique para editar)">
+            <div class="student-focus-strip" id="studentFocusStrip" data-dash-card="focus-strip" onclick="app.openStudentSettingsModal()" style="cursor: pointer;" title="Suas preferências de estudo personalizadas (Clique para editar)">
               <div class="student-focus-strip-info">
                 <div class="focus-icon-box">🎯</div>
                 <div>
@@ -276,8 +298,61 @@
               </div>
             </div>
 
+            <!-- Smart Statistics & Evolution Card -->
+            <div class="smart-stats-card" data-dash-card="smart-stats">
+              <div class="smart-stats-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="bar-chart-2" style="width: 20px; height: 20px; color: #4f46e5;"></i>
+                  <h4 style="margin: 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">Estatísticas Inteligentes & Metas</h4>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn-outline" onclick="app.switchTab('review')" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; color: #4f46e5; border-color: #c7d2fe; cursor: pointer;">
+                    Ver Relatórios &rarr;
+                  </button>
+                </div>
+              </div>
+
+              <div class="stats-kpi-grid">
+                <div class="stat-kpi-box">
+                  <div class="stat-kpi-val" id="statKpiTodayMinutes" style="color: #4f46e5;">0 min</div>
+                  <div class="stat-kpi-lbl">Estudo Hoje</div>
+                </div>
+                <div class="stat-kpi-box">
+                  <div class="stat-kpi-val" id="statKpiStreak" style="color: #ea580c;">🔥 0</div>
+                  <div class="stat-kpi-lbl">Dias Seguidos</div>
+                </div>
+                <div class="stat-kpi-box">
+                  <div class="stat-kpi-val" id="statKpiTpcDone" style="color: #10b981;">0 / 0</div>
+                  <div class="stat-kpi-lbl">TPCs Concluídos</div>
+                </div>
+                <div class="stat-kpi-box">
+                  <div class="stat-kpi-val" id="statKpiMistakesReview" style="color: #ef4444;">0</div>
+                  <div class="stat-kpi-lbl">Erros a Revisar</div>
+                </div>
+              </div>
+
+              <div class="weekly-bars-wrapper">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <strong style="font-size: 0.8rem; color: #334155;">Atividade da Semana (Minutos Dedicados)</strong>
+                  <span style="font-size: 0.75rem; color: #64748b;" id="weeklyTotalMinutesLabel">0 min no total</span>
+                </div>
+                <div class="weekly-bars-chart" id="weeklyBarsChart">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+
+              <!-- Assuntos a revisar alert / radar -->
+              <div id="statTopicsToReviewBox" style="margin-top: 12px; font-size: 0.78rem; padding: 10px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>🎯</span>
+                  <span id="statTopicsToReviewText">Nenhum erro pendente de revisão. Continue firme!</span>
+                </div>
+                <button type="button" class="btn-primary" onclick="app.switchTab('review')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; background: #4f46e5; cursor: pointer;">Revisar</button>
+              </div>
+            </div>
+
             <!-- Middle Row: Meus estudos & Universo Eureka Banner -->
-            <div class="sas-studies-eureka-row">
+            <div class="sas-studies-eureka-row" data-dash-card="studies-eureka">
               <!-- Meus estudos card matching image -->
               <div class="sas-my-studies-card" onclick="app.switchTab('gammon-tpc')">
                 <div class="studies-head">
@@ -306,23 +381,23 @@
             </div>
 
             <!-- Bottom: Notícias Card matching image -->
-            <div class="sas-news-card">
+            <div class="sas-news-card" data-dash-card="news" onclick="app.openNewsCenterModal()" style="cursor: pointer;" title="Clique para abrir a Central de Novidades">
               <div class="news-header">
                 <i data-lucide="newspaper" style="width: 18px; height: 18px; color: #0284c7;"></i>
-                <h4>Notícias</h4>
+                <h4>Notícias & Atualizações</h4>
               </div>
               <div class="news-body-empty">
                 <div class="news-icon-circle">
-                  <i data-lucide="book-marked" style="width: 26px; height: 26px;"></i>
+                  <i data-lucide="sparkles" style="width: 26px; height: 26px; color: #0284c7;"></i>
                 </div>
-                <h5>Confira as notícias por aqui</h5>
-                <p>Por enquanto não há novidades para serem exibidas nesta área</p>
+                <h5>Versão 2.5 Lançada!</h5>
+                <p>Toque aqui para conferir todas as novidades, melhorias e histórico de versões do Estude+.</p>
               </div>
             </div>
           </div>
 
           <!-- Right Column: Agenda Card matching image -->
-          <aside class="sas-agenda-col">
+          <aside class="sas-agenda-col" data-dash-card="agenda">
             <div class="sas-agenda-card">
               <div class="agenda-top-header">
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -2003,20 +2078,59 @@
               <input type="text" id="cfgStudentMotto" class="form-input" value="Foco todo dia para mandar bem nas provas do SAS!" placeholder="Ex: Rumo ao 10 no SAS!">
             </div>
 
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+            <!-- Tema Visual: Claro, Escuro, Sistema -->
+            <div class="form-group" style="margin-top: 14px;">
+              <label>Tema Visual da Tela:</label>
+              <div style="display: flex; gap: 8px;">
+                <label class="theme-choice-btn" style="flex: 1;">
+                  <input type="radio" name="cfgThemeMode" value="light" checked>
+                  <span>☀️ Claro</span>
+                </label>
+                <label class="theme-choice-btn" style="flex: 1;">
+                  <input type="radio" name="cfgThemeMode" value="dark">
+                  <span>🌙 Escuro</span>
+                </label>
+                <label class="theme-choice-btn" style="flex: 1;">
+                  <input type="radio" name="cfgThemeMode" value="system">
+                  <span>💻 Sistema</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Cor de Destaque -->
+            <div class="form-group">
+              <label style="display: flex; justify-content: space-between;">
+                <span>Cor de Destaque da Interface:</span>
+                <span id="cfgSelectedAccentName" style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Índigo Estude+</span>
+              </label>
+              <div class="accent-color-picker" id="cfgAccentColorPicker">
+                <button type="button" class="accent-color-btn active" data-color="#4f46e5" data-name="Índigo Estude+" style="background: #4f46e5;" onclick="app.selectAccentColor('#4f46e5', 'Índigo Estude+')">✓</button>
+                <button type="button" class="accent-color-btn" data-color="#0284c7" data-name="Azul Gammon" style="background: #0284c7;" onclick="app.selectAccentColor('#0284c7', 'Azul Gammon')"></button>
+                <button type="button" class="accent-color-btn" data-color="#059669" data-name="Verde Esmeralda" style="background: #059669;" onclick="app.selectAccentColor('#059669', 'Verde Esmeralda')"></button>
+                <button type="button" class="accent-color-btn" data-color="#7c3aed" data-name="Roxo Galáctico" style="background: #7c3aed;" onclick="app.selectAccentColor('#7c3aed', 'Roxo Galáctico')"></button>
+                <button type="button" class="accent-color-btn" data-color="#d97706" data-name="Âmbar Dourado" style="background: #d97706;" onclick="app.selectAccentColor('#d97706', 'Âmbar Dourado')"></button>
+                <button type="button" class="accent-color-btn" data-color="#e11d48" data-name="Rosa Rubi" style="background: #e11d48;" onclick="app.selectAccentColor('#e11d48', 'Rosa Rubi')"></button>
+              </div>
+              <input type="hidden" id="cfgAccentColor" value="#4f46e5">
+            </div>
+
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <!-- Densidade de Tela -->
               <div class="form-group" style="margin-bottom: 0;">
-                <label>Tema Visual da Tela:</label>
+                <label>Densidade da Tela:</label>
                 <div style="display: flex; gap: 8px;">
                   <label class="theme-choice-btn" style="flex: 1;">
-                    <input type="radio" name="cfgThemeMode" value="light" checked>
-                    <span>☀️ Modo Claro</span>
+                    <input type="radio" name="cfgDensity" value="comfortable" checked>
+                    <span>Confortável</span>
                   </label>
                   <label class="theme-choice-btn" style="flex: 1;">
-                    <input type="radio" name="cfgThemeMode" value="dark">
-                    <span>🌙 Modo Escuro</span>
+                    <input type="radio" name="cfgDensity" value="compact">
+                    <span>Compacta</span>
                   </label>
                 </div>
               </div>
+
+              <!-- Tamanho do Texto -->
               <div class="form-group" style="margin-bottom: 0;">
                 <label>Tamanho do Texto:</label>
                 <div style="display: flex; gap: 8px;">
@@ -2030,6 +2144,17 @@
                   </label>
                 </div>
               </div>
+            </div>
+
+            <!-- Desempenho e Acessibilidade -->
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 0;">
+              <label class="subj-checkbox-pill" style="cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                <input type="checkbox" id="cfgReduceMotion" name="cfgReduceMotion" style="width: 17px; height: 17px;">
+                <div>
+                  <strong style="font-size: 0.85rem; color: #0f172a; display: block;">Modo Desempenho / Reduzir Animações</strong>
+                  <span style="font-size: 0.74rem; color: #64748b;">Deixa a navegação ultraleve e instantânea. Recomendado para computadores modestos e celulares antigos.</span>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -2142,20 +2267,26 @@
       <div class="notifications-actions-bar">
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
           <button type="button" class="notification-filter-btn active" id="btnFilterNotifAll" onclick="app.filterNotifications('all')">
-            Todas (<span id="notifCountAll">5</span>)
+            Todas (<span id="notifCountAll">0</span>)
+          </button>
+          <button type="button" class="notification-filter-btn" id="btnFilterNotifUnread" onclick="app.filterNotifications('unread')">
+            🔔 Não Lidas (<span id="notifCountUnread">0</span>)
           </button>
           <button type="button" class="notification-filter-btn" id="btnFilterNotifTpc" onclick="app.filterNotifications('tpc')">
-            📋 TPCs (<span id="notifCountTpc">2</span>)
+            📋 TPCs (<span id="notifCountTpc">0</span>)
           </button>
           <button type="button" class="notification-filter-btn" id="btnFilterNotifExam" onclick="app.filterNotifications('exam')">
-            📅 Provas (<span id="notifCountExam">2</span>)
+            📅 Provas (<span id="notifCountExam">0</span>)
           </button>
-          <button type="button" class="notification-filter-btn" id="btnFilterNotifOccur" onclick="app.filterNotifications('occurrence')">
-            📢 Ocorrências (<span id="notifCountOccur">1</span>)
+          <button type="button" class="notification-filter-btn" id="btnFilterNotifPro" onclick="app.filterNotifications('pro')">
+            👑 PRO (<span id="notifCountPro">0</span>)
+          </button>
+          <button type="button" class="notification-filter-btn" id="btnFilterNotifSystem" onclick="app.filterNotifications('system')">
+            🛠️ Sistema (<span id="notifCountSystem">0</span>)
           </button>
         </div>
         <div style="display: flex; gap: 8px;">
-          <button type="button" class="btn-outline" onclick="app.markAllNotificationsRead()" style="font-size: 0.75rem; padding: 4px 8px; border: none; color: #4f46e5; font-weight: 700;">
+          <button type="button" class="btn-outline" onclick="app.markAllNotificationsRead()" style="font-size: 0.75rem; padding: 4px 8px; border: none; color: #4f46e5; font-weight: 700; cursor: pointer;">
             <i data-lucide="check-check" style="width: 12px; height: 12px; display: inline;"></i> Marcar lidas
           </button>
         </div>
@@ -2447,6 +2578,190 @@
       <span>Planos</span>
     </button>
   </nav>
+
+  <!-- ================= MODAL: BUSCA UNIVERSAL (CTRL + K) ================= -->
+  <div class="command-palette-overlay" id="commandPaletteModal" style="display: none;" onclick="if(event.target === this) app.closeCommandPalette()">
+    <div class="command-palette-box">
+      <div class="command-palette-header">
+        <i data-lucide="search" style="color: #64748b; width: 18px; height: 18px;"></i>
+        <input type="text" id="commandPaletteInput" class="command-palette-input" placeholder="Buscar páginas, matérias, tarefas, apostilas ou ações... (ESC para fechar)" oninput="app.handleCommandPaletteInput(this.value)">
+        <span class="shortcut-kbd">ESC</span>
+      </div>
+      <div class="command-palette-results" id="commandPaletteResults">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="command-palette-footer">
+        <span>Dica: Use as setas ou clique para navegar</span>
+        <div style="display: flex; gap: 8px;">
+          <span><span class="shortcut-kbd">Ctrl</span> + <span class="shortcut-kbd">K</span> abrir</span>
+          <span><span class="shortcut-kbd">Esc</span> fechar</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PERSONALIZAR DASHBOARD ================= -->
+  <div class="modal-overlay" id="customizeDashboardModal">
+    <div class="modal-card" style="max-width: 580px;">
+      <button class="modal-close" onclick="app.closeModal('customizeDashboardModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <div style="background: #e0e7ff; color: #4338ca; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+          ⚙️
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Personalizar Início do Estude+</h3>
+          <p class="subtitle" style="margin: 2px 0 0; font-size: 0.78rem; color: #64748b;">
+            Escolha quais blocos aparecem na tela inicial e reorganize a ordem de visualização.
+          </p>
+        </div>
+      </div>
+
+      <div class="dash-reorder-list" id="dashReorderList">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+        <button type="button" class="btn-outline" onclick="app.resetDashboardLayout()" style="font-size: 0.8rem; color: #64748b;">
+          Restaurar Padrão
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('customizeDashboardModal')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="app.saveDashboardLayout()" style="background: #4f46e5;">
+            Salvar Organização
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CENTRAL DE NOVIDADES & VERSÕES ================= -->
+  <div class="modal-overlay" id="newsCenterModal">
+    <div class="modal-card" style="max-width: 640px; max-height: 85vh; display: flex; flex-direction: column;">
+      <button class="modal-close" onclick="app.closeModal('newsCenterModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+        <div style="background: #e0f2fe; color: #0284c7; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+          📰
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Central de Novidades & Versões</h3>
+            <span class="version-badge">v2.5 Oficial</span>
+          </div>
+          <p class="subtitle" style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">
+            Acompanhe as atualizações contínuas do ecossistema Estude+ para o Colégio Gammon e SAS.
+          </p>
+        </div>
+      </div>
+
+      <div style="overflow-y: auto; padding-right: 6px; flex: 1;">
+        <!-- Versão 2.5 -->
+        <div class="changelog-version-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="version-badge" style="background: #dcfce7; color: #15803d;">v2.5 • Versão Atual</span>
+              <strong style="font-size: 0.95rem; color: #0f172a;">Evoluções do Painel & PRO sem Barreiras</strong>
+            </div>
+            <span style="font-size: 0.72rem; color: #94a3b8;">Outubro 2026</span>
+          </div>
+          <ul style="margin: 0; padding-left: 20px; font-size: 0.83rem; color: #334155; line-height: 1.6;">
+            <li><strong>Plano PRO Direto no Navegador:</strong> Acesso instantâneo em qualquer celular, tablet ou computador sem precisar baixar qualquer arquivo.</li>
+            <li><strong>Dashboard Personalizável:</strong> Oculte, reorganize e restaure os cartões da página inicial como preferir.</li>
+            <li><strong>Estatísticas Inteligentes:</strong> Gráfico de minutos semanais, metas diárias e radar de assuntos a revisar com dados reais.</li>
+            <li><strong>Busca Universal (Ctrl + K):</strong> Encontre qualquer matéria, tarefa, apostila SAS ou configuração com um toque.</li>
+            <li><strong>Personalização Visual Avançada:</strong> Temas Claro/Escuro/Sistema, 6 cores de destaque, densidade compacta e modo desempenho para PCs modestos.</li>
+            <li><strong>Central Admin Unificada:</strong> Gestão de solicitações e eventos sincronizados em tempo real entre plataformas.</li>
+          </ul>
+        </div>
+
+        <!-- Versão 2.4 -->
+        <div class="changelog-version-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="version-badge">v2.4</span>
+              <strong style="font-size: 0.95rem; color: #0f172a;">Sincronização Nuvem Multi-dispositivos</strong>
+            </div>
+            <span style="font-size: 0.72rem; color: #94a3b8;">Setembro 2026</span>
+          </div>
+          <ul style="margin: 0; padding-left: 20px; font-size: 0.83rem; color: #334155; line-height: 1.6;">
+            <li>Uma conta em todos os aparelhos: sincronização automática de tarefas, agenda e perfil.</li>
+            <li>Central de notificações GAMMON+ com suporte a ocorrências e provas.</li>
+            <li>Canal de suporte integrado para dúvidas e relato de dificuldades.</li>
+          </ul>
+        </div>
+
+        <!-- Versão 2.0 -->
+        <div class="changelog-version-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="version-badge">v2.0</span>
+              <strong style="font-size: 0.95rem; color: #0f172a;">Ecossistema SAS Asas 2026 & Tutor IA</strong>
+            </div>
+            <span style="font-size: 0.72rem; color: #94a3b8;">Agosto 2026</span>
+          </div>
+          <ul style="margin: 0; padding-left: 20px; font-size: 0.83rem; color: #334155; line-height: 1.6;">
+            <li>Integração das 12 Apostilas SAS Oficiais do 7º Ano.</li>
+            <li>118 Tarefas TPC dos professores do Colégio Gammon.</li>
+            <li>Tutor Gemini IA com respostas diretas e suporte a dúvidas 24 horas.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; text-align: right; padding-top: 10px; border-top: 1px solid #e2e8f0;">
+        <button type="button" class="btn-primary" onclick="app.closeModal('newsCenterModal')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ATALHOS DO TECLADO ================= -->
+  <div class="modal-overlay" id="shortcutsGuideModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <button class="modal-close" onclick="app.closeModal('shortcutsGuideModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+        <div style="background: #f1f5f9; color: #334155; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          ⌨️
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">Atalhos do Teclado</h3>
+          <p class="subtitle" style="margin: 2px 0 0; font-size: 0.78rem; color: #64748b;">Navegue com velocidade máxima no Estude+.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.84rem; color: #334155;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Abrir Busca Universal</span>
+          <div><span class="shortcut-kbd">Ctrl</span> + <span class="shortcut-kbd">K</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Fechar modais e painéis</span>
+          <div><span class="shortcut-kbd">Esc</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Ir para a Página Inicial</span>
+          <div><span class="shortcut-kbd">Alt</span> + <span class="shortcut-kbd">1</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Abrir Chatbot IA</span>
+          <div><span class="shortcut-kbd">Alt</span> + <span class="shortcut-kbd">2</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Abrir Apostilas SAS Eureka</span>
+          <div><span class="shortcut-kbd">Alt</span> + <span class="shortcut-kbd">3</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Abrir TPCs Gammon+</span>
+          <div><span class="shortcut-kbd">Alt</span> + <span class="shortcut-kbd">4</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px;">
+          <span>Ver este guia de atalhos</span>
+          <div><span class="shortcut-kbd">?</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; text-align: right;">
+        <button type="button" class="btn-primary" onclick="app.closeModal('shortcutsGuideModal')">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Script Logic -->
   <script src="app.js"></script>

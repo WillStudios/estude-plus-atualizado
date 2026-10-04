@@ -536,8 +536,8 @@ const server = http.createServer((req, res) => {
      SINCRONIZAÇÃO ENTRE DISPOSITIVOS (CELULAR, TABLET, PC)
      ========================================================================== */
 
-  // GET /api/user/sync - Baixa os dados completos e atualizados do usuário autenticado
-  if (req.method === 'GET' && pathname === '/api/user/sync') {
+  // GET /api/user/sync ou GET /api/auth/me - Baixa os dados completos e atualizados do usuário autenticado
+  if (req.method === 'GET' && (pathname === '/api/user/sync' || pathname === '/api/auth/me')) {
     const auth = getAuthUser(req);
     if (!auth || !auth.user) {
       return sendJson({ error: 'Não autenticado. Faça login para sincronizar seus dados entre dispositivos.' }, 401);
@@ -573,6 +573,7 @@ const server = http.createServer((req, res) => {
         studiedDays: Array.isArray(freshUser.studiedDays) ? freshUser.studiedDays : [],
         achievements: Array.isArray(freshUser.achievements) ? freshUser.achievements : [],
         studentSettings: freshUser.studentSettings || freshUser.preferences || {},
+        preferences: freshUser.preferences || freshUser.studentSettings || {},
         timetable: Array.isArray(freshUser.timetable) ? freshUser.timetable : null,
         tasks: freshUser.tasks || {
           completedTpcIds: freshUser.completedTpcIds || [],
