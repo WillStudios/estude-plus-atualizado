@@ -546,6 +546,39 @@ const server = http.createServer((req, res) => {
     const db = readDb();
     const freshUser = (db.users || []).find(u => u.id === auth.user.id) || auth.user;
 
+    // A cada novo dia que o aluno entra, adiciona +1 dia à sequência
+    const now = new Date();
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+    const lastDate = freshUser.lastVisitDate || (freshUser.lastLogin ? freshUser.lastLogin.split('T')[0] : null);
+
+    if (!Array.isArray(freshUser.loginDays)) freshUser.loginDays = [];
+    if (!Array.isArray(freshUser.studiedDays)) freshUser.studiedDays = [];
+
+    let dbUpdated = false;
+    if (lastDate && lastDate !== todayStr) {
+      freshUser.streak = (Number(freshUser.streak) || 0) + 1;
+      freshUser.bestStreak = Math.max(Number(freshUser.bestStreak) || 0, freshUser.streak);
+      freshUser.lastVisitDate = todayStr;
+      dbUpdated = true;
+    } else if (!freshUser.streak || freshUser.streak < 1) {
+      freshUser.streak = 1;
+      freshUser.lastVisitDate = todayStr;
+      dbUpdated = true;
+    }
+
+    if (!freshUser.loginDays.includes(todayStr)) {
+      freshUser.loginDays.push(todayStr);
+      dbUpdated = true;
+    }
+    if (!freshUser.studiedDays.includes(todayStr)) {
+      freshUser.studiedDays.push(todayStr);
+      dbUpdated = true;
+    }
+
+    if (dbUpdated) {
+      writeDb(db);
+    }
+
     // Busca a solicitação de plano mais recente deste usuário
     const activeReq = (db.planRequests || [])
       .filter(r => r.userId === freshUser.id)
@@ -566,11 +599,13 @@ const server = http.createServer((req, res) => {
         planName: freshUser.planName || 'Plano Base',
         proExpiresAt: freshUser.proExpiresAt || null,
         trialExpiresAt: freshUser.trialExpiresAt || null,
-        streak: Number(freshUser.streak) || 0,
-        bestStreak: Number(freshUser.bestStreak) || 0,
+        streak: Number(freshUser.streak) || 1,
+        bestStreak: Number(freshUser.bestStreak) || 1,
         dailyGoalMinutes: Number(freshUser.dailyGoalMinutes) || 15,
         todayMinutes: Number(freshUser.todayMinutes) || 0,
         studiedDays: Array.isArray(freshUser.studiedDays) ? freshUser.studiedDays : [],
+        loginDays: Array.isArray(freshUser.loginDays) ? freshUser.loginDays : [],
+        lastVisitDate: freshUser.lastVisitDate || null,
         achievements: Array.isArray(freshUser.achievements) ? freshUser.achievements : [],
         studentSettings: freshUser.studentSettings || freshUser.preferences || {},
         preferences: freshUser.preferences || freshUser.studentSettings || {},
@@ -618,6 +653,8 @@ const server = http.createServer((req, res) => {
         if (typeof data.progress.dailyGoalMinutes === 'number') u.dailyGoalMinutes = data.progress.dailyGoalMinutes;
         if (typeof data.progress.todayMinutes === 'number') u.todayMinutes = data.progress.todayMinutes;
         if (Array.isArray(data.progress.studiedDays)) u.studiedDays = data.progress.studiedDays;
+        if (Array.isArray(data.progress.loginDays)) u.loginDays = data.progress.loginDays;
+        if (data.progress.lastVisitDate) u.lastVisitDate = data.progress.lastVisitDate;
         if (Array.isArray(data.progress.achievements)) u.achievements = data.progress.achievements;
       }
 
@@ -1335,7 +1372,37 @@ const server = http.createServer((req, res) => {
       const sessionId = 'sess_' + crypto.randomBytes(16).toString('hex');
       const deviceType = detectDevice(req.headers['user-agent']);
       const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
 
+      if (!Array.isArray(user.loginDays)) user.loginDays = [];
+      const lastDate = user.lastVisitDate || (user.lastLogin ? user.lastLogin.split('T')[0] : null);
+
+      if (lastDate && lastDate !== todayStr) {
+        // Novo dia em que o usuário entrou: adiciona +1 dia
+        const d1 = new Date(lastDate + 'T00:00:00');
+        const d2 = new Date(todayStr + 'T00:00:00');
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        const isWeekendTransition = (d1.getDay() === 5 && d2.getDay() === 1 && diffDays <= 3);
+
+        if (diffDays === 1 || isWeekendTransition) {
+          user.streak = (Number(user.streak) || 0) + 1;
+        } else if (diffDays > 1) {
+          user.streak = (Number(user.streak) || 0) + 1;
+        }
+      } else if (!user.streak || user.streak < 1) {
+        user.streak = 1;
+      }
+
+      if (!user.loginDays.includes(todayStr)) {
+        user.loginDays.push(todayStr);
+      }
+      if (!Array.isArray(user.studiedDays)) user.studiedDays = [];
+      if (!user.studiedDays.includes(todayStr)) {
+        user.studiedDays.push(todayStr);
+      }
+
+      user.bestStreak = Math.max(Number(user.bestStreak) || 0, Number(user.streak) || 1);
+      user.lastVisitDate = todayStr;
       user.lastLogin = now.toISOString();
       user.lastDeviceType = deviceType;
       writeDb(db);

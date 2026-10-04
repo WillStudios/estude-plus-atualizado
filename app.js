@@ -660,6 +660,8 @@ class EstudePlusApp {
     this.setupEventListeners();
     this.initChatBot();
     this.checkAuth();
+    this.trackDailyStreak();
+    this.startActiveStudyTracker();
     this.initMasterSync();
     this.applyStudentSettingsToUI();
     this.updateGeminiKeyBadge();
@@ -692,6 +694,79 @@ class EstudePlusApp {
     if (window.lucide) {
       window.lucide.createIcons();
     }
+  }
+
+  trackDailyStreak() {
+    if (!this.currentUser) return;
+    const now = new Date();
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+    const lastDate = this.currentUser.lastVisitDate || this.state.lastVisitDate || null;
+
+    if (!Array.isArray(this.currentUser.loginDays)) this.currentUser.loginDays = [];
+    if (!Array.isArray(this.currentUser.studiedDays)) this.currentUser.studiedDays = [];
+    if (!Array.isArray(this.state.studiedDays)) this.state.studiedDays = [];
+
+    let updated = false;
+
+    if (lastDate !== todayStr) {
+      // Novo dia que o usuário entrou: adiciona +1 dia de ofensiva!
+      const currentStreak = Number(this.currentUser.streak || this.state.streak || 0);
+      const newStreak = Math.max(1, currentStreak + 1);
+
+      this.currentUser.streak = newStreak;
+      this.currentUser.bestStreak = Math.max(Number(this.currentUser.bestStreak) || 0, newStreak);
+      this.currentUser.lastVisitDate = todayStr;
+
+      this.state.streak = newStreak;
+      this.state.lastVisitDate = todayStr;
+      updated = true;
+    }
+
+    if (!this.currentUser.loginDays.includes(todayStr)) {
+      this.currentUser.loginDays.push(todayStr);
+      updated = true;
+    }
+    if (!this.currentUser.studiedDays.includes(todayStr)) {
+      this.currentUser.studiedDays.push(todayStr);
+      updated = true;
+    }
+    if (!this.state.studiedDays.includes(todayStr)) {
+      this.state.studiedDays.push(todayStr);
+      updated = true;
+    }
+
+    if (updated) {
+      this.saveCurrentUser();
+      this.saveState();
+      this.renderSmartStats();
+      this.refreshBadges();
+      if (typeof this.debouncedSyncPush === 'function') {
+        this.debouncedSyncPush();
+      }
+    }
+  }
+
+  startActiveStudyTracker() {
+    if (this._studyTimerInterval) clearInterval(this._studyTimerInterval);
+    this._studyTimerInterval = setInterval(() => {
+      if (document.hidden) return;
+      if (!this.currentUser) return;
+
+      this.currentUser.todayMinutes = (Number(this.currentUser.todayMinutes) || 0) + 1;
+      this.state.todayMinutes = this.currentUser.todayMinutes;
+      this.saveCurrentUser();
+      this.saveState();
+
+      const kpiToday = document.getElementById('statKpiTodayMinutes');
+      const goalMins = Number(this.currentUser?.dailyGoal || this.currentUser?.dailyGoalMinutes || 15);
+      if (kpiToday) kpiToday.innerText = `${this.state.todayMinutes} / ${goalMins} min`;
+
+      this.renderSmartStats();
+
+      if (this.state.todayMinutes % 5 === 0 && typeof this.debouncedSyncPush === 'function') {
+        this.debouncedSyncPush();
+      }
+    }, 60000);
   }
 
   loadState() {
@@ -1572,40 +1647,60 @@ class EstudePlusApp {
   }
 
   launchCustomChapterQuiz() {
-    if (!this.isUserPro()) {
-      this.showModal('subscriptionModal');
-      return;
+    try {
+      if (!this.isUserPro()) {
+        this.showModal('subscriptionModal');
+        return;
+      }
+      const subjSelect = document.getElementById('quizSubjectSelect');
+      const bookSelect = document.getElementById('quizBookSelect');
+      const capSelect = document.getElementById('quizChapterSelect');
+      const diffSelect = document.getElementById('quizDifficultySelect');
+      const countSelect = document.getElementById('quizQuestionCountSelect');
+
+      const subjKey = subjSelect?.value || this.currentQuizSubject || 'matematica';
+      const bookId = parseInt(bookSelect?.value || this.currentQuizBookId || '1', 10);
+      const capId = parseInt(capSelect?.value || this.currentQuizChapterId || '1', 10);
+      const difficulty = diffSelect?.value || this.currentQuizDifficulty || 'dificil';
+      const count = parseInt(countSelect?.value || this.currentQuizQuestionCount || '8', 10);
+
+      this.startQuizDirectlyForChapter(subjKey, bookId, capId, difficulty, count);
+    } catch (err) {
+      console.error('[Quiz Launch Error]', err);
+      alert('Não foi possível iniciar o quiz: ' + (err.message || 'Erro inesperado'));
     }
-    const subjSelect = document.getElementById('quizSubjectSelect');
-    const bookSelect = document.getElementById('quizBookSelect');
-    const capSelect = document.getElementById('quizChapterSelect');
-    const diffSelect = document.getElementById('quizDifficultySelect');
-    const countSelect = document.getElementById('quizQuestionCountSelect');
-
-    const subjKey = subjSelect?.value || this.currentQuizSubject || 'matematica';
-    const bookId = parseInt(bookSelect?.value || this.currentQuizBookId || '1', 10);
-    const capId = parseInt(capSelect?.value || this.currentQuizChapterId || '1', 10);
-    const difficulty = diffSelect?.value || this.currentQuizDifficulty || 'dificil';
-    const count = parseInt(countSelect?.value || this.currentQuizQuestionCount || '8', 10);
-
-    this.startQuizDirectlyForChapter(subjKey, bookId, capId, difficulty, count);
   }
 
   startQuizDirectlyForChapter(subjectKey, bookId, chapterId, difficulty = null, count = null) {
-    this.currentQuizSubject = subjectKey;
-    this.currentQuizBookId = bookId;
-    this.currentQuizChapterId = chapterId;
-    if (difficulty) this.currentQuizDifficulty = difficulty;
-    if (count) this.currentQuizQuestionCount = count;
+    try {
+      this.currentQuizSubject = subjectKey;
+      this.currentQuizBookId = bookId;
+      this.currentQuizChapterId = chapterId;
+      if (difficulty) this.currentQuizDifficulty = difficulty;
+      if (count) this.currentQuizQuestionCount = count;
 
-    const diff = this.currentQuizDifficulty || 'dificil';
-    const cnt = this.currentQuizQuestionCount || 8;
+      const diff = this.currentQuizDifficulty || 'dificil';
+      const cnt = this.currentQuizQuestionCount || 8;
 
-    const questions = this.getQuestionsForChapter(subjectKey, bookId, chapterId, diff, cnt);
-    this.quizState.questions = (questions && questions.length > 0) ? questions : this.getQuestionsForChapter('matematica', 1, 1, diff, cnt);
-    this.quizState.difficulty = diff;
-    this.switchTab('quiz');
-    this.startQuizExecution();
+      let questions = [];
+      try {
+        questions = this.getQuestionsForChapter(subjectKey, bookId, chapterId, diff, cnt);
+      } catch (qErr) {
+        console.warn('[GetQuestions Error, fallback]', qErr);
+      }
+
+      if (!questions || questions.length === 0) {
+        questions = this.getQuestionsForChapter('matematica', 1, 1, diff, cnt);
+      }
+
+      this.quizState.questions = questions;
+      this.quizState.difficulty = diff;
+      this.switchTab('quiz');
+      this.startQuizExecution();
+    } catch (err) {
+      console.error('[startQuizDirectlyForChapter Error]', err);
+      alert('Erro ao carregar perguntas do capítulo: ' + (err.message || err));
+    }
   }
 
   getQuestionsForChapter(subjectKey, bookId, chapterId, difficulty = 'dificil', count = 8) {
@@ -3563,6 +3658,34 @@ class EstudePlusApp {
             ],
             explanation: "A articulação do cotovelo é o fulcro, a inserção do bíceps é a força potente (no meio), e a carga na mão é a resistência. Portanto, é interpotente.",
             aiGuidance: "Biomecânica das alavancas no corpo humano."
+          },
+          {
+            id: "c11_d3",
+            subject: "Ciências (Livro 1 SAS)",
+            topic: "Cap. 1: Máquinas Simples",
+            text: "Em um plano inclinado de 12 metros de extensão usado para carregar caminhões, a altura vertical é de 3 metros. Desconsiderando o atrito, qual é a vantagem mecânica teórica dessa rampa?",
+            options: [
+              { text: "4 (a força motriz necessária é 4 vezes menor que o peso).", correct: true },
+              { text: "36 (multiplica-se a altura pelo comprimento).", correct: false },
+              { text: "0,25 (a rampa dificulta o movimento).", correct: false },
+              { text: "9 (a diferença entre extensão e altura).", correct: false }
+            ],
+            explanation: "A vantagem mecânica ideal (VMI) de um plano inclinado é dada pela razão entre o comprimento da rampa (L) e a altura (h): VMI = 12 / 3 = 4.",
+            aiGuidance: "Vantagem mecânica do plano inclinado: VMI = L / h."
+          },
+          {
+            id: "c11_d4",
+            subject: "Ciências (Livro 1 SAS)",
+            topic: "Cap. 1: Máquinas Simples",
+            text: "Um cortador de unhas é uma máquina composta formada pela associação direta de quais tipos de máquinas simples?",
+            options: [
+              { text: "Uma alavanca interpotente acoplada a duas alavancas inter-resistentes (as lâminas cortantes).", correct: true },
+              { text: "Duas roldanas fixas e um parafuso helicoidal.", correct: false },
+              { text: "Apenas um plano inclinado duplo sem alavancas.", correct: false },
+              { text: "Uma engrenagem circular ligada a um fulcro central fixo.", correct: false }
+            ],
+            explanation: "A haste que pressionamos funciona como alavanca interpotente/interfixa com ponto de apoio na ponta, transferindo força para as lâminas que agem como alavancas inter-resistentes.",
+            aiGuidance: "Associação composta de alavancas no cotidiano."
           }
         ]
       },
@@ -4097,6 +4220,12 @@ class EstudePlusApp {
         }
       ]
     };
+
+    const diffTemplates = (templates[difficulty] && templates[difficulty].length > 0)
+      ? templates[difficulty]
+      : (templates['medio'] || templates['facil']);
+    let templateIdx = 0;
+
     while (questionsList.length < count) {
       const t = diffTemplates[templateIdx % diffTemplates.length];
       const qId = `proc_${subjectKey}_${bookId}_${chapterId}_${difficulty}_${questionsList.length + 1}`;
@@ -8056,25 +8185,40 @@ class EstudePlusApp {
 
     // Calculate weekly activity bars
     const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-    const studiedDays = Array.isArray(this.state.studiedDays) ? this.state.studiedDays : [];
+    const studiedDays = Array.isArray(this.state.studiedDays)
+      ? this.state.studiedDays
+      : (Array.isArray(this.currentUser?.studiedDays) ? this.currentUser.studiedDays : []);
+    const loginDays = Array.isArray(this.currentUser?.loginDays) ? this.currentUser.loginDays : [];
+    const allActiveDays = Array.from(new Set([...studiedDays, ...loginDays]));
+
     const now = new Date();
     const currentDayOfWeek = (now.getDay() + 6) % 7; // 0 = Seg, ..., 6 = Dom
 
     let totalWeekMins = 0;
     const weekBarsHtml = dayNames.map((dName, idx) => {
       let dayMins = 0;
+      const dayMatched = allActiveDays.some(d => {
+        try {
+          const dt = new Date(d.includes('T') ? d : d + 'T12:00:00');
+          return (dt.getDay() + 6) % 7 === idx;
+        } catch (e) {
+          return false;
+        }
+      });
+
       if (idx === currentDayOfWeek) {
-        dayMins = todayMins;
-      } else if (studiedDays.some(d => (new Date(d).getDay() + 6) % 7 === idx)) {
+        dayMins = Math.max(todayMins, dayMatched ? 15 : todayMins);
+      } else if (dayMatched) {
         dayMins = goalMins;
       }
       totalWeekMins += dayMins;
-      const heightPct = Math.min(100, Math.max(8, (dayMins / (goalMins || 15)) * 100));
-      const isActive = idx === currentDayOfWeek && dayMins > 0;
+      const heightPct = Math.min(100, Math.max(12, ((dayMins || (dayMatched ? goalMins : 0)) / (goalMins || 15)) * 100));
+      const isActive = dayMins > 0 || dayMatched || (idx === currentDayOfWeek);
+      const isToday = idx === currentDayOfWeek;
       return `
         <div class="bar-col" title="${dName}: ${dayMins} min">
-          <div class="bar-pillar ${isActive ? 'active-day' : ''}" style="height: ${heightPct}%;"></div>
-          <span class="bar-col-label">${dName}</span>
+          <div class="bar-pillar ${isActive ? 'active-day' : ''} ${isToday ? 'current-today' : ''}" style="height: ${heightPct}%;"></div>
+          <span class="bar-col-label ${isToday ? 'label-today' : ''}">${dName}</span>
         </div>
       `;
     }).join('');
@@ -8841,6 +8985,10 @@ class EstudePlusApp {
       if (res.ok) {
         const data = await res.json();
         this.adminOverviewData = data;
+        if (Array.isArray(data.users) && data.users.length > 0) {
+          this.users = data.users;
+          this.saveUsers();
+        }
         this.adminPlanRequests = data.planRequests || [];
         this.adminSupportRequests = data.supportRequests || [];
         this.adminStudyReports = data.studyReports || [];
@@ -9654,7 +9802,12 @@ class EstudePlusApp {
     if (!container) return;
 
     const term = (searchTerm || '').toLowerCase().trim();
-    const allUsers = this.users || [];
+    const allUsers = (this.adminOverviewData && Array.isArray(this.adminOverviewData.users) && this.adminOverviewData.users.length > 0)
+      ? this.adminOverviewData.users
+      : (this.users || []);
+    if (!this.adminOverviewData && this.currentUser && (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie')) {
+      this.loadAdminOverview();
+    }
     if (badgeCount) {
       badgeCount.innerText = allUsers.length;
     }

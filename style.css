@@ -51,25 +51,20 @@
 }
 
 html {
-  font-size: 13.5px;
+  font-size: 14px;
   -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
 }
 
 @media (min-width: 1024px) {
   html {
-    font-size: 13px; /* Menos 1 nível de escala desktop */
-  }
-  body {
-    zoom: 0.92; /* Redução proporcional equilibrada (-1 zoom) */
+    font-size: 14px;
   }
 }
 
 @media (min-width: 1600px) {
   html {
-    font-size: 13.5px;
-  }
-  body {
-    zoom: 0.94;
+    font-size: 14.5px;
   }
 }
 
@@ -5806,12 +5801,140 @@ body.dark-mode .sas-my-studies-card,
 body.dark-mode .student-focus-strip,
 body.dark-mode .command-palette-box,
 body.dark-mode .smart-stats-card,
+body.dark-mode .weekly-bars-wrapper,
 body.dark-mode .stat-kpi-box,
 body.dark-mode .dash-reorder-item,
-body.dark-mode .changelog-version-card {
+body.dark-mode .changelog-version-card,
+body.dark-mode .quiz-config-card,
+body.dark-mode .quiz-active-box,
+body.dark-mode #quizChapterPreviewBox,
+body.dark-mode .panel-box {
   background-color: #1e293b !important;
   color: #f8fafc !important;
   border-color: #334155 !important;
+}
+
+body.dark-mode .sas-shortcut-tile {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode .sas-shortcut-tile:hover {
+  background-color: #1e293b !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25) !important;
+}
+
+body.dark-mode .sas-shortcut-tile span {
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode .tile-icon-box {
+  background: #1e293b !important;
+}
+
+body.dark-mode .tile-icon-box.gemini {
+  background: rgba(147, 51, 234, 0.25) !important;
+  color: #c084fc !important;
+}
+
+body.dark-mode .student-focus-strip {
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%) !important;
+  border-color: #4338ca !important;
+}
+
+body.dark-mode .student-focus-strip-info strong,
+body.dark-mode .student-focus-strip-info span {
+  color: #e0e7ff !important;
+}
+
+body.dark-mode .focus-pill-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode .focus-pill-item strong {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .stat-kpi-box {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .stat-kpi-val {
+  color: #f8fafc !important;
+}
+
+body.dark-mode .stat-kpi-lbl {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .weekly-bars-wrapper {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode .bar-pillar {
+  background: #334155 !important;
+}
+
+body.dark-mode .bar-pillar.active-day {
+  background: #6366f1 !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.45) !important;
+}
+
+body.dark-mode .bar-col-label {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .bar-col-label.label-today {
+  color: #818cf8 !important;
+  font-weight: 800 !important;
+}
+
+body.dark-mode .btn-create-reminder {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #38bdf8 !important;
+}
+
+body.dark-mode .btn-create-reminder:hover {
+  background-color: #1e293b !important;
+  border-color: #38bdf8 !important;
+}
+
+body.dark-mode #quizChapterPreviewBox {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.dark-mode #quizChapterPreviewBox strong {
+  color: #f8fafc !important;
+}
+
+body.dark-mode #quizChapterPreviewBox p {
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode #quizChapterPreviewBox div[style*="background"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode .quiz-opt-btn {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode .quiz-opt-btn:hover {
+  background-color: #1e293b !important;
+  border-color: #6366f1 !important;
 }
 
 body.dark-mode .sas-student-name,

@@ -15,10 +15,17 @@
       "streak": 5,
       "bestStreak": 5,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-04T21:58:33.701Z",
+      "lastLogin": "2026-10-04T23:44:20.034Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
-      "lastDeviceType": "Computador / Desktop"
+      "lastDeviceType": "Computador / Desktop",
+      "loginDays": [
+        "2026-10-04"
+      ],
+      "studiedDays": [
+        "2026-10-04"
+      ],
+      "lastVisitDate": "2026-10-04"
     },
     {
       "id": "aluno_lucas",
@@ -59,6 +66,111 @@
       "createdAt": "2026-10-04T16:58:52.378Z",
       "lastLogin": "2026-10-04T16:58:58.138Z",
       "lastDeviceType": "Computador / Desktop"
+    },
+    {
+      "id": "usr_1791157450231_cp8a",
+      "name": "Aluna Mobile Teste",
+      "username": "aluna_mobile_0159",
+      "email": "aluna_mobile_0159@estude.app",
+      "passwordHash": "0505893112eb7b69bd1b967dc7fe0f2194d16e496d3a4b23f35e9cc84095e60ff9533484414b880f4fa80cd922df460399e537b43dc611452dd98b30b806bff2",
+      "passwordSalt": "10700f01fbf014a64b43e43840d4e029",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 1,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [
+        "2026-10-04"
+      ],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-04T23:44:10.231Z",
+      "lastLogin": "2026-10-04T23:44:10.231Z",
+      "lastDeviceType": "iPhone / iOS",
+      "loginDays": [
+        "2026-10-04"
+      ],
+      "lastVisitDate": "2026-10-04"
+    },
+    {
+      "id": "usr_1791157459969_f416",
+      "name": "Aluno Teste Evolução",
+      "username": "aluno_1791157459925",
+      "email": "test_evolve_1791157459925@gammon.com.br",
+      "passwordHash": "534774f38c5ac35c0f311e11b96d2a22a75f78441738efda2620b33fcddc0380f648378f309f3c39c6534f84349395708f27a85b25ca18bfb4a2489f63f651ed",
+      "passwordSalt": "e15629ce802c0bdb10204341b0188960",
+      "role": "student",
+      "isSubscribed": true,
+      "plan": "pro",
+      "planStatus": "active",
+      "planName": "Plano Administrador PRO",
+      "emailVerified": true,
+      "streak": 4,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 20,
+      "studiedDays": [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-04"
+      ],
+      "todayMinutes": 15,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-04T23:44:19.969Z",
+      "lastLogin": "2026-10-04T23:44:19.969Z",
+      "lastDeviceType": "Celular",
+      "preferences": {
+        "themeMode": "system",
+        "accentColor": "#0284c7",
+        "accentName": "Azul Gammon",
+        "density": "compact",
+        "fontSize": "normal",
+        "reduceMotion": true,
+        "dashboardCards": [
+          {
+            "id": "profile-shortcuts",
+            "label": "👤 Perfil & Atalhos Rápidos",
+            "visible": true,
+            "locked": true
+          },
+          {
+            "id": "smart-stats",
+            "label": "📊 Estatísticas Inteligentes & Metas",
+            "visible": true
+          },
+          {
+            "id": "focus-strip",
+            "label": "🎯 Foco de Estudos & Metas",
+            "visible": false
+          },
+          {
+            "id": "studies-eureka",
+            "label": "🧭 Meus Estudos & Universo Eureka",
+            "visible": true
+          },
+          {
+            "id": "news",
+            "label": "📰 Notícias & Atualizações",
+            "visible": true
+          },
+          {
+            "id": "agenda",
+            "label": "📅 Agenda Escolar Gammon+",
+            "visible": true
+          }
+        ]
+      },
+      "lastSync": "2026-10-04T23:44:19.975Z",
+      "loginDays": [
+        "2026-10-04"
+      ],
+      "proExpiresAt": "2026-11-03T23:44:20.075Z"
     }
   ],
   "tpcs": [
@@ -99,7 +211,27 @@
     "forceRefreshTimestamp": 1791144054999
   },
   "connectedDevices": [],
-  "planRequests": [],
+  "planRequests": [
+    {
+      "id": "req_1791157459984_3503b6",
+      "userId": "usr_1791157459969_f416",
+      "userName": "Aluno Teste Evolução",
+      "userEmail": "test_evolve_1791157459925@gammon.com.br",
+      "userGrade": "7º Ano",
+      "plan": "pro",
+      "planName": "Plano ESTUDE+ PRO (R$ 19,90/mês)",
+      "amount": 19.9,
+      "contactMethod": "whatsapp",
+      "contactInfo": "",
+      "note": "",
+      "status": "approved",
+      "statusReason": "Pagamento PIX de R$ 19,90 conferido na conta!",
+      "createdAt": "2026-10-04T23:44:19.984Z",
+      "updatedAt": "2026-10-04T23:44:20.075Z",
+      "reviewedBy": "Freddie Pimentel Costa",
+      "reviewedAt": "2026-10-04T23:44:20.075Z"
+    }
+  ],
   "supportRequests": [],
   "studyReports": [],
   "agendaSyncLogs": [],
@@ -118,5 +250,19 @@
       "timestamp": "2026-10-04T21:58:33.722Z"
     }
   ],
-  "payments": []
+  "payments": [
+    {
+      "id": "PAG_1791157460075",
+      "studentName": "Aluno Teste Evolução",
+      "email": "test_evolve_1791157459925@gammon.com.br",
+      "userId": "usr_1791157459969_f416",
+      "method": "whatsapp",
+      "amount": 19.9,
+      "date": "2026-10-04",
+      "status": "confirmed",
+      "note": "Aprovado pelo administrador Freddie Pimentel Costa. Motivo/Obs: Pagamento PIX de R$ 19,90 conferido na conta!",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-04T23:44:20.075Z"
+    }
+  ]
 }
