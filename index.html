@@ -2156,6 +2156,23 @@
                 </div>
               </label>
             </div>
+
+            <!-- Zona de Perigo: Excluir Conta (Alunos e Administradores) -->
+            <div style="margin-top: 16px; padding: 12px 14px; background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 1rem;">⚠️</span>
+                  <strong style="color: #9f1239; font-size: 0.84rem;">Zona de Perigo da Conta</strong>
+                </div>
+                <p style="margin: 2px 0 0; font-size: 0.74rem; color: #be123c;">
+                  Excluir definitivamente sua conta do ESTUDE+, histórico e acessos.
+                </p>
+              </div>
+              <button type="button" class="btn-outline" onclick="app.deleteMyAccount()" style="color: #be123c; border-color: #f43f5e; background: #ffe4e6; font-weight: 800; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                Excluir Minha Conta
+              </button>
+            </div>
           </div>
 
           <!-- TAB 5: GRADE SEMANAL PERSONALIZADA -->
@@ -2189,31 +2206,14 @@
 
         </div>
 
-        <!-- Zona de Perigo: Excluir Conta (Alunos e Administradores) -->
-        <div style="margin-top: 22px; padding: 14px 16px; background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 1.1rem;">⚠️</span>
-              <strong style="color: #9f1239; font-size: 0.9rem;">Zona de Perigo da Conta</strong>
-            </div>
-            <p style="margin: 3px 0 0; font-size: 0.76rem; color: #be123c;">
-              Excluir definitivamente sua conta do ESTUDE+, histórico e acessos (aplicável a alunos e administradores).
-            </p>
-          </div>
-          <button type="button" class="btn-outline" onclick="app.deleteMyAccount()" style="color: #be123c; border-color: #f43f5e; background: #ffe4e6; font-weight: 800; font-size: 0.78rem; padding: 7px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-            Excluir Minha Conta
-          </button>
-        </div>
-
-        <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
-          <button type="button" class="btn-outline" onclick="app.resetStudentSettingsToDefault()" style="color: #64748b; font-size: 0.82rem;">
+        <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid var(--border-light); background: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn-outline" onclick="app.resetStudentSettingsToDefault()" style="color: #64748b; font-size: 0.8rem; padding: 6px 12px;">
             Restaurar Padrões
           </button>
-          <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn-outline" onclick="app.closeModal('studentSettingsModal')">Cancelar</button>
-            <button type="submit" class="btn-primary" style="background: #4f46e5;">
-              <i data-lucide="check"></i> Salvar Minhas Preferências
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-outline" onclick="app.closeModal('studentSettingsModal')" style="font-size: 0.8rem; padding: 6px 12px;">Cancelar</button>
+            <button type="submit" class="btn-primary" style="background: #4f46e5; font-size: 0.82rem; padding: 7px 16px;">
+              <i data-lucide="check" style="width: 14px; height: 14px;"></i> Salvar Minhas Preferências
             </button>
           </div>
         </div>
