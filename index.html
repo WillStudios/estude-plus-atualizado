@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ESTUDE+">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>ESTUDE+ | Seu parceiro inteligente para estudar melhor</title>
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Bar / App Header -->
+  <header class="top-nav">
+    <div class="brand" onclick="app.switchTab('dashboard')" style="cursor: pointer;">
+      <div style="background: linear-gradient(135deg, #0284c7, #4f46e5); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);">
+        <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+      </div>
+      <div>
+        <h1 class="logo-text" style="font-size: 1.25rem; letter-spacing: -0.5px; font-weight: 900; color: #0f172a; margin: 0; line-height: 1.1;">
+          ESTUDE<span style="color: #0284c7;">+</span>
+        </h1>
+        <p class="tagline" style="font-size: 0.68rem; color: #64748b; margin: 0; font-weight: 600;">Gammon &bull; SAS Plataforma</p>
+      </div>
+    </div>
+
+    <!-- Center Navigation Tabs (Clean ESTUDE+ Unified Tabs) -->
+    <nav class="sas-center-nav">
+      <button class="sas-center-nav-btn active" id="centerNavInicio" onclick="app.switchTab('dashboard')">
+        <i data-lucide="home" style="width: 16px; height: 16px;"></i>
+        <span>Início</span>
+      </button>
+      <button class="sas-center-nav-btn" id="centerNavChat" onclick="app.switchTab('gemini-chat')">
+        <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+        <span>Chat IA</span>
+      </button>
+      <button class="sas-center-nav-btn" id="centerNavLivros" onclick="app.switchTab('sas-eureka')">
+        <i data-lucide="compass" style="width: 16px; height: 16px;"></i>
+        <span>Eureka & Apostilas</span>
+      </button>
+      <button class="sas-center-nav-btn" id="centerNavAtividades" onclick="app.switchTab('gammon-tpc')">
+        <i data-lucide="clipboard-list" style="width: 16px; height: 16px;"></i>
+        <span>TPC Diário</span>
+      </button>
+      <button class="sas-center-nav-btn" id="centerNavPlanos" onclick="app.switchTab('plans-pricing')">
+        <i data-lucide="crown" style="width: 16px; height: 16px;"></i>
+        <span>Planos PRO</span>
+      </button>
+    </nav>
+    
+    <div class="user-meta">
+      <!-- Direct App File Download Button -->
+      <button class="sas-top-btn download-btn" onclick="app.downloadAppFile()" title="Baixar Arquivo Completo do App (Zip)">
+        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+        <span>Baixar App</span>
+      </button>
+
+      <!-- Admin Management Button (Visible to Freddie Costa) -->
+      <button class="sas-top-btn admin-btn" id="adminPaymentsBtn" onclick="app.showModal('adminPaymentsModal')" title="Painel de Confirmação de Pagamentos" style="display: none;">
+        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+        <span>Gestão</span>
+        <span class="badge-count" id="adminPendingCountBadge">0</span>
+      </button>
+
+      <!-- Notification Bell with real-time counter & Gammon+ Sync Modal -->
+      <div class="sas-top-icon-btn" onclick="app.openGammonNotificationsModal()" title="Central de Notificações GAMMON+ (Ocorrências, TPCs & Provas)" style="position: relative; cursor: pointer;">
+        <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748b;"></i>
+        <span class="bell-badge" id="topBellBadgeCount">5</span>
+      </div>
+
+      <!-- Help Icon (?) matching screenshot -->
+      <div class="sas-top-icon-btn" onclick="app.switchTab('gemini-chat')" title="ChatGPT IA Inteligente">
+        <i data-lucide="help-circle" style="width: 18px; height: 18px; color: #64748b;"></i>
+      </div>
+
+      <div class="trial-pill" id="trialPill" onclick="app.showSubscriptionModal()">
+        <i data-lucide="crown" class="crown-icon"></i>
+        <span id="planStatusText">Plano Base</span>
+      </div>
+
+      <!-- Student Personal Settings Button -->
+      <button class="sas-top-btn" onclick="app.openStudentSettingsModal()" title="Personalizar Meu Estudo & Preferências" style="border: 1px solid #c7d2fe; background: #eef2ff; color: #4338ca;">
+        <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
+        <span>Preferências</span>
+      </button>
+
+      <!-- Current User Profile & Logout -->
+      <div class="user-profile-pill" id="userProfileHeaderPill" onclick="app.openStudentSettingsModal()" title="Meu Perfil & Preferências (Clique para configurar)">
+        <div class="user-avatar-circle" id="userAvatarText">FP</div>
+        <div class="user-info-text">
+          <span class="user-name-label" id="userNameHeaderDisplay">Freddie Costa</span>
+          <span class="user-status-role" id="userRoleHeaderDisplay">Admin</span>
+        </div>
+        <button class="chat-btn-icon" onclick="event.stopPropagation(); app.handleLogout();" title="Sair da Conta" style="margin-left: 4px; padding: 2px; border: none; background: transparent; cursor: pointer;">
+          <i data-lucide="log-out" style="width: 13px; height: 13px; color: #ef4444;"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="layout-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <nav class="nav-links">
+        <button class="nav-btn active" data-tab="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Início & Treino</span>
+        </button>
+        <button class="nav-btn" onclick="app.openStudentSettingsModal()" style="border-left: 3px solid #8b5cf6;">
+          <i data-lucide="sliders" style="color: #8b5cf6;"></i>
+          <span>⚙️ Minhas Preferências</span>
+          <span class="badge-accent" style="background: #f3e8ff; color: #7c3aed;">Personalizar</span>
+        </button>
+        <button class="nav-btn" data-tab="gemini-chat" style="border-left: 3px solid #0284c7;">
+          <i data-lucide="bot" style="color: #0284c7;"></i>
+          <span>🤖 Chat IA</span>
+          <span class="badge-accent" id="sidebarChatBadge" style="background: #e0f2fe; color: #0369a1;">Direto</span>
+        </button>
+        <button class="nav-btn" data-tab="sas-eureka" style="border-left: 3px solid #ff7a00;">
+          <i data-lucide="compass" style="color: #ff7a00;"></i>
+          <span>🧭 Eureka & Apostilas SAS</span>
+          <span class="badge-accent" id="sidebarBooksBadge" style="background: #fff7ed; color: #ea580c;">Asas 2026</span>
+        </button>
+        <button class="nav-btn" data-tab="plans-pricing" style="border-left: 3px solid #10b981;">
+          <i data-lucide="crown" style="color: #10b981;"></i>
+          <span>💎 Planos & Assinatura</span>
+          <span class="badge-accent" style="background: #ecfdf5; color: #047857;">R$ 19,90</span>
+        </button>
+        <button class="nav-btn" data-tab="gammon-tpc" style="border-left: 3px solid #0284c7;">
+          <i data-lucide="clipboard-list" style="color: #0284c7;"></i>
+          <span>📋 TPC Diário (Ocorrências)</span>
+          <span class="badge-count" id="tpcPendingBadge" style="background:#e0f2fe; color:#0369a1;">4</span>
+        </button>
+        <button class="nav-btn" data-tab="timetable">
+          <i data-lucide="clock-3"></i>
+          <span>Grade de Aulas</span>
+          <span class="badge">Semanal</span>
+        </button>
+        <button class="nav-btn" data-tab="quiz">
+          <i data-lucide="check-circle-2"></i>
+          <span>Quiz Diário (15 min)</span>
+          <span class="badge-accent" id="sidebarQuizBadge">Novo</span>
+        </button>
+        <button class="nav-btn" data-tab="review">
+          <i data-lucide="rotate-ccw"></i>
+          <span>Aprender com os Erros</span>
+          <span class="badge-count" id="reviewCountBadge">2</span>
+        </button>
+        <button class="nav-btn" data-tab="calendar">
+          <i data-lucide="calendar"></i>
+          <span>Calendário de Provas</span>
+        </button>
+        <button class="nav-btn" data-tab="evolution">
+          <i data-lucide="line-chart"></i>
+          <span>Minha Evolução</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-promo" onclick="app.showModal('subscriptionModal')">
+        <div class="promo-header">
+          <span class="sparkle-tag">PLANO PRO</span>
+          <h4>Desbloqueie todo o poder</h4>
+        </div>
+        <p>Experimente <strong>5 dias grátis</strong> ou assine por apenas <strong>R$ 19,90/mês</strong>.</p>
+        <button class="btn-upgrade">Ver Detalhes do Plano</button>
+      </div>
+
+      <div class="sidebar-footer">
+        <p class="dev-tag">Estude+ &bull; Por Freddie Pimentel Costa</p>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content -->
+    <main class="content-area">
+
+      <!-- ================= TAB: DASHBOARD ================= -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <!-- Status Notification Banners (Pending Approval / Expiry Warning) -->
+        <div id="dashboardPendingBanner" style="display: none; margin-bottom: 20px;"></div>
+        <div id="subscriptionExpiryBanner" style="display: none; margin-bottom: 20px;"></div>
+
+        <!-- Official SAS Painel Layout matching Screenshot media_1791064566186 -->
+        <div class="sas-painel-grid">
+          <!-- Main Left/Center Column -->
+          <div class="sas-painel-main-col">
+            
+            <!-- Top Row: Student Profile Card + Atalhos Rápidos -->
+            <div class="sas-profile-shortcuts-row">
+              <!-- 1. Student Profile Card matching image -->
+              <div class="sas-student-card" onclick="app.openStudentSettingsModal()" style="cursor: pointer;" title="Clique para personalizar suas preferências de estudo">
+                <div class="sas-student-art" id="painelStudentAvatar">
+                  🦄
+                </div>
+                <div class="sas-student-info">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3 class="sas-student-name" id="painelStudentName">Freddie Pimentel Costa</h3>
+                    <span style="font-size: 11px; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; padding: 2px 7px; border-radius: 999px; font-weight: 700;">⚙️ Configurar</span>
+                  </div>
+                  <span class="sas-student-role" id="painelStudentRole">Estudante</span>
+                  <span class="sas-student-class" id="painelStudentClass">7º ano B &bull; Gammon 2</span>
+                </div>
+              </div>
+
+              <!-- 2. Atalhos Rápidos Grid matching image -->
+              <div class="sas-shortcuts-box">
+                <div class="sas-shortcuts-header">
+                  <h4>Atalhos rápidos</h4>
+                  <button class="sas-icon-btn" onclick="app.openStudentSettingsModal()" title="Configurações de estudo"><i data-lucide="edit-3" style="width: 15px; height: 15px;"></i></button>
+                </div>
+                <div class="sas-shortcuts-grid">
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('sas-eureka')" title="Apostilas & Trilhas Eureka SAS">
+                    <div class="tile-icon-box cyan"><i data-lucide="compass"></i></div>
+                    <span id="dashShortcutApostilasText">Eureka & Apostilas</span>
+                  </button>
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('quiz')" title="Quiz Diário de 15 Minutos">
+                    <div class="tile-icon-box" style="background: #fef3c7; color: #d97706;"><i data-lucide="zap"></i></div>
+                    <span id="dashShortcutQuizText">Quiz Diário</span>
+                  </button>
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('review')" title="Relatórios e Erros">
+                    <div class="tile-icon-box purple"><i data-lucide="bar-chart-2"></i></div>
+                    <span>Relatórios</span>
+                  </button>
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('gemini-chat')" title="Chatbot IA Inteligente">
+                    <div class="tile-icon-box" style="background: #e0f2fe; color: #0284c7;"><i data-lucide="bot"></i></div>
+                    <span id="dashShortcutChatText" style="color: #0f172a; font-weight: 800;">Chatbot IA</span>
+                  </button>
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('gammon-tpc')" title="Tarefas Para Casa Diárias">
+                    <div class="tile-icon-box green"><i data-lucide="clipboard-list"></i></div>
+                    <span>TPC Diário</span>
+                  </button>
+                  <button class="sas-shortcut-tile" onclick="app.showSubscriptionModal()" title="Assinar Plano PRO">
+                    <div class="tile-icon-box gold"><i data-lucide="crown"></i></div>
+                    <span>Plano PRO</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Student Preferences & Focus Banner -->
+            <div class="student-focus-strip" id="studentFocusStrip" onclick="app.openStudentSettingsModal()" style="cursor: pointer;" title="Suas preferências de estudo personalizadas (Clique para editar)">
+              <div class="student-focus-strip-info">
+                <div class="focus-icon-box">🎯</div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <strong style="font-size: 0.92rem; color: #1e1b4b;" id="stripFocusTitle">Meu Foco de Estudos & Metas</strong>
+                    <span style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; padding: 2px 7px; border-radius: 999px; font-weight: 700;" id="stripGradeTag">7º Ano</span>
+                  </div>
+                  <div class="focus-pills-list" id="stripFocusSubjectsList">
+                    <span class="focus-pill-item">📐 Matemática</span>
+                    <span class="focus-pill-item">⚡ Física</span>
+                    <span class="focus-pill-item">📝 Português</span>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align: right; flex-shrink: 0;">
+                <div style="font-size: 0.76rem; color: #64748b;" id="stripGoalText">Meta diária: <strong>15 min / dia</strong></div>
+                <div style="font-size: 0.72rem; color: #4f46e5; font-weight: 700; margin-top: 2px;" id="stripAiStyleTag">🤖 Tutor IA: Super Direto</div>
+              </div>
+            </div>
+
+            <!-- Middle Row: Meus estudos & Universo Eureka Banner -->
+            <div class="sas-studies-eureka-row">
+              <!-- Meus estudos card matching image -->
+              <div class="sas-my-studies-card" onclick="app.switchTab('gammon-tpc')">
+                <div class="studies-head">
+                  <h4>Meus estudos</h4>
+                  <i data-lucide="arrow-right" style="width: 18px; height: 18px; color: #64748b;"></i>
+                </div>
+                <div class="studies-badge-pill" id="painelStudiesPill">
+                  Sem atividades pendentes
+                </div>
+              </div>
+
+              <!-- Universo Eureka Banner Card matching image -->
+              <div class="sas-eureka-banner-card" onclick="app.switchTab('sas-eureka')">
+                <div class="eureka-banner-content">
+                  <span class="eureka-banner-logo">EUREKA!</span>
+                  <p>Trilhas de aprendizagem gamificadas e desafios interativos do 7º ano</p>
+                  <button class="btn-eureka-launch">
+                    <span>Acessar agora</span>
+                    <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+                  </button>
+                </div>
+                <div class="eureka-mascot-art">
+                  🧭
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom: Notícias Card matching image -->
+            <div class="sas-news-card">
+              <div class="news-header">
+                <i data-lucide="newspaper" style="width: 18px; height: 18px; color: #0284c7;"></i>
+                <h4>Notícias</h4>
+              </div>
+              <div class="news-body-empty">
+                <div class="news-icon-circle">
+                  <i data-lucide="book-marked" style="width: 26px; height: 26px;"></i>
+                </div>
+                <h5>Confira as notícias por aqui</h5>
+                <p>Por enquanto não há novidades para serem exibidas nesta área</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Agenda Card matching image -->
+          <aside class="sas-agenda-col">
+            <div class="sas-agenda-card">
+              <div class="agenda-top-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="calendar" style="color: #0369a1; width: 18px; height: 18px;"></i>
+                  <h4>Agenda</h4>
+                </div>
+                <div class="agenda-header-tools">
+                  <button class="icon-tool-btn" title="Expandir"><i data-lucide="maximize-2" style="width: 15px; height: 15px;"></i></button>
+                  <button class="icon-tool-btn" title="Filtros"><i data-lucide="sliders-horizontal" style="width: 15px; height: 15px;"></i></button>
+                </div>
+              </div>
+
+              <div class="agenda-date-selector">
+                <div class="date-range-label" id="agendaRangeLabel">27 Set. - 3 Out.</div>
+                <div class="date-arrows">
+                  <button class="arrow-btn" onclick="app.changeAgendaWeek(-1)">&larr;</button>
+                  <button class="today-btn" onclick="app.setAgendaToday()">Hoje</button>
+                  <button class="arrow-btn" onclick="app.changeAgendaWeek(1)">&rarr;</button>
+                </div>
+              </div>
+
+              <!-- Week days row matching image -->
+              <div class="agenda-week-row" id="agendaWeekDaysRow">
+                <!-- Rendered dynamically -->
+              </div>
+
+              <!-- Events Feed -->
+              <div class="agenda-events-feed" id="agendaEventsFeed">
+                <!-- Rendered dynamically -->
+              </div>
+
+              <div class="agenda-footer">
+                <button class="btn-create-reminder" onclick="app.showModal('addTpcModal')">
+                  <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> + Criar lembrete / Novo TPC
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+
+
+      <!-- ================= TAB: TPCS GAMMON+ (OCORRÊNCIAS / TPC DIÁRIO) ================= -->
+      <section id="tab-gammon-tpc" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span class="tpc-portal-pill"><i data-lucide="school"></i> GAMMON+ &bull; Aba Ocorrências</span>
+              <span style="font-size: 0.75rem; color: #0284c7; font-weight: 700; background: #e0f2fe; padding: 2px 8px; border-radius: 9999px;">TPC Diário dos Professores &bull; 7º Ano</span>
+            </div>
+            <h2>📋 Ocorrências & TPCs Diários (GAMMON+)</h2>
+            <p class="subtitle">Tarefas de casa lançadas pelos professores na aba Ocorrências do colégio. Marque como FEITO e gere treinos de apoio.</p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="https://portal.gammon.br/framehtml/web/app/edu/portaleducacional/#/ocorrencias" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #0284c7; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; padding: 9px 16px;">
+              <i data-lucide="external-link"></i> Abrir Ocorrências no Portal Gammon
+            </a>
+            <button class="btn-primary" onclick="app.showModal('importOccurrencesModal')" style="background: #0369a1;">
+              <i data-lucide="clipboard-paste"></i> Colar Ocorrências Gammon+
+            </button>
+            <button class="btn-outline" onclick="app.showModal('gammonSessionModal')" style="color: #0284c7; border-color: #bae6fd;">
+              <i data-lucide="shield-check"></i> Testar Conexão com Sessão
+            </button>
+            <button class="btn-primary" onclick="app.showModal('addTpcModal')">
+              <i data-lucide="plus-circle"></i> Novo TPC
+            </button>
+            <button class="btn-outline" onclick="app.resetTpcs()" style="color: #ef4444; border-color: #fca5a5;">
+              <i data-lucide="trash-2"></i> Limpar TPCs
+            </button>
+          </div>
+        </div>
+
+        <!-- TPC Stats & Quick Action Bar -->
+        <div class="tpc-summary-bar">
+          <div class="tpc-stat-card">
+            <span class="tpc-num text-danger" id="tpcPendingCount">3</span>
+            <span class="tpc-lbl">TPCs Pendentes (NÃO FEITO)</span>
+          </div>
+          <div class="tpc-stat-card">
+            <span class="tpc-num text-success" id="tpcCompletedCount">7</span>
+            <span class="tpc-lbl">TPCs Concluídos (FEITO)</span>
+          </div>
+          <div class="tpc-stat-card">
+            <span class="tpc-num text-accent" id="tpcTodayCount">2</span>
+            <span class="tpc-lbl">Para entregar amanhã</span>
+          </div>
+        </div>
+
+        <!-- TPC Filter Tabs -->
+        <div class="filter-bar">
+          <div class="filter-pills">
+            <button class="filter-chip active" data-tpc-filter="all">Todos os TPCs</button>
+            <button class="filter-chip" data-tpc-filter="pending">Apenas NÃO FEITOS</button>
+            <button class="filter-chip" data-tpc-filter="done">Apenas FEITOS</button>
+          </div>
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="tpcSearchInput" placeholder="Buscar TPC por disciplina ou conteúdo...">
+          </div>
+        </div>
+
+        <!-- TPC List Feed -->
+        <div class="tpc-grid-container" id="tpcGridList">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ================= TAB: GRADE DE HORÁRIO SEMANAL ================= -->
+      <section id="tab-timetable" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;"><i data-lucide="calendar"></i> GAMMON Horários</span>
+              <span style="font-size: 0.75rem; color: #0284c7; font-weight: 700; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 9999px;">Campus Chácara &bull; 7º Ano EF &bull; Freddie Pimentel Costa</span>
+            </div>
+            <h2>📅 Grade de Horários das Aulas da Semana</h2>
+            <p class="subtitle">Horários oficiais do Colégio Gammon organizados para sua rotina, aulas e TPCs.</p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="https://portal.gammon.br/framehtml/web/app/edu/portaleducacional/#/quadro-horario" target="_blank" rel="noopener noreferrer" class="btn-outline" style="border-color: #0284c7; color: #0284c7;">
+              <i data-lucide="external-link"></i> Abrir Portal Gammon
+            </a>
+            <button class="btn-primary" onclick="app.showModal('importScheduleModal')" style="background: #0284c7;">
+              <i data-lucide="download-cloud"></i> Colar/Importar Horário
+            </button>
+          </div>
+        </div>
+
+        <!-- Gammon Portal Schedule Notice Banner -->
+        <div class="sas-curriculum-notice" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-color: #bae6fd; margin-bottom: 20px;">
+          <div class="sas-notice-content">
+            <i data-lucide="school" class="sas-notice-icon" style="color: #0284c7;"></i>
+            <div>
+              <h4 style="color: #0369a1;">Grade de Horários do Colégio Gammon</h4>
+              <p style="color: #0c4a6e;">
+                Horários cadastrados para o 7º Ano EF (Campus Chácara). Você também pode <strong>copiar e colar o texto</strong> do quadro de horários no botão <em>"Colar/Importar Horário"</em> para atualizar suas aulas quando quiser!
+              </p>
+            </div>
+          </div>
+          <button class="btn-sm" style="background: #0284c7; color: #fff; font-weight: 700; white-space: nowrap;" onclick="app.showModal('importScheduleModal')">
+            <i data-lucide="clipboard-paste" style="width: 13px; height: 13px;"></i> Importar Agora
+          </button>
+        </div>
+
+        <!-- Weekly Schedule Table -->
+        <div class="timetable-card">
+          <div class="timetable-responsive-table" id="timetableContainer">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: ESTUDE+ IA (MINIMALISTA & DIRETO) ================= -->
+      <section id="tab-gemini-chat" class="tab-pane">
+        <div class="minimal-chat-wrapper">
+          
+          <!-- Top Chat Header -->
+          <div class="minimal-chat-header">
+            <div class="minimal-chat-brand">
+              <div class="minimal-chat-icon">
+                <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div>
+                <h3 class="minimal-chat-title">ESTUDE+ IA</h3>
+                <span class="minimal-chat-status">✨ Conversa Natural & Respostas Diretas</span>
+              </div>
+            </div>
+            
+            <div class="minimal-chat-actions">
+              <button type="button" class="btn-minimal-key" id="btnGeminiApiKey" onclick="app.configureGeminiApiKey()" title="Conectar Chave Google Gemini API (Opcional)">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                <span id="geminiKeyStatusText">Google AI</span>
+              </button>
+              <button type="button" class="btn-minimal-clear" onclick="app.startNewChat()" title="Nova Conversa">
+                <i data-lucide="plus" style="width: 15px; height: 15px;"></i>
+                <span>Nova Conversa</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages Feed -->
+          <div class="minimal-chat-feed" id="chatGptConversationStream">
+            <!-- Messages rendered dynamically -->
+          </div>
+
+          <!-- Input Bar at Bottom -->
+          <div class="minimal-chat-input-area">
+            <form onsubmit="app.handleChatGptSubmit(event)" class="minimal-chat-form">
+              <input 
+                type="text" 
+                id="chatGptInput" 
+                class="minimal-chat-input" 
+                placeholder="Pergunte qualquer coisa (ex: 2+2, capitais, fórmulas, história...)" 
+                autocomplete="off" 
+                required>
+              <button type="button" class="minimal-btn-voice" onclick="app.handleChatVoiceInput()" title="Falar por voz">
+                <i data-lucide="mic" style="width: 17px; height: 17px;"></i>
+              </button>
+              <button type="submit" class="minimal-btn-send" title="Enviar mensagem">
+                <i data-lucide="arrow-up" style="width: 17px; height: 17px;"></i>
+              </button>
+            </form>
+            <div class="minimal-chat-footnote">
+              ESTUDE+ IA &bull; Pergunte qualquer dúvida e receba a resposta direta
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= TAB: EUREKA & APOSTILAS SAS (UNIFICADO) ================= -->
+      <section id="tab-sas-eureka" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+              <span style="background: linear-gradient(135deg, #ff7a00, #dc2626); color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: 0.8rem;">SAS EDUCAÇÃO 2026</span>
+              <h2 style="margin: 0;">🧭 Eureka & Apostilas SAS (Asas 2026)</h2>
+            </div>
+            <p class="subtitle" style="margin: 0;">Acesse as apostilas do 7º ano, navegue pelos capítulos e faça as atividades pontuadas oficiais do Eureka SAS.</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <a href="https://app.portalsaseducacao.com.br/" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #ff7a00; padding: 10px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+              <i data-lucide="external-link"></i> Abrir Portal SAS Oficial
+            </a>
+          </div>
+        </div>
+
+        <!-- Sub-tabs Selector for Apostilas vs Eureka -->
+        <div class="eureka-subtabs-nav" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+          <button type="button" class="btn-subtab" id="btnSubtabEureka" onclick="app.switchEurekaSubtab('eureka')" style="padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none; background: #f1f5f9; color: #64748b; transition: all 0.2s;">
+            <i data-lucide="compass" style="width: 18px; height: 18px;"></i>
+            <span>🧭 Portal Eureka SAS (Liberado)</span>
+          </button>
+          <button type="button" class="btn-subtab active" id="btnSubtabApostilas" onclick="app.switchEurekaSubtab('apostilas')" style="padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none; background: #e0f2fe; color: #0369a1; transition: all 0.2s;">
+            <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+            <span>📚 Apostilas & Livros Digitais (🔒 Exclusivo PRO)</span>
+          </button>
+        </div>
+
+        <!-- VIEW 1: APOSTILAS & LIVROS DIGITAIS -->
+        <div id="subtabApostilasView" class="eureka-subtab-view">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; background: #fff; padding: 14px 18px; border-radius: 14px; border: 1px solid #e2e8f0;">
+            <div>
+              <strong style="color: #0f172a; font-size: 0.95rem;">Selecione a Disciplina das Apostilas:</strong>
+              <span style="display: block; font-size: 0.78rem; color: #64748b;">Navegue pelos capítulos dos Livros 1, 2, 3 e 4</span>
+            </div>
+            <select id="sasSubjectSelect" onchange="app.switchSasSubject(this.value)" style="padding: 10px 16px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a; cursor: pointer; font-size: 0.9rem;">
+              <option value="matematica" selected>📐 Matemática (Asas 2026)</option>
+              <option value="portugues">✍️ Língua Portuguesa</option>
+              <option value="ciencias">🔬 Ciências da Natureza</option>
+              <option value="historia">🏛️ História</option>
+              <option value="geografia">🌍 Geografia</option>
+              <option value="ingles">🇬🇧 Língua Inglesa</option>
+              <option value="redacao">📝 Pratique Redação</option>
+              <option value="arte">🎨 Arte</option>
+              <option value="filosofia">🧠 Filosofia</option>
+              <option value="logica">🧩 Lógica & Raciocínio</option>
+              <option value="olimpica">🏆 Jornada Olímpica</option>
+              <option value="espanhol">🇪🇸 Língua Espanhola</option>
+            </select>
+          </div>
+
+          <!-- Official SAS Interface matching user image -->
+          <div class="sas-hub-container">
+            <!-- Hub Header matching image -->
+            <div class="sas-hub-header">
+              <div class="sas-subject-badge-box">
+                <div class="sas-subject-thumb" id="hubSubjectThumb">
+                  📐
+                </div>
+                <div class="sas-subject-details">
+                  <h3 id="hubSubjectName">Matemática</h3>
+                  <p id="hubSubjectMeta">Asas 2026 &bull; Ensino Fundamental - Anos Finais &bull; 7º Ano</p>
+                </div>
+              </div>
+
+              <!-- Top Filter Pills matching image -->
+              <div class="sas-top-pills">
+                <button class="sas-pill-btn active" id="pillBtnAll" onclick="app.filterHubContent('all')">
+                  <i data-lucide="book-open" style="width: 14px; height: 14px;"></i> Livro digital
+                </button>
+                <button class="sas-pill-btn" id="pillBtnPdf" onclick="app.filterHubContent('pdf')">
+                  <i data-lucide="file-text" style="width: 14px; height: 14px; color: #dc2626;"></i> PDF
+                </button>
+                <button class="sas-pill-btn" id="pillBtnVideo" onclick="app.filterHubContent('video')">
+                  <i data-lucide="video" style="width: 14px; height: 14px; color: #ec4899;"></i> Vídeos
+                </button>
+                <button class="sas-pill-btn" id="pillBtnExercises" onclick="app.filterHubContent('exercicios')">
+                  <i data-lucide="check-square" style="width: 14px; height: 14px; color: #06b6d4;"></i> Exercícios
+                </button>
+                <button class="sas-pill-btn" id="pillBtnEureka" onclick="app.switchEurekaSubtab('eureka')">
+                  <i data-lucide="compass" style="width: 14px; height: 14px; color: #10b981;"></i> Eureka
+                </button>
+              </div>
+            </div>
+
+            <!-- Body: Left Index + Right Content -->
+            <div class="sas-hub-body">
+              <!-- Left Sidebar: Index of Books and Chapters -->
+              <aside class="sas-index-sidebar">
+                <h4 class="sas-index-title">Índice</h4>
+                <div id="sasBooksAccordion">
+                  <!-- Rendered dynamically: Livro 1, Livro 2, Livro 3, Livro 4 with their chapters -->
+                </div>
+              </aside>
+
+              <!-- Right Content Panel -->
+              <main class="sas-content-panel">
+                <div class="sas-content-header">
+                  <h2 class="sas-current-book-label" id="sasCurrentBookLabel">Livro 1</h2>
+                  <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                    <h3 class="sas-current-chapter-title" id="sasCurrentChapterTitle">Capítulo 1 – Divisibilidade</h3>
+                    
+                    <div class="sas-resource-feed" id="sasResourceFeed">
+                      <!-- Cards identical to image rendered dynamically -->
+                    </div>
+                  </div>
+                </div>
+              </main>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: EUREKA SAS -->
+        <div id="subtabEurekaView" class="eureka-subtab-view" style="display: none;">
+          <!-- Eureka Guidance Card -->
+          <div style="background: #fff7ed; border: 1px solid #fed7aa; border-radius: 16px; padding: 22px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: flex-start; gap: 16px;">
+              <div style="width: 48px; height: 48px; border-radius: 12px; background: #ff7a00; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="award" style="width: 26px; height: 26px;"></i>
+              </div>
+              <div>
+                <h4 style="color: #9a3412; font-size: 1.1rem; margin-bottom: 6px;">Como Funciona o Eureka SAS no Estude+:</h4>
+                <p style="color: #7c2d12; font-size: 0.85rem; line-height: 1.5; margin-bottom: 12px;">
+                  As apostilas e resumos você pode consultar na aba ao lado! O login no portal do SAS é necessário <strong>somente quando você for resolver as atividades pontuadas oficiais do Eureka</strong>, pois o sistema escolar do SAS precisa computar seus pontos e acertos na conta do aluno.
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <a href="https://app.portalsaseducacao.com.br/" target="_blank" class="btn-primary" style="background: #ff7a00; font-size: 0.85rem; padding: 8px 16px;">
+                    <i data-lucide="log-in"></i> Abrir Portal SAS Externo
+                  </a>
+                  <button class="btn-outline" onclick="app.openGeminiForEureka()" style="font-size: 0.85rem; padding: 8px 16px; background: #fff;">
+                    <i data-lucide="sparkles" style="color: #8b5cf6;"></i> Tirar Dúvida do Eureka com a IA
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Embedded Eureka Portal Frame -->
+          <div class="sas-embedded-wrapper">
+            <div class="sas-browser-bar">
+              <div class="browser-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <div class="browser-url-input">
+                <i data-lucide="lock" style="width: 13px; height: 13px; color: #10b981;"></i>
+                <span>https://app.portalsaseducacao.com.br/ (Acesso Eureka)</span>
+              </div>
+              <a href="https://app.portalsaseducacao.com.br/" target="_blank" class="browser-launch-btn" title="Abrir em tela cheia">
+                <i data-lucide="arrow-up-right" style="width: 16px; height: 16px;"></i>
+              </a>
+            </div>
+
+            <div class="sas-iframe-container">
+              <iframe 
+                id="sasEurekaIframe" 
+                src="https://app.portalsaseducacao.com.br/" 
+                title="Portal SAS Educação - Eureka"
+                allow="camera; microphone; fullscreen; clipboard-read; clipboard-write;"
+                loading="lazy">
+              </iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: PLANOS & ASSINATURAS ================= -->
+      <section id="tab-plans-pricing" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <h2>💎 Planos & Assinatura ESTUDE+</h2>
+            <p class="subtitle">Escolha seu plano para ter acesso ilimitado ao Gemini, PDFs das apostilas e treinos inteligentes.</p>
+          </div>
+          <div class="plan-badge-top">
+            <span class="badge-free" id="plansTabCurrentBadge">PLANO BASE</span>
+          </div>
+        </div>
+
+        <!-- Active Plan Banner / Status Alert -->
+        <div id="planStatusBannerContainer">
+          <!-- Populated dynamically with pending cash alert, active pro, or trial -->
+        </div>
+
+        <!-- Plan Pricing Cards: 3 Options (Base, 5 Dias Grátis, PRO Mensal) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px;">
+          <!-- 1. Free Base Plan -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; position: relative;">
+            <span style="background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">PLANO BASE / GRATUITO</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: #0f172a;">Plano Base</h3>
+            <p style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Acesso aos informativos essenciais de aulas e deveres do Gammon.</p>
+            <div style="font-size: 1.9rem; font-weight: 900; color: #0f172a; margin-bottom: 18px;">
+              R$ 0 <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">/ sempre grátis</span>
+            </div>
+            <ul class="benefits-list" style="margin-bottom: 24px; font-size: 0.82rem;">
+              <li><i data-lucide="check" class="check"></i> 🧭 <strong>Portal Eureka SAS Liberado:</strong> Atividades pontuadas e trilhas</li>
+              <li><i data-lucide="check" class="check"></i> 📋 <strong>Central de TPCs Gammon+:</strong> Acompanhamento e marcação de FEITO</li>
+              <li><i data-lucide="check" class="check"></i> 📅 Grade semanal de aulas e horários</li>
+              <li><i data-lucide="check" class="check"></i> 📢 Avisos e comunicados de professores</li>
+              <li style="color: #94a3b8;"><i data-lucide="x" style="color: #ef4444; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> <del>Sem Chatbot IA</del> (Exclusivo PRO)</li>
+              <li style="color: #94a3b8;"><i data-lucide="x" style="color: #ef4444; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> <del>Sem Quizzes Diários & Treinos</del> (Exclusivo PRO)</li>
+              <li style="color: #94a3b8;"><i data-lucide="x" style="color: #ef4444; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> <del>Sem 12 Apostilas SAS em PDF</del> (Exclusivo PRO)</li>
+            </ul>
+            <button class="btn-outline" id="btnFreePlanCard" style="width: 100%;" disabled>Plano Atual</button>
+          </div>
+
+          <!-- 2. Option: 5 Days Free Trial PRO -->
+          <div style="background: linear-gradient(180deg, #ffffff 0%, #fdf4ff 100%); border: 2px dashed #a855f7; border-radius: 20px; padding: 24px; position: relative;">
+            <div style="position: absolute; top: -12px; right: 20px; background: linear-gradient(135deg, #a855f7, #6366f1); color: white; font-weight: 800; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);">
+              DEGUSTAÇÃO PRO
+            </div>
+            <span style="background: #fae8ff; color: #86198f; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">OPÇÃO DE DEGUSTAÇÃO</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: #581c87;">Teste Grátis PRO (5 Dias)</h3>
+            <p style="color: #701a75; font-size: 0.82rem; margin-bottom: 16px;">Experimente todos os recursos PRO por 5 dias antes de assinar!</p>
+            <div style="font-size: 1.9rem; font-weight: 900; color: #a855f7; margin-bottom: 18px;">
+              R$ 0 <span style="font-size: 0.8rem; font-weight: 600; color: #701a75;">/ por 5 dias</span>
+            </div>
+            <ul class="benefits-list" style="margin-bottom: 24px; font-size: 0.82rem;">
+              <li><i data-lucide="check" style="color: #a855f7; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> <strong>Chatbot IA Liberado por 5 Dias:</strong> Respostas diretas e cálculos</li>
+              <li><i data-lucide="check" style="color: #a855f7; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> <strong>Quizzes Diários Liberados por 5 Dias:</strong> Treinos inteligentes</li>
+              <li><i data-lucide="check" style="color: #a855f7; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> <strong>12 Apostilas SAS Liberadas por 5 Dias:</strong> Leitura e PDFs</li>
+              <li><i data-lucide="check" style="color: #a855f7; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Sem cobrança automática nem cartão</li>
+            </ul>
+            <button class="btn-primary" id="btnActivate5DaysTrial" onclick="app.activate5DaysTrial()" style="width: 100%; background: #a855f7; border: none; font-size: 0.92rem; padding: 12px;">
+              <i data-lucide="sparkles"></i> Ativar 5 Dias Grátis
+            </button>
+          </div>
+
+          <!-- 3. PRO Plan Mensal -->
+          <div style="background: #ffffff; border: 2px solid #4f46e5; border-radius: 20px; padding: 24px; position: relative; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.15);">
+            <div style="position: absolute; top: -12px; right: 20px; background: linear-gradient(135deg, #4f46e5, #06b6d4); color: white; font-weight: 800; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);">
+              MAIS ESCOLHIDO NA ESCOLA
+            </div>
+            <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">ACESSO TOTAL ILIMITADO</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: #0f172a;">ESTUDE+ PRO</h3>
+            <p style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Desbloqueie todo o potencial para garantir as melhores notas no Gammon.</p>
+            <div style="font-size: 2rem; font-weight: 900; color: #4f46e5; margin-bottom: 18px;">
+              R$ 19,90 <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">/ por mês</span>
+            </div>
+            <ul class="benefits-list" style="margin-bottom: 24px; font-size: 0.82rem;">
+              <li><i data-lucide="check" class="check"></i> 👑 <strong>Gemini 2.5 Flash Ilimitado:</strong> Resolução de dúvidas em segundos 24h</li>
+              <li><i data-lucide="check" class="check"></i> 📚 <strong>Download em PDF Completo:</strong> Todas as 12 Apostilas SAS Asas 2026</li>
+              <li><i data-lucide="check" class="check"></i> 🧭 <strong>Gabarito & Eureka Comentado:</strong> Resoluções passo a passo</li>
+              <li><i data-lucide="check" class="check"></i> 🎯 <strong>Aprender com os Erros Turbo:</strong> Diagnóstico de notas</li>
+              <li><i data-lucide="check" class="check"></i> ⚡ <strong>Quizzes & Treinos Ilimitados:</strong> Escolha dificuldade e matérias</li>
+              <li><i data-lucide="check" class="check"></i> 🤝 <strong>Pagamento Super Flexível:</strong> Pix ou <strong>Dinheiro Vivo na Escola</strong> com Freddie!</li>
+            </ul>
+            <button class="btn-primary" id="btnProPlanCard" onclick="app.showModal('subscriptionModal')" style="width: 100%; font-size: 0.95rem; padding: 12px;">
+              <i data-lucide="crown"></i> Assinar Plano PRO (R$ 19,90)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: QUIZ DIÁRIO ================= -->
+      <section id="tab-quiz" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <h2>⚡ Quiz Diário Personalizado</h2>
+            <p class="subtitle">Dificuldade e quantidade personalizadas • Questões renovadas automaticamente a cada 24 horas.</p>
+          </div>
+          <div class="quiz-timer-indicator">
+            <i data-lucide="timer"></i>
+            <span id="quizTimeRemaining">15:00</span>
+          </div>
+        </div>
+
+        <div id="quizContainer">
+          <!-- Dynamically switches between: Intro / Question View / Results View -->
+        </div>
+      </section>
+
+      <!-- ================= TAB: REVISÃO DE ERROS ================= -->
+      <section id="tab-review" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <h2>🎯 Aprender com os Erros</h2>
+            <p class="subtitle">"Quando você erra, o sistema identifica aquela dificuldade e orienta seus próximos passos."</p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-outline" onclick="app.resetMistakes()" style="color: #ef4444; border-color: #fca5a5;">
+              <i data-lucide="trash-2"></i> Limpar Erros
+            </button>
+            <button class="btn-primary" onclick="app.startReviewSession()">
+              <i data-lucide="rotate-ccw"></i> Treinar Todas as Pendências
+            </button>
+          </div>
+        </div>
+
+        <div class="review-stats-banner">
+          <div class="review-stat-item">
+            <span class="r-num" id="totalErrorsCount">2</span>
+            <span class="r-label">Questões para reforçar</span>
+          </div>
+          <div class="review-stat-item">
+            <span class="r-num text-success" id="resolvedErrorsCount">6</span>
+            <span class="r-label">Dificuldades superadas</span>
+          </div>
+          <div class="review-stat-item">
+            <span class="r-num text-accent">75%</span>
+            <span class="r-label">Taxa de recuperação</span>
+          </div>
+        </div>
+
+        <div class="error-feed" id="errorReviewFeed">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ================= TAB: CALENDÁRIO ================= -->
+      <section id="tab-calendar" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <h2>📅 Calendário de Provas & Entregas</h2>
+            <p class="subtitle">Mantenha as datas sob controle para o Estude+ planejar suas revisões com antecedência</p>
+          </div>
+          <button class="btn-primary" onclick="app.showModal('addExamModal')">
+            <i data-lucide="plus-circle"></i> Agendar Prova
+          </button>
+        </div>
+
+        <div class="exams-full-container" id="fullExamsContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ================= TAB: EVOLUÇÃO ================= -->
+      <section id="tab-evolution" class="tab-pane">
+        <div class="tab-header">
+          <div>
+            <h2>📊 Minha Evolução</h2>
+            <p class="subtitle">Acompanhe seu crescimento diário e perceba quais conteúdos já domina</p>
+          </div>
+        </div>
+
+        <div class="evolution-summary-grid">
+          <div class="metric-card">
+            <div class="metric-head">
+              <span>Tempo Estudado Esta Semana</span>
+              <i data-lucide="clock"></i>
+            </div>
+            <div class="metric-body">
+              <span class="metric-value">1h 45m</span>
+              <span class="metric-sub text-success"><i data-lucide="trending-up"></i> +15m vs semana passada</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width: 75%"></div></div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-head">
+              <span>Precisão nos Quizzes</span>
+              <i data-lucide="check-circle"></i>
+            </div>
+            <div class="metric-body">
+              <span class="metric-value">82%</span>
+              <span class="metric-sub text-success"><i data-lucide="arrow-up-right"></i> +9% após reforço de erros</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width: 82%"></div></div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-head">
+              <span>Conteúdos Dominados</span>
+              <i data-lucide="award"></i>
+            </div>
+            <div class="metric-body">
+              <span class="metric-value">18 / 24</span>
+              <span class="metric-sub text-accent">75% da matriz curricular</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill" style="width: 75%"></div></div>
+          </div>
+        </div>
+
+        <div class="subject-mastery-section mt-8">
+          <h3>Domínio por Disciplina</h3>
+          <div class="mastery-grid" id="masteryGrid">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="quote-card mt-8">
+          <i data-lucide="quote" class="quote-icon"></i>
+          <div>
+            <p class="quote-text">"Tecnologia não para estudar por você. Tecnologia para ajudar você a estudar melhor. 15 minutos por dia fazem toda a diferença."</p>
+            <span class="quote-author">— Freddie Pimentel Costa, Desenvolvedor do Estude+</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- 1. AUTH OVERLAY (LOGIN & CADASTRO OBRIGATÓRIO) -->
+  <div class="auth-overlay" id="authOverlay" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-badge">
+          <i data-lucide="sparkles" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h2 class="auth-title">ESTUDE<span>+</span></h2>
+        <p class="auth-subtitle">Seu parceiro inteligente para estudar melhor no Colégio Gammon</p>
+      </div>
+
+      <!-- Login Form (Acesso Restrito: Somente Entrar) -->
+      <form id="loginForm" onsubmit="app.handleLoginSubmit(event)" style="margin-top: 18px;">
+        <div class="form-group">
+          <label>Nome de Usuário ou E-mail</label>
+          <input type="text" id="loginEmail" required placeholder="Digite seu usuário ou e-mail cadastrado">
+        </div>
+        <div class="form-group">
+          <label>Senha de Acesso</label>
+          <input type="password" id="loginPassword" required placeholder="Digite sua senha">
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 12px 0 16px; font-size: 0.8rem; color: #475569; line-height: 1.5;">
+          🎓 <strong>Acesso ESTUDE+:</strong> Digite seu usuário e senha autorizados para entrar. O cadastro de novas contas é gerenciado pelo administrador no PC.
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 4px;">
+          <i data-lucide="log-in"></i> Entrar no ESTUDE+
+        </button>
+
+        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" onclick="app.quickLogin('freddie')" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            👑 Entrar como Freddie (Admin)
+          </button>
+          <button type="button" onclick="app.quickLogin('student')" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            🎓 Entrar como Aluno
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px;">
+          <button type="button" id="btnToggleToRegister" onclick="app.toggleAuthMode('register')" style="background: none; border: none; color: var(--primary, #4f46e5); font-size: 0.88rem; font-weight: 600; cursor: pointer; text-decoration: underline;">Novo por aqui? Criar conta</button>
+        </div>
+      </form>
+
+      <!-- Register Form (Criar Conta com Nome Único) -->
+      <form id="registerForm" onsubmit="app.handleRegisterSubmit(event)" style="display: none; margin-top: 18px;">
+        <div class="form-group">
+          <label>Nome Completo ou Como Quer Ser Chamado</label>
+          <input type="text" id="regFullName" required placeholder="Ex: Pedro Lucas">
+        </div>
+        <div class="form-group">
+          <label>Nome de Usuário (Exclusivo)</label>
+          <input type="text" id="regUsername" required minlength="3" placeholder="Ex: pedro (sem espaços)">
+          <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 4px;">Este nome será único e reservado para você no Estude+.</small>
+        </div>
+        <div class="form-group">
+          <label>Senha de Acesso</label>
+          <input type="password" id="regPassword" required minlength="6" placeholder="Mínimo de 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label>Confirmar Senha</label>
+          <input type="password" id="regPasswordConfirm" required minlength="6" placeholder="Repita a mesma senha">
+        </div>
+        <div id="registerErrorMsg" style="display: none; background: #fef2f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.82rem; color: #dc2626;"></div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 4px;">
+          <i data-lucide="user-plus"></i> Criar Minha Conta
+        </button>
+        <div style="text-align: center; margin-top: 14px;">
+          <button type="button" onclick="app.toggleAuthMode('login')" style="background: none; border: none; color: #64748b; font-size: 0.85rem; cursor: pointer;">Já tem uma conta? Fazer login</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. SUBSCRIPTION MODAL (PIX & DINHEIRO VIVO NA ESCOLA) -->
+  <div class="modal-overlay" id="subscriptionModal">
+    <div class="modal-box modal-pricing" style="max-width: 620px;">
+      <button class="modal-close" onclick="app.closeModal('subscriptionModal')" aria-label="Fechar" title="Fechar Janela (X)">&times;</button>
+      <div class="pricing-header">
+        <div class="pricing-icon"><i data-lucide="sparkles"></i></div>
+        <span class="badge-free">PLANO ESTUDE+ PRO</span>
+        <h2>Desbloqueie Todos os Recursos</h2>
+        <p>Acesso total ao Gemini 2.5 Ilimitado, Apostilas em PDF e resoluções do Eureka</p>
+      </div>
+
+      <div class="price-display">
+        <span class="curr">R$</span>
+        <span class="amount">19,90</span>
+        <span class="period">/ mês</span>
+      </div>
+
+      <!-- Quick PRO Benefits Pills in Modal -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px; margin: 10px 0 16px; text-align: left;">
+        <span style="font-size: 0.72rem; font-weight: 800; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">Vantagens Exclusivas Inclusas:</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.78rem; color: #334155; font-weight: 600;">
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Gemini 2.5 Flash Ilimitado</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> 12 Apostilas SAS em PDF</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Gabarito Eureka Passo a Passo</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Diagnóstico Turbo de Erros</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Treinos Diários Ilimitados</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> TPCs Gammon+ em Tempo Real</div>
+        </div>
+      </div>
+
+      <!-- Option: 5 Days Free Trial Box in Modal -->
+      <div style="background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 1.5px dashed #a855f7; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="text-align: left;">
+          <strong style="color: #581c87; font-size: 0.85rem; display: block;">⚡ Quer experimentar antes de assinar?</strong>
+          <span style="color: #701a75; font-size: 0.76rem;">Ative 5 dias grátis de acesso total sem compromisso.</span>
+        </div>
+        <button type="button" class="btn-primary" onclick="app.activate5DaysTrial()" style="background: #a855f7; border: none; font-size: 0.8rem; font-weight: 800; padding: 8px 14px; border-radius: 8px;">
+          <i data-lucide="sparkles"></i> Ativar 5 Dias Grátis
+        </button>
+      </div>
+
+      <!-- Choose Payment Method -->
+      <label style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-top: 10px; display: block; text-align: left;">Ou Assine o Plano PRO Mensal (R$ 19,90):</label>
+      <div class="payment-methods-grid">
+        <!-- Option 1: Pix -->
+        <div class="payment-method-card active" id="methodCardPix" onclick="app.selectPaymentMethod('pix')">
+          <span class="badge-recom">INSTANTÂNEO</span>
+          <div class="method-icon" style="background: #ecfdf5; color: #059669;">
+            <i data-lucide="qr-code"></i>
+          </div>
+          <span class="method-title">Pagar com Pix</span>
+          <span class="method-desc">QR Code + Copia e Cola</span>
+        </div>
+
+        <!-- Option 2: Dinheiro Vivo na Escola -->
+        <div class="payment-method-card" id="methodCardCash" onclick="app.selectPaymentMethod('cash')">
+          <div class="method-icon" style="background: #eff6ff; color: #2563eb;">
+            <i data-lucide="banknote"></i>
+          </div>
+          <span class="method-title">Dinheiro na Escola</span>
+          <span class="method-desc">Entregar em mãos para Freddie</span>
+        </div>
+      </div>
+
+      <!-- Method Details: PIX (APENAS CHAVE CPF) -->
+      <div id="paymentDetailsPix" style="text-align: center; margin-bottom: 20px;">
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 18px; padding: 24px; display: inline-block; width: 100%;">
+          
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <i data-lucide="smartphone" style="width: 28px; height: 28px;"></i>
+          </div>
+
+          <h4 style="margin: 0 0 6px; font-size: 1.15rem; color: #0f172a;">Pagamento via PIX (Chave CPF)</h4>
+          <p style="margin: 0 0 16px; font-size: 0.84rem; color: #64748b;">
+            Transfira <strong>R$ 19,90</strong> no app do seu banco usando a chave CPF abaixo:
+          </p>
+
+          <!-- Highlight Box: Chave Pix CPF Oficial -->
+          <div class="pix-cpf-highlight-box" style="padding: 18px 20px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 2px dashed #059669; border-radius: 16px;">
+            <span style="font-size: 0.78rem; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Chave PIX Oficial (CPF do Freddie):</span>
+            <span class="pix-cpf-val" id="pixCpfDisplay" style="font-size: 1.5rem; letter-spacing: 1px; color: #065f46; margin: 8px 0; display: block;">183.199.286.80</span>
+            <button type="button" class="btn-primary" onclick="app.copyPixCpf()" style="background: #059669; font-size: 0.95rem; font-weight: 800; padding: 12px 24px; margin: 6px auto 0; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
+              <i data-lucide="copy"></i> Copiar Chave CPF: 183.199.286.80
+            </button>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-top: 16px; text-align: left; font-size: 0.82rem; color: #334155; line-height: 1.7;">
+            <div>👤 <strong>Titular:</strong> Freddie Pimentel Costa</div>
+            <div>💰 <strong>Valor:</strong> R$ 19,90 (Acesso Mensal PRO)</div>
+            <div>🏫 <strong>Instituição:</strong> Colégio Gammon • Lavras - MG</div>
+          </div>
+        </div>
+
+        <button class="btn-checkout" onclick="app.confirmPixPayment()" style="margin-top: 16px; font-size: 1rem; padding: 14px;">
+          <i data-lucide="check-circle"></i> Já transferi para o CPF / Confirmar Pagamento
+        </button>
+      </div>
+
+      <!-- Method Details: CASH IN SCHOOL -->
+      <div id="paymentDetailsCash" style="display: none; text-align: left; margin-bottom: 20px;">
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 20px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="hand-coins"></i>
+            </div>
+            <div>
+              <h4 style="color: #92400e; font-size: 1rem; margin-bottom: 4px;">Pagamento em Dinheiro Vivo na Escola:</h4>
+              <p style="color: #78350f; font-size: 0.82rem; line-height: 1.5; margin: 0;">
+                1. Você solicita a assinatura aqui no aplicativo.<br>
+                2. O status ficará como <strong>"PENDENTE"</strong>.<br>
+                3. Você entrega o valor de <strong>R$ 19,90 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).<br>
+                4. Assim que o Freddie receber, ele confirma no app dele e <strong>seus benefícios do plano PRO são liberados imediatamente</strong>!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-checkout" onclick="app.requestCashInSchoolPayment()" style="margin-top: 16px; background: #2563eb;">
+          <i data-lucide="send"></i> Solicitar Pagamento em Dinheiro na Escola
+        </button>
+      </div>
+
+      <div id="modalCancelPlanContainer"></div>
+
+      <!-- Explicit Close / Exit Button -->
+      <button type="button" class="btn-outline" onclick="app.closeModal('subscriptionModal')" style="width: 100%; margin: 18px 0 12px; padding: 12px; font-weight: 800; border-color: #cbd5e1; color: #475569; background: #f8fafc; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.92rem;">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i> Fechar e Voltar para o App
+      </button>
+
+      <span class="footer-note"><i data-lucide="lock"></i> Pagamento seguro gerenciado por Freddie Pimentel Costa &bull; Colégio Gammon</span>
+    </div>
+  </div>
+
+  <!-- 3. ADMIN HUB MODAL (ALUNOS ESTUDE+ & GESTÃO DE PAGAMENTOS) -->
+  <div class="modal-overlay" id="adminPaymentsModal">
+    <div class="modal-box" style="max-width: 740px;">
+      <button class="modal-close" onclick="app.closeModal('adminPaymentsModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: #4f46e5; color: white; display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.25rem;">🛡️ Painel do Administrador & Alunos</h3>
+          <p style="margin: 0; font-size: 0.78rem; color: #64748b;">Administrador: Freddie Pimentel Costa &bull; Gestão do App</p>
+        </div>
+      </div>
+
+      <!-- Admin Tabs: Alunos Estude+ vs Gestão de Pagamentos -->
+      <div class="auth-tabs" style="margin-top: 14px; margin-bottom: 14px;">
+        <button class="auth-tab-btn active" id="tabAdminStudentsBtn" onclick="app.switchAdminTab('students')">
+          <i data-lucide="users" style="width: 14px; height: 14px; display: inline; vertical-align: middle; margin-right: 4px;"></i>
+          Alunos Estude+ (<span id="adminStudentsBadgeCount">0</span>)
+        </button>
+        <button class="auth-tab-btn" id="tabAdminPaymentsBtn" onclick="app.switchAdminTab('payments')">
+          <i data-lucide="banknote" style="width: 14px; height: 14px; display: inline; vertical-align: middle; margin-right: 4px;"></i>
+          Gestão de Pagamentos
+        </button>
+      </div>
+
+      <!-- TAB 1: Alunos Estude+ View -->
+      <div id="adminStudentsView">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+          <p class="subtitle" style="margin: 0; font-size: 0.82rem;">
+            Pessoas cadastradas no site. Ative ou cancele planos PRO diretamente:
+          </p>
+          <div class="search-box" style="max-width: 240px; margin: 0;">
+            <i data-lucide="search"></i>
+            <input type="text" id="adminStudentSearch" placeholder="Buscar aluno..." oninput="app.renderAdminStudentsList(this.value)">
+          </div>
+        </div>
+
+        <div id="adminStudentsListContainer" style="max-height: 380px; overflow-y: auto;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- TAB 2: Gestão de Pagamentos View -->
+      <div id="adminPaymentsView" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <p class="subtitle" style="margin: 0; font-size: 0.82rem;">
+            Confirme os pagamentos dos alunos para ativar benefícios do plano PRO.
+          </p>
+          <button type="button" class="btn-outline" onclick="app.adminResetPayments()" style="padding: 6px 12px; font-size: 0.78rem; color: #dc2626; border-color: #fca5a5; background: #fff5f5; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Resetar Esta Aba
+          </button>
+        </div>
+
+        <div id="adminPaymentsListContainer" style="max-height: 380px; overflow-y: auto;">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('adminPaymentsModal')">Fechar Painel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. PLAY STORE DOWNLOAD MODAL -->
+  <div class="modal-overlay" id="playStoreModal">
+    <div class="modal-box" style="max-width: 540px; text-align: center;">
+      <button class="modal-close" onclick="app.closeModal('playStoreModal')">&times;</button>
+      <div class="playstore-app-icon" style="margin: 0 auto 16px;">
+        <i data-lucide="sparkles" style="width: 44px; height: 44px;"></i>
+      </div>
+      <h3 style="font-size: 1.35rem; margin-bottom: 4px;">ESTUDE+ : IA & SAS Educação</h3>
+      <p style="color: #059669; font-weight: 700; font-size: 0.88rem; margin-bottom: 16px;">Google Play &bull; App Oficial Gammon</p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; text-align: left; margin-bottom: 20px;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: #0f172a;">📲 Como instalar no seu celular agora:</h4>
+        <div style="margin-bottom: 12px; font-size: 0.84rem; color: #334155; line-height: 1.5;">
+          <strong>No Android (Google Chrome):</strong><br>
+          Toque no botão verde abaixo. Se o seu navegador não exibir o aviso automático, toque nos <strong>3 pontinhos</strong> no canto superior do Chrome e escolha <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à Tela Inicial"</strong>.
+        </div>
+        <div style="font-size: 0.84rem; color: #334155; line-height: 1.5;">
+          <strong>No iPhone (Safari):</strong><br>
+          Toque no botão de <strong>Compartilhar</strong> (quadrado com seta para cima) e selecione <strong>"Adicionar à Tela de Início"</strong>.
+        </div>
+      </div>
+
+      <button class="btn-playstore-install" onclick="app.handleInstallPwaClick()" style="width: 100%; max-width: 100%; margin-bottom: 12px;">
+        <i data-lucide="download"></i> Instalar Aplicativo Agora
+      </button>
+
+      <button type="button" class="btn-outline" onclick="app.closeModal('playStoreModal')" style="width: 100%;">
+        Fechar
+      </button>
+    </div>
+  </div>
+
+  <!-- 5. PDF VIEWER & DOWNLOAD MODAL -->
+  <div class="modal-overlay" id="pdfViewerModal">
+    <div class="modal-box" style="max-width: 750px; text-align: left;">
+      <button class="modal-close" onclick="app.closeModal('pdfViewerModal')">&times;</button>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #fee2e2; color: #dc2626; padding: 8px; border-radius: 10px;">
+            <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div>
+            <h3 id="pdfViewerTitle" style="margin: 0; font-size: 1.15rem;">Matemática - Asas 2026</h3>
+            <p style="margin: 0; font-size: 0.76rem; color: #64748b;">Apostila Oficial SAS &bull; Coleção Asas 2026 (7º Ano)</p>
+          </div>
+        </div>
+        <button class="btn-download-pdf" id="btnModalDownloadDirect" onclick="app.downloadCurrentPdfModal()" style="padding: 10px 18px;">
+          <i data-lucide="download"></i> Baixar Arquivo PDF
+        </button>
+      </div>
+
+      <!-- PDF Reader Mockup / Chapters Content -->
+      <div id="pdfViewerContent" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; max-height: 420px; overflow-y: auto;">
+        <!-- Populated dynamically with official chapters and summaries -->
+      </div>
+
+      <div class="modal-actions" style="margin-top: 16px;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('pdfViewerModal')">Fechar Leitor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Exam Modal -->
+  <div class="modal-overlay" id="addExamModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="app.closeModal('addExamModal')">&times;</button>
+      <h3>Agendar Prova ou Avaliação</h3>
+      <p class="subtitle">A IA usará esta data para criar revisões estratégicas.</p>
+      
+      <form id="addExamForm" onsubmit="app.handleNewExam(event)">
+        <div class="form-group">
+          <label>Disciplina</label>
+          <input type="text" id="examSubject" required placeholder="Ex: Matemática, SAAS História, Biologia...">
+        </div>
+        <div class="form-group">
+          <label>Conteúdo / Matéria da Prova</label>
+          <input type="text" id="examTopics" required placeholder="Ex: Frações, Termologia, Revolução Francesa...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data da Prova</label>
+            <input type="date" id="examDate" required>
+          </div>
+          <div class="form-group">
+            <label>Prioridade</label>
+            <select id="examPriority">
+              <option value="Alta">Alta</option>
+              <option value="Média" selected>Média</option>
+              <option value="Baixa">Baixa</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addExamModal')">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar no Calendário</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Material Modal -->
+  <div class="modal-overlay" id="addMaterialModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="app.closeModal('addMaterialModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span style="background: #ff7a00; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.72rem;">ORIGEM SAS</span>
+        <h3 style="margin-bottom: 0;">Cadastrar Conteúdo Oficial do SAS</h3>
+      </div>
+      <p class="subtitle">Adicione o capítulo, apostila ou simulado que o colégio determinou para estudo.</p>
+      
+      <form id="addMaterialForm" onsubmit="app.handleNewMaterial(event)">
+        <div class="form-group">
+          <label>Livro / Capítulo / Simulado SAS</label>
+          <input type="text" id="materialTitle" required placeholder="Ex: Livro 3 - Cap. 8: Frações e Porcentagens">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Recurso SAS</label>
+            <select id="materialCategory" required>
+              <option value="Apostilas">Apostila / Livro Digital SAS</option>
+              <option value="SAAS">Avaliação / Matriz SAAS</option>
+              <option value="Eureka">Trilha Eureka (Passo a Passo)</option>
+              <option value="Exercícios">Exercício Suplementar SAS</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Disciplina Escolar</label>
+            <input type="text" id="materialSubject" required placeholder="Ex: Matemática, Física, Português...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Link Direto no Portal SAS (Opcional)</label>
+          <input type="url" id="materialUrl" placeholder="https://app.portalsaseducacao.com.br/conteudo/...">
+        </div>
+        <div class="form-group">
+          <label>Pontos que o Professor / Escola pediu para estudar</label>
+          <textarea id="materialSummary" rows="2" placeholder="Ex: Páginas 45 a 52, foco em resolução de problemas com frações para a prova."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addMaterialModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: #ff7a00;">Salvar Conteúdo SAS</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add TPC Modal (GAMMON+) -->
+  <div class="modal-overlay" id="addTpcModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="app.closeModal('addTpcModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="tpc-portal-pill"><i data-lucide="school"></i> GAMMON+ TPC</span>
+        <h3 style="margin-bottom: 0;">Cadastrar Tarefa Para Casa (TPC)</h3>
+      </div>
+      <p class="subtitle">Insira a tarefa enviada pelo GAMMON+ para o app gerar exercícios de apoio.</p>
+      
+      <form id="addTpcForm" onsubmit="app.handleNewTpc(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Disciplina</label>
+            <input type="text" id="tpcSubject" required placeholder="Ex: Matemática, Física, Português...">
+          </div>
+          <div class="form-group">
+            <label>Data de Entrega</label>
+            <input type="date" id="tpcDueDate" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição do TPC / Páginas do Livro SAS</label>
+          <input type="text" id="tpcTitle" required placeholder="Ex: Livro 3, pág. 52 - Exercícios 1 a 6 sobre Frações">
+        </div>
+        <div class="form-group">
+          <label>Instruções do Professor / Observações</label>
+          <textarea id="tpcDetails" rows="2" placeholder="Ex: Entregar com contas armadas no caderno. Levar na aula de amanhã."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Dificuldade Estimada</label>
+          <select id="tpcDifficulty">
+            <option value="Média" selected>Média (requer atenção)</option>
+            <option value="Alta">Alta (preciso de ajuda do Tutor IA)</option>
+            <option value="Baixa">Baixa (rápida de resolver)</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addTpcModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: #0284c7;">Cadastrar TPC GAMMON+</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Import Schedule Modal (Portal Gammon) -->
+  <div class="modal-overlay" id="importScheduleModal">
+    <div class="modal-box" style="max-width: 600px;">
+      <button class="modal-close" onclick="app.closeModal('importScheduleModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="tpc-portal-pill"><i data-lucide="school"></i> PORTAL GAMMON</span>
+        <h3 style="margin-bottom: 0;">Importar Quadro de Horários</h3>
+      </div>
+      <p class="subtitle">
+        Como o portal Gammon requer seu login individual, acesse seu portal, copie o texto da sua grade de aulas e cole aqui abaixo.
+      </p>
+
+      <form id="importScheduleForm" onsubmit="app.handleImportSchedule(event)">
+        <div class="form-group">
+          <label>Cole aqui o texto ou linhas do seu Quadro de Horário do Gammon:</label>
+          <textarea id="schedulePasteText" rows="6" placeholder="Exemplo:
+07:15 - 08:05 | Matemática | Sala 12
+08:05 - 08:55 | Português | Sala 12
+09:15 - 10:05 | Física | Lab. Ciências
+...ou simplesmente selecione tudo na tela do portal e cole aqui!"></textarea>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-light); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.8rem; color: var(--text-muted);">
+          <i data-lucide="info" style="width: 14px; height: 14px; display: inline; vertical-align: middle; color: #0284c7;"></i>
+          A IA do Estude+ vai identificar automaticamente os horários, nomes das matérias e salas para montar sua tabela semanal.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="app.closeModal('importScheduleModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: #0284c7;">
+            <i data-lucide="check"></i> Processar e Salvar Grade
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONFIGURAÇÕES & PREFERÊNCIAS DO ALUNO ================= -->
+  <div class="modal-overlay" id="studentSettingsModal">
+    <div class="modal-card modal-settings-card">
+      <button class="modal-close" onclick="app.closeModal('studentSettingsModal')">&times;</button>
+      
+      <div class="modal-header-with-badge">
+        <div class="settings-modal-header-icon">⚙️</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Minhas Preferências de Estudo</h3>
+            <span style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">Personalização Total</span>
+          </div>
+          <p class="subtitle" style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">
+            Ajuste o ESTUDE+ para a sua série, suas matérias de maior dificuldade, sua rotina diária e o estilo do seu Tutor IA.
+          </p>
+        </div>
+      </div>
+
+      <!-- Settings Navigation Tabs -->
+      <div class="settings-tabs-nav">
+        <button type="button" class="settings-tab-btn active" data-settings-tab="focus" onclick="app.switchSettingsTab('focus')">
+          <span>🎯</span> Série & Foco
+        </button>
+        <button type="button" class="settings-tab-btn" data-settings-tab="goals" onclick="app.switchSettingsTab('goals')">
+          <span>⏱️</span> Metas & Rotina
+        </button>
+        <button type="button" class="settings-tab-btn" data-settings-tab="tutor" onclick="app.switchSettingsTab('tutor')">
+          <span>🤖</span> Estilo da IA
+        </button>
+        <button type="button" class="settings-tab-btn" data-settings-tab="profile" onclick="app.switchSettingsTab('profile')">
+          <span>👤</span> Perfil & Visual
+        </button>
+        <button type="button" class="settings-tab-btn" data-settings-tab="schedule" onclick="app.switchSettingsTab('schedule')">
+          <span>📅</span> Grade Semanal
+        </button>
+      </div>
+
+      <form id="studentSettingsForm" onsubmit="app.handleSaveStudentSettings(event)">
+        <div class="settings-modal-body">
+          
+          <!-- TAB 1: SÉRIE & MATÉRIAS DE FOCO -->
+          <div class="settings-tab-pane active" id="settingsTab-focus">
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="cfgStudentGrade">Série / Ano Escolar:</label>
+                <select id="cfgStudentGrade" class="form-select">
+                  <option value="6º Ano Fundamental">6º Ano • Ensino Fundamental</option>
+                  <option value="7º Ano Fundamental" selected>7º Ano • Ensino Fundamental (Gammon)</option>
+                  <option value="8º Ano Fundamental">8º Ano • Ensino Fundamental</option>
+                  <option value="9º Ano Fundamental">9º Ano • Ensino Fundamental</option>
+                  <option value="1º Ano Ensino Médio">1º Ano • Ensino Médio</option>
+                  <option value="2º Ano Ensino Médio">2º Ano • Ensino Médio</option>
+                  <option value="3º Ano Terceirão">3º Ano Terceirão • Pré-Vestibular</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="cfgStudentClass">Turma & Campus:</label>
+                <input type="text" id="cfgStudentClass" class="form-input" placeholder="Ex: 7º ano B • Gammon 2" value="7º ano B • Gammon 2">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Quais matérias você quer <strong>focar mais</strong> ou tem <strong>mais dificuldade</strong>?</span>
+                <span style="font-size: 0.72rem; color: #6366f1; font-weight: 700;">Receberão destaque no TPC e Painel</span>
+              </label>
+              <div class="settings-subjects-grid">
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="matematica" checked>
+                  <span class="subj-pill-box">📐 Matemática</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="portugues" checked>
+                  <span class="subj-pill-box">📝 Português / Gramática</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="redacao">
+                  <span class="subj-pill-box">✍️ Redação & Texto</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="ciencias">
+                  <span class="subj-pill-box">🌿 Ciências da Natureza</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="fisica" checked>
+                  <span class="subj-pill-box">⚡ Física (Eureka)</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="quimica">
+                  <span class="subj-pill-box">🧪 Química</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="biologia">
+                  <span class="subj-pill-box">🧬 Biologia</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="historia">
+                  <span class="subj-pill-box">🏛️ História</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="geografia">
+                  <span class="subj-pill-box">🌍 Geografia</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="ingles">
+                  <span class="subj-pill-box">🇬🇧 Língua Inglesa</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="espanhol">
+                  <span class="subj-pill-box">🇪🇸 Língua Espanhola</span>
+                </label>
+                <label class="subj-checkbox-pill">
+                  <input type="checkbox" name="cfgFocusSubject" value="filosofia">
+                  <span class="subj-pill-box">🧠 Filosofia / Sociologia</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: METAS DIÁRIAS & ROTINA -->
+          <div class="settings-tab-pane" id="settingsTab-goals">
+            <div class="form-group">
+              <label>Escolha sua meta diária de estudos no ESTUDE+:</label>
+              <div class="settings-goals-grid">
+                <label class="goal-radio-card">
+                  <input type="radio" name="cfgDailyGoal" value="15" checked>
+                  <div class="goal-card-box">
+                    <span class="goal-time">⚡ 15 min / dia</span>
+                    <span class="goal-badge">Recomendado</span>
+                    <p>Ideal para manter constância sem cansar, fazer o TPC do dia e revisar 1 tópico.</p>
+                  </div>
+                </label>
+                <label class="goal-radio-card">
+                  <input type="radio" name="cfgDailyGoal" value="30">
+                  <div class="goal-card-box">
+                    <span class="goal-time">⏱️ 30 min / dia</span>
+                    <span class="goal-badge">Foco Médio</span>
+                    <p>Ótimo para quem quer adiantar as trilhas do Eureka e tirar dúvidas com o Tutor.</p>
+                  </div>
+                </label>
+                <label class="goal-radio-card">
+                  <input type="radio" name="cfgDailyGoal" value="45">
+                  <div class="goal-card-box">
+                    <span class="goal-time">🚀 45 min / dia</span>
+                    <span class="goal-badge">Intensivo</span>
+                    <p>Perfeito para semanas de Avaliações SAAS e preparação para simulados.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="cfgStudyShift">Turno em que prefere estudar:</label>
+                <select id="cfgStudyShift" class="form-select">
+                  <option value="tarde" selected>☀️ Tarde (após a aula - 14h às 18h)</option>
+                  <option value="noite">🌙 Noite (18h às 21h)</option>
+                  <option value="manha">🌅 Manhã (antes da aula)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="cfgTpcReminderTime">Horário do Lembrete de TPC:</label>
+                <input type="time" id="cfgTpcReminderTime" class="form-input" value="17:00">
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: ESTILO DO TUTOR IA -->
+          <div class="settings-tab-pane" id="settingsTab-tutor">
+            <div class="form-group">
+              <label>Como você prefere que o Chatbot IA do ESTUDE+ te responda?</label>
+              <div class="ai-style-cards">
+                <label class="ai-style-card">
+                  <input type="radio" name="cfgAiStyle" value="direto" checked>
+                  <div class="ai-card-inner">
+                    <div class="ai-card-icon">⚡</div>
+                    <div>
+                      <strong>Super Direto & Sem Enrolação (Padrão)</strong>
+                      <p>Responde na hora, exato e sem rodeios. Perguntou 2+2? Ele responde 4! Perfeito para quem quer agilidade máxima no dever de casa.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="ai-style-card">
+                  <input type="radio" name="cfgAiStyle" value="didatico">
+                  <div class="ai-card-inner">
+                    <div class="ai-card-icon">📚</div>
+                    <div>
+                      <strong>Didático & Passo a Passo</strong>
+                      <p>Como um professor particular calmo e atencioso. Explica cada linha do cálculo ou raciocínio para você realmente aprender o método.</p>
+                    </div>
+                  </div>
+                </label>
+                <label class="ai-style-card">
+                  <input type="radio" name="cfgAiStyle" value="gamer">
+                  <div class="ai-card-inner">
+                    <div class="ai-card-icon">🎮</div>
+                    <div>
+                      <strong>Parceiro Descontraído & Gamer</strong>
+                      <p>Super amigável, usa metáforas de jogos (Roblox, Minecraft, Blox Fruits) e futebol, deixando a rotina de estudos leve e divertida.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 14px; border-radius: var(--radius-md); font-size: 0.78rem; color: #166534; display: flex; align-items: center; gap: 8px;">
+              <span>✨</span>
+              <span>O estilo escolhido calibra automaticamente tanto o <strong>Chat IA</strong> quanto o <strong>Tutor Flutuante</strong>.</span>
+            </div>
+          </div>
+
+          <!-- TAB 4: PERFIL & VISUAL -->
+          <div class="settings-tab-pane" id="settingsTab-profile">
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="cfgStudentName">Nome Completo do Aluno:</label>
+                <input type="text" id="cfgStudentName" class="form-input" value="Freddie Pimentel Costa" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="cfgStudentNickname">Apelido (como a IA deve te chamar):</label>
+                <input type="text" id="cfgStudentNickname" class="form-input" value="Freddie" placeholder="Ex: Freddie">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Escolha o Emoji do seu Avatar:</label>
+              <div class="avatar-selection-grid" id="cfgAvatarSelectionGrid">
+                <button type="button" class="avatar-option-btn active" data-avatar="🦄" onclick="app.selectAvatar('🦄')">🦄</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🦁" onclick="app.selectAvatar('🦁')">🦁</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🚀" onclick="app.selectAvatar('🚀')">🚀</button>
+                <button type="button" class="avatar-option-btn" data-avatar="⚡" onclick="app.selectAvatar('⚡')">⚡</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🧠" onclick="app.selectAvatar('🧠')">🧠</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🎮" onclick="app.selectAvatar('🎮')">🎮</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🦊" onclick="app.selectAvatar('🦊')">🦊</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🦉" onclick="app.selectAvatar('🦉')">🦉</button>
+                <button type="button" class="avatar-option-btn" data-avatar="🎓" onclick="app.selectAvatar('🎓')">🎓</button>
+                <button type="button" class="avatar-option-btn" data-avatar="👑" onclick="app.selectAvatar('👑')">👑</button>
+              </div>
+              <input type="hidden" id="cfgSelectedAvatar" value="🦄">
+            </div>
+
+            <div class="form-group">
+              <label for="cfgStudentMotto">Frase de Motivação / Lema de Estudo:</label>
+              <input type="text" id="cfgStudentMotto" class="form-input" value="Foco todo dia para mandar bem nas provas do SAS!" placeholder="Ex: Rumo ao 10 no SAS!">
+            </div>
+
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Tema Visual da Tela:</label>
+                <div style="display: flex; gap: 8px;">
+                  <label class="theme-choice-btn" style="flex: 1;">
+                    <input type="radio" name="cfgThemeMode" value="light" checked>
+                    <span>☀️ Modo Claro</span>
+                  </label>
+                  <label class="theme-choice-btn" style="flex: 1;">
+                    <input type="radio" name="cfgThemeMode" value="dark">
+                    <span>🌙 Modo Escuro</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>Tamanho do Texto:</label>
+                <div style="display: flex; gap: 8px;">
+                  <label class="theme-choice-btn" style="flex: 1;">
+                    <input type="radio" name="cfgFontSize" value="normal" checked>
+                    <span>🔤 Padrão</span>
+                  </label>
+                  <label class="theme-choice-btn" style="flex: 1;">
+                    <input type="radio" name="cfgFontSize" value="large">
+                    <span>🔍 Ampliado</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 5: GRADE SEMANAL PERSONALIZADA -->
+          <div class="settings-tab-pane" id="settingsTab-schedule">
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0; margin-bottom: 12px;">
+              Indique as principais matérias que você tem em cada dia da semana para o sistema priorizar seus TPCs diários:
+            </p>
+            <div class="schedule-config-grid">
+              <div class="schedule-day-col">
+                <strong>Segunda-feira:</strong>
+                <input type="text" id="cfgSchedSeg" class="form-input" value="Matemática, Português, Geografia, Inglês">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Terça-feira:</strong>
+                <input type="text" id="cfgSchedTer" class="form-input" value="Ciências, Matemática, História, Artes">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Quarta-feira:</strong>
+                <input type="text" id="cfgSchedQua" class="form-input" value="Português, Redação, Física, Filosofia">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Quinta-feira:</strong>
+                <input type="text" id="cfgSchedQui" class="form-input" value="Matemática, Geografia, Química, Inglês">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Sexta-feira:</strong>
+                <input type="text" id="cfgSchedSex" class="form-input" value="História, Português, Biologia, Ed. Física">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Zona de Perigo: Excluir Conta (Alunos e Administradores) -->
+        <div style="margin-top: 22px; padding: 14px 16px; background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 1.1rem;">⚠️</span>
+              <strong style="color: #9f1239; font-size: 0.9rem;">Zona de Perigo da Conta</strong>
+            </div>
+            <p style="margin: 3px 0 0; font-size: 0.76rem; color: #be123c;">
+              Excluir definitivamente sua conta do ESTUDE+, histórico e acessos (aplicável a alunos e administradores).
+            </p>
+          </div>
+          <button type="button" class="btn-outline" onclick="app.deleteMyAccount()" style="color: #be123c; border-color: #f43f5e; background: #ffe4e6; font-weight: 800; font-size: 0.78rem; padding: 7px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            Excluir Minha Conta
+          </button>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn-outline" onclick="app.resetStudentSettingsToDefault()" style="color: #64748b; font-size: 0.82rem;">
+            Restaurar Padrões
+          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-outline" onclick="app.closeModal('studentSettingsModal')">Cancelar</button>
+            <button type="submit" class="btn-primary" style="background: #4f46e5;">
+              <i data-lucide="check"></i> Salvar Minhas Preferências
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CENTRAL DE NOTIFICAÇÕES GAMMON+ ================= -->
+  <div class="modal-overlay" id="gammonNotificationsModal">
+    <div class="modal-card notifications-modal-card">
+      <button class="modal-close" onclick="app.closeModal('gammonNotificationsModal')">&times;</button>
+      
+      <div class="notifications-top-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="notif-icon-badge tpc" style="background: #eef2ff; color: #4338ca; width: 44px; height: 44px; font-size: 1.3rem;">
+            🔔
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Notificações GAMMON+</h3>
+              <span class="sync-status-indicator" id="gammonSyncStatusBadge">
+                <i data-lucide="bell" style="width: 12px; height: 12px;"></i> Central Ativa
+              </span>
+            </div>
+            <p class="subtitle" style="margin: 2px 0 0; font-size: 0.78rem; color: #64748b;" id="gammonLastSyncSubtitle">
+              TPCs diários, agendamentos de provas e comunicados do Colégio Gammon.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Banner -->
+      <div class="gammon-connect-banner" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
+        <div>
+          <strong style="display: block; font-size: 0.95rem; margin-bottom: 2px;">📌 Central de TPCs e Avisos Gammon</strong>
+          <span style="font-size: 0.76rem; opacity: 0.92;" id="gammonAccountStatusText">
+            Turma 17B (Campus Chácara) &bull; Acompanhamento de tarefas e comunicados escolares
+          </span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
+          <a href="https://portal.gammon.br/framehtml/web/app/edu/portaleducacional/#/ocorrencias" target="_blank" class="btn-primary" style="background: #0284c7; color: #fff; font-weight: 800; font-size: 0.78rem; padding: 7px 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="external-link" style="width: 13px; height: 13px;"></i> Abrir Ocorrências
+          </a>
+          <button type="button" class="btn-primary" onclick="app.closeModal('gammonNotificationsModal'); app.showModal('importOccurrencesModal')" style="background: rgba(255,255,255,0.15); color: #ffffff; font-weight: 700; font-size: 0.78rem; padding: 7px 12px; border: 1px solid rgba(255,255,255,0.3); display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="clipboard-paste" style="width: 13px; height: 13px;"></i> Colar TPC / Ocorrência
+          </button>
+        </div>
+      </div>
+
+      <!-- Notifications Filter and Action Bar -->
+      <div class="notifications-actions-bar">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" class="notification-filter-btn active" id="btnFilterNotifAll" onclick="app.filterNotifications('all')">
+            Todas (<span id="notifCountAll">5</span>)
+          </button>
+          <button type="button" class="notification-filter-btn" id="btnFilterNotifTpc" onclick="app.filterNotifications('tpc')">
+            📋 TPCs (<span id="notifCountTpc">2</span>)
+          </button>
+          <button type="button" class="notification-filter-btn" id="btnFilterNotifExam" onclick="app.filterNotifications('exam')">
+            📅 Provas (<span id="notifCountExam">2</span>)
+          </button>
+          <button type="button" class="notification-filter-btn" id="btnFilterNotifOccur" onclick="app.filterNotifications('occurrence')">
+            📢 Ocorrências (<span id="notifCountOccur">1</span>)
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-outline" onclick="app.markAllNotificationsRead()" style="font-size: 0.75rem; padding: 4px 8px; border: none; color: #4f46e5; font-weight: 700;">
+            <i data-lucide="check-check" style="width: 12px; height: 12px; display: inline;"></i> Marcar lidas
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Notifications Feed Container -->
+      <div class="notifications-list-feed" id="gammonNotificationsFeed">
+        <!-- Rendered dynamically by app.renderGammonNotifications() -->
+      </div>
+
+      <!-- Footer Info and Mobile Notification Permissions -->
+      <div class="modal-actions" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn-outline" onclick="app.requestDeviceNotificationPermission()" style="font-size: 0.8rem; color: #0284c7; border-color: #bae6fd; background: #f0f9ff;">
+          <i data-lucide="bell-ring" style="width: 14px; height: 14px;"></i> Ativar Alertas no Celular/PC
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-primary" onclick="app.closeModal('gammonNotificationsModal')" style="background: #4f46e5;">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Occurrences Modal (GAMMON+ TPCs) -->
+  <div class="modal-overlay" id="importOccurrencesModal">
+    <div class="modal-box" style="max-width: 600px;">
+      <button class="modal-close" onclick="app.closeModal('importOccurrencesModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="tpc-portal-pill"><i data-lucide="school"></i> OCORRÊNCIAS GAMMON+</span>
+        <h3 style="margin-bottom: 0;">Colar Boletim de Ocorrências / TPCs</h3>
+      </div>
+      <p class="subtitle">
+        Copie o texto da aba Ocorrências do seu GAMMON+ (onde os professores lançam os TPCs diários) e cole abaixo para atualizar automaticamente suas tarefas!
+      </p>
+
+      <form id="importOccurrencesForm" onsubmit="app.handleImportOccurrences(event)">
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="margin-bottom: 0;">Cole aqui as ocorrências e TPCs copiados do portal:</label>
+            <a href="https://portal.gammon.br/framehtml/web/app/edu/portaleducacional/#/ocorrencias" target="_blank" rel="noopener noreferrer" style="font-size: 0.78rem; color: #0284c7; text-decoration: underline; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="external-link" style="width: 12px; height: 12px;"></i> Abrir Ocorrências do Gammon
+            </a>
+          </div>
+          <textarea id="occurrencesPasteText" rows="7" placeholder="Exemplo:
+03/10 - Matemática - Prof. Carlos: TPC Livro 1 Cap 1 Pág 28 ex 1 a 10.
+03/10 - Português - Profª Ana: TPC Leitura do Cap 2 pág 34 e exercícios.
+04/10 - Ciências - Prof. Marcos: Trazer resumo dos ecossistemas.
+(Você pode copiar toda a tabela ou texto da tela do portal e colar aqui direto!)"></textarea>
+        </div>
+
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.8rem; color: #0369a1;">
+          <i data-lucide="sparkles" style="width: 14px; height: 14px; display: inline; vertical-align: middle; color: #0284c7;"></i>
+          A Inteligência Artificial vai identificar a matéria, as páginas dos livros SAS e a data de entrega para cada ocorrência.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="app.closeModal('importOccurrencesModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: #0284c7;">
+            <i data-lucide="check"></i> Processar Ocorrências e Atualizar TPCs
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Testar Integração de Sessão Gammon (Login Manual no Navegador) -->
+  <div class="modal-overlay" id="gammonSessionModal">
+    <div class="modal-box" style="max-width: 620px;">
+      <button class="modal-close" onclick="app.closeModal('gammonSessionModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="tpc-portal-pill" style="background: #e0f2fe; color: #0284c7;"><i data-lucide="shield-check"></i> INTEGRAÇÃO COM SESSÃO</span>
+        <h3 style="margin-bottom: 0;">Consulta via Sessão Autenticada</h3>
+      </div>
+      <p class="subtitle" style="font-size: 0.84rem; line-height: 1.45; margin-bottom: 16px;">
+        Esta ferramenta realiza um teste real e seguro para verificar se o seu navegador permite ao Estude+ consultar os TPCs da sua sessão do portal <strong>sem você digitar sua senha aqui</strong>.
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+        <h4 style="margin: 0 0 8px; font-size: 0.92rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+          <span style="background: #0284c7; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">1</span>
+          Passo 1: Login Manual no Portal Gammon
+        </h4>
+        <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 12px; line-height: 1.4;">
+          Abra o portal do colégio em uma janela de navegação e realize seu login normalmente com sua conta institucional.
+        </p>
+        <button type="button" class="btn-primary" onclick="app.openGammonManualLoginWindow()" style="background: #0284c7; font-size: 0.85rem; padding: 9px 16px;">
+          <i data-lucide="external-link"></i> Abrir Janela do Portal Gammon (#/ocorrencias)
+        </button>
+      </div>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+        <h4 style="margin: 0 0 8px; font-size: 0.92rem; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+          <span style="background: #0284c7; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">2</span>
+          Passo 2: Testar Consulta Direta da Sessão
+        </h4>
+        <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 12px; line-height: 1.4;">
+          Após fazer o login na janela acima, clique no botão para testar se o navegador autoriza a sincronização direta:
+        </p>
+        <button type="button" class="btn-primary" id="btnTestGammonSession" onclick="app.testGammonSessionSync()" style="background: #059669; font-size: 0.85rem; padding: 9px 16px;">
+          <i data-lucide="refresh-cw"></i> Consultar Ocorrências da Sessão
+        </button>
+
+        <div id="gammonSessionTestResult" style="margin-top: 14px; display: none;">
+          <!-- Dynamically populated with test result and diagnosis -->
+        </div>
+      </div>
+
+      <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('gammonSessionModal')">Fechar</button>
+        <button type="button" class="btn-outline" onclick="app.closeModal('gammonSessionModal'); app.showModal('importOccurrencesModal')" style="color: #0284c7; border-color: #bae6fd;">
+          <i data-lucide="clipboard-paste"></i> Usar Copiar e Colar (100% Funcional)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Test Modal (QR Code & Direct Link) -->
+  <div class="modal-overlay" id="mobileTestModal">
+    <div class="modal-box" style="max-width: 540px; text-align: center;">
+      <button class="modal-close" onclick="app.closeModal('mobileTestModal')">&times;</button>
+      <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; background: #ecfdf5; color: #10b981; border-radius: 50%; margin-bottom: 12px;">
+        <i data-lucide="smartphone" style="width: 28px; height: 28px;"></i>
+      </div>
+      <h3 style="margin-bottom: 4px;">📱 Testar no Celular</h3>
+      <p class="subtitle" style="margin-bottom: 20px;">
+        Abra o <strong>ESTUDE+</strong> direto no seu celular (iPhone ou Android) enquanto estiver conectado à mesma rede Wi-Fi!
+      </p>
+
+      <!-- QR Code Display -->
+      <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 20px; display: inline-block; margin-bottom: 18px;">
+        <img 
+          src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=http%3A%2F%2F192.168.3.128%3A8080&color=1e1b4b" 
+          alt="QR Code ESTUDE+" 
+          style="width: 200px; height: 200px; border-radius: 12px; display: block; margin: 0 auto; box-shadow: 0 4px 14px rgba(0,0,0,0.08);"
+          onerror="this.style.display='none'; document.getElementById('qrFallbackText').style.display='block';"
+        >
+        <div id="qrFallbackText" style="display: none; padding: 20px; color: var(--text-muted); font-size: 0.85rem;">
+          Use o link direto abaixo para abrir no celular.
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 10px; font-weight: 600;">
+          📷 Aponte a câmera do seu celular para o QR Code acima
+        </p>
+      </div>
+
+      <!-- Direct Link Box -->
+      <div style="margin-bottom: 16px; text-align: left;">
+        <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Opção 1: Link no mesmo Wi-Fi (Recomendado):</label>
+        <div style="display: flex; gap: 8px;">
+          <input 
+            type="text" 
+            id="mobileLinkInput" 
+            value="http://192.168.3.128:8080" 
+            readonly 
+            style="flex: 1; font-family: monospace; font-size: 0.95rem; font-weight: 700; background: #f1f5f9; border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 10px 14px; color: #0284c7;"
+          >
+          <button type="button" class="btn-primary" onclick="app.copyMobileLink()" style="background: #10b981; white-space: nowrap;">
+            <i data-lucide="copy"></i> Copiar
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px; text-align: left;">
+        <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Opção 2: Link pela Internet (4G / Fora de Casa):</label>
+        <div style="display: flex; gap: 8px;">
+          <input 
+            type="text" 
+            id="mobilePublicLinkInput" 
+            value="https://rude-lands-glow.loca.lt" 
+            readonly 
+            style="flex: 1; font-family: monospace; font-size: 0.88rem; font-weight: 700; background: #f1f5f9; border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 10px 14px; color: #7c3aed;"
+          >
+          <button type="button" class="btn-primary" onclick="navigator.clipboard.writeText('https://rude-lands-glow.loca.lt').then(() => alert('Link público copiado! Se pedir senha, digite o IP: 179.108.213.212'))" style="background: #7c3aed; white-space: nowrap;">
+            <i data-lucide="copy"></i> Copiar
+          </button>
+        </div>
+        <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">* Se o link público solicitar verificação, basta digitar o IP <strong>179.108.213.212</strong></span>
+      </div>
+
+      <!-- Instructions Box -->
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 14px 16px; text-align: left; font-size: 0.8rem; color: #166534; line-height: 1.5; margin-bottom: 20px;">
+        <strong>💡 Como transformar em aplicativo no celular:</strong>
+        <ul style="margin: 6px 0 0 16px; padding: 0;">
+          <li><strong>No iPhone (Safari):</strong> Toque no botão de <em>Compartilhar</em> e selecione <em>"Adicionar à Tela de Início"</em>.</li>
+          <li><strong>No Android (Chrome):</strong> Toque nos <em>3 pontinhos</em> e selecione <em>"Instalar aplicativo"</em> ou <em>"Adicionar à Tela Inicial"</em>.</li>
+        </ul>
+      </div>
+
+      <div class="modal-actions" style="justify-content: center;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('mobileTestModal')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CHATBOT FLUTUANTE ESTILO GEMINI ================= -->
+  <!-- Floating Launcher Button -->
+  <button class="chat-floating-btn" id="chatFloatingBtn" onclick="app.switchTab('gemini-chat')" title="Abrir Chatbot IA" style="background: #0284c7; border: 1px solid #0369a1;">
+    <div class="chat-btn-pulse" style="border-color: #38bdf8;"></div>
+    <div style="padding: 4px; border-radius: 6px; display: flex; align-items: center; color: #ffffff;">
+      <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
+    </div>
+    <span class="chat-floating-label" style="color: #fff; font-weight: 700;">Chat IA</span>
+    <span class="chat-badge-free" style="background: #ffffff; color: #0284c7; font-weight: 800;">IA</span>
+  </button>
+
+  <!-- Chat Dialog Window (Gemini Theme) -->
+  <div class="chat-window" id="chatBotWindow">
+    <div class="chat-header">
+      <div class="chat-partner-info">
+        <div class="gemini-sparkle-icon">
+          <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+        </div>
+        <div>
+          <h4><span class="gemini-brand-glow">Gemini 2.5 Flash</span> <span class="badge-partner">Tutor Gammon</span></h4>
+          <p class="partner-status"><span class="status-dot"></span> Inteligência Ativa &bull; Respostas Gratuitas</p>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-btn-icon" onclick="app.clearChatMessages()" title="Limpar conversa">
+          <i data-lucide="trash-2"></i>
+        </button>
+        <button class="chat-btn-icon" onclick="app.toggleChatBot()" title="Minimizar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Suggested Quick Prompts -->
+    <div class="chat-quick-prompts">
+      <button class="chip-btn" onclick="app.sendQuickPrompt('Quais são as minhas 12 apostilas do SAS Asas 2026?')">
+        📚 Livros Asas 2026
+      </button>
+      <button class="chip-btn" onclick="app.sendQuickPrompt('Como devo começar meus estudos hoje?')">
+        🎯 Por onde começo?
+      </button>
+      <button class="chip-btn" onclick="app.sendQuickPrompt('Me explica frações com denominadores diferentes?')">
+        ➕ Frações passo a passo
+      </button>
+      <button class="chip-btn" onclick="app.sendQuickPrompt('Como me preparar para a prova do SAAS?')">
+        📝 Dicas para prova SAAS
+      </button>
+      <button class="chip-btn" onclick="app.sendQuickPrompt('O que diz a 1ª Lei de Newton no Eureka?')">
+        🍎 1ª Lei de Newton
+      </button>
+    </div>
+
+    <!-- Chat Messages Feed -->
+    <div class="chat-messages" id="chatMessagesFeed">
+      <!-- Populated dynamically -->
+    </div>
+
+    <!-- Input Box -->
+    <form class="chat-input-form" onsubmit="app.handleUserMessage(event)">
+      <input 
+        type="text" 
+        id="chatUserInput" 
+        placeholder="Pergunte ao Gemini sobre matérias, apostilas ou Eureka..." 
+        autocomplete="off"
+        required>
+      <button type="submit" class="chat-send-btn" id="chatSendBtn" style="background: linear-gradient(135deg, #4f46e5, #9333ea);">
+        <i data-lucide="send"></i>
+      </button>
+    </form>
+    <div class="chat-bottom-disclaimer">
+      <span>✨ Gemini IA &bull; Calibrado para o Colégio Gammon & SAS Educação</span>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar (Never wraps or pushes down!) -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="mobile-nav-btn active" id="mobNavInicio" onclick="app.switchTab('dashboard')">
+      <i data-lucide="home"></i>
+      <span>Início</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavChat" onclick="app.switchTab('gemini-chat')">
+      <i data-lucide="bot"></i>
+      <span>Chat IA</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavApostilas" onclick="app.switchTab('sas-eureka')">
+      <i data-lucide="compass"></i>
+      <span>Eureka & Apostilas</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavTpc" onclick="app.switchTab('gammon-tpc')">
+      <i data-lucide="clipboard-list"></i>
+      <span>TPC</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobNavPlanos" onclick="app.switchTab('plans-pricing')">
+      <i data-lucide="crown"></i>
+      <span>Planos</span>
+    </button>
+  </nav>
+
+  <!-- Script Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

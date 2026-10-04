@@ -1,0 +1,15 @@
+{
+  "name": "estude-plus",
+  "version": "1.0.0",
+  "description": "Estude+ Plataforma Educacional Inteligente",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.12.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

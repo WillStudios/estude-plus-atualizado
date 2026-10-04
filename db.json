@@ -1,0 +1,102 @@
+{
+  "users": [
+    {
+      "id": "admin_freddie",
+      "name": "Freddie Pimentel Costa",
+      "username": "freddie",
+      "email": "freddie@gammon.com.br",
+      "role": "admin",
+      "isSubscribed": true,
+      "plan": "pro",
+      "planStatus": "active",
+      "planName": "Plano Administrador PRO",
+      "grade": "7º Ano (Campus Chácara)",
+      "emailVerified": true,
+      "streak": 5,
+      "bestStreak": 5,
+      "createdAt": "2026-09-01T00:00:00.000Z",
+      "lastLogin": "2026-10-04T20:35:59.294Z",
+      "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
+      "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
+      "lastDeviceType": "Windows / PC"
+    },
+    {
+      "id": "aluno_lucas",
+      "name": "Lucas Silva",
+      "username": "lucas",
+      "email": "lucas@gammon.com.br",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "grade": "7º Ano B",
+      "createdAt": "2026-09-15T00:00:00.000Z",
+      "lastLogin": "2026-10-04T13:23:51.482Z",
+      "passwordHash": "cc9be4cf8432a524c09038b4dc517aebea60142311514d29ea6d1b0871974a4b3b494f41ac1c14db2c0a6739b21107d56cb893966cf27e040b7a286f6ecd979d",
+      "passwordSalt": "d70fc66bbe8bbad19e3bb312dabecd06"
+    },
+    {
+      "id": "usr_1791133132378_ureh",
+      "name": "Pedro Lucas",
+      "username": "pedro",
+      "email": "pedro@estude.app",
+      "passwordHash": "6f261beee3be2fe146cda01a7e53ec3bf429dee486cb4b87f3767760b29f646c027cb02bee9660028902b46c786de7ca0d962b9543732ceda0cc8866de937d6d",
+      "passwordSalt": "ab6f0eed05351db74109fe63f718cb23",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-04T16:58:52.378Z",
+      "lastLogin": "2026-10-04T16:58:58.138Z",
+      "lastDeviceType": "Computador / Desktop"
+    }
+  ],
+  "tpcs": [
+    {
+      "id": "gammon_109863",
+      "gammonId": 109863,
+      "subject": "Matemática",
+      "title": "TPC Diário - Matemática",
+      "pages": "Página 50 (Atividade Suplementar)",
+      "pageNumber": "50",
+      "description": "Atividade Suplementar - página 50, para o dia 05/10.",
+      "details": "Atividade Suplementar - página 50, para o dia 05/10.",
+      "teacher": "Profª Elaine Aparecida Leandro dos Santos",
+      "classGroup": "17B",
+      "term": "3º Trimestre",
+      "type": "TPC Diário",
+      "tpcType": "TPC Diário",
+      "createdDate": "2026-10-02",
+      "createdDateBr": "02/10/2026",
+      "dueDate": "2026-10-05",
+      "dueDateBr": "05/10/2026 (Segunda-feira)",
+      "difficulty": "Média",
+      "source": "portal_gammon_sync",
+      "status": "pending",
+      "done": false,
+      "syncedAt": "2026-10-04T19:47:00.310Z"
+    }
+  ],
+  "gammonStatus": {
+    "status": "success",
+    "lastSync": "2026-10-04T19:43:24.663Z",
+    "totalCaptured": 118,
+    "message": "118 TPCs sincronizados do Portal Gammon!"
+  },
+  "masterCommands": {
+    "broadcastNotice": "",
+    "lockdownActive": false,
+    "forceRefreshTimestamp": 1791144054999
+  },
+  "connectedDevices": []
+}

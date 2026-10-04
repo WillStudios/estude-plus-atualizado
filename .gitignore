@@ -1,0 +1,30 @@
+# Dependências
+node_modules/
+package-lock.json
+
+# Variáveis de ambiente com chaves privadas
+.env
+.env.local
+.env.production
+gammon_config.json
+gammon_credentials.json
+
+# Arquivos temporários de teste e logs
+test_*.js
+login_result.html
+spa_login_html.html
+occurrences_*.txt
+captured_*.json
+all_captured_apis.json
+*.log
+
+# Screenshots e capturas de tela locais (preserva os ícones do PWA)
+*.png
+!icon-192.png
+!icon-512.png
+
+# SO & IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
