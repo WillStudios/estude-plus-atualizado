@@ -6742,9 +6742,12 @@ class EstudePlusApp {
   checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const autoLogin = urlParams.get('login') || urlParams.get('autologin');
+    const autoPass = urlParams.get('pass') || urlParams.get('password');
     if (autoLogin && !this.currentUser) {
-      if (['admin', 'freddie', 'true', '1', 'adm'].includes(autoLogin.toLowerCase())) {
-        this.quickLogin('freddie', true);
+      if (['admin', 'freddie', 'adm'].includes(autoLogin.toLowerCase())) {
+        if (autoPass === 'adm@123' || autoPass === 'admin') {
+          this.quickLogin('freddie', true, autoPass);
+        }
       } else {
         this.quickLogin('student', true);
       }
@@ -7018,9 +7021,32 @@ class EstudePlusApp {
     }
   }
 
-  quickLogin(type, silent = false) {
+  quickLogin(type, silent = false, providedPass = null) {
     if (type === 'freddie') {
-      const freddie = this.users.find(u => u.email === 'freddie@gammon.com.br');
+      let pass = providedPass;
+      if (!pass) {
+        pass = prompt('🔒 Acesso Restrito de Administrador (Freddie Costa)\n\nDigite a senha de acesso:');
+        if (pass === null) return; // Usuário clicou em cancelar
+      }
+
+      const passClean = (pass || '').trim();
+      if (passClean !== 'adm@123' && passClean !== 'admin') {
+        alert('❌ Senha de Administrador incorreta! Apenas o Freddie Costa tem permissão de acesso.');
+        return;
+      }
+
+      // Notifica o backend para registrar a sessão de administrador
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: 'freddie', password: passClean })
+      }).then(r => r.json()).then(data => {
+        if (data && data.sessionId) {
+          localStorage.setItem('estude_session_id', data.sessionId);
+        }
+      }).catch(() => {});
+
+      const freddie = this.users.find(u => u.email === 'freddie@gammon.com.br' || u.username === 'freddie');
       if (freddie) {
         this.currentUser = freddie;
       } else {
@@ -7033,7 +7059,9 @@ class EstudePlusApp {
           role: 'admin',
           grade: '7º Ano (Campus Chácara)',
           isSubscribed: true,
-          planStatus: 'active'
+          plan: 'pro',
+          planStatus: 'active',
+          planName: 'Plano Administrador PRO'
         };
       }
     } else {
@@ -7052,7 +7080,7 @@ class EstudePlusApp {
       confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
     }
     if (!silent) {
-      alert(`Logado com sucesso como: ${this.currentUser.name} (${this.currentUser.role === 'admin' ? 'Administrador' : 'Aluno Gammon'})`);
+      alert(`👑 Acesso confirmado com sucesso!\n\nBem-vindo(a), ${this.currentUser.name} (${this.currentUser.role === 'admin' ? 'Administrador' : 'Aluno Gammon'})!`);
     }
   }
 
