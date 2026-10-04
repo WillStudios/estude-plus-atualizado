@@ -15,10 +15,10 @@
       "streak": 5,
       "bestStreak": 5,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-04T20:35:59.294Z",
+      "lastLogin": "2026-10-04T21:58:33.701Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
-      "lastDeviceType": "Windows / PC"
+      "lastDeviceType": "Computador / Desktop"
     },
     {
       "id": "aluno_lucas",
@@ -98,5 +98,25 @@
     "lockdownActive": false,
     "forceRefreshTimestamp": 1791144054999
   },
-  "connectedDevices": []
+  "connectedDevices": [],
+  "planRequests": [],
+  "supportRequests": [],
+  "studyReports": [],
+  "agendaSyncLogs": [],
+  "adminNotifications": [],
+  "systemEvents": [],
+  "auditLogs": [
+    {
+      "id": "aud_1791151113722_8ebi",
+      "action": "support_answered",
+      "actor": "Freddie Pimentel Costa",
+      "details": {
+        "requestId": "sup_1791151113624_4fa363",
+        "status": "answered"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-04T21:58:33.722Z"
+    }
+  ],
+  "payments": []
 }

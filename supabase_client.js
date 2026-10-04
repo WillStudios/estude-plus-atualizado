@@ -194,6 +194,77 @@ async function recordAuditLog(log) {
 }
 
 // -----------------------------------------------------------------------------
+// OPERAÇÕES: SOLICITAÇÕES DO PLANO PRO
+// -----------------------------------------------------------------------------
+async function getAllPlanRequests() {
+  if (!isConfigured) return null;
+  return await request('plan_requests?select=*');
+}
+
+async function upsertPlanRequest(req) {
+  if (!isConfigured || !req || !req.id) return null;
+  const row = {
+    id: String(req.id),
+    user_id: req.userId || null,
+    user_name: req.userName || 'Aluno',
+    user_email: req.userEmail || null,
+    user_grade: req.userGrade || '7º Ano',
+    plan: req.plan || 'pro',
+    plan_name: req.planName || 'Plano PRO',
+    amount: req.amount || 19.90,
+    contact_method: req.contactMethod || 'whatsapp',
+    contact_info: req.contactInfo || '',
+    note: req.note || '',
+    status: req.status || 'pending',
+    status_reason: req.statusReason || '',
+    reviewed_by: req.reviewedBy || null,
+    reviewed_at: req.reviewedAt || null,
+    updated_at: new Date().toISOString()
+  };
+
+  return await request('plan_requests', {
+    method: 'POST',
+    body: JSON.stringify(row)
+  });
+}
+
+// -----------------------------------------------------------------------------
+// OPERAÇÕES: SUPORTE, ERROS DE ESTUDOS & NOTIFICAÇÕES
+// -----------------------------------------------------------------------------
+async function upsertSupportRequest(req) {
+  if (!isConfigured || !req || !req.id) return null;
+  const row = {
+    id: String(req.id),
+    user_id: req.userId || null,
+    user_name: req.userName || 'Aluno',
+    category: req.category || 'duvida',
+    subject: req.subject || 'Dúvida',
+    message: req.message || '',
+    device_type: req.deviceType || 'PC',
+    status: req.status || 'pending',
+    admin_response: req.adminResponse || '',
+    updated_at: new Date().toISOString()
+  };
+  return await request('support_requests', { method: 'POST', body: JSON.stringify(row) });
+}
+
+async function upsertStudyReport(rep) {
+  if (!isConfigured || !rep || !rep.id) return null;
+  const row = {
+    id: String(rep.id),
+    user_id: rep.userId || null,
+    user_name: rep.userName || 'Aluno',
+    category: rep.category || 'questoes',
+    title: rep.title || 'Problema',
+    description: rep.description || '',
+    status: rep.status || 'pending',
+    admin_note: rep.adminNote || '',
+    updated_at: new Date().toISOString()
+  };
+  return await request('study_reports', { method: 'POST', body: JSON.stringify(row) });
+}
+
+// -----------------------------------------------------------------------------
 // SINCRONIZAÇÃO COMPLETA (DB LOCAL -> NUVEM SUPABASE)
 // -----------------------------------------------------------------------------
 async function syncFromLocalDb(db) {
@@ -209,7 +280,21 @@ async function syncFromLocalDb(db) {
         await upsertTpc(t);
       }
     }
-    console.log('[Supabase] Sincronização inicial concluída com sucesso!');
+    if (Array.isArray(db.planRequests)) {
+      for (const p of db.planRequests) {
+        await upsertPlanRequest(p);
+      }
+    }
+    if (Array.isArray(db.supportRequests)) {
+      for (const s of db.supportRequests) {
+        await upsertSupportRequest(s);
+      }
+    }
+    if (Array.isArray(db.studyReports)) {
+      for (const r of db.studyReports) {
+        await upsertStudyReport(r);
+      }
+    }
     return true;
   } catch (e) {
     console.error('[Supabase Sync Error]', e);
@@ -227,5 +312,10 @@ module.exports = {
   getAllPayments,
   upsertPayment,
   recordAuditLog,
+  getAllPlanRequests,
+  upsertPlanRequest,
+  upsertSupportRequest,
+  upsertStudyReport,
   syncFromLocalDb
 };
+

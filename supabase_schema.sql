@@ -66,7 +66,70 @@ CREATE TABLE IF NOT EXISTS public.payments (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Tabela de Auditoria e Logs de Segurança
+-- 5. Tabela de Solicitações do Plano PRO
+CREATE TABLE IF NOT EXISTS public.plan_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    user_name TEXT NOT NULL,
+    user_email TEXT,
+    user_grade TEXT,
+    plan TEXT DEFAULT 'pro',
+    plan_name TEXT DEFAULT 'Plano ESTUDE+ PRO (R$ 19,90/mês)',
+    amount NUMERIC(10, 2) DEFAULT 19.90,
+    contact_method TEXT DEFAULT 'whatsapp',
+    contact_info TEXT,
+    note TEXT,
+    status TEXT DEFAULT 'pending', -- 'pending', 'in_review', 'approved', 'rejected'
+    status_reason TEXT,
+    reviewed_by TEXT,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Tabela de Suporte e Dúvidas dos Alunos (Todas as plataformas)
+CREATE TABLE IF NOT EXISTS public.support_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    user_name TEXT NOT NULL,
+    category TEXT DEFAULT 'duvida', -- 'duvida', 'suporte', 'plano', 'agenda', 'questoes', 'outro'
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    device_type TEXT DEFAULT 'PC',
+    contact_info TEXT,
+    status TEXT DEFAULT 'pending', -- 'pending', 'in_review', 'answered', 'resolved'
+    admin_response TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Tabela de Erros Reportados em Estudos & Quizzes
+CREATE TABLE IF NOT EXISTS public.study_reports (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    user_name TEXT NOT NULL,
+    category TEXT DEFAULT 'questoes',
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    device_type TEXT DEFAULT 'PC',
+    status TEXT DEFAULT 'pending', -- 'pending', 'resolved', 'dismissed'
+    admin_note TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. Tabela de Notificações do Administrador
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+    id TEXT PRIMARY KEY,
+    type TEXT DEFAULT 'info',
+    category TEXT DEFAULT 'system',
+    title TEXT NOT NULL,
+    message TEXT,
+    status TEXT DEFAULT 'unread', -- 'unread', 'read'
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Tabela de Auditoria e Logs de Segurança
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id TEXT PRIMARY KEY,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
@@ -76,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     details TEXT
 );
 
--- 6. Tabela de Configurações Gerais e Status de Sincronização
+-- 7. Tabela de Configurações Gerais e Status de Sincronização
 CREATE TABLE IF NOT EXISTS public.app_config (
     key TEXT PRIMARY KEY,
     value JSONB NOT NULL,
@@ -88,6 +151,13 @@ CREATE TABLE IF NOT EXISTS public.app_config (
 -- ==============================================================================
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tpcs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.plan_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Permitir leitura de solicitações de planos" ON public.plan_requests FOR SELECT USING (true);
+CREATE POLICY "Permitir gravação de solicitações de planos" ON public.plan_requests FOR ALL USING (true);
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;

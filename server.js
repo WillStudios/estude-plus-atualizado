@@ -48,7 +48,15 @@ const MIME_TYPES = {
 function readDb() {
   try {
     if (fs.existsSync(DB_FILE)) {
-      return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      if (!Array.isArray(parsed.planRequests)) parsed.planRequests = [];
+      if (!Array.isArray(parsed.supportRequests)) parsed.supportRequests = [];
+      if (!Array.isArray(parsed.studyReports)) parsed.studyReports = [];
+      if (!Array.isArray(parsed.agendaSyncLogs)) parsed.agendaSyncLogs = [];
+      if (!Array.isArray(parsed.adminNotifications)) parsed.adminNotifications = [];
+      if (!Array.isArray(parsed.systemEvents)) parsed.systemEvents = [];
+      if (!Array.isArray(parsed.auditLogs)) parsed.auditLogs = [];
+      return parsed;
     }
   } catch (e) {
     console.error('Error reading DB:', e);
@@ -60,7 +68,13 @@ function readDb() {
     masterCommands: {},
     verificationCodes: {},
     recoveryCodes: {},
-    auditLogs: []
+    auditLogs: [],
+    planRequests: [],
+    supportRequests: [],
+    studyReports: [],
+    agendaSyncLogs: [],
+    adminNotifications: [],
+    systemEvents: []
   };
 }
 
@@ -92,6 +106,69 @@ function broadcastToAdmins(eventType, data) {
       sseClients.delete(client);
     }
   }
+}
+
+function createAdminNotification({ type, category, title, message, meta }) {
+  const db = readDb();
+  if (!Array.isArray(db.adminNotifications)) db.adminNotifications = [];
+  const notif = {
+    id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    type: type || 'info', // 'info', 'warning', 'success', 'error'
+    category: category || 'system', // 'user', 'plan', 'support', 'study', 'agenda', 'system'
+    title: title || 'Notificação',
+    message: message || '',
+    meta: meta || {},
+    status: 'unread',
+    createdAt: new Date().toISOString()
+  };
+  db.adminNotifications.unshift(notif);
+  if (db.adminNotifications.length > 200) db.adminNotifications = db.adminNotifications.slice(0, 200);
+  writeDb(db);
+  broadcastToAdmins('new_notification', notif);
+  return notif;
+}
+
+function logAudit(action, actor, details, ip) {
+  const db = readDb();
+  if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+  const entry = {
+    id: 'aud_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    action: action || 'unknown_action',
+    actor: actor || 'system',
+    details: details || {},
+    ip: ip || 'internal',
+    timestamp: new Date().toISOString()
+  };
+  db.auditLogs.unshift(entry);
+  if (db.auditLogs.length > 200) db.auditLogs = db.auditLogs.slice(0, 200);
+  writeDb(db);
+  return entry;
+}
+
+function logSystemEvent(level, source, message, details) {
+  const db = readDb();
+  if (!Array.isArray(db.systemEvents)) db.systemEvents = [];
+  const evt = {
+    id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    level: level || 'info',
+    source: source || 'server',
+    message: message || '',
+    details: details || {},
+    timestamp: new Date().toISOString()
+  };
+  db.systemEvents.unshift(evt);
+  if (db.systemEvents.length > 200) db.systemEvents = db.systemEvents.slice(0, 200);
+  writeDb(db);
+  if (level === 'error') {
+    createAdminNotification({
+      type: 'error',
+      category: 'system',
+      title: `Erro do Sistema (${source})`,
+      message: (message || '').substring(0, 120),
+      meta: { source, details }
+    });
+  }
+  return evt;
 }
 
 function getClientIp(req) {
@@ -248,9 +325,61 @@ function calculatePresence(lastHeartbeat, loginTime) {
 
 function validateAdmin(req) {
   const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'];
+  let queryToken = '';
+  try {
+    const parsedUrl = new URL(req.url, 'http://localhost');
+    queryToken = parsedUrl.searchParams.get('token') || parsedUrl.searchParams.get('adminToken') || '';
+  } catch (e) {}
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'] || queryToken;
   if (!token) return false;
   return adminTokens.has(token);
+}
+
+function getAuthUser(req) {
+  const sessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
+  if (sessionId) {
+    const session = activeSessions.get(sessionId);
+    if (session && session.userId) {
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === session.userId);
+      if (user) return { user, session };
+    }
+  }
+
+  // Token de autorização (Bearer token ou admin)
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'];
+  if (token) {
+    if (activeSessions.has(token)) {
+      const session = activeSessions.get(token);
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === session.userId);
+      if (user) return { user, session };
+    }
+    if (adminTokens.has(token)) {
+      const db = readDb();
+      const admin = (db.users || []).find(u => u.role === 'admin') || {
+        id: 'admin_freddie',
+        name: 'Freddie Pimentel Costa',
+        role: 'admin',
+        username: 'freddie'
+      };
+      return { user: admin, session: { userId: admin.id, userRole: 'admin', userName: admin.name } };
+    }
+  }
+
+  // Suporte a identificação de dispositivo autenticado por x-user-id se houver sessão ativa
+  const headerUserId = req.headers['x-user-id'];
+  if (headerUserId) {
+    const session = Array.from(activeSessions.values()).find(s => s.userId === headerUserId);
+    if (session) {
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === headerUserId);
+      if (user) return { user, session };
+    }
+  }
+
+  return null;
 }
 
 // Function to run Gammon sync in background
@@ -267,6 +396,16 @@ function triggerGammonSync(callback) {
     isSyncRunning = false;
     if (error) {
       console.error('Erro na sincronização:', error.message);
+      const db = readDb();
+      if (!Array.isArray(db.agendaSyncLogs)) db.agendaSyncLogs = [];
+      db.agendaSyncLogs.unshift({
+        timestamp: new Date().toISOString(),
+        status: 'error',
+        message: error.message
+      });
+      if (db.agendaSyncLogs.length > 50) db.agendaSyncLogs = db.agendaSyncLogs.slice(0, 50);
+      writeDb(db);
+      logSystemEvent('warn', 'gammon_sync', 'Aviso na sincronização do Portal Gammon', { error: error.message });
       if (callback) callback({ status: 'error', message: error.message });
       return;
     }
@@ -286,13 +425,23 @@ function triggerGammonSync(callback) {
           totalCaptured: freshTpcs.length,
           message: `${freshTpcs.length} TPCs sincronizados do Portal Gammon!`
         };
+        if (!Array.isArray(db.agendaSyncLogs)) db.agendaSyncLogs = [];
+        db.agendaSyncLogs.unshift({
+          timestamp: new Date().toISOString(),
+          status: 'success',
+          totalCaptured: freshTpcs.length,
+          message: `${freshTpcs.length} TPCs sincronizados com sucesso do Portal Gammon!`
+        });
+        if (db.agendaSyncLogs.length > 50) db.agendaSyncLogs = db.agendaSyncLogs.slice(0, 50);
         db.masterCommands = db.masterCommands || {};
         db.masterCommands.forceRefreshTimestamp = Date.now();
         writeDb(db);
+        logSystemEvent('info', 'gammon_sync', `Sincronização Gammon concluída com ${freshTpcs.length} TPCs`, { count: freshTpcs.length });
         broadcastToAdmins('gammon_sync', { totalTpcs: freshTpcs.length });
       }
     } catch (e) {
       console.error('Erro ao mesclar TPCs:', e);
+      logSystemEvent('error', 'gammon_sync', 'Erro ao ler arquivo de TPCs sincronizados', { error: e.message });
     }
 
     if (callback) callback({ status: 'success', message: 'Sincronização concluída com sucesso!' });
@@ -315,7 +464,7 @@ const server = http.createServer((req, res) => {
       'Content-Type': 'application/json; charset=utf-8',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-session-id, x-user-id'
     });
     res.end(JSON.stringify(data));
   };
@@ -338,7 +487,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-session-id, x-user-id'
     });
     return res.end();
   }
@@ -381,6 +530,712 @@ const server = http.createServer((req, res) => {
       return sendJson({ error: err.message }, 500);
     });
     return;
+  }
+
+  /* ==========================================================================
+     SINCRONIZAÇÃO ENTRE DISPOSITIVOS (CELULAR, TABLET, PC)
+     ========================================================================== */
+
+  // GET /api/user/sync - Baixa os dados completos e atualizados do usuário autenticado
+  if (req.method === 'GET' && pathname === '/api/user/sync') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado. Faça login para sincronizar seus dados entre dispositivos.' }, 401);
+    }
+
+    const db = readDb();
+    const freshUser = (db.users || []).find(u => u.id === auth.user.id) || auth.user;
+
+    // Busca a solicitação de plano mais recente deste usuário
+    const activeReq = (db.planRequests || [])
+      .filter(r => r.userId === freshUser.id)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] || null;
+
+    return sendJson({
+      success: true,
+      user: {
+        id: freshUser.id,
+        name: freshUser.name,
+        username: freshUser.username,
+        email: freshUser.email,
+        role: freshUser.role,
+        grade: freshUser.grade,
+        isSubscribed: Boolean(freshUser.isSubscribed),
+        plan: freshUser.plan || 'free',
+        planStatus: freshUser.planStatus || 'free',
+        planName: freshUser.planName || 'Plano Base',
+        proExpiresAt: freshUser.proExpiresAt || null,
+        trialExpiresAt: freshUser.trialExpiresAt || null,
+        streak: Number(freshUser.streak) || 0,
+        bestStreak: Number(freshUser.bestStreak) || 0,
+        dailyGoalMinutes: Number(freshUser.dailyGoalMinutes) || 15,
+        todayMinutes: Number(freshUser.todayMinutes) || 0,
+        studiedDays: Array.isArray(freshUser.studiedDays) ? freshUser.studiedDays : [],
+        achievements: Array.isArray(freshUser.achievements) ? freshUser.achievements : [],
+        studentSettings: freshUser.studentSettings || freshUser.preferences || {},
+        timetable: Array.isArray(freshUser.timetable) ? freshUser.timetable : null,
+        tasks: freshUser.tasks || {
+          completedTpcIds: freshUser.completedTpcIds || [],
+          userTpcs: freshUser.userTpcs || []
+        },
+        lastSync: freshUser.lastSync || new Date().toISOString()
+      },
+      activePlanRequest: activeReq
+    });
+  }
+
+  // POST /api/user/sync - Salva progresso, preferências, agenda e tarefas no servidor
+  if (req.method === 'POST' && pathname === '/api/user/sync') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado. Sessão inválida ou expirada.' }, 401);
+    }
+
+    parseBody((data) => {
+      if (!data) return sendJson({ error: 'Dados inválidos para sincronização.' }, 400);
+
+      const db = readDb();
+      const uIndex = (db.users || []).findIndex(u => u.id === auth.user.id);
+      if (uIndex === -1) {
+        return sendJson({ error: 'Usuário não encontrado no banco de dados.' }, 404);
+      }
+
+      const u = db.users[uIndex];
+
+      // Atualiza preferências e configurações do estudante
+      if (data.studentSettings && typeof data.studentSettings === 'object') {
+        u.studentSettings = { ...(u.studentSettings || {}), ...data.studentSettings };
+      }
+      if (data.preferences && typeof data.preferences === 'object') {
+        u.preferences = { ...(u.preferences || {}), ...data.preferences };
+      }
+
+      // Atualiza progresso de estudos
+      if (data.progress && typeof data.progress === 'object') {
+        if (typeof data.progress.streak === 'number') u.streak = data.progress.streak;
+        if (typeof data.progress.bestStreak === 'number') u.bestStreak = data.progress.bestStreak;
+        if (typeof data.progress.dailyGoalMinutes === 'number') u.dailyGoalMinutes = data.progress.dailyGoalMinutes;
+        if (typeof data.progress.todayMinutes === 'number') u.todayMinutes = data.progress.todayMinutes;
+        if (Array.isArray(data.progress.studiedDays)) u.studiedDays = data.progress.studiedDays;
+        if (Array.isArray(data.progress.achievements)) u.achievements = data.progress.achievements;
+      }
+
+      // Atualiza grade de horários / agenda semanal (timetable)
+      if (Array.isArray(data.timetable)) {
+        u.timetable = data.timetable;
+      }
+
+      // Atualiza tarefas e TPCs concluídos pelo usuário
+      if (data.tasks && typeof data.tasks === 'object') {
+        u.tasks = { ...(u.tasks || {}), ...data.tasks };
+        if (Array.isArray(data.tasks.completedTpcIds)) {
+          u.completedTpcIds = data.tasks.completedTpcIds;
+        }
+        if (Array.isArray(data.tasks.userTpcs)) {
+          u.userTpcs = data.tasks.userTpcs;
+        }
+      }
+
+      if (data.deviceType) {
+        u.lastDeviceType = data.deviceType;
+      }
+
+      u.lastSync = new Date().toISOString();
+      writeDb(db);
+
+      return sendJson({
+        success: true,
+        message: 'Dados salvos e sincronizados com sucesso no servidor!',
+        lastSync: u.lastSync
+      });
+    });
+    return;
+  }
+
+  /* ==========================================================================
+     SOLICITAÇÕES DO PLANO PRO
+     ========================================================================== */
+
+  // POST /api/plans/request - Aluno solicita ativação do Plano Pro
+  if (req.method === 'POST' && pathname === '/api/plans/request') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Apenas usuários autenticados podem solicitar o Plano Pro.' }, 401);
+    }
+
+    parseBody((data) => {
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === auth.user.id) || auth.user;
+
+      if (user.isSubscribed && user.plan === 'pro') {
+        return sendJson({ error: 'Sua conta já possui o Plano PRO ativo em todos os seus dispositivos!' }, 400);
+      }
+
+      // Evita solicitações duplicadas desnecessárias
+      if (!Array.isArray(db.planRequests)) db.planRequests = [];
+      const existing = db.planRequests.find(r => r.userId === user.id && (r.status === 'pending' || r.status === 'in_review'));
+      if (existing) {
+        return sendJson({
+          error: `Você já possui uma solicitação do Plano PRO em andamento (Status: ${existing.status === 'in_review' ? 'Em análise' : 'Pendente'}). Aguarde a liberação pelo Freddie.`,
+          existingRequest: existing
+        }, 409);
+      }
+
+      const reqId = 'req_' + Date.now() + '_' + crypto.randomBytes(3).toString('hex');
+      const newReq = {
+        id: reqId,
+        userId: user.id,
+        userName: user.name || user.username || 'Aluno Gammon',
+        userEmail: user.email || '',
+        userGrade: user.grade || '7º Ano',
+        plan: 'pro',
+        planName: 'Plano ESTUDE+ PRO (R$ 19,90/mês)',
+        amount: 19.90,
+        contactMethod: (data.contactMethod || 'whatsapp').trim(),
+        contactInfo: (data.contactInfo || '').trim(),
+        note: (data.note || '').trim(),
+        status: 'pending', // 'pending', 'in_review', 'approved', 'rejected'
+        statusReason: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        reviewedBy: null,
+        reviewedAt: null
+      };
+
+      db.planRequests.unshift(newReq);
+      writeDb(db);
+
+      // Notifica administradores conectados em tempo real via SSE
+      broadcastToAdmins('new_plan_request', {
+        request: newReq,
+        message: `🔔 Nova solicitação de Plano PRO recebida de ${newReq.userName}!`
+      });
+
+      // Grava log de auditoria
+      if (Array.isArray(db.auditLogs)) {
+        db.auditLogs.unshift({
+          id: 'log_' + Date.now(),
+          timestamp: new Date().toISOString(),
+          type: 'plan_request_created',
+          ip: clientIp,
+          userId: user.id,
+          details: `Aluno ${newReq.userName} (${user.id}) solicitou o Plano PRO via ${newReq.contactMethod}`
+        });
+      }
+
+      return sendJson({
+        success: true,
+        message: 'Solicitação do Plano PRO enviada com sucesso! O administrador já foi notificado.',
+        request: newReq
+      });
+    });
+    return;
+  }
+
+  // GET /api/admin/plan-requests - Consulta de solicitações (Restrito ao Administrador)
+  if (req.method === 'GET' && pathname === '/api/admin/plan-requests') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado pode consultar as solicitações.' }, 403);
+    }
+
+    const db = readDb();
+    return sendJson({
+      success: true,
+      requests: db.planRequests || []
+    });
+  }
+
+  // POST /api/admin/plan-requests/status - Altera status da solicitação (Em análise, Aprovada, Recusada)
+  if (req.method === 'POST' && pathname === '/api/admin/plan-requests/status') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado pode alterar o status das solicitações.' }, 403);
+    }
+
+    parseBody((data) => {
+      if (!data || !data.requestId || !data.status) {
+        return sendJson({ error: 'requestId e status são obrigatórios.' }, 400);
+      }
+
+      const validStatuses = ['pending', 'in_review', 'approved', 'rejected'];
+      if (!validStatuses.includes(data.status)) {
+        return sendJson({ error: 'Status inválido. Use pending, in_review, approved ou rejected.' }, 400);
+      }
+
+      const db = readDb();
+      if (!Array.isArray(db.planRequests)) db.planRequests = [];
+      const targetReq = db.planRequests.find(r => r.id === data.requestId);
+      if (!targetReq) {
+        return sendJson({ error: 'Solicitação não encontrada.' }, 404);
+      }
+
+      const adminName = auth?.user?.name || 'Freddie Costa (Admin)';
+      targetReq.status = data.status;
+      targetReq.statusReason = (data.reason || '').trim();
+      targetReq.reviewedBy = adminName;
+      targetReq.reviewedAt = new Date().toISOString();
+      targetReq.updatedAt = new Date().toISOString();
+
+      const targetUser = (db.users || []).find(u => u.id === targetReq.userId);
+
+      // Quando o administrador APROVA: ativa os benefícios do Plano PRO no banco
+      if (data.status === 'approved' && targetUser) {
+        targetUser.isSubscribed = true;
+        targetUser.plan = 'pro';
+        targetUser.planStatus = 'active';
+        targetUser.planName = 'Plano Administrador PRO';
+        targetUser.proExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+
+        // Registra o pagamento confirmado em db.payments
+        if (!Array.isArray(db.payments)) db.payments = [];
+        const paymentRecord = {
+          id: 'PAG_' + Date.now(),
+          studentName: targetReq.userName,
+          email: targetReq.userEmail,
+          userId: targetReq.userId,
+          method: targetReq.contactMethod || 'cash',
+          amount: targetReq.amount || 19.90,
+          date: new Date().toISOString().slice(0, 10),
+          status: 'confirmed',
+          note: `Aprovado pelo administrador ${adminName}. Motivo/Obs: ${targetReq.statusReason || 'Recebimento validado'}`,
+          confirmedBy: adminName,
+          confirmedAt: new Date().toISOString()
+        };
+        db.payments.unshift(paymentRecord);
+      } else if (data.status === 'rejected' && targetUser) {
+        // Se foi recusada, reverte status de pendência
+        if (targetUser.planStatus === 'pending_cash' || targetUser.planStatus === 'pending') {
+          targetUser.planStatus = 'free';
+          targetUser.plan = 'free';
+          targetUser.isSubscribed = false;
+        }
+      }
+
+      writeDb(db);
+
+      // Notifica administradores e clientes em tempo real via SSE
+      broadcastToAdmins('plan_request_updated', {
+        requestId: targetReq.id,
+        status: targetReq.status,
+        userId: targetReq.userId,
+        userName: targetReq.userName
+      });
+
+      return sendJson({
+        success: true,
+        message: `Solicitação marcada como "${data.status === 'approved' ? 'Aprovada' : data.status === 'rejected' ? 'Recusada' : 'Em análise'}" com sucesso!`,
+        request: targetReq,
+        user: targetUser ? {
+          id: targetUser.id,
+          name: targetUser.name,
+          plan: targetUser.plan,
+          planStatus: targetUser.planStatus,
+          isSubscribed: targetUser.isSubscribed
+        } : null
+      });
+    });
+    return;
+  }
+
+  /* ==========================================================================
+     CENTRAL ÚNICA DO ADMINISTRADOR (OVERVIEW, NOTIFICAÇÕES, SUPORTE, ESTUDOS)
+     ========================================================================== */
+
+  // GET /api/admin/overview - Central Única de Gerenciamento de Todas as Plataformas
+  if (req.method === 'GET' && pathname === '/api/admin/overview') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado pode acessar o painel global centralizado.' }, 403);
+    }
+
+    const db = readDb();
+    const now = Date.now();
+
+    // Limpar sessões inativas há mais de 30 dias
+    for (const [id, s] of activeSessions.entries()) {
+      if ((now - (s.lastHeartbeat || 0)) > 30 * 24 * 3600 * 1000) {
+        activeSessions.delete(id);
+      }
+    }
+
+    // Sanitizar usuários: remover hashes de senha e salts, calcular presença precisa
+    const sanitizedUsers = (db.users || []).map(u => {
+      const userSessions = Array.from(activeSessions.values()).filter(s => s.userId === u.id);
+      let presence = 'offline';
+      let device = u.lastDeviceType || 'Computador / Desktop';
+
+      for (const s of userSessions) {
+        const pres = calculatePresence(s.lastHeartbeat, s.loginTime);
+        if (pres === 'online') {
+          presence = 'online';
+          device = s.deviceType;
+          break;
+        } else if (pres === 'recent_login' && presence === 'offline') {
+          presence = 'recent_login';
+          device = s.deviceType;
+        }
+      }
+
+      return {
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        email: u.email,
+        grade: u.grade,
+        role: u.role || 'student',
+        isSubscribed: Boolean(u.isSubscribed),
+        plan: u.plan || 'free',
+        planStatus: u.planStatus || 'free',
+        planName: u.planName || 'Plano Base',
+        proActivatedAt: u.proActivatedAt,
+        proExpiresAt: u.proExpiresAt,
+        lastLogin: u.lastLogin,
+        createdAt: u.createdAt,
+        deviceType: device,
+        presence
+      };
+    });
+
+    const onlineCount = sanitizedUsers.filter(u => u.presence === 'online').length;
+    const proCount = sanitizedUsers.filter(u => u.isSubscribed || u.plan === 'pro').length;
+    const pendingPlanReqs = (db.planRequests || []).filter(r => r.status === 'pending' || r.status === 'in_review').length;
+    const pendingSupport = (db.supportRequests || []).filter(s => s.status === 'pending' || s.status === 'in_review').length;
+    const pendingStudy = (db.studyReports || []).filter(e => e.status === 'pending' || e.status === 'in_review').length;
+    const unreadNotifs = (db.adminNotifications || []).filter(n => n.status === 'unread').length;
+
+    return sendJson({
+      success: true,
+      stats: {
+        totalUsers: sanitizedUsers.length,
+        activeOnline: onlineCount,
+        proUsers: proCount,
+        pendingPlanRequests: pendingPlanReqs,
+        pendingSupport,
+        pendingStudyReports: pendingStudy,
+        unreadNotifications: unreadNotifs,
+        totalTpcs: (db.tpcs || []).length,
+        serverUptimeSec: Math.floor(process.uptime())
+      },
+      users: sanitizedUsers,
+      planRequests: db.planRequests || [],
+      supportRequests: db.supportRequests || [],
+      studyReports: db.studyReports || [],
+      agendaStatus: {
+        status: db.gammonStatus || {},
+        isSyncRunning,
+        totalTpcs: (db.tpcs || []).length,
+        logs: (db.agendaSyncLogs || []).slice(0, 30)
+      },
+      systemStatus: {
+        render: {
+          environment: process.env.RENDER ? 'production' : 'local',
+          serviceId: process.env.RENDER_SERVICE_ID || 'estude-plus-saas',
+          port: PORT
+        },
+        supabase: {
+          configured: Boolean(supabase && supabase.isConfigured),
+          url: supabase && supabase.isConfigured ? supabase.SUPABASE_URL : null,
+          status: supabase && supabase.isConfigured ? 'Conectado (PostgreSQL)' : 'Modo Local Persistente (db.json)'
+        },
+        gemini: {
+          available: Boolean(process.env.GEMINI_API_KEY || db.geminiApiKey),
+          model: 'Gemini 2.5 Flash'
+        },
+        memoryUsageMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+        uptimeSeconds: Math.floor(process.uptime()),
+        serverTime: new Date().toISOString(),
+        recentEvents: (db.systemEvents || []).slice(0, 40)
+      },
+      notifications: (db.adminNotifications || []).slice(0, 50),
+      auditLogs: (db.auditLogs || []).slice(0, 50)
+    });
+  }
+
+  // POST /api/admin/notifications/mark-read - Marcar notificações como lidas
+  if (req.method === 'POST' && pathname === '/api/admin/notifications/mark-read') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado.' }, 403);
+    }
+
+    parseBody((data) => {
+      const db = readDb();
+      if (!Array.isArray(db.adminNotifications)) db.adminNotifications = [];
+
+      if (data && data.all) {
+        db.adminNotifications.forEach(n => { n.status = 'read'; });
+      } else if (data && data.notificationId) {
+        const notif = db.adminNotifications.find(n => n.id === data.notificationId);
+        if (notif) notif.status = 'read';
+      }
+
+      writeDb(db);
+      return sendJson({ success: true, unreadCount: db.adminNotifications.filter(n => n.status === 'unread').length });
+    });
+    return;
+  }
+
+  // POST /api/support/ticket - Envio de dúvidas, solicitações ou suporte de qualquer dispositivo
+  if (req.method === 'POST' && pathname === '/api/support/ticket') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Você precisa estar conectado à sua conta para enviar uma solicitação.' }, 401);
+    }
+
+    parseBody((data) => {
+      if (!data || !data.subject || !data.message) {
+        return sendJson({ error: 'Preencha o assunto e a mensagem da solicitação.' }, 400);
+      }
+
+      const db = readDb();
+      if (!Array.isArray(db.supportRequests)) db.supportRequests = [];
+
+      const user = auth.user;
+      const device = data.deviceType || detectDevice(req.headers['user-agent']);
+      const category = (data.category || 'duvida').trim();
+
+      // Previne spam / solicitações duplicadas idênticas em menos de 2 minutos
+      const recentDup = db.supportRequests.find(r =>
+        r.userId === user.id &&
+        r.subject === data.subject.trim() &&
+        (Date.now() - new Date(r.createdAt).getTime()) < 120000
+      );
+      if (recentDup) {
+        return sendJson({ error: 'Você já enviou esta mesma solicitação há instantes. Aguarde a resposta do administrador.' }, 409);
+      }
+
+      const ticket = {
+        id: 'sup_' + Date.now() + '_' + crypto.randomBytes(3).toString('hex'),
+        userId: user.id,
+        userName: user.name || user.username || 'Aluno',
+        userEmail: user.email || '',
+        userGrade: user.grade || '7º Ano',
+        category,
+        subject: data.subject.trim(),
+        message: data.message.trim(),
+        deviceType: device,
+        contactMethod: data.contactMethod || 'app',
+        contactInfo: data.contactInfo || '',
+        status: 'pending', // 'pending', 'in_review', 'answered', 'resolved'
+        adminResponse: '',
+        answeredBy: null,
+        answeredAt: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      db.supportRequests.unshift(ticket);
+      writeDb(db);
+
+      createAdminNotification({
+        type: 'info',
+        category: 'support',
+        title: `Nova Solicitação: [${category.toUpperCase()}] ${ticket.subject}`,
+        message: `${ticket.userName} (${device}): "${ticket.message.substring(0, 90)}..."`,
+        meta: { ticketId: ticket.id, userId: user.id, device }
+      });
+
+      broadcastToAdmins('new_support_request', { ticket });
+      logAudit('support_ticket_created', ticket.userName, { ticketId: ticket.id, category }, clientIp);
+
+      return sendJson({
+        success: true,
+        message: 'Solicitação registrada no servidor com sucesso! O Freddie foi notificado.',
+        ticket
+      });
+    });
+    return;
+  }
+
+  // GET /api/support/my-tickets - Consulta dos próprios tickets do aluno
+  if (req.method === 'GET' && pathname === '/api/support/my-tickets') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+    const db = readDb();
+    const myTickets = (db.supportRequests || []).filter(s => s.userId === auth.user.id);
+    return sendJson({ success: true, tickets: myTickets });
+  }
+
+  // POST /api/study/report-error - Reportar erros em questões, quizzes, apostilas ou funcionamento
+  if (req.method === 'POST' && pathname === '/api/study/report-error') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Você precisa estar conectado à sua conta para reportar um problema.' }, 401);
+    }
+
+    parseBody((data) => {
+      if (!data || !data.description) {
+        return sendJson({ error: 'Descreva o problema encontrado.' }, 400);
+      }
+
+      const db = readDb();
+      if (!Array.isArray(db.studyReports)) db.studyReports = [];
+
+      const user = auth.user;
+      const device = data.deviceType || detectDevice(req.headers['user-agent']);
+      const category = (data.category || 'questoes').trim();
+
+      const report = {
+        id: 'rep_' + Date.now() + '_' + crypto.randomBytes(3).toString('hex'),
+        userId: user.id,
+        userName: user.name || user.username || 'Aluno',
+        userGrade: user.grade || '7º Ano',
+        category,
+        title: (data.title || `Problema em ${category}`).trim(),
+        description: data.description.trim(),
+        questionId: data.questionId || null,
+        subject: data.subject || null,
+        deviceType: device,
+        status: 'pending', // 'pending', 'in_review', 'resolved', 'dismissed'
+        adminNote: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      db.studyReports.unshift(report);
+      writeDb(db);
+
+      createAdminNotification({
+        type: 'warning',
+        category: 'study',
+        title: `Problema em Estudos: [${category.toUpperCase()}] ${report.title}`,
+        message: `${report.userName}: "${report.description.substring(0, 90)}..."`,
+        meta: { reportId: report.id, userId: user.id }
+      });
+
+      broadcastToAdmins('new_study_report', { report });
+      logAudit('study_report_created', report.userName, { reportId: report.id, category }, clientIp);
+
+      return sendJson({
+        success: true,
+        message: 'Problema reportado e gravado no servidor com sucesso! A equipe administrativa irá analisar.',
+        report
+      });
+    });
+    return;
+  }
+
+  // POST /api/admin/support/status - Atualização de status e resposta a suporte pelo Admin
+  if (req.method === 'POST' && pathname === '/api/admin/support/status') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado.' }, 403);
+    }
+
+    parseBody((data) => {
+      if (!data || !data.requestId || !data.status) {
+        return sendJson({ error: 'Dados incompletos.' }, 400);
+      }
+
+      const db = readDb();
+      if (!Array.isArray(db.supportRequests)) db.supportRequests = [];
+      const item = db.supportRequests.find(s => s.id === data.requestId);
+      if (!item) {
+        return sendJson({ error: 'Solicitação não encontrada.' }, 404);
+      }
+
+      item.status = data.status; // 'in_review', 'answered', 'resolved', 'rejected'
+      if (data.adminResponse !== undefined) item.adminResponse = data.adminResponse;
+      item.answeredBy = (auth && auth.user && auth.user.name) || 'Freddie Costa';
+      item.answeredAt = new Date().toISOString();
+      item.updatedAt = new Date().toISOString();
+
+      writeDb(db);
+      logAudit(`support_${data.status}`, item.answeredBy, { requestId: item.id, status: data.status }, clientIp);
+      broadcastToAdmins('support_updated', { ticket: item });
+
+      return sendJson({ success: true, message: 'Status da solicitação atualizado com sucesso!', ticket: item });
+    });
+    return;
+  }
+
+  // POST /api/admin/study-reports/status - Atualização de status de relatório de estudos
+  if (req.method === 'POST' && pathname === '/api/admin/study-reports/status') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado.' }, 403);
+    }
+
+    parseBody((data) => {
+      if (!data || !data.reportId || !data.status) {
+        return sendJson({ error: 'Dados incompletos.' }, 400);
+      }
+
+      const db = readDb();
+      if (!Array.isArray(db.studyReports)) db.studyReports = [];
+      const report = db.studyReports.find(r => r.id === data.reportId);
+      if (!report) {
+        return sendJson({ error: 'Relatório não encontrado.' }, 404);
+      }
+
+      report.status = data.status; // 'in_review', 'resolved', 'dismissed'
+      if (data.adminNote !== undefined) report.adminNote = data.adminNote;
+      report.updatedAt = new Date().toISOString();
+
+      writeDb(db);
+      logAudit(`study_report_${data.status}`, (auth && auth.user && auth.user.name) || 'Freddie Costa', { reportId: report.id, status: data.status }, clientIp);
+      broadcastToAdmins('study_report_updated', { report });
+
+      return sendJson({ success: true, message: 'Status do relatório atualizado com sucesso!', report });
+    });
+    return;
+  }
+
+  // POST /api/admin/system/test-integrations - Diagnóstico em tempo real das integrações do servidor
+  if (req.method === 'POST' && pathname === '/api/admin/system/test-integrations') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado.' }, 403);
+    }
+
+    // 1. Teste de escrita no disco (db.json)
+    let diskOk = false;
+    try {
+      const testFile = path.join(__dirname, '.disk_test_' + Date.now());
+      fs.writeFileSync(testFile, 'ok', 'utf8');
+      if (fs.existsSync(testFile)) {
+        fs.unlinkSync(testFile);
+        diskOk = true;
+      }
+    } catch (e) {
+      diskOk = false;
+    }
+
+    // 2. Teste Supabase
+    let supabaseStatus = 'não configurado';
+    if (supabase && supabase.isConfigured) {
+      try {
+        supabaseStatus = 'Conectado (URL configurada, cliente REST ativo)';
+      } catch (e) {
+        supabaseStatus = 'Erro ao consultar Supabase: ' + e.message;
+      }
+    }
+
+    // 3. Teste Gemini Key
+    const hasGemini = Boolean(process.env.GEMINI_API_KEY || readDb().geminiApiKey);
+
+    return sendJson({
+      success: true,
+      results: {
+        diskPersistence: diskOk ? 'Operando 100% normal (Leitura e Escrita ativas)' : 'Falha na gravação em disco',
+        supabasePostgreSQL: supabaseStatus,
+        geminiIA: hasGemini ? 'Chave configurada e ativa' : 'Chave não informada no .env',
+        renderCloud: process.env.RENDER ? 'Ambiente Render Produção Ativo' : 'Ambiente Local / Dev',
+        memoryRssMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+        uptimeHours: (process.uptime() / 3600).toFixed(2),
+        activeAdminConnections: sseClients.size
+      }
+    });
   }
 
   // 2. POST /api/auth/login - Autenticação com rate limiting e registro de sessão

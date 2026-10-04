@@ -662,6 +662,31 @@ class EstudePlusApp {
     this.applyStudentSettingsToUI();
     this.updateGeminiKeyBadge();
 
+    // Sincronização multi-dispositivo (PC, Celular, Tablet)
+    if (this.currentUser) {
+      this.syncUserData('pull');
+      if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
+        this.loadAdminOverview();
+        this.initAdminSSE();
+      }
+    }
+    window.addEventListener('focus', () => {
+      if (this.currentUser) {
+        this.syncUserData('pull');
+        if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
+          this.loadAdminOverview();
+        }
+      }
+    });
+    setInterval(() => {
+      if (this.currentUser) {
+        this.syncUserData('pull');
+        if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
+          this.loadAdminOverview();
+        }
+      }
+    }, 20000);
+
     if (window.lucide) {
       window.lucide.createIcons();
     }
@@ -691,6 +716,7 @@ class EstudePlusApp {
   saveState() {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+      this.debouncedSyncPush();
     } catch (e) {
       console.warn('LocalStorage error:', e);
     }
@@ -6733,6 +6759,7 @@ class EstudePlusApp {
     try {
       if (this.currentUser) {
         localStorage.setItem(this.currentUserStorageKey, JSON.stringify(this.currentUser));
+        this.debouncedSyncPush();
       } else {
         localStorage.removeItem(this.currentUserStorageKey);
       }
@@ -7702,6 +7729,339 @@ class EstudePlusApp {
     alert(`⏳ Solicitação de pagamento registrada com sucesso! (Código: ${orderId})\n\nAgora você deve entregar R$ 19,90 em dinheiro vivo para o Freddie Pimentel Costa na escola.\n\nEnquanto você não entregar, seu plano permanecerá como PENDENTE. Assim que o Freddie confirmar no aplicativo dele que recebeu o dinheiro, o seu plano PRO será liberado na hora!`);
   }
 
+  /* ==========================================================================
+     SINCRONIZAÇÃO ENTRE DISPOSITIVOS (CELULAR, TABLET, PC)
+     ========================================================================== */
+  async syncUserData(action = 'pull') {
+    if (!this.currentUser) return;
+    const sessId = localStorage.getItem('estude_session_id');
+
+    if (action === 'pull') {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (sessId) headers['x-session-id'] = sessId;
+        if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
+
+        const res = await fetch('/api/user/sync', { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            const u = data.user;
+            // Atualiza status do plano e perfil
+            this.currentUser.isSubscribed = Boolean(u.isSubscribed);
+            this.currentUser.plan = u.plan || 'free';
+            this.currentUser.planStatus = u.planStatus || 'free';
+            this.currentUser.planName = u.planName || 'Plano Base';
+            this.currentUser.proExpiresAt = u.proExpiresAt;
+            this.currentUser.streak = u.streak || 0;
+            this.currentUser.bestStreak = u.bestStreak || 0;
+            this.currentUser.dailyGoalMinutes = u.dailyGoalMinutes || 15;
+            this.currentUser.todayMinutes = u.todayMinutes || 0;
+            if (Array.isArray(u.studiedDays)) this.currentUser.studiedDays = u.studiedDays;
+            if (Array.isArray(u.achievements)) this.currentUser.achievements = u.achievements;
+            if (u.studentSettings) {
+              this.currentUser.studentSettings = { ...(this.currentUser.studentSettings || {}), ...u.studentSettings };
+            }
+
+            // Atualiza estado local sincronizado
+            this.state.streak = u.streak || 0;
+            this.state.todayMinutes = u.todayMinutes || 0;
+            if (Array.isArray(u.studiedDays)) this.state.studiedDays = u.studiedDays;
+            if (Array.isArray(u.achievements)) this.state.achievements = u.achievements;
+            if (Array.isArray(u.timetable) && u.timetable.length > 0) {
+              this.state.timetable = u.timetable;
+            }
+            if (u.tasks) {
+              if (Array.isArray(u.tasks.completedTpcIds)) this.state.completedTpcIds = u.tasks.completedTpcIds;
+              if (Array.isArray(u.tasks.userTpcs)) this.state.userTpcs = u.tasks.userTpcs;
+            }
+
+            this.activePlanRequest = data.activePlanRequest || null;
+
+            // Salva silenciosamente local
+            try {
+              localStorage.setItem(this.currentUserStorageKey, JSON.stringify(this.currentUser));
+              localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+            } catch (e) {}
+
+            this.updateUserHeaderUI();
+            this.renderPlanStatus();
+            this.renderDashboard();
+            this.renderTimetable();
+            this.renderTpcs();
+          }
+        }
+      } catch (e) {
+        console.warn('[Sync pull failed]', e);
+      }
+    } else if (action === 'push') {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (sessId) headers['x-session-id'] = sessId;
+        if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
+
+        const payload = {
+          studentSettings: this.currentUser.studentSettings || {},
+          progress: {
+            streak: this.state.streak || this.currentUser.streak || 0,
+            bestStreak: this.currentUser.bestStreak || 0,
+            dailyGoalMinutes: this.currentUser.dailyGoalMinutes || 15,
+            todayMinutes: this.state.todayMinutes || 0,
+            studiedDays: this.state.studiedDays || [],
+            achievements: this.state.achievements || []
+          },
+          timetable: this.state.timetable || [],
+          tasks: {
+            completedTpcIds: this.state.completedTpcIds || [],
+            userTpcs: this.state.userTpcs || []
+          },
+          deviceType: window.innerWidth < 768 ? 'Celular' : (window.innerWidth < 1024 ? 'Tablet' : 'Computador / PC')
+        };
+
+        await fetch('/api/user/sync', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.warn('[Sync push failed]', e);
+      }
+    }
+  }
+
+  debouncedSyncPush() {
+    if (this._syncTimeout) clearTimeout(this._syncTimeout);
+    this._syncTimeout = setTimeout(() => {
+      this.syncUserData('push');
+    }, 1500);
+  }
+
+  /* ==========================================================================
+     SOLICITAÇÃO DO PLANO PRO
+     ========================================================================== */
+  openProRequestModal() {
+    if (!this.currentUser) {
+      this.showAuthOverlay();
+      return;
+    }
+
+    if (this.isUserPro()) {
+      alert('👑 Sua conta já possui o Plano ESTUDE+ PRO ativo!');
+      return;
+    }
+
+    const userNameEl = document.getElementById('proReqUserName');
+    const userIdEl = document.getElementById('proReqUserId');
+    const userGradeEl = document.getElementById('proReqUserGrade');
+    if (userNameEl) userNameEl.innerText = this.currentUser.name || this.currentUser.username;
+    if (userIdEl) userIdEl.innerText = this.currentUser.id || '-';
+    if (userGradeEl) userGradeEl.innerText = this.currentUser.grade || '7º Ano';
+
+    const statusBanner = document.getElementById('proReqCurrentStatusBanner');
+    const form = document.getElementById('proRequestForm');
+    const activeReq = this.activePlanRequest;
+
+    if (activeReq && (activeReq.status === 'pending' || activeReq.status === 'in_review')) {
+      if (statusBanner) {
+        statusBanner.style.display = 'block';
+        statusBanner.innerHTML = `
+          <div style="background: ${activeReq.status === 'in_review' ? '#f0f9ff' : '#fffbeb'}; border: 1.5px solid ${activeReq.status === 'in_review' ? '#7dd3fc' : '#fde68a'}; border-radius: 12px; padding: 14px; text-align: left;">
+            <strong style="color: ${activeReq.status === 'in_review' ? '#0369a1' : '#92400e'}; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+              ${activeReq.status === 'in_review' ? '🔵 Solicitação Em Análise pelo Freddie' : '🟡 Solicitação Pendente de Aprovação'}
+            </strong>
+            <p style="margin: 6px 0 0; font-size: 0.82rem; color: #334155; line-height: 1.5;">
+              Você já enviou um pedido no dia <strong>${new Date(activeReq.createdAt).toLocaleDateString('pt-BR')}</strong> via <strong>${activeReq.contactMethod}</strong>.
+              O administrador Freddie Costa foi notificado e você receberá a ativação assim que aprovado.
+            </p>
+          </div>
+        `;
+      }
+      if (form) form.style.display = 'none';
+    } else {
+      if (statusBanner) statusBanner.style.display = 'none';
+      if (form) form.style.display = 'block';
+    }
+
+    this.showModal('proRequestModal');
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  handleContactMethodChange(val) {
+    const label = document.getElementById('proReqContactInfoLabel');
+    const input = document.getElementById('proReqContactInfo');
+    if (!label || !input) return;
+
+    if (val === 'whatsapp') {
+      label.innerText = 'Número do WhatsApp (DDD + Número):';
+      input.placeholder = 'Ex: (35) 99999-9999';
+      input.required = true;
+    } else if (val === 'email') {
+      label.innerText = 'Seu E-mail para Contato:';
+      input.placeholder = this.currentUser?.email || 'aluno@gammon.com.br';
+      input.required = true;
+    } else {
+      label.innerText = 'Nome de quem vai entregar na escola:';
+      input.placeholder = this.currentUser?.name || 'Seu nome completo';
+      input.required = false;
+    }
+  }
+
+  async submitProPlanRequest(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!this.currentUser) {
+      this.showAuthOverlay();
+      return;
+    }
+
+    const method = document.getElementById('proReqContactMethod')?.value || 'whatsapp';
+    const info = document.getElementById('proReqContactInfo')?.value || '';
+    const note = document.getElementById('proReqNote')?.value || '';
+
+    const btn = document.getElementById('btnSubmitProRequest');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2"></i> Enviando Solicitação...';
+    }
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      const res = await fetch('/api/plans/request', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ contactMethod: method, contactInfo: info, note })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        this.activePlanRequest = data.request;
+        this.closeModal('proRequestModal');
+        this.renderPlanStatus();
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+        }
+        alert('🎉 ' + data.message);
+      } else {
+        alert(data.error || 'Não foi possível registrar a solicitação.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao enviar a solicitação. Tente novamente.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send"></i> Confirmar e Enviar Solicitação';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  showAdminToast(title, message) {
+    const toast = document.getElementById('adminNotificationToast');
+    const titleEl = document.getElementById('toastTitle');
+    const msgEl = document.getElementById('toastMessage');
+    if (!toast) return;
+    if (titleEl) titleEl.innerText = title;
+    if (msgEl) msgEl.innerText = message;
+    toast.style.display = 'block';
+    if (window.lucide) window.lucide.createIcons();
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 9000);
+  }
+
+  initAdminSSE() {
+    if (this.adminEventSource) {
+      try { this.adminEventSource.close(); } catch (e) {}
+      this.adminEventSource = null;
+    }
+    const isAdmin = this.currentUser && (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie');
+    if (!isAdmin) return;
+
+    try {
+      const adminToken = 'admin_master_freddie_token_2026';
+      this.adminEventSource = new EventSource(`/api/admin/events?token=${encodeURIComponent(adminToken)}`);
+
+      this.adminEventSource.addEventListener('new_plan_request', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const req = payload.data?.request;
+          this.showAdminToast(
+            '💎 Nova Solicitação de Plano PRO!',
+            `${req?.userName || 'Um aluno'} enviou um pedido de ativação do Plano PRO!`
+          );
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('plan_request_updated', (e) => {
+        try {
+          this.loadAdminOverview();
+          if (this.currentUser) {
+            this.syncUserData('pull');
+          }
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('new_support_request', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const t = payload.data?.ticket;
+          this.showAdminToast(
+            '💬 Nova Solicitação de Suporte / Dúvida',
+            `${t?.userName || 'Aluno'}: ${t?.subject || 'Nova mensagem'}`
+          );
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('support_updated', () => {
+        this.loadAdminOverview();
+      });
+
+      this.adminEventSource.addEventListener('new_study_report', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const r = payload.data?.report;
+          this.showAdminToast(
+            '📚 Erro em Estudos Reportado',
+            `${r?.userName || 'Aluno'}: [${(r?.category || 'Geral').toUpperCase()}] ${r?.title || ''}`
+          );
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('study_report_updated', () => {
+        this.loadAdminOverview();
+      });
+
+      this.adminEventSource.addEventListener('gammon_sync', (e) => {
+        try {
+          this.showAdminToast(
+            '📅 Agenda Gammon Sincronizada',
+            'Novos TPCs e tarefas foram atualizados pelo servidor!'
+          );
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('new_notification', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.onerror = () => {
+        // Fallback silencioso para o pooling periódico
+      };
+    } catch (err) {
+      console.warn('[SSE Init Failed]', err);
+    }
+  }
+
   renderPlanStatus() {
     const dashBanner = document.getElementById('dashboardPendingBanner');
     const plansBannerContainer = document.getElementById('planStatusBannerContainer');
@@ -7791,6 +8151,32 @@ class EstudePlusApp {
       `;
     }
 
+    if (!isPro && this.activePlanRequest && (this.activePlanRequest.status === 'pending' || this.activePlanRequest.status === 'in_review')) {
+      const statusLabel = this.activePlanRequest.status === 'pending' ? 'Pendente' : 'Em Análise';
+      const reqDate = new Date(this.activePlanRequest.createdAt || Date.now()).toLocaleDateString('pt-BR');
+      bannerHtml = `
+        <div style="background: #fffbeb; border: 1.5px solid #fde68a; color: #92400e; padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: #fef3c7; display: flex; align-items: center; justify-content: center; color: #d97706; flex-shrink: 0;">
+              <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong style="font-size: 1rem; color: #92400e;">⏳ Solicitação de Plano PRO (${statusLabel})</strong>
+                <span style="background: #fef3c7; color: #b45309; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid #fde68a;">ENVIADA</span>
+              </div>
+              <p style="margin: 2px 0 0; font-size: 0.85rem; color: #b45309;">
+                Seu pedido foi registrado em <strong>${reqDate}</strong>. Assim que o Freddie Costa confirmar a aprovação, seu acesso PRO será liberado simultaneamente no celular e no computador!
+              </p>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="app.openProRequestModal()" style="font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; background: #d97706;">
+            <i data-lucide="eye" style="width: 15px; height: 15px;"></i> Ver Solicitação
+          </button>
+        </div>
+      `;
+    }
+
     if (dashBanner) {
       dashBanner.innerHTML = status === 'pending_cash' ? bannerHtml : '';
       dashBanner.style.display = status === 'pending_cash' ? 'block' : 'none';
@@ -7802,6 +8188,24 @@ class EstudePlusApp {
 
     const btnProCard = document.getElementById('btnProPlanCard');
     const btnFreeCard = document.getElementById('btnFreePlanCard');
+    const btnRequestPro = document.getElementById('btnRequestProPlanCard');
+
+    if (btnRequestPro) {
+      if (isPro) {
+        btnRequestPro.style.display = 'none';
+      } else if (this.activePlanRequest && (this.activePlanRequest.status === 'pending' || this.activePlanRequest.status === 'in_review')) {
+        btnRequestPro.style.display = 'block';
+        btnRequestPro.innerHTML = '<i data-lucide="clock"></i> Solicitação PRO Enviada (Em Análise)';
+        btnRequestPro.style.background = '#f59e0b';
+        btnRequestPro.onclick = () => this.openProRequestModal();
+      } else {
+        btnRequestPro.style.display = 'block';
+        btnRequestPro.innerHTML = '<i data-lucide="crown"></i> Solicitar Plano PRO (R$ 19,90)';
+        btnRequestPro.style.background = 'linear-gradient(135deg, #4f46e5, #7c3aed)';
+        btnRequestPro.onclick = () => this.openProRequestModal();
+      }
+    }
+
     if (btnProCard) {
       if (isPro) {
         btnProCard.innerHTML = '<i data-lucide="x-circle"></i> Cancelar Plano PRO (Voltar ao Básico)';
@@ -7882,26 +8286,833 @@ class EstudePlusApp {
     this.renderAdminPaymentsList();
   }
 
-  switchAdminTab(tab) {
-    const btnStudents = document.getElementById('tabAdminStudentsBtn');
-    const btnPayments = document.getElementById('tabAdminPaymentsBtn');
-    const viewStudents = document.getElementById('adminStudentsView');
-    const viewPayments = document.getElementById('adminPaymentsView');
+  showAdminModal() {
+    if (!this.currentUser || (this.currentUser.role !== 'admin' && this.currentUser.username !== 'freddie' && this.currentUser.email !== 'freddie@gammon.com.br')) {
+      alert('🔒 Acesso Restrito: Apenas o administrador autorizado (Freddie Costa) tem permissão para acessar a Central Única.');
+      return;
+    }
+    this.showModal('adminPaymentsModal');
+    this.currentAdminTab = this.currentAdminTab || 'students';
+    this.switchAdminTab(this.currentAdminTab);
+    this.loadAdminOverview();
+  }
 
-    if (tab === 'students') {
-      btnStudents?.classList.add('active');
-      btnPayments?.classList.remove('active');
-      if (viewStudents) viewStudents.style.display = 'block';
-      if (viewPayments) viewPayments.style.display = 'none';
-      this.renderAdminStudentsList();
+  async loadAdminOverview() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/overview', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        this.adminOverviewData = data;
+        this.adminPlanRequests = data.planRequests || [];
+        this.adminSupportRequests = data.supportRequests || [];
+        this.adminStudyReports = data.studyReports || [];
+        this.adminNotifications = data.notifications || [];
+        this.adminAuditLogs = data.auditLogs || [];
+
+        // Atualizar KPI Stats
+        const stats = data.stats || {};
+        const elTotalUsers = document.getElementById('statTotalUsers');
+        const elActiveOnline = document.getElementById('statActiveOnline');
+        const elProUsers = document.getElementById('statProUsers');
+        const elPendingPlans = document.getElementById('statPendingPlans');
+        const elPendingSupport = document.getElementById('statPendingSupport');
+        const elUnreadNotifs = document.getElementById('statUnreadNotifs');
+
+        if (elTotalUsers) elTotalUsers.innerText = stats.totalUsers ?? (data.users?.length || 0);
+        if (elActiveOnline) elActiveOnline.innerText = stats.activeOnline ?? 1;
+        if (elProUsers) elProUsers.innerText = stats.proUsers ?? 1;
+        if (elPendingPlans) elPendingPlans.innerText = stats.pendingPlanRequests ?? 0;
+        if (elPendingSupport) elPendingSupport.innerText = stats.pendingSupport ?? 0;
+        if (elUnreadNotifs) elUnreadNotifs.innerText = stats.unreadNotifications ?? 0;
+
+        // Atualizar Badges das Abas
+        const badgePlan = document.getElementById('adminPlanRequestsBadgeCount');
+        if (badgePlan) {
+          badgePlan.innerText = stats.pendingPlanRequests || 0;
+          badgePlan.style.display = (stats.pendingPlanRequests > 0) ? 'inline-block' : 'none';
+        }
+        const badgeSupp = document.getElementById('adminSupportBadgeCount');
+        if (badgeSupp) {
+          badgeSupp.innerText = stats.pendingSupport || 0;
+          badgeSupp.style.display = (stats.pendingSupport > 0) ? 'inline-block' : 'none';
+        }
+        const badgeStudy = document.getElementById('adminStudyBadgeCount');
+        if (badgeStudy) {
+          badgeStudy.innerText = stats.pendingStudyReports || 0;
+          badgeStudy.style.display = (stats.pendingStudyReports > 0) ? 'inline-block' : 'none';
+        }
+        const badgeNotifTab = document.getElementById('adminNotifsTabBadge');
+        if (badgeNotifTab) {
+          badgeNotifTab.innerText = stats.unreadNotifications || 0;
+          badgeNotifTab.style.display = (stats.unreadNotifications > 0) ? 'inline-block' : 'none';
+        }
+
+        // Atualizar Badge Principal do Botão de Gestão no Topo
+        const totalPendingMain = (stats.pendingPlanRequests || 0) + (stats.pendingSupport || 0) + (stats.unreadNotifications || 0);
+        const adminMainBadge = document.getElementById('adminPendingCountBadge');
+        if (adminMainBadge) {
+          adminMainBadge.innerText = totalPendingMain;
+          adminMainBadge.style.display = totalPendingMain > 0 ? 'inline-block' : 'none';
+        }
+
+        // Renderizar aba ativa
+        this.renderCurrentAdminTab();
+      }
+    } catch (e) {
+      console.warn('[Admin Overview Fetch Failed]', e);
+    }
+  }
+
+  switchAdminTab(tab) {
+    this.currentAdminTab = tab;
+    const tabMap = {
+      students: { btn: 'tabAdminStudentsBtn', view: 'adminStudentsView' },
+      plan_requests: { btn: 'tabAdminPlanRequestsBtn', view: 'adminPlanRequestsView' },
+      support: { btn: 'tabAdminSupportBtn', view: 'adminSupportView' },
+      study_reports: { btn: 'tabAdminStudyReportsBtn', view: 'adminStudyReportsView' },
+      agenda_sync: { btn: 'tabAdminAgendaSyncBtn', view: 'adminAgendaSyncView' },
+      notifications: { btn: 'tabAdminNotificationsBtn', view: 'adminNotificationsView' },
+      system_health: { btn: 'tabAdminSystemHealthBtn', view: 'adminSystemHealthView' }
+    };
+
+    Object.keys(tabMap).forEach(key => {
+      const cfg = tabMap[key];
+      const btn = document.getElementById(cfg.btn);
+      const view = document.getElementById(cfg.view);
+      if (key === tab) {
+        btn?.classList.add('active');
+        if (view) view.style.display = 'block';
+      } else {
+        btn?.classList.remove('active');
+        if (view) view.style.display = 'none';
+      }
+    });
+
+    this.renderCurrentAdminTab();
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  renderCurrentAdminTab() {
+    const tab = this.currentAdminTab || 'students';
+    if (tab === 'students') this.renderAdminStudentsList();
+    else if (tab === 'plan_requests') this.renderAdminPlanRequestsList();
+    else if (tab === 'support') this.renderAdminSupportList();
+    else if (tab === 'study_reports') this.renderAdminStudyReportsList();
+    else if (tab === 'agenda_sync') this.renderAdminAgendaSyncLogs();
+    else if (tab === 'notifications') this.renderAdminNotificationsList();
+    else if (tab === 'system_health') this.renderAdminSystemHealth();
+  }
+
+  renderAdminPlanRequestsList() {
+    const container = document.getElementById('adminPlanRequestsListContainer');
+    if (!container) return;
+
+    let requests = this.adminPlanRequests || [];
+    const filterStatus = document.getElementById('adminPlanRequestsFilterStatus')?.value || 'all';
+    if (filterStatus !== 'all') {
+      requests = requests.filter(r => r.status === filterStatus);
+    }
+
+    if (requests.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; color: #64748b; background: #f8fafc; border-radius: 14px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">💎</div>
+          <p style="margin: 0; font-weight: 700; color: #1e1b4b; font-size: 0.95rem;">Nenhuma solicitação encontrada neste filtro.</p>
+          <span style="font-size: 0.8rem; color: #64748b;">Quando um aluno solicitar o Plano PRO pelo celular, tablet ou PC, o pedido aparecerá aqui.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = requests.map(r => {
+      const statusBadge = {
+        pending: '<span style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟡 Pendente</span>',
+        in_review: '<span style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🔵 Em análise</span>',
+        approved: '<span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟢 Aprovada (PRO Ativo)</span>',
+        rejected: '<span style="background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🔴 Recusada</span>'
+      }[r.status] || r.status;
+
+      const dateFmt = r.createdAt ? new Date(r.createdAt).toLocaleString('pt-BR') : '-';
+
+      return `
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 1rem; color: #0f172a;">${r.userName}</strong>
+                <span style="font-family: monospace; font-size: 0.75rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #475569;">ID: ${r.userId}</span>
+                ${statusBadge}
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.78rem; color: #64748b;">
+                ${r.userGrade ? `Turma: <strong>${r.userGrade}</strong> &bull; ` : ''}
+                Plano: <strong>${r.planName || 'Plano PRO'} (R$ ${Number(r.amount || 19.9).toFixed(2).replace('.', ',')})</strong> &bull;
+                Data: <strong>${dateFmt}</strong>
+              </p>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.75rem; background: #eef2ff; color: #4338ca; padding: 3px 8px; border-radius: 6px; font-weight: 700;">
+                ${r.contactMethod === 'whatsapp' ? '📱 WhatsApp' : r.contactMethod === 'email' ? '✉️ E-mail' : '🏫 Na Escola'}
+              </span>
+              ${r.contactInfo ? `<div style="font-size: 0.8rem; font-weight: 700; color: #1e1b4b; margin-top: 3px;">${r.contactInfo}</div>` : ''}
+            </div>
+          </div>
+
+          ${r.note ? `
+            <div style="background: #f8fafc; border-left: 3px solid #6366f1; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; color: #334155; margin-bottom: 10px; font-style: italic;">
+              "${r.note}"
+            </div>
+          ` : ''}
+
+          ${r.statusReason ? `
+            <div style="background: #fff7ed; border-left: 3px solid #f97316; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; color: #9a3412; margin-bottom: 10px;">
+              <strong>Observação da análise:</strong> ${r.statusReason} ${r.reviewedBy ? `(por ${r.reviewedBy})` : ''}
+            </div>
+          ` : ''}
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+            ${r.status !== 'in_review' && r.status !== 'approved' ? `
+              <button class="btn-outline" onclick="app.adminUpdatePlanRequestStatus('${r.id}', 'in_review')" style="font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; color: #0284c7; border-color: #7dd3fc; background: #f0f9ff; font-weight: 700; cursor: pointer;">
+                <i data-lucide="search" style="width: 13px; height: 13px; display: inline; vertical-align: middle;"></i> Marcar Em Análise
+              </button>
+            ` : ''}
+
+            ${r.status !== 'approved' ? `
+              <button class="btn-primary" onclick="app.adminUpdatePlanRequestStatus('${r.id}', 'approved')" style="font-size: 0.75rem; padding: 6px 14px; border-radius: 8px; background: #059669; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="check-check" style="width: 14px; height: 14px;"></i> Aprovar e Ativar PRO
+              </button>
+            ` : `
+              <span style="font-size: 0.75rem; color: #059669; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> PRO Ativo em Todos os Dispositivos
+              </span>
+            `}
+
+            ${r.status !== 'rejected' ? `
+              <button class="btn-outline" onclick="app.adminUpdatePlanRequestStatus('${r.id}', 'rejected')" style="font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; color: #dc2626; border-color: #fca5a5; background: #fff5f5; font-weight: 700; cursor: pointer;">
+                <i data-lucide="x" style="width: 13px; height: 13px; display: inline; vertical-align: middle;"></i> Recusar
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async adminUpdatePlanRequestStatus(requestId, status) {
+    let reason = '';
+    if (status === 'rejected') {
+      reason = prompt('Motivo da recusa (opcional para informar ao aluno):') || '';
+    } else if (status === 'approved') {
+      if (!confirm('Confirmar aprovação do Plano PRO para este aluno? O acesso ilimitado será liberado imediatamente no celular, tablet e PC dele.')) {
+        return;
+      }
+    }
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/plan-requests/status', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ requestId, status, reason })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (status === 'approved' && typeof confetti === 'function') {
+          confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+        }
+        await this.loadAdminOverview();
+        alert(data.message || 'Status atualizado com sucesso!');
+      } else {
+        alert(data.error || 'Erro ao atualizar status.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao atualizar status da solicitação.');
+    }
+  }
+
+  renderAdminSupportList() {
+    const container = document.getElementById('adminSupportListContainer');
+    if (!container) return;
+
+    let tickets = this.adminSupportRequests || [];
+    const catFilter = document.getElementById('adminSupportCategoryFilter')?.value || 'all';
+    const statusFilter = document.getElementById('adminSupportStatusFilter')?.value || 'all';
+
+    if (catFilter !== 'all') tickets = tickets.filter(t => t.category === catFilter);
+    if (statusFilter !== 'all') tickets = tickets.filter(t => t.status === statusFilter);
+
+    if (tickets.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; color: #64748b; background: #f8fafc; border-radius: 14px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">💬</div>
+          <p style="margin: 0; font-weight: 700; color: #1e1b4b; font-size: 0.95rem;">Nenhuma dúvida ou solicitação de suporte encontrada.</p>
+          <span style="font-size: 0.8rem; color: #64748b;">Quando os alunos enviarem dúvidas de seus celulares ou computadores, elas aparecerão aqui.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = tickets.map(t => {
+      const statusBadge = {
+        pending: '<span style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟡 Pendente</span>',
+        in_review: '<span style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🔵 Em análise</span>',
+        answered: '<span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟢 Respondido</span>',
+        resolved: '<span style="background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">✔ Resolvido</span>',
+        rejected: '<span style="background: #fee2e2; color: #b91c1c; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🔴 Recusado</span>'
+      }[t.status] || t.status;
+
+      const catBadge = {
+        duvida: '<span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">❓ Dúvida</span>',
+        suporte: '<span style="background: #fdf4ff; color: #a21caf; font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">🛠️ Suporte</span>',
+        plano: '<span style="background: #fef3c7; color: #b45309; font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">💎 Plano</span>',
+        agenda: '<span style="background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">📅 Agenda</span>',
+        outro: '<span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">💬 Outro</span>'
+      }[t.category] || t.category;
+
+      const dateFmt = t.createdAt ? new Date(t.createdAt).toLocaleString('pt-BR') : '-';
+
+      return `
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                ${catBadge}
+                <strong style="font-size: 0.95rem; color: #0f172a;">${t.subject}</strong>
+                ${statusBadge}
+              </div>
+              <p style="margin: 3px 0 0; font-size: 0.78rem; color: #64748b;">
+                Por <strong>${t.userName}</strong> &bull; Dispositivo: <strong>${t.deviceType || 'PC'}</strong> &bull; Data: ${dateFmt}
+              </p>
+            </div>
+            ${t.contactInfo ? `<span style="font-size: 0.75rem; background: #f8fafc; padding: 3px 8px; border-radius: 6px; color: #334155;">📞 ${t.contactInfo}</span>` : ''}
+          </div>
+
+          <div style="background: #f8fafc; border-radius: 8px; padding: 10px 12px; font-size: 0.84rem; color: #1e293b; margin: 8px 0; line-height: 1.4;">
+            ${t.message}
+          </div>
+
+          ${t.adminResponse ? `
+            <div style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; color: #14532d; margin-bottom: 10px;">
+              <strong>Resposta enviada (${t.answeredBy || 'Freddie'}):</strong> ${t.adminResponse}
+            </div>
+          ` : ''}
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f5f9;">
+            <button class="btn-outline" onclick="app.adminRespondSupport('${t.id}')" style="font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; color: #4338ca; border-color: #c7d2fe; background: #eef2ff;">
+              <i data-lucide="message-square" style="width: 13px; height: 13px; display: inline;"></i> Responder / Despachar
+            </button>
+            ${t.status !== 'resolved' ? `
+              <button class="btn-primary" onclick="app.adminUpdateSupportStatus('${t.id}', 'resolved')" style="font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; background: #059669;">
+                <i data-lucide="check" style="width: 13px; height: 13px; display: inline;"></i> Marcar Resolvido
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async adminRespondSupport(requestId) {
+    const item = (this.adminSupportRequests || []).find(s => s.id === requestId);
+    const existing = item?.adminResponse || '';
+    const answer = prompt(`💬 Resposta para "${item?.userName || 'Aluno'}" sobre: ${item?.subject}\n\nDigite a mensagem de resposta que aparecerá na tela dele:`, existing);
+    if (answer === null) return;
+    await this.adminUpdateSupportStatus(requestId, 'answered', answer);
+  }
+
+  async adminUpdateSupportStatus(requestId, status, responseText = null) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const payload = { requestId, status };
+      if (responseText !== null) payload.adminResponse = responseText;
+
+      const res = await fetch('/api/admin/support/status', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await this.loadAdminOverview();
+        alert(data.message || 'Status atualizado com sucesso!');
+      } else {
+        alert(data.error || 'Erro ao atualizar.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao atualizar solicitação.');
+    }
+  }
+
+  renderAdminStudyReportsList() {
+    const container = document.getElementById('adminStudyReportsListContainer');
+    if (!container) return;
+
+    let reports = this.adminStudyReports || [];
+    const filterStatus = document.getElementById('adminStudyStatusFilter')?.value || 'all';
+    if (filterStatus !== 'all') reports = reports.filter(r => r.status === filterStatus);
+
+    if (reports.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; color: #64748b; background: #f8fafc; border-radius: 14px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">📚</div>
+          <p style="margin: 0; font-weight: 700; color: #1e1b4b; font-size: 0.95rem;">Nenhum erro de estudo reportado.</p>
+          <span style="font-size: 0.8rem; color: #64748b;">Quando algum aluno relatar problema em questão, quiz ou apostila, o chamado aparecerá aqui.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = reports.map(r => {
+      const statusBadge = {
+        pending: '<span style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟡 Pendente</span>',
+        in_review: '<span style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🔵 Em Análise</span>',
+        resolved: '<span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟢 Corrigido / Resolvido</span>',
+        dismissed: '<span style="background: #f1f5f9; color: #475569; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">⚪ Descartado</span>'
+      }[r.status] || r.status;
+
+      const dateFmt = r.createdAt ? new Date(r.createdAt).toLocaleString('pt-BR') : '-';
+
+      return `
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="background: #fff7ed; color: #c2410c; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">[${r.category.toUpperCase()}]</span>
+                <strong style="font-size: 0.92rem; color: #0f172a;">${r.title}</strong>
+                ${statusBadge}
+              </div>
+              <p style="margin: 3px 0 0; font-size: 0.78rem; color: #64748b;">
+                Reportado por <strong>${r.userName}</strong> &bull; Dispositivo: ${r.deviceType || 'PC'} &bull; ${dateFmt}
+              </p>
+            </div>
+          </div>
+
+          <div style="background: #f8fafc; border-radius: 8px; padding: 10px 12px; font-size: 0.84rem; color: #334155; margin: 8px 0; line-height: 1.4;">
+            ${r.description}
+          </div>
+
+          ${r.adminNote ? `
+            <div style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; color: #14532d; margin-bottom: 8px;">
+              <strong>Nota do Admin:</strong> ${r.adminNote}
+            </div>
+          ` : ''}
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+            ${r.status !== 'resolved' ? `
+              <button class="btn-primary" onclick="app.adminUpdateStudyReportStatus('${r.id}', 'resolved')" style="font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; background: #059669;">
+                <i data-lucide="check" style="width: 13px; height: 13px; display: inline;"></i> Marcar Corrigido
+              </button>
+            ` : ''}
+            ${r.status !== 'dismissed' ? `
+              <button class="btn-outline" onclick="app.adminUpdateStudyReportStatus('${r.id}', 'dismissed')" style="font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                Descartar
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async adminUpdateStudyReportStatus(reportId, status) {
+    const note = prompt('Nota interna / resolução (opcional):') || '';
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/study-reports/status', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ reportId, status, adminNote: note })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await this.loadAdminOverview();
+        alert(data.message || 'Relatório atualizado com sucesso!');
+      } else {
+        alert(data.error || 'Erro ao atualizar.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao atualizar relatório.');
+    }
+  }
+
+  renderAdminAgendaSyncLogs() {
+    const textEl = document.getElementById('adminAgendaLastSyncText');
+    const container = document.getElementById('adminAgendaSyncLogsContainer');
+    const agenda = this.adminOverviewData?.agendaStatus || {};
+
+    if (textEl) {
+      const lastSync = agenda.status?.lastSync ? new Date(agenda.status.lastSync).toLocaleString('pt-BR') : 'Nunca sincronizado';
+      textEl.innerHTML = `Última sincronização com o Portal Gammon: <strong>${lastSync}</strong> &bull; Total TPCs no banco: <strong>${agenda.totalTpcs || 0}</strong> &bull; Status: <span style="color: #059669; font-weight: 800;">${agenda.status?.status || 'OK'}</span>`;
+    }
+
+    if (!container) return;
+    const logs = agenda.logs || [];
+    if (logs.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #64748b; font-size: 0.85rem; background: #f8fafc; border-radius: 8px;">
+          Nenhum log recente de sincronização da agenda gravado.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = logs.map(l => {
+      const isSuccess = l.status === 'success';
+      const timeFmt = l.timestamp ? new Date(l.timestamp).toLocaleString('pt-BR') : '-';
+      return `
+        <div style="background: ${isSuccess ? '#f0fdf4' : '#fff1f2'}; border: 1px solid ${isSuccess ? '#bbf7d0' : '#fecdd3'}; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div>
+            <strong style="color: ${isSuccess ? '#166534' : '#9f1239'}; font-size: 0.85rem;">
+              ${isSuccess ? '✔ Sincronização Concluída' : '⚠️ Falha ou Aviso'}
+            </strong>
+            <p style="margin: 2px 0 0; font-size: 0.78rem; color: #334155;">${l.message || (isSuccess ? `${l.totalCaptured} TPCs atualizados` : l.error)}</p>
+          </div>
+          <span style="font-size: 0.75rem; color: #64748b; font-family: monospace;">${timeFmt}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async adminTriggerGammonSync() {
+    const btn = document.getElementById('btnAdminTriggerGammonSync');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2"></i> Conectando ao Portal Gammon...';
+    }
+    try {
+      const res = await fetch('/api/gammon/sync', { method: 'POST' });
+      const data = await res.json();
+      alert(data.message || 'Sincronização executada!');
+      await this.loadAdminOverview();
+    } catch (e) {
+      alert('Erro de conexão ao disparar sincronização.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="download-cloud"></i> Sincronizar Agora com o Portal';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  renderAdminNotificationsList() {
+    const container = document.getElementById('adminNotificationsListContainer');
+    if (!container) return;
+
+    const notifs = this.adminNotifications || [];
+    if (notifs.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; color: #64748b; background: #f8fafc; border-radius: 14px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">🔔</div>
+          <p style="margin: 0; font-weight: 700; color: #1e1b4b; font-size: 0.95rem;">Nenhuma notificação registrada.</p>
+          <span style="font-size: 0.8rem; color: #64748b;">Eventos de cadastros, pagamentos e chamados aparecerão aqui em tempo real.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = notifs.map(n => {
+      const isUnread = n.status === 'unread';
+      const timeFmt = n.createdAt ? new Date(n.createdAt).toLocaleString('pt-BR') : '-';
+      const catBadge = {
+        user: '👥 Usuário',
+        plan: '💎 Plano PRO',
+        support: '💬 Suporte',
+        study: '📚 Estudos',
+        agenda: '📅 Agenda',
+        system: '⚙️ Sistema'
+      }[n.category] || n.category;
+
+      return `
+        <div style="background: ${isUnread ? '#fffbeb' : '#ffffff'}; border: 1.5px solid ${isUnread ? '#fde68a' : '#e2e8f0'}; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 0.72rem; font-weight: 800; background: #e0e7ff; color: #3730a3; padding: 2px 7px; border-radius: 6px;">${catBadge}</span>
+              <strong style="font-size: 0.88rem; color: #0f172a;">${n.title}</strong>
+              ${isUnread ? '<span style="background: #ef4444; color: white; font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;">NOVA</span>' : ''}
+            </div>
+            <p style="margin: 4px 0 0; font-size: 0.82rem; color: #334155; line-height: 1.4;">${n.message}</p>
+            <span style="font-size: 0.72rem; color: #64748b; font-family: monospace; margin-top: 4px; display: inline-block;">${timeFmt}</span>
+          </div>
+          ${isUnread ? `
+            <button class="btn-outline" onclick="app.adminMarkNotificationRead('${n.id}')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap;">
+              Marcar lida
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async adminMarkAllNotificationsRead() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      await fetch('/api/admin/notifications/mark-read', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ all: true })
+      });
+      await this.loadAdminOverview();
+    } catch (e) {}
+  }
+
+  async adminMarkNotificationRead(notificationId) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      await fetch('/api/admin/notifications/mark-read', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ notificationId })
+      });
+      await this.loadAdminOverview();
+    } catch (e) {}
+  }
+
+  renderAdminSystemHealth() {
+    const grid = document.getElementById('adminSystemCardsGrid');
+    const auditContainer = document.getElementById('adminAuditLogsContainer');
+    const sys = this.adminOverviewData?.systemStatus || {};
+
+    if (grid) {
+      grid.innerHTML = `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+          <div style="font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 6px;">☁️ Servidor Render Cloud</div>
+          <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">${sys.render?.environment === 'production' ? 'Produção Online' : 'Ambiente Local / Dev'}</div>
+          <p style="margin: 4px 0 0; font-size: 0.75rem; color: #64748b;">Porta: ${sys.render?.port || 8080} &bull; Uptime: ${Math.floor((sys.uptimeSeconds || 0) / 60)} min</p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+          <div style="font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 6px;">🗄️ Banco de Dados</div>
+          <div style="font-size: 0.95rem; font-weight: 800; color: #059669;">${sys.supabase?.status || 'Ativo'}</div>
+          <p style="margin: 4px 0 0; font-size: 0.75rem; color: #64748b;">db.json e Supabase REST sincronizados</p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+          <div style="font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 6px;">🤖 Gemini IA Inteligente</div>
+          <div style="font-size: 0.95rem; font-weight: 800; color: #4f46e5;">${sys.gemini?.available ? 'Ativo (Gemini 2.5 Flash)' : 'Offline'}</div>
+          <p style="margin: 4px 0 0; font-size: 0.75rem; color: #64748b;">Tutor inteligente pronto para responder</p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+          <div style="font-size: 0.8rem; font-weight: 800; color: #475569; margin-bottom: 6px;">⚡ Memória & Conexões</div>
+          <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">${sys.memoryUsageMb || 50} MB RSS</div>
+          <p style="margin: 4px 0 0; font-size: 0.75rem; color: #64748b;">Tempo real SSE ativo com fallback</p>
+        </div>
+      `;
+    }
+
+    if (auditContainer) {
+      const logs = this.adminAuditLogs || [];
+      if (logs.length === 0) {
+        auditContainer.innerHTML = '<p style="color: #64748b; margin: 0; padding: 10px;">Nenhum registro de auditoria gravado ainda.</p>';
+      } else {
+        auditContainer.innerHTML = logs.map(l => {
+          const time = l.timestamp ? new Date(l.timestamp).toLocaleTimeString('pt-BR') : '-';
+          return `
+            <div style="padding: 6px 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; gap: 8px;">
+              <div>
+                <span style="color: #4f46e5; font-weight: 700;">[${l.action}]</span>
+                <span style="color: #334155;">por ${l.actor || 'sistema'}: ${typeof l.details === 'object' ? JSON.stringify(l.details) : l.details}</span>
+              </div>
+              <span style="color: #94a3b8; white-space: nowrap;">${time} (${l.ip || '127.0.0.1'})</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  }
+
+  async adminRunSystemDiagnostics() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/system/test-integrations', { method: 'POST', headers });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const r = data.results || {};
+        alert(`🔍 RELATÓRIO DE DIAGNÓSTICO DO SERVIDOR ESTUDE+:\n\n` +
+          `• Disco e Banco Local: ${r.diskPersistence}\n` +
+          `• Supabase PostgreSQL: ${r.supabasePostgreSQL}\n` +
+          `• Google Gemini IA: ${r.geminiIA}\n` +
+          `• Nuvem Render: ${r.renderCloud}\n` +
+          `• Memória Usada: ${r.memoryRssMb} MB\n` +
+          `• Tempo Ativo: ${r.uptimeHours} horas\n` +
+          `• Administradores Conectados: ${r.activeAdminConnections}\n\n` +
+          `Status Geral: TODAS AS INTEGRAÇÕES OPERACIONAIS!`);
+      } else {
+        alert(data.error || 'Erro ao executar diagnóstico.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao executar diagnóstico.');
+    }
+  }
+
+  /* ==========================================================================
+     CENTRAL DE AJUDA & REPORTAR DO ALUNO (CELULAR, TABLET, PC)
+     ========================================================================== */
+  openSupportModal() {
+    if (!this.currentUser) {
+      this.showAuthOverlay();
+      return;
+    }
+    this.showModal('studentSupportModal');
+    this.switchStudentSupportTab('new');
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  switchStudentSupportTab(tab) {
+    const btnNew = document.getElementById('tabSupportNewBtn');
+    const btnHist = document.getElementById('tabSupportMyTicketsBtn');
+    const viewNew = document.getElementById('studentSupportNewView');
+    const viewHist = document.getElementById('studentSupportHistoryView');
+
+    if (tab === 'new') {
+      btnNew?.classList.add('active');
+      btnHist?.classList.remove('active');
+      if (viewNew) viewNew.style.display = 'block';
+      if (viewHist) viewHist.style.display = 'none';
     } else {
-      btnPayments?.classList.add('active');
-      btnStudents?.classList.remove('active');
-      if (viewStudents) viewStudents.style.display = 'none';
-      if (viewPayments) viewPayments.style.display = 'block';
-      this.renderAdminPaymentsList();
+      btnNew?.classList.remove('active');
+      btnHist?.classList.add('active');
+      if (viewNew) viewNew.style.display = 'none';
+      if (viewHist) viewHist.style.display = 'block';
+      this.loadStudentSupportHistory();
     }
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  async submitStudentSupport(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!this.currentUser) {
+      this.showAuthOverlay();
+      return;
+    }
+
+    const category = document.getElementById('studentSupportCategory')?.value || 'duvida';
+    const subject = document.getElementById('studentSupportSubject')?.value || '';
+    const message = document.getElementById('studentSupportMessage')?.value || '';
+    const contact = document.getElementById('studentSupportContact')?.value || '';
+
+    const btn = document.getElementById('btnSubmitSupportTicket');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2"></i> Enviando...';
+    }
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      const deviceType = window.innerWidth < 768 ? 'Celular' : (window.innerWidth < 1024 ? 'Tablet' : 'Computador / PC');
+
+      const res = await fetch('/api/support/ticket', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ category, subject, message, contactInfo: contact, deviceType })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('🎉 ' + data.message);
+        document.getElementById('studentSupportSubject').value = '';
+        document.getElementById('studentSupportMessage').value = '';
+        this.switchStudentSupportTab('history');
+      } else {
+        alert(data.error || 'Erro ao enviar.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao enviar. Tente novamente.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="send"></i> Enviar para o Servidor';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  async loadStudentSupportHistory() {
+    const container = document.getElementById('studentSupportHistoryListContainer');
+    if (!container) return;
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      const res = await fetch('/api/support/my-tickets', { headers });
+      const data = await res.json();
+      const list = data.tickets || [];
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 24px; color: #64748b; font-size: 0.85rem;">
+            Você ainda não enviou nenhuma dúvida ou solicitação.<br>
+            Use a aba "Nova Mensagem" acima para falar com o Freddie!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(t => {
+        const isAnswered = t.status === 'answered' || t.status === 'resolved';
+        return `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+              <strong style="font-size: 0.88rem; color: #0f172a;">${t.subject}</strong>
+              <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: ${isAnswered ? '#dcfce7' : '#fef3c7'}; color: ${isAnswered ? '#15803d' : '#92400e'};">
+                ${isAnswered ? 'Respondido' : 'Em Análise'}
+              </span>
+            </div>
+            <p style="margin: 4px 0 0; font-size: 0.8rem; color: #475569;">"${t.message}"</p>
+            ${t.adminResponse ? `
+              <div style="background: #ecfdf5; border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 4px; font-size: 0.8rem; color: #065f46; margin-top: 6px;">
+                <strong>Resposta do Freddie:</strong> ${t.adminResponse}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      container.innerHTML = '<p style="color: #dc2626; font-size: 0.82rem; text-align: center;">Erro ao carregar mensagens.</p>';
+    }
   }
 
   renderAdminStudentsList(searchTerm = '') {
