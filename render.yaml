@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: estude-plus
+    name: estudeplus
     env: node
     plan: free
     buildCommand: npm install
