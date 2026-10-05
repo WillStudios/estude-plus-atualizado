@@ -2760,6 +2760,18 @@
       <div style="margin-top: 16px; text-align: right;">
         <button type="button" class="btn-primary" onclick="app.closeModal('shortcutsGuideModal')">Fechar</button>
       </div>
+  </div>
+
+  <!-- Quiz Attempt Detail Modal -->
+  <div class="modal-overlay" id="quizAttemptDetailModal">
+    <div class="modal-box" style="max-width: 680px; max-height: 88vh; display: flex; flex-direction: column;">
+      <button class="modal-close" onclick="app.closeModal('quizAttemptDetailModal')">&times;</button>
+      <div id="quizAttemptDetailModalBody" style="overflow-y: auto; padding-right: 4px;">
+        <!-- Populated dynamically -->
+      </div>
+      <div class="modal-actions" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-light); justify-content: flex-end;">
+        <button type="button" class="btn-primary" onclick="app.closeModal('quizAttemptDetailModal')">Fechar Resolução</button>
+      </div>
     </div>
   </div>
 

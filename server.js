@@ -546,38 +546,16 @@ const server = http.createServer((req, res) => {
     const db = readDb();
     const freshUser = (db.users || []).find(u => u.id === auth.user.id) || auth.user;
 
-    // A cada novo dia que o aluno entra, adiciona +1 dia à sequência
     const now = new Date();
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
-    const lastDate = freshUser.lastVisitDate || (freshUser.lastLogin ? freshUser.lastLogin.split('T')[0] : null);
 
     if (!Array.isArray(freshUser.loginDays)) freshUser.loginDays = [];
-    if (!Array.isArray(freshUser.studiedDays)) freshUser.studiedDays = [];
-
-    let dbUpdated = false;
-    if (lastDate && lastDate !== todayStr) {
-      freshUser.streak = (Number(freshUser.streak) || 0) + 1;
-      freshUser.bestStreak = Math.max(Number(freshUser.bestStreak) || 0, freshUser.streak);
-      freshUser.lastVisitDate = todayStr;
-      dbUpdated = true;
-    } else if (!freshUser.streak || freshUser.streak < 1) {
-      freshUser.streak = 1;
-      freshUser.lastVisitDate = todayStr;
-      dbUpdated = true;
-    }
-
     if (!freshUser.loginDays.includes(todayStr)) {
       freshUser.loginDays.push(todayStr);
-      dbUpdated = true;
-    }
-    if (!freshUser.studiedDays.includes(todayStr)) {
-      freshUser.studiedDays.push(todayStr);
-      dbUpdated = true;
-    }
-
-    if (dbUpdated) {
       writeDb(db);
     }
+
+    const todayActive = (freshUser.studiedDays || []).includes(todayStr);
 
     // Busca a solicitação de plano mais recente deste usuário
     const activeReq = (db.planRequests || [])
@@ -599,12 +577,15 @@ const server = http.createServer((req, res) => {
         planName: freshUser.planName || 'Plano Base',
         proExpiresAt: freshUser.proExpiresAt || null,
         trialExpiresAt: freshUser.trialExpiresAt || null,
-        streak: Number(freshUser.streak) || 1,
-        bestStreak: Number(freshUser.bestStreak) || 1,
+        streak: Number(freshUser.streak) || 0,
+        bestStreak: Number(freshUser.bestStreak) || 0,
         dailyGoalMinutes: Number(freshUser.dailyGoalMinutes) || 15,
         todayMinutes: Number(freshUser.todayMinutes) || 0,
         studiedDays: Array.isArray(freshUser.studiedDays) ? freshUser.studiedDays : [],
         loginDays: Array.isArray(freshUser.loginDays) ? freshUser.loginDays : [],
+        quizHistory: Array.isArray(freshUser.quizHistory) ? freshUser.quizHistory : [],
+        activeQuizSession: freshUser.activeQuizSession || null,
+        todayActive,
         lastVisitDate: freshUser.lastVisitDate || null,
         achievements: Array.isArray(freshUser.achievements) ? freshUser.achievements : [],
         studentSettings: freshUser.studentSettings || freshUser.preferences || {},
@@ -685,6 +666,253 @@ const server = http.createServer((req, res) => {
         success: true,
         message: 'Dados salvos e sincronizados com sucesso no servidor!',
         lastSync: u.lastSync
+      });
+    });
+    return;
+  }
+
+  /* ==========================================================================
+     SISTEMA OFICIAL DE QUIZZES, PERSISTÊNCIA E OFENSIVA (STREAK)
+     ========================================================================== */
+
+  // Função central para cálculo idempotente da ofensiva (Streak) em America/Sao_Paulo
+  function calculateOfensivaAfterActivity(user, activityType, details = {}) {
+    const now = new Date();
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+
+    if (!Array.isArray(user.studiedDays)) user.studiedDays = [];
+    if (!Array.isArray(user.activityLog)) user.activityLog = [];
+
+    const activityRecord = {
+      id: 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      date: todayStr,
+      timestamp: now.toISOString(),
+      type: activityType,
+      details
+    };
+    user.activityLog.unshift(activityRecord);
+    if (user.activityLog.length > 200) user.activityLog.pop();
+
+    const alreadyActiveToday = user.studiedDays.includes(todayStr);
+
+    if (!alreadyActiveToday) {
+      user.studiedDays.push(todayStr);
+
+      // Calcular dias consecutivos no fuso de Brasília
+      const sortedDates = [...user.studiedDays]
+        .filter(d => d !== todayStr)
+        .sort((a, b) => new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00'));
+
+      const lastActiveDate = sortedDates[0] || null;
+
+      if (lastActiveDate) {
+        const d1 = new Date(lastActiveDate + 'T12:00:00');
+        const d2 = new Date(todayStr + 'T12:00:00');
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        const isWeekendTransition = (d1.getDay() === 5 && d2.getDay() === 1 && diffDays <= 3);
+
+        if (diffDays === 1 || isWeekendTransition) {
+          user.streak = (Number(user.streak) || 0) + 1;
+        } else {
+          // Mais de 1 dia de intervalo sem atividade válida: reinicia ofensiva em 1
+          user.streak = 1;
+        }
+      } else {
+        user.streak = 1;
+      }
+
+      user.bestStreak = Math.max(Number(user.bestStreak) || 0, user.streak);
+    }
+
+    user.lastActiveDate = todayStr;
+    return {
+      streak: user.streak,
+      bestStreak: user.bestStreak,
+      alreadyActiveToday,
+      activityRecord
+    };
+  }
+
+  // 1. POST /api/quiz/finish - Salva tentativa com notas, matérias e atualiza ofensiva de forma idempotente
+  if (req.method === 'POST' && pathname === '/api/quiz/finish') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado para registrar tentativa de quiz.' }, 401);
+    }
+
+    parseBody((data) => {
+      if (!data || typeof data !== 'object') {
+        return sendJson({ error: 'Dados do quiz inválidos.' }, 400);
+      }
+
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === auth.user.id);
+      if (!user) {
+        return sendJson({ error: 'Usuário não encontrado.' }, 404);
+      }
+
+      if (!Array.isArray(user.quizHistory)) user.quizHistory = [];
+
+      const now = new Date();
+      const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+
+      const incoming = data.attempt || data || {};
+      const attemptId = incoming.id || ('att_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+      const attempt = {
+        id: attemptId,
+        date: incoming.date || todayStr,
+        completedAt: incoming.completedAt || now.toISOString(),
+        quizId: incoming.quizId || `quiz_${incoming.subject || 'geral'}_${incoming.bookId || 1}_${incoming.chapterId || 1}`,
+        subject: incoming.subject || 'Geral',
+        bookId: Number(incoming.bookId) || 1,
+        chapterId: Number(incoming.chapterId) || 1,
+        chapterTitle: incoming.chapterTitle || 'Capítulo SAS',
+        difficulty: incoming.difficulty || 'medio',
+        totalQuestions: Number(incoming.totalQuestions) || (Array.isArray(incoming.questions) ? incoming.questions.length : (Array.isArray(incoming.answersRecord) ? incoming.answersRecord.length : 4)),
+        score: Number(incoming.score) || 0,
+        percentage: Number(incoming.percentage) || Math.round(((Number(incoming.score) || 0) / (Number(incoming.totalQuestions) || 1)) * 100),
+        timeSpentSeconds: Number(incoming.timeSpentSeconds) || 0,
+        questions: Array.isArray(incoming.questions) ? incoming.questions.slice(0, 30) : [],
+        answersRecord: Array.isArray(incoming.answersRecord) ? incoming.answersRecord : []
+      };
+
+      // Adiciona ao topo do histórico
+      user.quizHistory.unshift(attempt);
+      if (user.quizHistory.length > 80) user.quizHistory.pop();
+
+      // Limpa qualquer rascunho de quiz em andamento
+      user.activeQuizSession = null;
+
+      // Atualiza ofensiva (Streak) com atividade válida
+      const streakResult = calculateOfensivaAfterActivity(user, 'quiz_completed', {
+        attemptId,
+        subject: attempt.subject,
+        chapterTitle: attempt.chapterTitle,
+        score: attempt.score,
+        total: attempt.totalQuestions,
+        pct: attempt.percentage
+      });
+
+      writeDb(db);
+
+      // Sincroniza em background com Supabase
+      supabase.syncFromLocalDb(db).catch(() => {});
+
+      return sendJson({
+        success: true,
+        message: 'Quiz concluído e registrado com sucesso!',
+        attempt,
+        streak: user.streak,
+        bestStreak: user.bestStreak,
+        alreadyActiveToday: streakResult.alreadyActiveToday,
+        todayActive: true
+      });
+    });
+    return;
+  }
+
+  // 2. GET /api/quiz/history - Retorna histórico completo e real de quizzes do aluno
+  if (req.method === 'GET' && pathname === '/api/quiz/history') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    const db = readDb();
+    const user = (db.users || []).find(u => u.id === auth.user.id);
+    if (!user) {
+      return sendJson({ error: 'Usuário não encontrado.' }, 404);
+    }
+
+    return sendJson({
+      success: true,
+      history: Array.isArray(user.quizHistory) ? user.quizHistory : [],
+      quizHistory: Array.isArray(user.quizHistory) ? user.quizHistory : []
+    });
+  }
+
+  // 3. POST /api/quiz/save-draft - Salva rascunho em andamento para retomada em qualquer aparelho
+  if (req.method === 'POST' && pathname === '/api/quiz/save-draft') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    parseBody((data) => {
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === auth.user.id);
+      if (!user) return sendJson({ error: 'Usuário não encontrado.' }, 404);
+
+      user.activeQuizSession = data.draft ? {
+        ...data.draft,
+        savedAt: new Date().toISOString()
+      } : null;
+
+      writeDb(db);
+      return sendJson({ success: true, message: 'Progresso do quiz salvo.' });
+    });
+    return;
+  }
+
+  // 4. GET /api/quiz/active-draft - Recupera rascunho de quiz em andamento
+  if (req.method === 'GET' && pathname === '/api/quiz/active-draft') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    const db = readDb();
+    const user = (db.users || []).find(u => u.id === auth.user.id);
+    if (!user) return sendJson({ error: 'Usuário não encontrado.' }, 404);
+
+    return sendJson({
+      success: true,
+      draft: user.activeQuizSession || null
+    });
+  }
+
+  // 5. POST /api/quiz/clear-draft - Descarta rascunho de quiz
+  if (req.method === 'POST' && pathname === '/api/quiz/clear-draft') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    const db = readDb();
+    const user = (db.users || []).find(u => u.id === auth.user.id);
+    if (user) {
+      user.activeQuizSession = null;
+      writeDb(db);
+    }
+    return sendJson({ success: true, message: 'Rascunho de quiz descartado.' });
+  }
+
+  // 6. POST /api/activity/complete - Registro unificado e idempotente de atividade válida (TPC, meta de minutos, erros)
+  if (req.method === 'POST' && pathname === '/api/activity/complete') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado para registrar atividade.' }, 401);
+    }
+
+    parseBody((data) => {
+      const type = data?.type || 'learning_activity';
+      const details = data?.details || {};
+
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === auth.user.id);
+      if (!user) return sendJson({ error: 'Usuário não encontrado.' }, 404);
+
+      const streakResult = calculateOfensivaAfterActivity(user, type, details);
+      writeDb(db);
+      supabase.syncFromLocalDb(db).catch(() => {});
+
+      return sendJson({
+        success: true,
+        message: 'Atividade registrada com sucesso!',
+        streak: user.streak,
+        bestStreak: user.bestStreak,
+        alreadyActiveToday: streakResult.alreadyActiveToday,
+        todayActive: true
       });
     });
     return;
@@ -1282,12 +1510,12 @@ const server = http.createServer((req, res) => {
     if (!rateCheck.allowed) return sendJson({ error: rateCheck.error }, 429);
 
     parseBody((data) => {
-      if (!data || !data.login || !data.password) {
+      if (!data || (!data.login && !data.username) || !data.password) {
         return sendJson({ error: 'Informe seu nome de usuário e senha.' }, 400);
       }
 
       const db = readDb();
-      const loginClean = (data.login || '').trim().toLowerCase();
+      const loginClean = (data.login || data.username || '').trim().toLowerCase();
       const passClean = (data.password || '').trim();
 
       let user = (db.users || []).find(u =>
@@ -1375,33 +1603,10 @@ const server = http.createServer((req, res) => {
       const todayStr = now.toISOString().split('T')[0];
 
       if (!Array.isArray(user.loginDays)) user.loginDays = [];
-      const lastDate = user.lastVisitDate || (user.lastLogin ? user.lastLogin.split('T')[0] : null);
-
-      if (lastDate && lastDate !== todayStr) {
-        // Novo dia em que o usuário entrou: adiciona +1 dia
-        const d1 = new Date(lastDate + 'T00:00:00');
-        const d2 = new Date(todayStr + 'T00:00:00');
-        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-        const isWeekendTransition = (d1.getDay() === 5 && d2.getDay() === 1 && diffDays <= 3);
-
-        if (diffDays === 1 || isWeekendTransition) {
-          user.streak = (Number(user.streak) || 0) + 1;
-        } else if (diffDays > 1) {
-          user.streak = (Number(user.streak) || 0) + 1;
-        }
-      } else if (!user.streak || user.streak < 1) {
-        user.streak = 1;
-      }
-
       if (!user.loginDays.includes(todayStr)) {
         user.loginDays.push(todayStr);
       }
-      if (!Array.isArray(user.studiedDays)) user.studiedDays = [];
-      if (!user.studiedDays.includes(todayStr)) {
-        user.studiedDays.push(todayStr);
-      }
 
-      user.bestStreak = Math.max(Number(user.bestStreak) || 0, Number(user.streak) || 1);
       user.lastVisitDate = todayStr;
       user.lastLogin = now.toISOString();
       user.lastDeviceType = deviceType;

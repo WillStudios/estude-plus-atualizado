@@ -700,49 +700,215 @@ class EstudePlusApp {
     if (!this.currentUser) return;
     const now = new Date();
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
-    const lastDate = this.currentUser.lastVisitDate || this.state.lastVisitDate || null;
 
     if (!Array.isArray(this.currentUser.loginDays)) this.currentUser.loginDays = [];
+    if (!this.currentUser.loginDays.includes(todayStr)) {
+      this.currentUser.loginDays.push(todayStr);
+      this.saveCurrentUser();
+    }
+
+    this.renderSmartStats();
+    this.refreshBadges();
+  }
+
+  async recordValidActivity(type, details = {}) {
+    if (!this.currentUser) return;
+    const now = new Date();
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+
     if (!Array.isArray(this.currentUser.studiedDays)) this.currentUser.studiedDays = [];
     if (!Array.isArray(this.state.studiedDays)) this.state.studiedDays = [];
 
-    let updated = false;
+    const wasAlreadyActiveToday = this.currentUser.studiedDays.includes(todayStr);
 
-    if (lastDate !== todayStr) {
-      // Novo dia que o usuário entrou: adiciona +1 dia de ofensiva!
-      const currentStreak = Number(this.currentUser.streak || this.state.streak || 0);
-      const newStreak = Math.max(1, currentStreak + 1);
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
 
-      this.currentUser.streak = newStreak;
-      this.currentUser.bestStreak = Math.max(Number(this.currentUser.bestStreak) || 0, newStreak);
-      this.currentUser.lastVisitDate = todayStr;
+      const res = await fetch('/api/activity/complete', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ type, details })
+      });
 
-      this.state.streak = newStreak;
-      this.state.lastVisitDate = todayStr;
-      updated = true;
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          this.currentUser.streak = data.streak;
+          this.currentUser.bestStreak = data.bestStreak;
+          this.state.streak = data.streak;
+
+          if (!this.currentUser.studiedDays.includes(todayStr)) {
+            this.currentUser.studiedDays.push(todayStr);
+          }
+          if (!this.state.studiedDays.includes(todayStr)) {
+            this.state.studiedDays.push(todayStr);
+          }
+
+          this.saveCurrentUser();
+          this.saveState();
+          this.renderSmartStats();
+          this.refreshBadges();
+
+          if (!wasAlreadyActiveToday) {
+            this.showActivityToast('🔥 Sequência Validada!', `Atividade registrada no servidor! Ofensiva: ${data.streak} dia(s) seguidos.`);
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[Activity Server Sync Offline, using local fallback]', e);
     }
 
-    if (!this.currentUser.loginDays.includes(todayStr)) {
-      this.currentUser.loginDays.push(todayStr);
-      updated = true;
-    }
-    if (!this.currentUser.studiedDays.includes(todayStr)) {
+    // Offline Fallback
+    if (!wasAlreadyActiveToday) {
       this.currentUser.studiedDays.push(todayStr);
-      updated = true;
-    }
-    if (!this.state.studiedDays.includes(todayStr)) {
       this.state.studiedDays.push(todayStr);
-      updated = true;
-    }
-
-    if (updated) {
+      this.currentUser.streak = (Number(this.currentUser.streak) || 0) + 1;
+      this.currentUser.bestStreak = Math.max(Number(this.currentUser.bestStreak) || 0, this.currentUser.streak);
+      this.state.streak = this.currentUser.streak;
       this.saveCurrentUser();
       this.saveState();
       this.renderSmartStats();
       this.refreshBadges();
-      if (typeof this.debouncedSyncPush === 'function') {
-        this.debouncedSyncPush();
+      this.debouncedSyncPush();
+    }
+  }
+
+  showActivityToast(title, message) {
+    let container = document.getElementById('activityToastBox');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'activityToastBox';
+      container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; pointer-events: none;';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.style.cssText = 'background: #0f172a; color: #f8fafc; border: 1.5px solid #4f46e5; border-radius: 12px; padding: 14px 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-size: 0.88rem; max-width: 360px; pointer-events: auto;';
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #a5b4fc; margin-bottom: 4px;">
+        <span>${title}</span>
+      </div>
+      <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;">${message}</div>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4500);
+  }
+
+  /* Rascunho e Retomada de Quiz em Andamento */
+  saveActiveQuizDraft() {
+    if (!this.quizState || !this.quizState.active) return;
+    const draft = {
+      subjectKey: this.currentQuizSubject,
+      bookId: this.currentQuizBookId,
+      chapterId: this.currentQuizChapterId,
+      difficulty: this.quizState.difficulty,
+      count: this.currentQuizQuestionCount,
+      currentQuestionIdx: this.quizState.currentQuestionIdx,
+      score: this.quizState.score,
+      answered: this.quizState.answered,
+      selectedAnswer: this.quizState.selectedAnswer,
+      timerSeconds: this.quizState.timerSeconds,
+      questions: this.quizState.questions,
+      answersRecord: this.quizState.answersRecord || [],
+      savedAt: Date.now()
+    };
+    try {
+      localStorage.setItem('estude_active_quiz_draft', JSON.stringify(draft));
+    } catch (e) {}
+
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+      fetch('/api/quiz/save-draft', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ draft })
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
+  getActiveQuizDraft() {
+    try {
+      const raw = localStorage.getItem('estude_active_quiz_draft');
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft && draft.savedAt && (Date.now() - draft.savedAt < 12 * 3600 * 1000) && Array.isArray(draft.questions) && draft.questions.length > 0) {
+          return draft;
+        }
       }
+    } catch (e) {}
+
+    if (this.currentUser?.activeQuizSession) {
+      const d = this.currentUser.activeQuizSession;
+      if (d && Array.isArray(d.questions) && d.questions.length > 0) return d;
+    }
+    return null;
+  }
+
+  clearActiveQuizDraft() {
+    try {
+      localStorage.removeItem('estude_active_quiz_draft');
+      if (this.currentUser) this.currentUser.activeQuizSession = null;
+    } catch (e) {}
+
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+      fetch('/api/quiz/clear-draft', { method: 'POST', headers }).catch(() => {});
+    } catch (e) {}
+  }
+
+  resumeActiveQuiz() {
+    const draft = this.getActiveQuizDraft();
+    if (!draft) {
+      alert('Nenhum quiz em andamento encontrado.');
+      this.renderQuizIntro();
+      return;
+    }
+
+    this.currentQuizSubject = draft.subjectKey || 'matematica';
+    this.currentQuizBookId = draft.bookId || 1;
+    this.currentQuizChapterId = draft.chapterId || 1;
+    this.currentQuizDifficulty = draft.difficulty || 'dificil';
+    this.currentQuizQuestionCount = draft.count || draft.questions.length;
+
+    this.quizState = {
+      active: true,
+      questions: draft.questions,
+      difficulty: draft.difficulty || 'dificil',
+      currentQuestionIdx: draft.currentQuestionIdx || 0,
+      score: draft.score || 0,
+      answered: Boolean(draft.answered),
+      selectedAnswer: draft.selectedAnswer !== undefined ? draft.selectedAnswer : null,
+      answering: false,
+      timerSeconds: draft.timerSeconds || 300,
+      answersRecord: draft.answersRecord || [],
+      startTime: Date.now()
+    };
+
+    this.switchTab('quiz');
+    this.startQuizTimer();
+    this.renderCurrentQuestion();
+  }
+
+  discardActiveQuiz() {
+    if (confirm('Deseja realmente descartar este quiz em andamento e começar um novo?')) {
+      this.clearActiveQuizDraft();
+      this.renderQuizIntro();
     }
   }
 
@@ -760,6 +926,11 @@ class EstudePlusApp {
       const kpiToday = document.getElementById('statKpiTodayMinutes');
       const goalMins = Number(this.currentUser?.dailyGoal || this.currentUser?.dailyGoalMinutes || 15);
       if (kpiToday) kpiToday.innerText = `${this.state.todayMinutes} / ${goalMins} min`;
+
+      // Se atingiu a meta diária de minutos (15 min), valida a ofensiva automaticamente!
+      if (this.state.todayMinutes >= goalMins) {
+        this.recordValidActivity('daily_goal_minutes', { minutes: this.state.todayMinutes });
+      }
 
       this.renderSmartStats();
 
@@ -1444,103 +1615,182 @@ class EstudePlusApp {
     const currentDiff = this.currentQuizDifficulty || 'dificil';
     const currentCount = this.currentQuizQuestionCount || 8;
     const dailyInfo = this.getDailyQuizInfo();
+    const activeDraft = this.getActiveQuizDraft();
+    const historyList = (this.currentUser?.quizHistory || []);
 
     container.innerHTML = `
-      <div class="quiz-setup-card" style="max-width: 800px;">
-        <!-- Banner de Rotação Diária 24h -->
-        <div style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border: 1.5px solid #c7d2fe; border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #4f46e5; color: white; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);">
-              <i data-lucide="refresh-cw" style="width: 20px; height: 20px;"></i>
+      <div style="max-width: 800px; margin: 0 auto;">
+        ${activeDraft && activeDraft.questions && activeDraft.questions.length > 0 ? `
+          <!-- Banner de Retomada de Quiz em Andamento -->
+          <div class="resume-quiz-banner" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6; border-radius: 16px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="background: #2563eb; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                <i data-lucide="play-circle" style="width: 26px; height: 26px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 800; color: #1e3a8a; font-size: 1.05rem;">
+                  🔄 Você tem um Quiz em andamento!
+                </div>
+                <div style="font-size: 0.82rem; color: #1d4ed8; margin-top: 3px;">
+                  Parado na <strong>Questão ${(activeDraft.currentQuestionIdx || 0) + 1} de ${(activeDraft.questions || []).length}</strong> &bull; Acertos até aqui: <strong>${activeDraft.score || 0}</strong>
+                </div>
+              </div>
             </div>
-            <div>
-              <div style="font-weight: 800; font-size: 0.92rem; color: #1e1b4b; display: flex; align-items: center; gap: 8px;">
-                <span>🔄 Rotação Automática a Cada 24 Horas Ativa</span>
-                <span style="background: #10b981; color: white; font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; font-weight: 700;">Edição de Hoje (${dailyInfo.formattedDate})</span>
-              </div>
-              <div style="font-size: 0.78rem; color: #4338ca; margin-top: 2px;">
-                As perguntas renovam-se todo dia. Próxima rotação automática em <strong>${dailyInfo.label}</strong>.
-              </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary" onclick="app.resumeActiveQuiz()" style="background: #2563eb; padding: 10px 20px; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <i data-lucide="play" style="width: 16px; height: 16px;"></i> Continuar de Onde Parou
+              </button>
+              <button type="button" class="btn-outline" onclick="app.discardActiveQuiz()" style="background: white; border-color: #cbd5e1; color: #64748b; padding: 10px 14px; font-weight: 700; border-radius: 10px; cursor: pointer;">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Descartar
+              </button>
             </div>
           </div>
-          <button type="button" onclick="app.rotateQuizDailySeed()" class="btn-outline" style="background: white; border-color: #c7d2fe; color: #4338ca; font-size: 0.78rem; padding: 7px 12px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #f59e0b;"></i> Sortear Novo Conjunto Agora
+        ` : ''}
+
+        <div class="quiz-setup-card">
+          <!-- Banner de Rotação Diária 24h -->
+          <div style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border: 1.5px solid #c7d2fe; border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="background: #4f46e5; color: white; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);">
+                <i data-lucide="refresh-cw" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 800; font-size: 0.92rem; color: #1e1b4b; display: flex; align-items: center; gap: 8px;">
+                  <span>🔄 Rotação Automática a Cada 24 Horas Ativa</span>
+                  <span style="background: #10b981; color: white; font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; font-weight: 700;">Edição de Hoje (${dailyInfo.formattedDate})</span>
+                </div>
+                <div style="font-size: 0.78rem; color: #4338ca; margin-top: 2px;">
+                  As perguntas renovam-se todo dia. Próxima rotação automática em <strong>${dailyInfo.label}</strong>.
+                </div>
+              </div>
+            </div>
+            <button type="button" onclick="app.rotateQuizDailySeed()" class="btn-outline" style="background: white; border-color: #c7d2fe; color: #4338ca; font-size: 0.78rem; padding: 7px 12px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #f59e0b;"></i> Sortear Novo Conjunto Agora
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
+            <div class="quiz-intro-icon" style="margin: 0; width: 44px; height: 44px;">
+              <i data-lucide="brain-circuit" style="width: 26px; height: 26px; color: #4f46e5;"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.25rem;">Configurar Quiz Personalizado do Aluno</h3>
+              <p style="margin: 0; font-size: 0.78rem; color: #64748b;">Escolha a disciplina, a dificuldade e o número de questões para treinar com foco no SAS Asas 2026</p>
+            </div>
+          </div>
+
+          <div class="quiz-select-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px;">
+            <div class="quiz-select-col">
+              <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">1. Disciplina:</label>
+              <select id="quizSubjectSelect" onchange="app.onQuizSubjectChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
+                <option value="matematica" ${currentSubj === 'matematica' ? 'selected' : ''}>📐 Matemática (Asas 2026)</option>
+                <option value="portugues" ${currentSubj === 'portugues' ? 'selected' : ''}>✍️ Língua Portuguesa</option>
+                <option value="ciencias" ${currentSubj === 'ciencias' ? 'selected' : ''}>🔬 Ciências da Natureza</option>
+                <option value="historia" ${currentSubj === 'historia' ? 'selected' : ''}>🏛️ História</option>
+                <option value="geografia" ${currentSubj === 'geografia' ? 'selected' : ''}>🌍 Geografia</option>
+                <option value="ingles" ${currentSubj === 'ingles' ? 'selected' : ''}>🇬🇧 Língua Inglesa</option>
+              </select>
+            </div>
+
+            <div class="quiz-select-col">
+              <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">2. Livro (Apostila):</label>
+              <select id="quizBookSelect" onchange="app.onQuizBookChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
+                <option value="1" ${currentBook === 1 ? 'selected' : ''}>Livro 1 (1º Bimestre)</option>
+                <option value="2" ${currentBook === 2 ? 'selected' : ''}>Livro 2 (2º Bimestre)</option>
+                <option value="3" ${currentBook === 3 ? 'selected' : ''}>Livro 3 (3º Bimestre)</option>
+                <option value="4" ${currentBook === 4 ? 'selected' : ''}>Livro 4 (4º Bimestre)</option>
+              </select>
+            </div>
+
+            <div class="quiz-select-col">
+              <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">3. Capítulo da Apostila:</label>
+              <select id="quizChapterSelect" onchange="app.onQuizChapterChange()" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="quiz-select-col">
+              <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">4. Dificuldade do Quiz:</label>
+              <select id="quizDifficultySelect" onchange="app.onQuizDifficultyChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
+                <option value="facil" ${currentDiff === 'facil' ? 'selected' : ''}>🟢 Fácil (Fixação Básica)</option>
+                <option value="medio" ${currentDiff === 'medio' ? 'selected' : ''}>🟡 Médio (Padrão SAS)</option>
+                <option value="dificil" ${currentDiff === 'dificil' ? 'selected' : ''}>🔴 Difícil (Desafio SAS & Olimpíadas)</option>
+              </select>
+            </div>
+
+            <div class="quiz-select-col">
+              <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">5. Quantidade de Questões:</label>
+              <select id="quizQuestionCountSelect" onchange="app.onQuizCountChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
+                <option value="4" ${currentCount === 4 ? 'selected' : ''}>⚡ 4 Questões (Rápido • 8 min)</option>
+                <option value="8" ${currentCount === 8 ? 'selected' : ''}>🎯 8 Questões (Recomendado • 16 min)</option>
+                <option value="12" ${currentCount === 12 ? 'selected' : ''}>📚 12 Questões (Aprofundado • 24 min)</option>
+                <option value="16" ${currentCount === 16 ? 'selected' : ''}>🏆 16 Questões (Simulado Completo • 32 min)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="quizChapterPreviewBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 0.84rem; color: #334155;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div class="quiz-features" style="margin-bottom: 20px;">
+            <div class="q-feat"><i data-lucide="check-circle-2"></i> Rotação Diária 24h</div>
+            <div class="q-feat"><i data-lucide="check-circle-2"></i> Dificuldade Calibrável</div>
+            <div class="q-feat"><i data-lucide="check-circle-2"></i> Salva Erros para Revisão</div>
+          </div>
+
+          <button id="btnStartQuizSession" class="btn-primary" style="width: 100%; font-size: 1.05rem; padding: 14px 28px;" onclick="app.launchCustomChapterQuiz()">
+            <i data-lucide="play"></i> Iniciar Quiz (${currentCount} Questões • ${currentDiff.toUpperCase()})
           </button>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
-          <div class="quiz-intro-icon" style="margin: 0; width: 44px; height: 44px;">
-            <i data-lucide="brain-circuit" style="width: 26px; height: 26px; color: #4f46e5;"></i>
+        <!-- Histórico de Quizzes Realizados com Gabarito SAS -->
+        <div class="quiz-history-card" style="margin-top: 24px; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; text-align: left; box-shadow: 0 4px 16px rgba(0,0,0,0.02);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="history" style="color: #4f46e5; width: 22px; height: 22px;"></i> Histórico de Quizzes Realizados
+            </h4>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 999px;">
+              ${historyList.length} treino(s) salvo(s)
+            </span>
           </div>
-          <div>
-            <h3 style="margin: 0; font-size: 1.25rem;">Configurar Quiz Personalizado do Aluno</h3>
-            <p style="margin: 0; font-size: 0.78rem; color: #64748b;">Escolha a disciplina, a dificuldade e o número de questões para treinar com foco no SAS Asas 2026</p>
-          </div>
+
+          ${historyList.length === 0 ? `
+            <div style="text-align: center; padding: 28px 16px; background: #f8fafc; border-radius: 12px; border: 1.5px dashed #cbd5e1; color: #64748b;">
+              <div style="font-size: 1.6rem; margin-bottom: 6px;">📝</div>
+              <div style="font-weight: 700; font-size: 0.92rem; color: #334155;">Nenhum quiz concluído ainda.</div>
+              <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">Escolha uma disciplina acima e complete seu primeiro quiz para validar sua ofensiva do dia!</div>
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              ${historyList.slice(0, 10).map(attempt => {
+                const dateFmt = new Date(attempt.date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                const isGreat = attempt.percentage >= 70;
+                return `
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <div style="width: 44px; height: 44px; border-radius: 10px; background: ${isGreat ? '#dcfce7' : '#fee2e2'}; color: ${isGreat ? '#166534' : '#991b1b'}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800;">
+                        <span style="font-size: 0.88rem; line-height: 1;">${attempt.score}/${attempt.totalQuestions}</span>
+                        <span style="font-size: 0.65rem;">${attempt.percentage}%</span>
+                      </div>
+                      <div>
+                        <div style="font-weight: 800; font-size: 0.9rem; color: #0f172a;">
+                          ${(attempt.subject || 'Geral').toUpperCase()} &bull; Livro ${attempt.bookId || 1}
+                        </div>
+                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                          ${dateFmt} &bull; Nível ${(attempt.difficulty || 'dificil').toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-outline" onclick="app.viewQuizAttemptDetails('${attempt.id}')" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                      <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Ver Gabarito & Resoluções
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
         </div>
-
-        <div class="quiz-select-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 16px;">
-          <div class="quiz-select-col">
-            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">1. Disciplina:</label>
-            <select id="quizSubjectSelect" onchange="app.onQuizSubjectChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
-              <option value="matematica" ${currentSubj === 'matematica' ? 'selected' : ''}>📐 Matemática (Asas 2026)</option>
-              <option value="portugues" ${currentSubj === 'portugues' ? 'selected' : ''}>✍️ Língua Portuguesa</option>
-              <option value="ciencias" ${currentSubj === 'ciencias' ? 'selected' : ''}>🔬 Ciências da Natureza</option>
-              <option value="historia" ${currentSubj === 'historia' ? 'selected' : ''}>🏛️ História</option>
-              <option value="geografia" ${currentSubj === 'geografia' ? 'selected' : ''}>🌍 Geografia</option>
-              <option value="ingles" ${currentSubj === 'ingles' ? 'selected' : ''}>🇬🇧 Língua Inglesa</option>
-            </select>
-          </div>
-
-          <div class="quiz-select-col">
-            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">2. Livro (Apostila):</label>
-            <select id="quizBookSelect" onchange="app.onQuizBookChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
-              <option value="1" ${currentBook === 1 ? 'selected' : ''}>Livro 1 (1º Bimestre)</option>
-              <option value="2" ${currentBook === 2 ? 'selected' : ''}>Livro 2 (2º Bimestre)</option>
-              <option value="3" ${currentBook === 3 ? 'selected' : ''}>Livro 3 (3º Bimestre)</option>
-              <option value="4" ${currentBook === 4 ? 'selected' : ''}>Livro 4 (4º Bimestre)</option>
-            </select>
-          </div>
-
-          <div class="quiz-select-col">
-            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">3. Capítulo da Apostila:</label>
-            <select id="quizChapterSelect" onchange="app.onQuizChapterChange()" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
-              <!-- Populated dynamically -->
-            </select>
-          </div>
-
-          <div class="quiz-select-col">
-            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">4. Dificuldade do Quiz:</label>
-            <select id="quizDifficultySelect" onchange="app.onQuizDifficultyChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
-              <option value="facil" ${currentDiff === 'facil' ? 'selected' : ''}>🟢 Fácil (Fixação Básica)</option>
-              <option value="medio" ${currentDiff === 'medio' ? 'selected' : ''}>🟡 Médio (Padrão SAS)</option>
-              <option value="dificil" ${currentDiff === 'dificil' ? 'selected' : ''}>🔴 Difícil (Desafio SAS & Olimpíadas)</option>
-            </select>
-          </div>
-
-          <div class="quiz-select-col">
-            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 6px;">5. Quantidade de Questões:</label>
-            <select id="quizQuestionCountSelect" onchange="app.onQuizCountChange(this.value)" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff; color: #0f172a;">
-              <option value="4" ${currentCount === 4 ? 'selected' : ''}>⚡ 4 Questões (Rápido • 8 min)</option>
-              <option value="8" ${currentCount === 8 ? 'selected' : ''}>🎯 8 Questões (Recomendado • 16 min)</option>
-              <option value="12" ${currentCount === 12 ? 'selected' : ''}>📚 12 Questões (Aprofundado • 24 min)</option>
-              <option value="16" ${currentCount === 16 ? 'selected' : ''}>🏆 16 Questões (Simulado Completo • 32 min)</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="quizChapterPreviewBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 0.84rem; color: #334155;">
-          <!-- Dynamically populated -->
-        </div>
-
-        <div class="quiz-features" style="margin-bottom: 20px;">
-          <div class="q-feat"><i data-lucide="check-circle-2"></i> Rotação Diária 24h</div>
-          <div class="q-feat"><i data-lucide="check-circle-2"></i> Dificuldade Calibrável</div>
-          <div class="q-feat"><i data-lucide="check-circle-2"></i> Salva Erros para Revisão</div>
-        </div>
-
-        <button id="btnStartQuizSession" class="btn-primary" style="width: 100%; font-size: 1.05rem; padding: 14px 28px;" onclick="app.launchCustomChapterQuiz()">
-          <i data-lucide="play"></i> Iniciar Quiz (${currentCount} Questões • ${currentDiff.toUpperCase()})
-        </button>
       </div>
     `;
 
@@ -4430,8 +4680,9 @@ class EstudePlusApp {
   }
 
   confirmAnswer() {
-    if (this.quizState.selectedAnswer === null || this.quizState.answered) return;
+    if (this.quizState.answering || this.quizState.selectedAnswer === null || this.quizState.answered) return;
 
+    this.quizState.answering = true;
     this.quizState.answered = true;
     const q = this.quizState.questions[this.quizState.currentQuestionIdx];
     const isCorrect = Boolean(q.options[this.quizState.selectedAnswer]?.correct);
@@ -4462,6 +4713,22 @@ class EstudePlusApp {
       }
     }
 
+    if (!this.quizState.answersRecord) this.quizState.answersRecord = [];
+    const chosenOpt = q.options[this.quizState.selectedAnswer];
+    const correctOpt = q.options.find(o => o.correct);
+    this.quizState.answersRecord.push({
+      questionId: q.id || `q_${this.quizState.currentQuestionIdx}`,
+      questionText: q.text,
+      subject: q.subject,
+      topic: q.topic,
+      selectedAnswerIdx: this.quizState.selectedAnswer,
+      selectedAnswerText: chosenOpt ? chosenOpt.text : '',
+      isCorrect: isCorrect,
+      correctAnswerText: correctOpt ? correctOpt.text : '',
+      explanation: q.explanation || ''
+    });
+
+    this.saveActiveQuizDraft();
     this.renderCurrentQuestion();
   }
 
@@ -4469,14 +4736,17 @@ class EstudePlusApp {
     if (confirm('Deseja interromper o quiz atual e voltar para a escolha de capítulos da apostila?')) {
       if (this.quizState.timerInterval) clearInterval(this.quizState.timerInterval);
       this.quizState.active = false;
+      this.quizState.answering = false;
       this.renderQuizIntro();
     }
   }
 
   nextQuestion() {
+    this.quizState.answering = false;
     this.quizState.answered = false;
     this.quizState.selectedAnswer = null;
     this.quizState.currentQuestionIdx++;
+    this.saveActiveQuizDraft();
 
     if (this.quizState.currentQuestionIdx < this.quizState.questions.length) {
       this.renderCurrentQuestion();
@@ -4488,14 +4758,45 @@ class EstudePlusApp {
   finishQuiz() {
     if (this.quizState.timerInterval) clearInterval(this.quizState.timerInterval);
     this.quizState.active = false;
+    this.quizState.answering = false;
 
     const container = document.getElementById('quizContainer');
     if (!container) return;
 
-    const total = this.quizState.questions.length;
-    const score = this.quizState.score;
-    const pct = Math.round((score / total) * 100);
+    const total = (this.quizState.questions || []).length;
+    const score = this.quizState.score || 0;
+    const pct = total > 0 ? Math.round((score / total) * 100) : 0;
     const diff = this.quizState.difficulty || this.currentQuizDifficulty || 'dificil';
+    const subj = this.currentQuizSubject || 'matematica';
+    const answersRecord = this.quizState.answersRecord || [];
+
+    const attempt = {
+      id: 'quiz_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      date: new Date().toISOString(),
+      subject: subj,
+      bookId: this.currentQuizBookId || 1,
+      chapterId: this.currentQuizChapterId || 1,
+      difficulty: diff,
+      totalQuestions: total,
+      score: score,
+      percentage: pct,
+      answersRecord: answersRecord
+    };
+
+    if (!this.currentUser) this.currentUser = {};
+    if (!Array.isArray(this.currentUser.quizHistory)) {
+      this.currentUser.quizHistory = [];
+    }
+    this.currentUser.quizHistory.unshift(attempt);
+    if (this.currentUser.quizHistory.length > 50) {
+      this.currentUser.quizHistory = this.currentUser.quizHistory.slice(0, 50);
+    }
+    this.saveCurrentUser();
+    this.clearActiveQuizDraft();
+
+    // Envia ao backend oficial para salvar a tentativa e calcular a ofensiva
+    this.submitQuizAttemptToServer(attempt);
+
     const diffBadge = {
       facil: '<span style="font-size: 0.8rem; font-weight: 800; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 6px;">🟢 Nível: Fácil</span>',
       medio: '<span style="font-size: 0.8rem; font-weight: 800; background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px;">🟡 Nível: Médio SAS</span>',
@@ -4503,7 +4804,7 @@ class EstudePlusApp {
     }[diff] || '<span style="font-size: 0.8rem; font-weight: 800; background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px;">🔴 Difícil</span>';
 
     container.innerHTML = `
-      <div class="quiz-results-box" style="text-align: center; padding: 36px 20px;">
+      <div class="quiz-results-box" style="text-align: center; padding: 36px 20px; max-width: 800px; margin: 0 auto;">
         <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
           ${diffBadge}
           <span style="font-size: 0.8rem; font-weight: 800; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px;">🎯 ${total} Questões</span>
@@ -4514,6 +4815,13 @@ class EstudePlusApp {
           <span class="score-num" style="font-size: 1.8rem; font-weight: 800; color: ${pct >= 70 ? '#047857' : '#b91c1c'};">${score}/${total}</span>
           <span class="score-total" style="font-size: 0.76rem; font-weight: 700; color: ${pct >= 70 ? '#059669' : '#dc2626'};">${pct}% de Acerto</span>
         </div>
+
+        <div id="quizStreakResultBadge">
+          <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 12px; padding: 10px 16px; margin: 0 auto 16px; max-width: 480px; font-size: 0.84rem; color: #c2410c; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>⏳ Validando ofensiva no servidor...</span>
+          </div>
+        </div>
+
         <h3 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; color: #0f172a;">
           ${pct >= 75 ? '🎉 Excelente Desempenho no Quiz!' : '💪 Bom treino! Oportunidades encontradas.'}
         </h3>
@@ -4523,7 +4831,7 @@ class EstudePlusApp {
             : 'Cada questão errada foi catalogada automaticamente na aba "Aprender com os Erros" para você refazer e dominar a habilidade.'}
         </p>
 
-        <div class="results-box-actions" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <div class="results-box-actions" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;">
           <button class="btn-primary" onclick="app.renderQuizIntro()" style="background: #4f46e5; padding: 12px 24px;">
             <i data-lucide="repeat"></i> Escolher Outro Capítulo / Novo Quiz
           </button>
@@ -4533,6 +4841,37 @@ class EstudePlusApp {
           <button class="btn-outline" onclick="app.switchTab('sas-books')" style="padding: 12px 20px;">
             <i data-lucide="book-open"></i> Ir para Apostilas SAS
           </button>
+        </div>
+
+        <!-- Gabarito Detalhado e Resoluções Pedagógicas SAS -->
+        <div class="quiz-detailed-review" style="text-align: left; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; margin-top: 20px;">
+          <h4 style="margin: 0 0 16px; font-size: 1.1rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="check-square" style="color: #4f46e5; width: 22px; height: 22px;"></i> Gabarito Detalhado & Justificativas do SAS
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            ${answersRecord.map((ans, idx) => `
+              <div style="background: #ffffff; border-radius: 12px; border: 1.5px solid ${ans.isCorrect ? '#bbf7d0' : '#fecaca'}; padding: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #334155;">Questão ${idx + 1} &bull; ${ans.subject || subj}</span>
+                  <span style="font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px; background: ${ans.isCorrect ? '#dcfce7' : '#fee2e2'}; color: ${ans.isCorrect ? '#166534' : '#991b1b'};">
+                    ${ans.isCorrect ? '✔️ Acertou' : '❌ Errou'}
+                  </span>
+                </div>
+                <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a; margin-bottom: 10px; line-height: 1.45;">${ans.questionText}</div>
+                <div style="font-size: 0.85rem; margin-bottom: 6px; color: ${ans.isCorrect ? '#166534' : '#991b1b'};">
+                  <strong>Sua alternativa:</strong> ${ans.selectedAnswerText || 'Não marcada'}
+                </div>
+                ${!ans.isCorrect ? `
+                  <div style="font-size: 0.85rem; margin-bottom: 6px; color: #15803d;">
+                    <strong>Alternativa correta:</strong> ${ans.correctAnswerText}
+                  </div>
+                ` : ''}
+                <div style="background: #f1f5f9; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; color: #475569; margin-top: 8px; line-height: 1.5;">
+                  <strong>💡 Justificativa Pedagógica SAS:</strong> ${ans.explanation || 'Resolução comentada no material do SAS.'}
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
     `;
@@ -4544,6 +4883,144 @@ class EstudePlusApp {
     this.renderDashboard();
     this.renderMistakesReview();
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  async submitQuizAttemptToServer(attempt) {
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      const res = await fetch('/api/quiz/finish', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          userId: this.currentUser?.id,
+          attempt
+        })
+      });
+
+      const data = await res.json();
+      if (data && data.success) {
+        if (this.currentUser) {
+          if (data.streak !== undefined) this.currentUser.streak = data.streak;
+          if (data.bestStreak !== undefined) this.currentUser.bestStreak = data.bestStreak;
+          if (data.lastActivityDate) this.currentUser.lastActivityDate = data.lastActivityDate;
+          if (data.studiedDays) this.currentUser.studiedDays = data.studiedDays;
+          if (data.activityLog) this.currentUser.activityLog = data.activityLog;
+          this.currentUser.todayActive = true;
+          this.saveCurrentUser();
+          this.updateStreakDisplay();
+        }
+
+        const streakBadgeEl = document.getElementById('quizStreakResultBadge');
+        if (streakBadgeEl) {
+          streakBadgeEl.innerHTML = `
+            <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1.5px solid #fdba74; border-radius: 12px; padding: 12px 18px; margin: 0 auto 16px; max-width: 480px; display: flex; align-items: center; justify-content: center; gap: 10px; color: #9a3412;">
+              <span style="font-size: 1.6rem;">🔥</span>
+              <div style="text-align: left;">
+                <div style="font-weight: 800; font-size: 0.95rem;">
+                  ${data.alreadyActiveToday ? 'Ofensiva Diária Confirmada!' : 'Ofensiva Renovada com Sucesso!'}
+                </div>
+                <div style="font-size: 0.8rem; color: #c2410c;">
+                  ${data.alreadyActiveToday 
+                    ? `Você já completou uma atividade hoje. Sua sequência de <strong>${data.streak} dias seguidos</strong> está 100% protegida no servidor!`
+                    : `Parabéns por completar o quiz de hoje! Sua sequência subiu para <strong>${data.streak} dia(s) seguidos</strong>!`}
+                </div>
+              </div>
+            </div>
+          `;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }
+    } catch (err) {
+      console.warn('[Quiz Finish Sync Error]', err);
+    }
+  }
+
+  viewQuizAttemptDetails(attemptId) {
+    const list = this.currentUser?.quizHistory || [];
+    const attempt = list.find(a => String(a.id) === String(attemptId));
+    if (!attempt) {
+      alert('Tentativa de quiz não encontrada no histórico.');
+      return;
+    }
+
+    const body = document.getElementById('quizAttemptDetailModalBody');
+    if (body) {
+      const records = attempt.answersRecord || [];
+      const dateFormatted = new Date(attempt.date).toLocaleString('pt-BR');
+      const diffBadge = {
+        facil: '<span style="font-size: 0.76rem; font-weight: 800; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px;">🟢 Fácil</span>',
+        medio: '<span style="font-size: 0.76rem; font-weight: 800; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 6px;">🟡 Médio</span>',
+        dificil: '<span style="font-size: 0.76rem; font-weight: 800; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px;">🔴 Difícil</span>'
+      }[attempt.difficulty] || '';
+
+      body.innerHTML = `
+        <div style="padding: 10px 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Gabarito da Tentativa</h3>
+                ${diffBadge}
+              </div>
+              <div style="font-size: 0.8rem; color: #64748b; margin-top: 3px;">
+                Disciplina: <strong>${(attempt.subject || 'Geral').toUpperCase()}</strong> &bull; Realizado em: ${dateFormatted}
+              </div>
+            </div>
+            <div style="font-weight: 800; font-size: 1.1rem; background: ${attempt.percentage >= 70 ? '#dcfce7' : '#fee2e2'}; color: ${attempt.percentage >= 70 ? '#166534' : '#991b1b'}; padding: 6px 14px; border-radius: 10px;">
+              ${attempt.score}/${attempt.totalQuestions} (${attempt.percentage}%)
+            </div>
+          </div>
+
+          ${records.length === 0 ? `
+            <div style="text-align: center; padding: 24px; color: #94a3b8; font-size: 0.88rem;">
+              Nenhum detalhe de questão registrado para este quiz.
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              ${records.map((ans, idx) => `
+                <div style="background: #ffffff; border-radius: 12px; border: 1.5px solid ${ans.isCorrect ? '#bbf7d0' : '#fecaca'}; padding: 14px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px;">
+                    <span style="color: #475569;">Questão ${idx + 1} &bull; ${ans.topic || ans.subject || ''}</span>
+                    <span style="color: ${ans.isCorrect ? '#166534' : '#991b1b'};">${ans.isCorrect ? '✔️ Acertou' : '❌ Errou'}</span>
+                  </div>
+                  <div style="font-size: 0.9rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; line-height: 1.4;">${ans.questionText}</div>
+                  <div style="font-size: 0.82rem; color: ${ans.isCorrect ? '#166534' : '#991b1b'}; margin-bottom: 4px;">
+                    <strong>Alternativa do aluno:</strong> ${ans.selectedAnswerText || 'Não marcada'}
+                  </div>
+                  ${!ans.isCorrect ? `
+                    <div style="font-size: 0.82rem; color: #166534; margin-bottom: 4px;">
+                      <strong>Gabarito SAS oficial:</strong> ${ans.correctAnswerText}
+                    </div>
+                  ` : ''}
+                  <div style="font-size: 0.8rem; background: #f8fafc; padding: 8px 10px; border-radius: 6px; color: #475569; margin-top: 6px; line-height: 1.45;">
+                    <strong>Justificativa Pedagógica:</strong> ${ans.explanation || 'Resolução comentada pelo SAS.'}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+      this.showModal('quizAttemptDetailModal');
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  updateStreakDisplay() {
+    const streakDays = Number(this.currentUser?.streak || this.state.streak || 0);
+    this.state.streak = streakDays;
+
+    const streakEl = document.getElementById('streakCount');
+    if (streakEl) streakEl.innerText = `${streakDays} dias seguidos`;
+
+    const kpiStreak = document.getElementById('statKpiStreak');
+    if (kpiStreak) kpiStreak.innerText = `🔥 ${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}`;
+
+    this.refreshBadges();
+    this.renderSmartStats();
   }
 
   /* ================= MISTAKES & REVIEW (CENA 7 & 8) ================= */
@@ -4625,8 +5102,11 @@ class EstudePlusApp {
       this.renderMistakesReview();
       this.renderDashboard();
       this.refreshBadges();
-      if (item.status === 'resolved' && typeof confetti === 'function') {
-        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      if (item.status === 'resolved') {
+        this.recordValidActivity('mistake_resolved', { mistakeId: id, question: item.question });
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+        }
       }
     }
   }
@@ -5269,6 +5749,7 @@ class EstudePlusApp {
       if (item.status === 'pending') {
         item.status = 'done';
         item.doneAt = new Date().toISOString();
+        this.recordValidActivity('tpc_completed', { tpcId: id, title: item.title, discipline: item.discipline });
       } else {
         item.status = 'pending';
         delete item.doneAt;
@@ -8441,6 +8922,12 @@ class EstudePlusApp {
             if (u.tasks) {
               if (Array.isArray(u.tasks.completedTpcIds)) this.state.completedTpcIds = u.tasks.completedTpcIds;
               if (Array.isArray(u.tasks.userTpcs)) this.state.userTpcs = u.tasks.userTpcs;
+            }
+            if (Array.isArray(u.quizHistory)) {
+              this.currentUser.quizHistory = u.quizHistory;
+            }
+            if (u.activeQuizSession) {
+              this.currentUser.activeQuizSession = u.activeQuizSession;
             }
 
             this.activePlanRequest = data.activePlanRequest || null;

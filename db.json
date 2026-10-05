@@ -171,6 +171,493 @@
         "2026-10-04"
       ],
       "proExpiresAt": "2026-11-03T23:44:20.075Z"
+    },
+    {
+      "id": "usr_1791158058933_m9hp",
+      "name": "dadawdaw",
+      "username": "awawdadaw",
+      "email": "awawdadaw@estude.app",
+      "passwordHash": "96d80419412c75a7d35083cc53102308566e703ec3b4d66847bd3a58a84855451dd452d12999ca38fe33fa582ae298861fe41db9165bf96a63684cf7c34c116f",
+      "passwordSalt": "2c185a8c9104a005e6e9c3b642731816",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 1,
+      "bestStreak": 1,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [
+        "2026-10-04"
+      ],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-04T23:54:18.933Z",
+      "lastLogin": "2026-10-04T23:54:18.933Z",
+      "lastDeviceType": "Computador / PC",
+      "studentSettings": {},
+      "preferences": {
+        "themeMode": "light",
+        "fontSize": "normal",
+        "density": "comfortable",
+        "accentColor": "#4f46e5",
+        "accentName": "Índigo Estude+",
+        "reduceMotion": false,
+        "dashboardCards": [
+          {
+            "id": "profile-shortcuts",
+            "label": "👤 Perfil & Atalhos Rápidos",
+            "visible": true,
+            "locked": true
+          },
+          {
+            "id": "focus-strip",
+            "label": "🎯 Foco de Estudos & Metas",
+            "visible": true
+          },
+          {
+            "id": "smart-stats",
+            "label": "📊 Estatísticas Inteligentes & Metas",
+            "visible": true
+          },
+          {
+            "id": "studies-eureka",
+            "label": "🧭 Meus Estudos & Universo Eureka",
+            "visible": true
+          },
+          {
+            "id": "news",
+            "label": "📰 Notícias & Atualizações",
+            "visible": true
+          },
+          {
+            "id": "agenda",
+            "label": "📅 Agenda Escolar Gammon+",
+            "visible": true
+          }
+        ]
+      },
+      "timetable": [
+        {
+          "time": "07:30 - 08:15",
+          "segunda": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "terca": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Arte",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Redação",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "08:15 - 09:00",
+          "segunda": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Educação Física",
+            "room": "Ginásio / Quadra",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          }
+        },
+        {
+          "time": "09:00 - 09:45",
+          "segunda": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "terca": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "10:05 - 10:50",
+          "segunda": {
+            "subject": "Ensino Religioso",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Redação",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "10:50 - 11:35",
+          "segunda": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "11:35 - 12:20",
+          "segunda": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Educação Física",
+            "room": "Ginásio / Quadra",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        }
+      ],
+      "tasks": {
+        "completedTpcIds": [],
+        "userTpcs": []
+      },
+      "completedTpcIds": [],
+      "userTpcs": [],
+      "lastSync": "2026-10-04T23:54:28.881Z",
+      "loginDays": [
+        "2026-10-04"
+      ],
+      "lastVisitDate": "2026-10-04"
+    },
+    {
+      "id": "usr_1791158756152_3mwn",
+      "name": "Aluno Teste Quizzes",
+      "username": "aluno_teste_1791158756086",
+      "email": "aluno_teste_1791158756086@estude.app",
+      "passwordHash": "1fc820b4a9ca8b627ea700429a12fecbdd4cc2f21d4e0757d5bd9dc1b09bfb1b7dbeb79b17b163315cbbdce868064d7d6083ad7d16e373ebc7a7e98b099ba13b",
+      "passwordSalt": "718cca859ced1d7e52b104dff791e577",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T00:05:56.152Z",
+      "lastLogin": "2026-10-05T00:05:56.152Z",
+      "lastDeviceType": "Computador / Desktop"
+    },
+    {
+      "id": "usr_1791158789471_cky6",
+      "name": "Aluno Teste Quizzes",
+      "username": "aluno_teste_1791158789398",
+      "email": "aluno_teste_1791158789398@estude.app",
+      "passwordHash": "d985baf75789ae46ad508b18419625f7cbf28cf9171167cfa19d1267a2d6fe2680526e5fac5cb78e8f7cb644033cb0e992d6e664e2c086c531fa5e36ba0195de",
+      "passwordSalt": "c51f6652188599b0ea182de11c3f3691",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 1,
+      "bestStreak": 1,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [
+        "2026-10-04"
+      ],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T00:06:29.471Z",
+      "lastLogin": "2026-10-05T00:06:29.556Z",
+      "lastDeviceType": "Computador / Desktop",
+      "loginDays": [
+        "2026-10-05",
+        "2026-10-04"
+      ],
+      "lastVisitDate": "2026-10-05",
+      "activeQuizSession": null,
+      "quizHistory": [
+        {
+          "id": "att_1791158789589_xmod3d",
+          "date": "2026-10-04",
+          "completedAt": "2026-10-05T00:06:29.588Z",
+          "quizId": "quiz_geral_1_1",
+          "subject": "Geral",
+          "bookId": 1,
+          "chapterId": 1,
+          "chapterTitle": "Capítulo SAS",
+          "difficulty": "medio",
+          "totalQuestions": 4,
+          "score": 0,
+          "percentage": 0,
+          "timeSpentSeconds": 0,
+          "questions": []
+        },
+        {
+          "id": "att_1791158789575_fxcki3",
+          "date": "2026-10-04",
+          "completedAt": "2026-10-05T00:06:29.573Z",
+          "quizId": "quiz_geral_1_1",
+          "subject": "Geral",
+          "bookId": 1,
+          "chapterId": 1,
+          "chapterTitle": "Capítulo SAS",
+          "difficulty": "medio",
+          "totalQuestions": 4,
+          "score": 0,
+          "percentage": 0,
+          "timeSpentSeconds": 0,
+          "questions": []
+        }
+      ],
+      "activityLog": [
+        {
+          "id": "act_1791158789595_ot81c",
+          "date": "2026-10-04",
+          "timestamp": "2026-10-05T00:06:29.594Z",
+          "type": "learning_activity",
+          "details": {
+            "tpcId": 101,
+            "title": "Exercícios SAS Cap 1"
+          }
+        },
+        {
+          "id": "act_1791158789589_tw4c4",
+          "date": "2026-10-04",
+          "timestamp": "2026-10-05T00:06:29.589Z",
+          "type": "quiz_completed",
+          "details": {
+            "attemptId": "att_1791158789589_xmod3d",
+            "subject": "Geral",
+            "chapterTitle": "Capítulo SAS",
+            "score": 0,
+            "total": 4,
+            "pct": 0
+          }
+        },
+        {
+          "id": "act_1791158789576_k6clg",
+          "date": "2026-10-04",
+          "timestamp": "2026-10-05T00:06:29.575Z",
+          "type": "quiz_completed",
+          "details": {
+            "attemptId": "att_1791158789575_fxcki3",
+            "subject": "Geral",
+            "chapterTitle": "Capítulo SAS",
+            "score": 0,
+            "total": 4,
+            "pct": 0
+          }
+        }
+      ],
+      "lastActiveDate": "2026-10-04"
+    },
+    {
+      "id": "usr_1791158812490_hufs",
+      "name": "Aluno Teste Quizzes",
+      "username": "aluno_teste_1791158812419",
+      "email": "aluno_teste_1791158812419@estude.app",
+      "passwordHash": "9c09bbd3686a0bbe6b38b02795cf439e481ef776cd5065031cd3642f3d5f7cecb8ad46df649a64330dd9eea1dfd234cd95090db9ed7ab59f27f8409d47c08cac",
+      "passwordSalt": "be6faebbe24bb49987c9ffafe98692a3",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 1,
+      "bestStreak": 1,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [
+        "2026-10-04"
+      ],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T00:06:52.490Z",
+      "lastLogin": "2026-10-05T00:06:52.572Z",
+      "lastDeviceType": "Computador / Desktop",
+      "loginDays": [
+        "2026-10-05",
+        "2026-10-04"
+      ],
+      "lastVisitDate": "2026-10-05",
+      "activeQuizSession": null,
+      "quizHistory": [
+        {
+          "id": "att_1791158812604_vv7qy5",
+          "date": "2026-10-04",
+          "completedAt": "2026-10-05T00:06:52.603Z",
+          "quizId": "quiz_geral_1_1",
+          "subject": "Geral",
+          "bookId": 1,
+          "chapterId": 1,
+          "chapterTitle": "Capítulo SAS",
+          "difficulty": "medio",
+          "totalQuestions": 4,
+          "score": 0,
+          "percentage": 0,
+          "timeSpentSeconds": 0,
+          "questions": []
+        },
+        {
+          "id": "att_1791158812589_b5uuso",
+          "date": "2026-10-04",
+          "completedAt": "2026-10-05T00:06:52.588Z",
+          "quizId": "quiz_geral_1_1",
+          "subject": "Geral",
+          "bookId": 1,
+          "chapterId": 1,
+          "chapterTitle": "Capítulo SAS",
+          "difficulty": "medio",
+          "totalQuestions": 4,
+          "score": 0,
+          "percentage": 0,
+          "timeSpentSeconds": 0,
+          "questions": []
+        }
+      ],
+      "activityLog": [
+        {
+          "id": "act_1791158812610_804j1",
+          "date": "2026-10-04",
+          "timestamp": "2026-10-05T00:06:52.610Z",
+          "type": "learning_activity",
+          "details": {
+            "tpcId": 101,
+            "title": "Exercícios SAS Cap 1"
+          }
+        },
+        {
+          "id": "act_1791158812604_i84f1",
+          "date": "2026-10-04",
+          "timestamp": "2026-10-05T00:06:52.604Z",
+          "type": "quiz_completed",
+          "details": {
+            "attemptId": "att_1791158812604_vv7qy5",
+            "subject": "Geral",
+            "chapterTitle": "Capítulo SAS",
+            "score": 0,
+            "total": 4,
+            "pct": 0
+          }
+        },
+        {
+          "id": "act_1791158812590_isvax",
+          "date": "2026-10-04",
+          "timestamp": "2026-10-05T00:06:52.590Z",
+          "type": "quiz_completed",
+          "details": {
+            "attemptId": "att_1791158812589_b5uuso",
+            "subject": "Geral",
+            "chapterTitle": "Capítulo SAS",
+            "score": 0,
+            "total": 4,
+            "pct": 0
+          }
+        }
+      ],
+      "lastActiveDate": "2026-10-04"
     }
   ],
   "tpcs": [
