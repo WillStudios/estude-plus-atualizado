@@ -1835,9 +1835,7 @@
   <!-- ================= MODAL: CONFIGURAÇÕES & PREFERÊNCIAS DO ALUNO ================= -->
   <div class="modal-overlay" id="studentSettingsModal">
     <div class="modal-card modal-settings-card">
-      <button class="modal-close" onclick="app.closeModal('studentSettingsModal')">&times;</button>
-      
-      <div class="modal-header-with-badge">
+      <div class="modal-header-with-badge" style="position: relative; padding-right: 56px;">
         <div class="settings-modal-header-icon">⚙️</div>
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -1848,6 +1846,7 @@
             Ajuste o ESTUDE+ para a sua série, suas matérias de maior dificuldade, sua rotina diária e o estilo do seu Tutor IA.
           </p>
         </div>
+        <button type="button" class="modal-close-btn" onclick="app.closeModal('studentSettingsModal')" style="position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #334155; font-size: 1.3rem; font-weight: 700; line-height: 1; transition: all 0.15s ease;" title="Fechar (ESC)">&times;</button>
       </div>
 
       <!-- Settings Navigation Tabs -->
