@@ -1,0 +1,8 @@
+{
+  "status": "success",
+  "message": "Estrutura curricular oficial do SAS 2026 ativa (Apostilas 1, 2 e 3).",
+  "timestamp": "2026-10-05T15:00:00.000Z",
+  "lastLiveSync": "2026-10-05T15:00:00.000Z",
+  "totalSubjects": 6,
+  "apostilasPermitidas": [1, 2, 3]
+}

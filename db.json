@@ -252,6 +252,21 @@
       "lastSync": "2026-10-05T15:45:32.980Z",
       "activityLog": [
         {
+          "id": "act_1791215725212_6ugjj",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T15:55:25.183Z",
+          "type": "trilha_stage_completed",
+          "details": {
+            "subjectKey": "matematica",
+            "bookId": 1,
+            "chapterId": 1,
+            "chapterTitle": "Capítulo 1 – Divisibilidade",
+            "stageId": "fundamentos",
+            "score": 10,
+            "total": 10
+          }
+        },
+        {
           "id": "act_1791215030524_3feqr",
           "date": "2026-10-05",
           "timestamp": "2026-10-05T15:43:50.524Z",
@@ -273,255 +288,6 @@
         }
       ],
       "lastActiveDate": "2026-10-05"
-    },
-    {
-      "id": "usr_1791215296881_zox1",
-      "name": "daad",
-      "username": "awawaw",
-      "email": "awawaw@estude.app",
-      "passwordHash": "51747132ba92de116fa087c5d27535e14b0efb0e1f218d39e1191cf2ad201a5defeb461642ddd147b0364e492c0dcd6a21f62a1640a29cc95a87ad47b081c1e8",
-      "passwordSalt": "096317c91225d6215e2705c81d8b7e2c",
-      "role": "student",
-      "isSubscribed": false,
-      "plan": "free",
-      "planStatus": "free",
-      "planName": "Plano Base",
-      "emailVerified": true,
-      "streak": 2,
-      "bestStreak": 0,
-      "dailyGoalMinutes": 15,
-      "studiedDays": [
-        "2026-10-04",
-        "2026-10-05"
-      ],
-      "todayMinutes": 1,
-      "achievements": [],
-      "createdIp": "127.0.0.1",
-      "createdAt": "2026-10-05T15:48:16.881Z",
-      "lastLogin": "2026-10-05T15:48:16.881Z",
-      "lastDeviceType": "Computador / PC",
-      "studentSettings": {},
-      "preferences": {
-        "themeMode": "light",
-        "fontSize": "normal",
-        "density": "comfortable",
-        "accentColor": "#4f46e5",
-        "accentName": "Índigo Estude+",
-        "reduceMotion": false,
-        "dashboardCards": [
-          {
-            "id": "profile-shortcuts",
-            "label": "👤 Perfil & Atalhos Rápidos",
-            "visible": true,
-            "locked": true
-          },
-          {
-            "id": "focus-strip",
-            "label": "🎯 Foco de Estudos & Metas",
-            "visible": true
-          },
-          {
-            "id": "smart-stats",
-            "label": "📊 Estatísticas Inteligentes & Metas",
-            "visible": true
-          },
-          {
-            "id": "studies-eureka",
-            "label": "🧭 Meus Estudos & Universo Eureka",
-            "visible": true
-          },
-          {
-            "id": "news",
-            "label": "📰 Notícias & Atualizações",
-            "visible": true
-          },
-          {
-            "id": "agenda",
-            "label": "📅 Agenda Escolar Gammon+",
-            "visible": true
-          }
-        ]
-      },
-      "timetable": [
-        {
-          "time": "07:30 - 08:15",
-          "segunda": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "terca": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Arte",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Redação",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "sexta": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "08:15 - 09:00",
-          "segunda": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Educação Física",
-            "room": "Ginásio / Quadra",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "História",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "sexta": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          }
-        },
-        {
-          "time": "09:00 - 09:45",
-          "segunda": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "terca": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Geografia",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "sexta": {
-            "subject": "História",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "10:05 - 10:50",
-          "segunda": {
-            "subject": "Ensino Religioso",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Redação",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "sexta": {
-            "subject": "Ciências",
-            "room": "Lab. Ciências",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "10:50 - 11:35",
-          "segunda": {
-            "subject": "Geografia",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Geografia",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Ciências",
-            "room": "Lab. Ciências",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "sexta": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "11:35 - 12:20",
-          "segunda": {
-            "subject": "Ciências",
-            "room": "Lab. Ciências",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Educação Física",
-            "room": "Ginásio / Quadra",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "História",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "sexta": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        }
-      ],
-      "tasks": {
-        "completedTpcIds": [],
-        "userTpcs": []
-      },
-      "completedTpcIds": [],
-      "userTpcs": [],
-      "lastSync": "2026-10-05T15:48:18.538Z",
-      "loginDays": [
-        "2026-10-05"
-      ]
     }
   ],
   "tpcs": [
@@ -2677,7 +2443,7 @@
   "masterCommands": {
     "broadcastNotice": "",
     "lockdownActive": false,
-    "forceRefreshTimestamp": 1791215029405
+    "forceRefreshTimestamp": 1791215334061
   },
   "connectedDevices": [],
   "planRequests": [],
@@ -2700,6 +2466,21 @@
   "adminNotifications": [],
   "systemEvents": [
     {
+      "id": "evt_1791215725216_ndfl",
+      "level": "info",
+      "source": "trilhas",
+      "message": "Etapa [fundamentos] da trilha de Capítulo 1 – Divisibilidade concluída pelo aluno",
+      "details": {
+        "userId": "admin_freddie",
+        "subjectKey": "matematica",
+        "bookId": 1,
+        "chapterId": 1,
+        "masteryPercentage": 14,
+        "isCompleted": false
+      },
+      "timestamp": "2026-10-05T15:55:25.216Z"
+    },
+    {
       "id": "evt_1791215029409_8cq4",
       "level": "info",
       "source": "gammon_sync",
@@ -2721,6 +2502,14 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "log_1791215334061",
+      "timestamp": "2026-10-05T15:48:54.061Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791215296881_zox1",
+      "details": "Conta \"daad\" (usr_1791215296881_zox1) excluída definitivamente do sistema por daad."
+    },
     {
       "id": "aud_1791215302431_shf2",
       "action": "delete_material",
@@ -2940,5 +2729,6 @@
   "flashcards": [],
   "simulados": [],
   "mindmaps": [],
-  "studentNotes": []
+  "studentNotes": [],
+  "trilhasProgress": []
 }

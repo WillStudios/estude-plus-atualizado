@@ -73,6 +73,7 @@ function readDb() {
       if (!Array.isArray(parsed.simulados)) parsed.simulados = [];
       if (!Array.isArray(parsed.mindmaps)) parsed.mindmaps = [];
       if (!Array.isArray(parsed.studentNotes)) parsed.studentNotes = [];
+      if (!Array.isArray(parsed.trilhasProgress)) parsed.trilhasProgress = [];
       if (Array.isArray(parsed.users)) {
         parsed.users = parsed.users.filter(u => !isMockUser(u));
       }
@@ -88,6 +89,7 @@ function readDb() {
     simulados: [],
     mindmaps: [],
     studentNotes: [],
+    trilhasProgress: [],
     tpcs: [],
     gammonStatus: {},
     masterCommands: {},
@@ -1130,6 +1132,278 @@ const server = http.createServer((req, res) => {
       });
     });
     return;
+  }
+
+  /* ==========================================================================
+     SISTEMA DE TRILHAS SAS (APOSTILAS 1, 2 E 3) & PROGRESSÃO DE CAPÍTULOS
+     ========================================================================== */
+
+  // 1. GET /api/trilhas/content - Conteúdo oficial mapeado do SAS (estritamente Apostilas 1, 2 e 3)
+  if (req.method === 'GET' && pathname === '/api/trilhas/content') {
+    const contentPath = path.join(__dirname, 'sas_authorized_content.json');
+    let authorizedData = null;
+    if (fs.existsSync(contentPath)) {
+      try {
+        authorizedData = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
+      } catch (e) {
+        console.error('Erro ao ler sas_authorized_content.json:', e);
+      }
+    }
+
+    if (!authorizedData || !authorizedData.subjects) {
+      return sendJson({ error: 'Conteúdo curricular SAS não disponível.' }, 404);
+    }
+
+    // Regra estrita: NUNCA permitir Apostila 4
+    for (const subjKey of Object.keys(authorizedData.subjects)) {
+      const subj = authorizedData.subjects[subjKey];
+      if (Array.isArray(subj.apostilas)) {
+        subj.apostilas = subj.apostilas.filter(a => a.id <= 3);
+      }
+    }
+
+    return sendJson({
+      success: true,
+      source: authorizedData.source,
+      curriculumYear: authorizedData.curriculumYear || 2026,
+      grade: authorizedData.grade || '7º Ano - Ensino Fundamental',
+      updatedAt: authorizedData.updatedAt,
+      subjects: authorizedData.subjects
+    });
+  }
+
+  // 2. GET /api/trilhas/progress - Retorna progresso do aluno autenticado nas trilhas
+  if (req.method === 'GET' && pathname === '/api/trilhas/progress') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado. Faça login para acessar suas trilhas.' }, 401);
+    }
+
+    const db = readDb();
+    const userProgress = (db.trilhasProgress || []).filter(p => String(p.userId) === String(auth.user.id));
+
+    // Filtros opcionais por matéria, apostila e capítulo
+    const subjectParam = parsedUrl.searchParams.get('subject');
+    const bookParam = parsedUrl.searchParams.get('bookId');
+    const chapterParam = parsedUrl.searchParams.get('chapterId');
+
+    let filtered = userProgress;
+    if (subjectParam) {
+      filtered = filtered.filter(p => p.subjectKey === subjectParam);
+    }
+    if (bookParam) {
+      filtered = filtered.filter(p => Number(p.bookId) === Number(bookParam));
+    }
+    if (chapterParam) {
+      filtered = filtered.filter(p => Number(p.chapterId) === Number(chapterParam));
+    }
+
+    // Métricas agregadas de desempenho e maestria
+    const totalChaptersCompleted = userProgress.filter(p => p.isCompleted).length;
+    const totalStagesCompleted = userProgress.reduce((acc, curr) => acc + (Array.isArray(curr.completedStages) ? curr.completedStages.length : 0), 0);
+    const avgMastery = userProgress.length > 0
+      ? Math.round(userProgress.reduce((acc, curr) => acc + (curr.masteryPercentage || 0), 0) / userProgress.length)
+      : 0;
+
+    return sendJson({
+      success: true,
+      progress: filtered,
+      allProgress: userProgress,
+      summary: {
+        totalChaptersCompleted,
+        totalStagesCompleted,
+        avgMastery,
+        activeTrailsCount: userProgress.length
+      }
+    });
+  }
+
+  // 3. POST /api/trilhas/complete-stage - Conclui etapa da trilha e avança progressão
+  if (req.method === 'POST' && pathname === '/api/trilhas/complete-stage') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado para registrar etapa de trilha.' }, 401);
+    }
+
+    parseBody((data) => {
+      const subjectKey = String(data?.subjectKey || '').trim().toLowerCase();
+      const bookId = Number(data?.bookId || 0);
+      const chapterId = Number(data?.chapterId || 0);
+      const stageId = String(data?.stageId || '').trim();
+      const stageIndex = Number(data?.stageIndex ?? -1);
+      const chapterTitle = String(data?.chapterTitle || `Capítulo ${chapterId}`).trim();
+      const score = Number(data?.score || 0);
+      const total = Number(data?.total || 0);
+
+      if (!subjectKey || !bookId || !chapterId || !stageId) {
+        return sendJson({ error: 'Dados obrigatórios da etapa ausentes (subjectKey, bookId, chapterId, stageId).' }, 400);
+      }
+
+      // REGRA ESTRITA: Apenas Apostilas 1, 2 e 3 são permitidas
+      if (bookId > 3 || bookId < 1) {
+        return sendJson({ error: 'Apenas as Apostilas 1, 2 e 3 do SAS são permitidas. Apostila inválida.' }, 400);
+      }
+
+      const validStages = ['fundamentos', 'pratica_1', 'quiz_1', 'pratica_2', 'quiz_2', 'revisao', 'desafio_final'];
+      if (!validStages.includes(stageId)) {
+        return sendJson({ error: 'Etapa inválida para a trilha do capítulo.' }, 400);
+      }
+
+      const db = readDb();
+      if (!Array.isArray(db.trilhasProgress)) db.trilhasProgress = [];
+
+      const recordId = `trilha_${auth.user.id}_${subjectKey}_${bookId}_${chapterId}`;
+      let record = db.trilhasProgress.find(p => p.id === recordId);
+
+      const now = new Date().toISOString();
+
+      if (!record) {
+        record = {
+          id: recordId,
+          userId: auth.user.id,
+          subjectKey,
+          bookId,
+          chapterId,
+          chapterTitle,
+          currentStageIndex: 0,
+          completedStages: [],
+          stageResults: {},
+          masteryPercentage: 0,
+          isCompleted: false,
+          startedAt: now,
+          lastCompletedAt: now
+        };
+        db.trilhasProgress.push(record);
+      }
+
+      if (!Array.isArray(record.completedStages)) record.completedStages = [];
+      if (!record.stageResults) record.stageResults = {};
+
+      // Adiciona etapa sem duplicação
+      if (!record.completedStages.includes(stageId)) {
+        record.completedStages.push(stageId);
+      }
+
+      // Registra resultado da etapa
+      record.stageResults[stageId] = {
+        completedAt: now,
+        score,
+        total,
+        percentage: total > 0 ? Math.round((score / total) * 100) : 100
+      };
+
+      // Atualiza índice da etapa atual desbloqueada
+      const foundIdx = validStages.indexOf(stageId);
+      if (foundIdx >= 0) {
+        record.currentStageIndex = Math.max(record.currentStageIndex || 0, foundIdx + 1);
+      }
+
+      // Calcula maestria percentual do capítulo (7 etapas = 100%)
+      record.masteryPercentage = Math.round((record.completedStages.length / validStages.length) * 100);
+      if (record.completedStages.length >= validStages.length) {
+        record.isCompleted = true;
+        record.completedAt = now;
+      }
+      record.lastCompletedAt = now;
+
+      // Integração com cálculo de ofensiva (Streak diário)
+      const user = (db.users || []).find(u => u.id === auth.user.id) || auth.user;
+      const streakResult = calculateOfensivaAfterActivity(user, 'trilha_stage_completed', {
+        subjectKey,
+        bookId,
+        chapterId,
+        chapterTitle,
+        stageId,
+        score,
+        total
+      });
+
+      writeDb(db);
+      supabase.syncFromLocalDb(db).catch(() => {});
+
+      logSystemEvent('info', 'trilhas', `Etapa [${stageId}] da trilha de ${chapterTitle} concluída pelo aluno`, {
+        userId: auth.user.id,
+        subjectKey,
+        bookId,
+        chapterId,
+        masteryPercentage: record.masteryPercentage,
+        isCompleted: record.isCompleted
+      });
+
+      return sendJson({
+        success: true,
+        message: record.isCompleted ? 'Parabéns! Você alcançou o Domínio Total deste capítulo! 🏆' : 'Etapa da trilha concluída com sucesso!',
+        progress: record,
+        isCompleted: record.isCompleted,
+        streak: user.streak,
+        bestStreak: user.bestStreak,
+        alreadyActiveToday: streakResult.alreadyActiveToday
+      });
+    });
+    return;
+  }
+
+  // 4. POST /api/trilhas/reset-chapter - Reinicia trilha de um capítulo para novo treino
+  if (req.method === 'POST' && pathname === '/api/trilhas/reset-chapter') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado.' }, 401);
+    }
+
+    parseBody((data) => {
+      const subjectKey = String(data?.subjectKey || '').trim().toLowerCase();
+      const bookId = Number(data?.bookId || 0);
+      const chapterId = Number(data?.chapterId || 0);
+
+      const db = readDb();
+      const recordId = `trilha_${auth.user.id}_${subjectKey}_${bookId}_${chapterId}`;
+      const recordIndex = (db.trilhasProgress || []).findIndex(p => p.id === recordId);
+
+      if (recordIndex !== -1) {
+        db.trilhasProgress.splice(recordIndex, 1);
+        writeDb(db);
+      }
+
+      return sendJson({
+        success: true,
+        message: 'Trilha do capítulo reiniciada com sucesso para novos estudos!'
+      });
+    });
+    return;
+  }
+
+  // 5. POST /api/trilhas/sas-sync - Disparo de sincronização autorizada segura com SAS
+  if (req.method === 'POST' && pathname === '/api/trilhas/sas-sync') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado.' }, 401);
+    }
+
+    const { exec } = require('child_process');
+    const syncScript = path.join(__dirname, 'sas_sync_service.js');
+
+    exec(`node "${syncScript}"`, (err, stdout, stderr) => {
+      if (err) {
+        console.error('[SAS Sync Error]:', err.message);
+      }
+    });
+
+    return sendJson({
+      success: true,
+      message: 'Sincronizador autorizado acionado. Caso necessário, a janela do navegador será exibida para autenticação manual.'
+    });
+  }
+
+  // 6. GET /api/trilhas/sas-sync-status - Status da sincronização autorizada
+  if (req.method === 'GET' && pathname === '/api/trilhas/sas-sync-status') {
+    const statusFile = path.join(__dirname, 'sas_sync_status.json');
+    let statusData = { status: 'idle', message: 'Nenhuma sincronização recente registrada.' };
+    if (fs.existsSync(statusFile)) {
+      try {
+        statusData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+      } catch (e) {}
+    }
+    return sendJson(statusData);
   }
 
   /* ==========================================================================

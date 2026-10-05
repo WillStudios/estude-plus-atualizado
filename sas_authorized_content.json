@@ -1,0 +1,470 @@
+{
+  "source": "https://app.portalsaseducacao.com.br/conteudo/",
+  "curriculumYear": 2026,
+  "grade": "7º Ano - Ensino Fundamental",
+  "updatedAt": "2026-10-05T15:53:47.755Z",
+  "subjects": {
+    "matematica": {
+      "name": "Matemática",
+      "icon": "📐",
+      "color": "#2563eb",
+      "meta": "Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano",
+      "apostilas": [
+        {
+          "id": 1,
+          "title": "Apostila 1",
+          "chapters": [
+            {
+              "id": 1,
+              "title": "Capítulo 1 – Divisibilidade",
+              "tag": "Capítulo 1",
+              "desc": "Múltiplos, divisores, critérios de divisibilidade (2, 3, 4, 5, 6, 8, 9, 10), números primos e compostos, fatoração completa e decomposição prima."
+            },
+            {
+              "id": 2,
+              "title": "Capítulo 2 – Números inteiros",
+              "tag": "Capítulo 2",
+              "desc": "Conceito de número negativo, reta numérica inteira, módulo ou valor absoluto, números opostos/simétricos e comparação de inteiros."
+            },
+            {
+              "id": 3,
+              "title": "Capítulo 3 – Operações com números inteiros",
+              "tag": "Capítulo 3",
+              "desc": "Adição, subtração, jogo de sinais, multiplicação, divisão e expressões numéricas com parênteses, colchetes e chaves."
+            },
+            {
+              "id": 4,
+              "title": "Capítulo 4 – Circunferência",
+              "tag": "Capítulo 4",
+              "desc": "Definição de circunferência e círculo, centro, raio, diâmetro, corda, arco, número Pi (π) e cálculo do comprimento C = 2πr."
+            },
+            {
+              "id": 5,
+              "title": "Capítulo 5 – Transformações geométricas no plano cartesiano",
+              "tag": "Capítulo 5",
+              "desc": "Coordenadas cartesianas (x, y), eixos das abscissas e ordenadas, quadrantes, simetria de reflexão, translação e rotação de figuras."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Apostila 2",
+          "chapters": [
+            {
+              "id": 6,
+              "title": "Capítulo 6 – Frações e números racionais",
+              "tag": "Capítulo 6",
+              "desc": "Conceito de número racional, representação fracionária e decimal, frações equivalentes e simplificação."
+            },
+            {
+              "id": 7,
+              "title": "Capítulo 7 – Operações com números racionais",
+              "tag": "Capítulo 7",
+              "desc": "Adição, subtração com MMC, multiplicação, divisão, potenciação e raiz quadrada de números racionais."
+            },
+            {
+              "id": 8,
+              "title": "Capítulo 8 – Equações do 1º grau",
+              "tag": "Capítulo 8",
+              "desc": "Igualdade matemática, princípios aditivo e multiplicativo, resolução de equações e problemas do cotidiano."
+            },
+            {
+              "id": 9,
+              "title": "Capítulo 9 – Proporcionalidade e regra de três",
+              "tag": "Capítulo 9",
+              "desc": "Razão, proporção, grandezas diretamente e inversamente proporcionais e regra de três simples."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Apostila 3",
+          "chapters": [
+            {
+              "id": 10,
+              "title": "Capítulo 10 – Ângulos e polígonos",
+              "tag": "Capítulo 10",
+              "desc": "Medida de ângulos, ângulos retos, agudos, obtusos, complementares e suplementares, vértices e diagonais."
+            },
+            {
+              "id": 11,
+              "title": "Capítulo 11 – Triângulos e quadriláteros",
+              "tag": "Capítulo 11",
+              "desc": "Condição de existência de triângulos, classificação por lados e ângulos, soma dos ângulos internos e paralelogramos."
+            },
+            {
+              "id": 12,
+              "title": "Capítulo 12 – Medidas e áreas de figuras planas",
+              "tag": "Capítulo 12",
+              "desc": "Cálculo de área e perímetro: retângulo, quadrado, paralelogramo, triângulo e trapézio."
+            },
+            {
+              "id": 13,
+              "title": "Capítulo 13 – Estatística e probabilidade",
+              "tag": "Capítulo 13",
+              "desc": "Coleta de dados, tabelas de frequência, gráficos de barras e setores e cálculo de probabilidade simples."
+            }
+          ]
+        }
+      ]
+    },
+    "portugues": {
+      "name": "Língua Portuguesa",
+      "icon": "✍️",
+      "color": "#059669",
+      "meta": "Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano",
+      "apostilas": [
+        {
+          "id": 1,
+          "title": "Apostila 1",
+          "chapters": [
+            {
+              "id": 1,
+              "title": "Capítulo 1 – Gênero Notícia e Reportagem",
+              "tag": "Capítulo 1",
+              "desc": "Estrutura da notícia, lide (lead), manchete, pirâmide invertida e linguagem jornalística objetiva."
+            },
+            {
+              "id": 2,
+              "title": "Capítulo 2 – Tipos de Frase e Pontuação",
+              "tag": "Capítulo 2",
+              "desc": "Frases declarativas, interrogativas, exclamativas e imperativas. Emprego correto da vírgula e ponto e vírgula."
+            },
+            {
+              "id": 3,
+              "title": "Capítulo 3 – Substantivos e Adjetivos no Texto",
+              "tag": "Capítulo 3",
+              "desc": "Flexão de gênero, número e grau, função adjetiva e caracterização em crônicas e contos."
+            },
+            {
+              "id": 4,
+              "title": "Capítulo 4 – Termos Essenciais da Oração: Sujeito e Predicado",
+              "tag": "Capítulo 4",
+              "desc": "Identificação de sujeito (simples, composto, oculto, indeterminado) e tipos de predicado."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Apostila 2",
+          "chapters": [
+            {
+              "id": 5,
+              "title": "Capítulo 5 – Transitividade Verbal e Objetos",
+              "tag": "Capítulo 5",
+              "desc": "Verbos transitivos diretos, indiretos e intransitivos; objeto direto e indireto."
+            },
+            {
+              "id": 6,
+              "title": "Capítulo 6 – A Crônica Narrativa e Reflexiva",
+              "tag": "Capítulo 6",
+              "desc": "Cotidiano na literatura, ironia, humor, ponto de vista do narrador e tempo psicológico."
+            },
+            {
+              "id": 7,
+              "title": "Capítulo 7 – Concordância Verbal Fundamental",
+              "tag": "Capítulo 7",
+              "desc": "Regras gerais de concordância do verbo com sujeitos simples e compostos."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Apostila 3",
+          "chapters": [
+            {
+              "id": 8,
+              "title": "Capítulo 8 – Pronomes e Mecanismos de Coesão",
+              "tag": "Capítulo 8",
+              "desc": "Pronomes pessoais, possessivos, demonstrativos e sua função referencial no texto."
+            },
+            {
+              "id": 9,
+              "title": "Capítulo 9 – Figuras de Linguagem",
+              "tag": "Capítulo 9",
+              "desc": "Metáfora, comparação, personificação/prosopopeia, antítese e hipérbole nos poemas."
+            },
+            {
+              "id": 10,
+              "title": "Capítulo 10 – Orações Coordenadas",
+              "tag": "Capítulo 10",
+              "desc": "Coordenação assindética e sindética: aditivas, adversativas, alternativas, conclusivas e explicativas."
+            }
+          ]
+        }
+      ]
+    },
+    "ciencias": {
+      "name": "Ciências da Natureza",
+      "icon": "🔬",
+      "color": "#0891b2",
+      "meta": "Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano",
+      "apostilas": [
+        {
+          "id": 1,
+          "title": "Apostila 1",
+          "chapters": [
+            {
+              "id": 1,
+              "title": "Capítulo 1 – Máquinas Simples e Força",
+              "tag": "Capítulo 1",
+              "desc": "Alavancas (interfixa, inter-resistente, interpotente), roldanas, plano inclinado e vantagem mecânica."
+            },
+            {
+              "id": 2,
+              "title": "Capítulo 2 – Calor, Temperatura e Equilíbrio Térmico",
+              "tag": "Capítulo 2",
+              "desc": "Diferença entre calor e temperatura, escalas termométricas e sensação térmica."
+            },
+            {
+              "id": 3,
+              "title": "Capítulo 3 – Formas de Propagação do Calor",
+              "tag": "Capítulo 3",
+              "desc": "Condução em sólidos, convecção em fluidos e irradiação por ondas eletromagnéticas."
+            },
+            {
+              "id": 4,
+              "title": "Capítulo 4 – Os Grandes Biomas Brasileiros",
+              "tag": "Capítulo 4",
+              "desc": "Amazônia, Cerrado, Caatinga, Mata Atlântica, Pantanal e Pampa: flora, fauna e clima."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Apostila 2",
+          "chapters": [
+            {
+              "id": 5,
+              "title": "Capítulo 5 – A Diversidade da Vida e Reinos",
+              "tag": "Capítulo 5",
+              "desc": "Os 5 reinos de seres vivos, taxonomia, nomenclatura binomial e árvores filogenéticas."
+            },
+            {
+              "id": 6,
+              "title": "Capítulo 6 – Vírus e Bactérias",
+              "tag": "Capítulo 6",
+              "desc": "Estrutura acelular dos vírus, bactérias autótrofas e heterótrofas, importância ecológica e doenças."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Apostila 3",
+          "chapters": [
+            {
+              "id": 7,
+              "title": "Capítulo 7 – Fungos, Algas e Protozoários",
+              "tag": "Capítulo 7",
+              "desc": "Reino Fungi, protozoários flagelados, ciliados e amebas; doenças transmitidas por vetores."
+            },
+            {
+              "id": 8,
+              "title": "Capítulo 8 – O Reino Vegetal",
+              "tag": "Capítulo 8",
+              "desc": "Briófitas, Pteridófitas, Gimnospermas e Angiospermas: evolução, flores, sementes e frutos."
+            }
+          ]
+        }
+      ]
+    },
+    "historia": {
+      "name": "História",
+      "icon": "🏛️",
+      "color": "#d97706",
+      "meta": "Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano",
+      "apostilas": [
+        {
+          "id": 1,
+          "title": "Apostila 1",
+          "chapters": [
+            {
+              "id": 1,
+              "title": "Capítulo 1 – Feudalismo e Sociedade Medieval",
+              "tag": "Capítulo 1",
+              "desc": "Queda do Império Romano do Ocidente, relações feudo-vassálicas, servos, nobreza e poder da Igreja Católica."
+            },
+            {
+              "id": 2,
+              "title": "Capítulo 2 – O Mundo Islâmico e Expansão Árabe",
+              "tag": "Capítulo 2",
+              "desc": "Maomé, preceitos do Islã, expansão militar no Mediterrâneo e avanços científicos árabes."
+            },
+            {
+              "id": 3,
+              "title": "Capítulo 3 – As Cruzadas e o Renascimento Comercial",
+              "tag": "Capítulo 3",
+              "desc": "Expedições cruzadas a Jerusalém, reabertura de rotas comerciais e o renascimento das cidades europeias."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Apostila 2",
+          "chapters": [
+            {
+              "id": 4,
+              "title": "Capítulo 4 – O Renascimento Cultural e Científico",
+              "tag": "Capítulo 4",
+              "desc": "Humanismo, antropocentrismo, artes plásticas em Florença e Roma, Galileu e a revolução heliocêntrica."
+            },
+            {
+              "id": 5,
+              "title": "Capítulo 5 – As Reformas Religiosas e Contrarreforma",
+              "tag": "Capítulo 5",
+              "desc": "Martinho Lutero, 95 teses, calvinismo, anglicanismo, Concílio de Trento e Companhia de Jesus."
+            },
+            {
+              "id": 6,
+              "title": "Capítulo 6 – As Grandes Navegações e Mercantilismo",
+              "tag": "Capítulo 6",
+              "desc": "Pioneirismo português, rota das Índias, viagem de Colombo e Cabral, tratados de Tordesilhas."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Apostila 3",
+          "chapters": [
+            {
+              "id": 7,
+              "title": "Capítulo 7 – Povos Pré-Colombianos: Maias, Astecas e Incas",
+              "tag": "Capítulo 7",
+              "desc": "Organização social, arquitetura monumental, astronomia, agricultura em chinampas e terraços andinos."
+            },
+            {
+              "id": 8,
+              "title": "Capítulo 8 – Conquista e Colonização da América Espanhola",
+              "tag": "Capítulo 8",
+              "desc": "Cortés, Pizarro, encomienda, mita, genocídio indígena e exploração de prata em Potosí."
+            },
+            {
+              "id": 9,
+              "title": "Capítulo 9 – Reinos Africanos e Tráfico Transatlântico",
+              "tag": "Capítulo 9",
+              "desc": "Reinos de Mali, Congo e Songhai, rotas caravanistas do ouro e o comércio negreiro forçado."
+            }
+          ]
+        }
+      ]
+    },
+    "geografia": {
+      "name": "Geografia",
+      "icon": "🌍",
+      "color": "#0d9488",
+      "meta": "Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano",
+      "apostilas": [
+        {
+          "id": 1,
+          "title": "Apostila 1",
+          "chapters": [
+            {
+              "id": 1,
+              "title": "Capítulo 1 – O Território Brasileiro e Divisão Regional",
+              "tag": "Capítulo 1",
+              "desc": "Fronteiras, fusos horários do Brasil, divisão oficial do IBGE em 5 macrorregiões e complexos geoeconômicos."
+            },
+            {
+              "id": 2,
+              "title": "Capítulo 2 – Relevo, Clima e Hidrografia do Brasil",
+              "tag": "Capítulo 2",
+              "desc": "Planaltos, depressões e planícies brasileiras, climas equatorial, tropical, semiárido e bacias hidrográficas."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Apostila 2",
+          "chapters": [
+            {
+              "id": 3,
+              "title": "Capítulo 3 – Dinâmica Populacional e Demografia Brasileira",
+              "tag": "Capítulo 3",
+              "desc": "Crescimento vegetativo, transição demográfica, pirâmides etárias, fluxos migratórios e IDH."
+            },
+            {
+              "id": 4,
+              "title": "Capítulo 4 – Urbanização e Estrutura das Cidades",
+              "tag": "Capítulo 4",
+              "desc": "Êxodo rural, metropolização, conurbação, megacidades e problemas socioambientais urbanos."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Apostila 3",
+          "chapters": [
+            {
+              "id": 5,
+              "title": "Capítulo 5 – Região Norte: Espaço e Amazônia",
+              "tag": "Capítulo 5",
+              "desc": "Bacia amazônica, Zona Franca de Manaus, arco do desmatamento e preservação de terras indígenas."
+            },
+            {
+              "id": 6,
+              "title": "Capítulo 6 – Região Nordeste: As Quatro Sub-regiões",
+              "tag": "Capítulo 6",
+              "desc": "Zona da Mata, Agreste, Sertão e Meio-Norte; transposição do Rio São Francisco e polos industriais."
+            }
+          ]
+        }
+      ]
+    },
+    "ingles": {
+      "name": "Língua Inglesa",
+      "icon": "🇬🇧",
+      "color": "#4f46e5",
+      "meta": "Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano",
+      "apostilas": [
+        {
+          "id": 1,
+          "title": "Apostila 1",
+          "chapters": [
+            {
+              "id": 1,
+              "title": "Chapter 1 – Routine, Habits & Simple Present",
+              "tag": "Capítulo 1",
+              "desc": "Adverbs of frequency (always, often, never), third person singular rules (-s, -es, -ies), daily routine texts."
+            },
+            {
+              "id": 2,
+              "title": "Chapter 2 – Free Time & Present Continuous",
+              "tag": "Capítulo 2",
+              "desc": "Actions happening now, form of verb to be + verb-ing, contrast between Simple Present and Continuous."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Apostila 2",
+          "chapters": [
+            {
+              "id": 3,
+              "title": "Chapter 3 – Past Memories: Simple Past (Regular Verbs)",
+              "tag": "Capítulo 3",
+              "desc": "Past tense -ed endings, pronunciation rules, negative and interrogative with did / didn't."
+            },
+            {
+              "id": 4,
+              "title": "Chapter 4 – Past Stories: Irregular Verbs & Biographies",
+              "tag": "Capítulo 4",
+              "desc": "Common irregular verbs (went, saw, had, took), reading historical biographies."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Apostila 3",
+          "chapters": [
+            {
+              "id": 5,
+              "title": "Chapter 5 – Food & Quantifiers (Countable and Uncountable)",
+              "tag": "Capítulo 5",
+              "desc": "Many, much, a lot of, some, any, food vocabulary, ordering meals at a restaurant."
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
