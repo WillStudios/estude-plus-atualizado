@@ -129,6 +129,14 @@ function writeDb(data) {
 }
 
 const OFFICIAL_PLANS = {
+  base: {
+    id: 'base',
+    name: 'Plano Base',
+    amount: 0.00,
+    periodicity: 'gratuito',
+    durationDays: 0,
+    description: 'Acesso essencial aos TPCs, horários e Quiz Diário (Sem Trilhas Pro)'
+  },
   pro_mensal: {
     id: 'pro_mensal',
     name: 'Plano ESTUDE+ PRO Mensal',
@@ -1047,10 +1055,13 @@ const server = http.createServer((req, res) => {
     // Verifica expiração automática de assinatura
     if (freshUser.isSubscribed && freshUser.proExpiresAt && new Date(freshUser.proExpiresAt).getTime() <= Date.now()) {
       freshUser.isSubscribed = false;
-      freshUser.plan = 'free';
+      freshUser.plan = 'base';
       freshUser.planStatus = 'expired';
+      freshUser.planName = 'Plano Base';
       writeDb(db);
     }
+
+    const isProUser = Boolean(freshUser.isSubscribed) || freshUser.plan === 'pro' || freshUser.planStatus === 'active' || freshUser.planStatus === 'pro_mensal_active' || freshUser.planStatus === 'pro_anual_active';
 
     return sendJson({
       success: true,
@@ -1061,12 +1072,12 @@ const server = http.createServer((req, res) => {
         email: freshUser.email,
         role: freshUser.role,
         grade: freshUser.grade,
-        isSubscribed: Boolean(freshUser.isSubscribed),
-        plan: freshUser.plan || 'free',
-        planStatus: freshUser.planStatus || 'free',
-        planType: freshUser.planType || (freshUser.planStatus === 'pro_anual_active' ? 'pro_anual' : (freshUser.isSubscribed ? 'pro_mensal' : 'free')),
-        planPeriodicity: freshUser.planPeriodicity || (freshUser.planStatus === 'pro_anual_active' ? 'anual' : (freshUser.isSubscribed ? 'mensal' : 'gratuito')),
-        planName: freshUser.planName || 'Plano Base',
+        isSubscribed: isProUser,
+        plan: isProUser ? 'pro' : 'base',
+        planStatus: isProUser ? (freshUser.planStatus || 'pro_mensal_active') : (freshUser.planStatus === 'expired' ? 'expired' : 'base'),
+        planType: isProUser ? (freshUser.planType || 'pro_mensal') : 'base',
+        planPeriodicity: isProUser ? (freshUser.planPeriodicity || 'mensal') : 'gratuito',
+        planName: isProUser ? (freshUser.planName || 'Plano PRO') : 'Plano Base',
         proActivatedAt: freshUser.proActivatedAt || null,
         proExpiresAt: freshUser.proExpiresAt || null,
         trialExpiresAt: freshUser.trialExpiresAt || null,
@@ -1553,7 +1564,7 @@ const server = http.createServer((req, res) => {
       isPro: access.isPro,
       isAdmin: access.isAdmin,
       proRequired: !access.allowed,
-      planType: access.planType || (access.isAdmin ? 'admin' : 'free'),
+      planType: access.planType || (access.isAdmin ? 'admin' : 'base'),
       progress: filtered,
       allProgress: userProgress,
       summary: {
@@ -2068,12 +2079,12 @@ const server = http.createServer((req, res) => {
         targetUser.planStatus = 'payment_declined';
         if (targetUser.plan !== 'pro') {
           targetUser.isSubscribed = false;
-          targetUser.plan = 'free';
+          targetUser.plan = 'base';
         }
       } else if (data.status === 'canceled' && targetUser) {
-        targetUser.planStatus = 'canceled';
+        targetUser.planStatus = 'base';
         targetUser.isSubscribed = false;
-        targetUser.plan = 'free';
+        targetUser.plan = 'base';
         targetUser.planName = 'Plano Base';
         delete targetUser.proActivatedAt;
         delete targetUser.proExpiresAt;
@@ -2094,7 +2105,7 @@ const server = http.createServer((req, res) => {
       if (targetUser) {
         broadcastToUser(targetUser.id, 'pro_status_changed', {
           isSubscribed: Boolean(targetUser.isSubscribed),
-          plan: targetUser.plan || 'free',
+          plan: targetUser.plan || 'base',
           planStatus: targetUser.planStatus,
           planType: targetUser.planType,
           planPeriodicity: targetUser.planPeriodicity,
@@ -2136,8 +2147,8 @@ const server = http.createServer((req, res) => {
     }
 
     user.isSubscribed = false;
-    user.plan = 'free';
-    user.planStatus = 'canceled';
+    user.plan = 'base';
+    user.planStatus = 'base';
     user.planName = 'Plano Base';
     delete user.proActivatedAt;
     delete user.proExpiresAt;
@@ -2202,12 +2213,12 @@ const server = http.createServer((req, res) => {
         email: u.email,
         grade: u.grade,
         role: u.role || 'student',
-        isSubscribed: Boolean(u.isSubscribed),
-        plan: u.plan || 'free',
-        planStatus: u.planStatus || 'free',
-        planType: u.planType || (u.planStatus === 'pro_anual_active' ? 'pro_anual' : (u.isSubscribed ? 'pro_mensal' : 'free')),
-        planPeriodicity: u.planPeriodicity || (u.planStatus === 'pro_anual_active' ? 'anual' : (u.isSubscribed ? 'mensal' : 'gratuito')),
-        planName: u.planName || 'Plano Base',
+        isSubscribed: Boolean(u.isSubscribed) || u.plan === 'pro' || u.planStatus === 'active' || u.planStatus === 'pro_mensal_active' || u.planStatus === 'pro_anual_active',
+        plan: (Boolean(u.isSubscribed) || u.plan === 'pro') ? 'pro' : 'base',
+        planStatus: (Boolean(u.isSubscribed) || u.plan === 'pro') ? (u.planStatus || 'pro_mensal_active') : 'base',
+        planType: (Boolean(u.isSubscribed) || u.plan === 'pro') ? (u.planType || 'pro_mensal') : 'base',
+        planPeriodicity: (Boolean(u.isSubscribed) || u.plan === 'pro') ? (u.planPeriodicity || 'mensal') : 'gratuito',
+        planName: (Boolean(u.isSubscribed) || u.plan === 'pro') ? (u.planName || 'Plano PRO') : 'Plano Base',
         proActivatedAt: u.proActivatedAt,
         proExpiresAt: u.proExpiresAt,
         lastLogin: u.lastLogin,
@@ -2722,10 +2733,10 @@ const server = http.createServer((req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        isSubscribed: user.isSubscribed || false,
-        plan: user.plan || 'free',
-        planStatus: user.planStatus || 'free',
-        planName: user.planName || 'Plano Base',
+        isSubscribed: Boolean(user.isSubscribed) || user.plan === 'pro',
+        plan: (Boolean(user.isSubscribed) || user.plan === 'pro') ? 'pro' : 'base',
+        planStatus: (Boolean(user.isSubscribed) || user.plan === 'pro') ? (user.planStatus || 'pro_mensal_active') : 'base',
+        planName: (Boolean(user.isSubscribed) || user.plan === 'pro') ? (user.planName || 'Plano PRO') : 'Plano Base',
         emailVerified: user.emailVerified !== false,
         streak: user.streak || 0,
         bestStreak: user.bestStreak || 0,
@@ -2803,8 +2814,8 @@ const server = http.createServer((req, res) => {
         passwordSalt: salt,
         role: 'student',
         isSubscribed: false,
-        plan: 'free',
-        planStatus: 'free',
+        plan: 'base',
+        planStatus: 'base',
         planName: 'Plano Base',
         emailVerified: true,
         streak: 0,
@@ -2869,8 +2880,8 @@ const server = http.createServer((req, res) => {
           grade: newUser.grade,
           role: newUser.role,
           isSubscribed: false,
-          plan: 'free',
-          planStatus: 'free',
+          plan: 'base',
+          planStatus: 'base',
           planName: 'Plano Base',
           deviceType: deviceLabel,
           presence: 'online',
@@ -2893,8 +2904,8 @@ const server = http.createServer((req, res) => {
         email: newUser.email,
         role: newUser.role,
         isSubscribed: false,
-        plan: 'free',
-        planStatus: 'free',
+        plan: 'base',
+        planStatus: 'base',
         planName: 'Plano Base',
         streak: 0,
         bestStreak: 0,
@@ -3344,9 +3355,9 @@ const server = http.createServer((req, res) => {
         username: u.username,
         email: u.email,
         role: u.role || 'student',
-        plan: u.plan || 'free',
-        planStatus: u.planStatus || 'free',
-        isSubscribed: u.isSubscribed || false,
+        plan: (Boolean(u.isSubscribed) || u.plan === 'pro') ? 'pro' : 'base',
+        planStatus: (Boolean(u.isSubscribed) || u.plan === 'pro') ? (u.planStatus || 'pro_mensal_active') : 'base',
+        isSubscribed: Boolean(u.isSubscribed) || u.plan === 'pro',
         emailVerified: u.emailVerified !== false,
         deviceType: currentDevice,
         lastLogin: u.lastLogin,
@@ -3515,8 +3526,8 @@ const server = http.createServer((req, res) => {
       }
 
       user.isSubscribed = false;
-      user.plan = 'free';
-      user.planStatus = 'canceled';
+      user.plan = 'base';
+      user.planStatus = 'base';
       user.planName = 'Plano Base';
       delete user.proActivatedAt;
       delete user.proExpiresAt;
@@ -3554,11 +3565,11 @@ const server = http.createServer((req, res) => {
         supabase.syncUser(user).catch(err => console.warn('[Supabase Sync Cancel Pro]', err.message));
       }
 
-      broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: false, plan: 'free', planStatus: 'free' });
+      broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: false, plan: 'base', planStatus: 'base', planName: 'Plano Base' });
       broadcastToUser(user.id, 'pro_status_changed', {
         isSubscribed: false,
-        plan: 'free',
-        planStatus: 'free',
+        plan: 'base',
+        planStatus: 'base',
         planName: 'Plano Base'
       });
 
@@ -3671,8 +3682,15 @@ const server = http.createServer((req, res) => {
         db.masterCommands = db.masterCommands || {};
         db.masterCommands.forceRefreshTimestamp = Date.now();
         writeDb(db);
-        broadcastToAdmins('user_updated', { userId: data.userId });
-        return sendJson({ success: true, user: db.users[userIdx] });
+        const updatedUser = db.users[userIdx];
+        broadcastToAdmins('user_updated', { userId: data.userId, isSubscribed: updatedUser.isSubscribed, plan: updatedUser.plan, planStatus: updatedUser.planStatus, planName: updatedUser.planName });
+        broadcastToUser(data.userId, 'pro_status_changed', {
+          isSubscribed: Boolean(updatedUser.isSubscribed),
+          plan: updatedUser.plan || 'base',
+          planStatus: updatedUser.planStatus || 'base',
+          planName: updatedUser.planName || (updatedUser.plan === 'pro' ? 'Plano PRO' : 'Plano Base')
+        });
+        return sendJson({ success: true, user: updatedUser });
       }
       return sendJson({ error: 'Usuário não encontrado' }, 404);
     });

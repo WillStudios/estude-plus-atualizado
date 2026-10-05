@@ -1128,14 +1128,13 @@ class EstudePlusApp {
       }
     }
 
-    const proOnlyTabs = ['gemini-chat', 'quiz'];
+    const proOnlyTabs = ['gemini-chat'];
     if (proOnlyTabs.includes(tabName) && !this.isUserPro()) {
       const names = {
-        'gemini-chat': 'Chatbot IA Inteligente',
-        'quiz': 'Quiz Diário de 15 Minutos'
+        'gemini-chat': 'Chatbot IA Inteligente'
       };
       const label = names[tabName] || 'Recurso Exclusivo PRO';
-      alert(`🔒 Recurso Bloqueado no Plano Base!\n\nO "${label}" NÃO está disponível no Plano Base gratuito.\n\nPara liberar o Chatbot IA e os Quizzes Diários, ative a opção de 5 dias grátis de degustação ou assine o ESTUDE+ PRO por R$ 10,00/mês ou R$ 120,00/ano!`);
+      alert(`🔒 Recurso Bloqueado no Plano Base!\n\nO "${label}" é um benefício exclusivo do Plano PRO.\n\nAssine o ESTUDE+ PRO por R$ 10,00/mês ou R$ 120,00/ano para ter acesso total ao Gemini 2.5 Flash, Apostilas SAS e Trilhas de Aprendizagem!`);
       this.switchTab('plans-pricing');
       this.showModal('subscriptionModal');
       return;
@@ -3210,39 +3209,7 @@ class EstudePlusApp {
     const container = document.getElementById('quizContainer');
     if (!container) return;
 
-    if (!this.isUserPro()) {
-      container.innerHTML = `
-        <div class="pro-locked-quiz-card" style="background: #ffffff; border: 2px solid #fee2e2; border-radius: 20px; padding: 36px 24px; text-align: center; max-width: 650px; margin: 20px auto; box-shadow: 0 10px 30px rgba(220, 38, 38, 0.08);">
-          <div style="width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 16px; box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);">
-            <i data-lucide="lock" style="width: 30px; height: 30px;"></i>
-          </div>
-          <span style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px;">🔒 BLOQUEADO NO PLANO BASE</span>
-          <h2 style="font-size: 1.6rem; font-weight: 900; color: #0f172a; margin: 12px 0 8px;">Quizzes Diários & Treinos Inteligentes</h2>
-          <p style="color: #64748b; font-size: 0.92rem; line-height: 1.6; margin: 0 auto 24px; max-width: 520px;">
-            No <strong>Plano Base</strong>, os testes e simulados estão <strong>bloqueados</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> ou assinar o <strong>ESTUDE+ PRO</strong> (a partir de R$ 10,00/mês ou R$ 120,00/ano) para treinar com questões personalizadas da Coleção Asas 2026 que mudam a cada 24 horas, escolher a dificuldade e receber explicações passo a passo da IA!
-          </p>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 24px; text-align: left;">
-            <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem; margin-bottom: 10px;">⚡ Vantagens do Quiz no Plano PRO:</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; color: #475569;">
-              <div><i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; display: inline; vertical-align: middle;"></i> Questões renovadas todo dia</div>
-              <div><i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; display: inline; vertical-align: middle;"></i> Fácil, Médio e Desafios SAAS</div>
-              <div><i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; display: inline; vertical-align: middle;"></i> Todas as matérias do 7º ano</div>
-              <div><i data-lucide="check" style="width: 14px; height: 14px; color: #10b981; display: inline; vertical-align: middle;"></i> Aprender com os Erros turbo</div>
-            </div>
-          </div>
-          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-primary" onclick="app.activate5DaysTrial()" style="background: linear-gradient(135deg, #9333ea, #4f46e5); padding: 12px 20px; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(147, 51, 234, 0.25);">
-              <i data-lucide="zap"></i> Ativar 5 Dias Grátis
-            </button>
-            <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #059669; padding: 12px 20px; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
-              <i data-lucide="crown"></i> Assinar PRO (R$ 10,00/mês)
-            </button>
-          </div>
-        </div>
-      `;
-      if (window.lucide) window.lucide.createIcons();
-      return;
-    }
+
 
     const currentSubj = this.currentQuizSubject || 'matematica';
     const currentBook = this.currentQuizBookId || 1;
@@ -7091,14 +7058,14 @@ class EstudePlusApp {
       this.closeModal('subscriptionModal');
 
       // If viewing a PRO-only tab, switch back to dashboard
-      const proOnlyTabs = ['gemini-chat', 'quiz'];
+      const proOnlyTabs = ['gemini-chat'];
       if (proOnlyTabs.includes(this.currentTab)) {
         this.switchTab('dashboard');
       } else if (this.currentTab === 'sas-eureka') {
         this.switchEurekaSubtab('eureka');
       }
 
-      alert('✔ Plano PRO cancelado com sucesso!\n\nSua conta retornou ao Plano Base (Gratuito). Os recursos do Chatbot IA, Quizzes Diários e Apostilas SAS foram bloqueados.');
+      alert('✔ Plano PRO cancelado com sucesso!\n\nSua conta retornou ao Plano Base. Os recursos exclusivos do Pro (Chatbot IA, Trilhas SAS e Apostilas em PDF) foram bloqueados. O Quiz Diário e TPCs continuam liberados no Plano Base.');
     }
   }
 
@@ -9898,6 +9865,7 @@ class EstudePlusApp {
       const dashChat = document.getElementById('dashShortcutChatText');
       const dashQuiz = document.getElementById('dashShortcutQuizText');
       const dashApostilas = document.getElementById('dashShortcutApostilasText');
+      const trilhasBadge = document.getElementById('sidebarTrilhasBadge');
 
       if (!isPro) {
         if (chatBadge) {
@@ -9912,14 +9880,20 @@ class EstudePlusApp {
           booksBadge.style.color = '#dc2626';
           booksBadge.style.fontWeight = '800';
         }
+        if (trilhasBadge) {
+          trilhasBadge.innerText = '🔒 PRO';
+          trilhasBadge.style.background = '#fee2e2';
+          trilhasBadge.style.color = '#dc2626';
+          trilhasBadge.style.fontWeight = '800';
+        }
         if (quizBadge) {
-          quizBadge.innerText = '🔒 PRO';
-          quizBadge.style.background = '#fee2e2';
-          quizBadge.style.color = '#dc2626';
-          quizBadge.style.fontWeight = '800';
+          quizBadge.innerText = '⚡ Diário';
+          quizBadge.style.background = '#dcfce7';
+          quizBadge.style.color = '#15803d';
+          quizBadge.style.fontWeight = '700';
         }
         if (dashChat) dashChat.innerHTML = 'Chatbot IA <span style="font-size: 0.65rem; color: #dc2626; font-weight: 800; background: #fee2e2; padding: 2px 5px; border-radius: 4px; margin-left: 3px;">🔒 PRO</span>';
-        if (dashQuiz) dashQuiz.innerHTML = 'Quiz Diário <span style="font-size: 0.65rem; color: #dc2626; font-weight: 800; background: #fee2e2; padding: 2px 5px; border-radius: 4px; margin-left: 3px;">🔒 PRO</span>';
+        if (dashQuiz) dashQuiz.innerHTML = 'Quiz Diário <span style="font-size: 0.65rem; color: #16a34a; font-weight: 800; background: #dcfce7; padding: 2px 5px; border-radius: 4px; margin-left: 3px;">Liberado</span>';
         if (dashApostilas) dashApostilas.innerHTML = 'Apostilas <span style="font-size: 0.65rem; color: #dc2626; font-weight: 800; background: #fee2e2; padding: 2px 5px; border-radius: 4px; margin-left: 3px;">🔒 PRO</span>';
       } else {
         if (chatBadge) {
@@ -9934,8 +9908,14 @@ class EstudePlusApp {
           booksBadge.style.color = '#ea580c';
           booksBadge.style.fontWeight = '700';
         }
+        if (trilhasBadge) {
+          trilhasBadge.innerText = 'Apostilas 1-3';
+          trilhasBadge.style.background = '#fef3c7';
+          trilhasBadge.style.color = '#b45309';
+          trilhasBadge.style.fontWeight = '700';
+        }
         if (quizBadge) {
-          quizBadge.innerText = 'Ativo';
+          quizBadge.innerText = '⚡ Diário';
           quizBadge.style.background = '#dcfce7';
           quizBadge.style.color = '#15803d';
           quizBadge.style.fontWeight = '700';
@@ -11050,13 +11030,13 @@ class EstudePlusApp {
             const u = data.user;
             // Atualiza status do plano e perfil
             this.currentUser.isSubscribed = Boolean(u.isSubscribed);
-            this.currentUser.plan = u.plan || 'free';
-            this.currentUser.planStatus = u.planStatus || 'free';
-            this.currentUser.planName = u.planName || 'Plano Base';
+            this.currentUser.plan = u.plan === 'pro' ? 'pro' : 'base';
+            this.currentUser.planStatus = u.plan === 'pro' ? (u.planStatus || 'pro_mensal_active') : 'base';
+            this.currentUser.planName = u.plan === 'pro' ? (u.planName || 'Plano PRO') : 'Plano Base';
             this.currentUser.proExpiresAt = u.proExpiresAt;
             this.state.isSubscribed = Boolean(u.isSubscribed);
             if (!this.currentUser.isSubscribed) {
-              const proOnlyTabs = ['gemini-chat', 'quiz'];
+              const proOnlyTabs = ['gemini-chat'];
               if (proOnlyTabs.includes(this.currentTab)) {
                 this.switchTab('dashboard');
               }
@@ -11646,14 +11626,11 @@ class EstudePlusApp {
                 <span style="background: #e2e8f0; color: #475569; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">ATIVO</span>
               </div>
               <p style="margin: 2px 0 0; font-size: 0.84rem; color: #64748b;">
-                Acesso liberado aos TPCs e Quadro de Horários. O Chatbot IA, Quizzes Diários e Apostilas SAS estão bloqueados neste plano.
+                Acesso liberado aos TPCs, Quadro de Horários e Quiz Diário. Os recursos exclusivos PRO (Chatbot IA, Trilhas SAS e Apostilas em PDF) estão bloqueados neste plano.
               </p>
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-primary" onclick="app.activate5DaysTrial()" style="background: linear-gradient(135deg, #9333ea, #4f46e5); font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
-              <i data-lucide="zap" style="width: 14px; height: 14px;"></i> 5 Dias Grátis
-            </button>
             <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; background: #059669;">
               <i data-lucide="crown" style="width: 14px; height: 14px;"></i> Assinar PRO (R$ 10,00)
             </button>
@@ -12870,8 +12847,8 @@ class EstudePlusApp {
 
         // Atualiza estado local sincronizado com a resposta confirmada do backend
         student.isSubscribed = false;
-        student.plan = 'free';
-        student.planStatus = 'free';
+        student.plan = 'base';
+        student.planStatus = 'base';
         student.planName = 'Plano Base';
         delete student.proActivatedAt;
         delete student.proExpiresAt;
@@ -12882,8 +12859,8 @@ class EstudePlusApp {
 
         if (this.currentUser && (String(this.currentUser.id) === String(userId) || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
           this.currentUser.isSubscribed = false;
-          this.currentUser.plan = 'free';
-          this.currentUser.planStatus = 'free';
+          this.currentUser.plan = 'base';
+          this.currentUser.planStatus = 'base';
           this.currentUser.planName = 'Plano Base';
           delete this.currentUser.proActivatedAt;
           delete this.currentUser.proExpiresAt;
@@ -12899,7 +12876,7 @@ class EstudePlusApp {
           this.renderQuizIntro();
           this.renderSasHub();
           this.renderGeminiTab();
-          const proOnlyTabs = ['gemini-chat', 'quiz'];
+          const proOnlyTabs = ['gemini-chat'];
           if (proOnlyTabs.includes(this.currentTab)) {
             this.switchTab('dashboard');
           } else if (this.currentTab === 'sas-eureka') {
@@ -13121,9 +13098,9 @@ class EstudePlusApp {
     this.users.forEach(u => {
       if (u.role !== 'admin') {
         u.isSubscribed = isPro;
-        u.plan = isPro ? 'pro' : 'free';
-        u.planStatus = isPro ? 'active' : 'free';
-        u.planName = isPro ? 'ESTUDE+ PRO' : 'Plano Base';
+        u.plan = isPro ? 'pro' : 'base';
+        u.planStatus = isPro ? 'pro_mensal_active' : 'base';
+        u.planName = isPro ? 'Plano PRO' : 'Plano Base';
       }
     });
     this.saveUsers();
@@ -13135,7 +13112,8 @@ class EstudePlusApp {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'setPlanForAll',
-          planStatus: isPro ? 'active' : 'free',
+          plan: isPro ? 'pro' : 'base',
+          planStatus: isPro ? 'pro_mensal_active' : 'base',
           isSubscribed: isPro
         })
       });
@@ -13146,7 +13124,7 @@ class EstudePlusApp {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: u.id,
-            updates: { isSubscribed: isPro, plan: isPro ? 'pro' : 'free', planStatus: isPro ? 'active' : 'free' }
+            updates: { isSubscribed: isPro, plan: isPro ? 'pro' : 'base', planStatus: isPro ? 'pro_mensal_active' : 'base', planName: isPro ? 'Plano PRO' : 'Plano Base' }
           })
         });
       }
