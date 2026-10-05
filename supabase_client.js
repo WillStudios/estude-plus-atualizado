@@ -302,11 +302,26 @@ async function syncFromLocalDb(db) {
   }
 }
 
+async function deleteUser(userId) {
+  if (!isConfigured || !userId) return false;
+  try {
+    const res = await request(`users?id=eq.${encodeURIComponent(String(userId))}`, {
+      method: 'DELETE'
+    });
+    return Boolean(res);
+  } catch (e) {
+    console.error('[Supabase Delete User Error]', e);
+    return false;
+  }
+}
+
 module.exports = {
   isConfigured,
   SUPABASE_URL,
   getAllUsers,
   upsertUser,
+  syncUser: upsertUser,
+  deleteUser,
   getAllTpcs,
   upsertTpc,
   getAllPayments,

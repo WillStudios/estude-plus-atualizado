@@ -5458,55 +5458,45 @@ class EstudePlusApp {
     }
   }
 
-  adminCancelUserPlan(email) {
+  async adminCancelUserPlan(email) {
+    if (!email) return;
+    const studentUser = (this.users || []).find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+    if (studentUser) {
+      await this.adminCancelStudentPlan(studentUser.id);
+      return;
+    }
+
     if (confirm(`Deseja cancelar o Plano PRO do usuário ${email} e retornar sua conta para o Plano Base (Gratuito)?`)) {
-      const studentUser = (this.users || []).find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
-      if (studentUser) {
-        studentUser.isSubscribed = false;
-        studentUser.plan = 'free';
-        studentUser.planStatus = 'free';
-        studentUser.planName = 'Plano Base';
-        delete studentUser.proActivatedAt;
-        delete studentUser.proExpiresAt;
-        delete studentUser.trialExpiresAt;
-        delete studentUser.trialDaysRemaining;
-        delete studentUser.trialActivatedAt;
-        if (this.saveUsers) this.saveUsers();
-      }
-      if (this.currentUser && this.currentUser.email && this.currentUser.email.toLowerCase() === email.toLowerCase()) {
-        this.currentUser.isSubscribed = false;
-        this.currentUser.plan = 'free';
-        this.currentUser.planStatus = 'free';
-        this.currentUser.planName = 'Plano Base';
-        delete this.currentUser.proActivatedAt;
-        delete this.currentUser.proExpiresAt;
-        delete this.currentUser.trialExpiresAt;
-        delete this.currentUser.trialDaysRemaining;
-        delete this.currentUser.trialActivatedAt;
-        this.state.isSubscribed = false;
-        if (this.saveCurrentUser) this.saveCurrentUser(this.currentUser);
-        if (this.updateUserHeaderUI) this.updateUserHeaderUI();
-        this.renderPlanStatus();
-        this.renderDashboard();
-        this.renderQuizIntro();
-        this.renderSasHub();
-        this.renderGeminiTab();
-        const proOnlyTabs = ['gemini-chat', 'quiz'];
-        if (proOnlyTabs.includes(this.currentTab)) {
-          this.switchTab('dashboard');
-        } else if (this.currentTab === 'sas-eureka') {
-          this.switchEurekaSubtab('eureka');
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const sessId = localStorage.getItem('estude_session_id');
+        if (sessId) headers['x-session-id'] = sessId;
+        headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+        const res = await fetch('/api/admin/users/cancel-pro', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ userEmail: email })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const payment = (this.state.payments || []).find(p => p.email && p.email.toLowerCase() === email.toLowerCase());
+          if (payment) {
+            payment.status = 'cancelled';
+            payment.note = 'Plano cancelado pelo administrador Freddie';
+            this.saveState();
+          }
+          await this.loadAdminOverview();
+          this.renderAdminStudentsList();
+          this.renderAdminPaymentsList();
+          alert(data.message || `✔ Plano do usuário ${email} cancelado com sucesso no servidor.`);
+        } else {
+          alert('❌ Erro ao cancelar plano: ' + (data.error || 'Erro no servidor.'));
         }
+      } catch (err) {
+        console.error('[Admin Cancel User Plan Error]', err);
+        alert('❌ Erro de conexão com o servidor ao cancelar o plano.');
       }
-      const payment = (this.state.payments || []).find(p => p.email && p.email.toLowerCase() === email.toLowerCase());
-      if (payment) {
-        payment.status = 'cancelled';
-        payment.note = 'Plano cancelado pelo administrador Freddie';
-      }
-      this.saveState();
-      if (this.renderAdminPaymentsList) this.renderAdminPaymentsList();
-      if (this.checkPendingAdminBadge) this.checkPendingAdminBadge();
-      alert(`✔ Plano do usuário ${email} cancelado com sucesso. A conta retornou ao Plano Base.`);
     }
   }
 
@@ -8881,6 +8871,21 @@ class EstudePlusApp {
         if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
 
         const res = await fetch('/api/user/sync', { headers });
+        if (res.status === 401) {
+          const errData = await res.json().catch(() => ({}));
+          if (errData.accountDeleted) {
+            console.warn('[Sync] Conta excluída ou desativada pelo administrador.');
+            this.currentUser = null;
+            try {
+              localStorage.removeItem(this.currentUserStorageKey);
+              localStorage.removeItem('estude_session_id');
+              sessionStorage.clear();
+            } catch (e) {}
+            alert('⚠️ Sua conta foi excluída ou desativada pelo administrador.');
+            window.location.reload();
+            return;
+          }
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.user) {
@@ -8891,6 +8896,13 @@ class EstudePlusApp {
             this.currentUser.planStatus = u.planStatus || 'free';
             this.currentUser.planName = u.planName || 'Plano Base';
             this.currentUser.proExpiresAt = u.proExpiresAt;
+            this.state.isSubscribed = Boolean(u.isSubscribed);
+            if (!this.currentUser.isSubscribed) {
+              const proOnlyTabs = ['gemini-chat', 'quiz'];
+              if (proOnlyTabs.includes(this.currentTab)) {
+                this.switchTab('dashboard');
+              }
+            }
             this.currentUser.streak = u.streak || 0;
             this.currentUser.bestStreak = u.bestStreak || 0;
             this.currentUser.dailyGoalMinutes = u.dailyGoalMinutes || 15;
@@ -9450,7 +9462,7 @@ class EstudePlusApp {
     this.renderAdminPaymentsList();
   }
 
-  showAdminModal() {
+  async showAdminModal() {
     if (!this.currentUser || (this.currentUser.role !== 'admin' && this.currentUser.username !== 'freddie' && this.currentUser.email !== 'freddie@gammon.com.br')) {
       alert('🔒 Acesso Restrito: Apenas o administrador autorizado (Freddie Costa) tem permissão para acessar a Central Única.');
       return;
@@ -9458,7 +9470,7 @@ class EstudePlusApp {
     this.showModal('adminPaymentsModal');
     this.currentAdminTab = this.currentAdminTab || 'students';
     this.switchAdminTab(this.currentAdminTab);
-    this.loadAdminOverview();
+    await this.loadAdminOverview();
   }
 
   async loadAdminOverview() {
@@ -10378,32 +10390,38 @@ class EstudePlusApp {
         .map(w => w[0].toUpperCase())
         .join('');
 
+      const presenceBadge = u.presence === 'online'
+        ? '<span style="font-size: 0.68rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: #dcfce7; color: #15803d; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e;"></span> Online agora</span>'
+        : (u.deviceType ? `<span style="font-size: 0.68rem; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 6px;">${u.deviceType}</span>` : '');
+
       return `
-        <div style="background: #ffffff; border: 1px solid ${isPro ? '#bbf7d0' : '#e2e8f0'}; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <div style="background: #ffffff; border: 1.5px solid ${isPro ? '#86efac' : '#e2e8f0'}; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
           <div style="display: flex; align-items: center; gap: 12px; min-width: 240px;">
-            <div style="width: 42px; height: 42px; border-radius: 50%; background: ${isOwner ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : 'linear-gradient(135deg, #0284c7, #38bdf8)'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: ${isOwner ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : (isPro ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0284c7, #38bdf8)')}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
               ${initials}
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <strong style="color: #0f172a; font-size: 0.95rem;">${u.name || u.username}</strong>
+                <strong style="color: #0f172a; font-size: 0.98rem;">${u.name || u.username}</strong>
                 ${isOwner ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #f3e8ff; color: #7e22ce;">👑 Admin</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f3e8ff; color: #7e22ce;">👑 Admin</span>
                 ` : `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">🎓 Aluno</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">🎓 Aluno</span>
                 `}
                 ${isPro ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #dcfce7; color: #15803d;">💎 PRO Ativo</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">💎 PRO Ativo</span>
                 ` : isTrial5d ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #fef3c7; color: #b45309;">⚡ Degustação (5 dias)</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⚡ Degustação (5 dias)</span>
                 ` : isPending ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #fef3c7; color: #b45309;">💵 Pgto Pendente</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">💵 Pgto Pendente</span>
                 ` : `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
                 `}
+                ${presenceBadge}
               </div>
-              <div style="font-size: 0.78rem; color: #64748b; margin-top: 3px;">
-                <span>Usuário: <code>${u.username || u.email}</code></span>
+              <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>Usuário: <code style="background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #0f172a;">${u.username || u.email}</code></span>
+                ${u.email ? `&bull; <span>E-mail: <strong>${u.email}</strong></span>` : ''}
                 &bull; <span>Cadastrado: ${createdDate}</span>
                 &bull; <span>Último acesso: ${lastLoginDate}</span>
               </div>
@@ -10412,21 +10430,21 @@ class EstudePlusApp {
 
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             ${isPro ? `
-              <button class="btn-outline" onclick="app.adminCancelStudentPlan('${u.id}')" style="color: #dc2626; border-color: #fca5a5; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;" title="Cancelar plano PRO deste usuário">
-                <i data-lucide="x-circle" style="width: 14px; height: 14px; display: inline; vertical-align: middle; margin-right: 3px;"></i>
-                Cancelar PRO
+              <button type="button" class="btn-outline" onclick="app.adminCancelStudentPlan('${u.id}')" style="color: #b91c1c; border-color: #fca5a5; background: #fff1f2; font-size: 0.8rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Remover plano PRO e retornar aluno ao Plano Base Gratuito">
+                <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+                <span>Voltar ao Plano Base</span>
               </button>
             ` : `
-              <button class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}')" style="background: #059669; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;" title="Liberar 30 dias de Plano PRO">
-                <i data-lucide="crown" style="width: 14px; height: 14px; display: inline; vertical-align: middle; margin-right: 3px;"></i>
-                Ativar PRO
+              <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}')" style="background: #059669; font-size: 0.8rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(5,150,105,0.25);" title="Liberar 30 dias de Plano PRO no servidor">
+                <i data-lucide="crown" style="width: 14px; height: 14px;"></i>
+                <span>Ativar PRO</span>
               </button>
             `}
 
-            <!-- Excluir qualquer conta (inclusive contas de administrador) -->
-            <button class="btn-outline" onclick="app.adminDeleteStudent('${u.id}')" style="color: ${isOwner ? '#b91c1c' : '#64748b'}; border-color: ${isOwner ? '#f87171' : '#cbd5e1'}; background: ${isOwner ? '#fff1f2' : 'transparent'}; font-size: 0.78rem; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="${isOwner ? 'Excluir esta conta de Administrador' : 'Excluir conta do aluno'}">
-              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-              ${isOwner ? '<span style="font-size: 0.72rem; font-weight: 800;">Excluir Admin</span>' : ''}
+            <!-- Excluir/Apagar conta definitivamente -->
+            <button type="button" class="btn-outline" onclick="app.adminDeleteStudent('${u.id}')" style="color: #dc2626; border-color: #fca5a5; background: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="${isOwner ? 'Excluir esta conta de Administrador' : 'Excluir definitivamente a conta deste aluno'}">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px; color: #dc2626;"></i>
+              <span>${isOwner ? 'Excluir Admin' : 'Apagar Conta'}</span>
             </button>
           </div>
         </div>
@@ -10437,103 +10455,151 @@ class EstudePlusApp {
     if (window.lucide) window.lucide.createIcons();
   }
 
-  adminCancelStudentPlan(userId) {
-    const student = (this.users || []).find(u => u.id === userId);
+  async adminCancelStudentPlan(userId) {
+    const allUsers = (this.adminOverviewData?.users && this.adminOverviewData.users.length > 0) ? this.adminOverviewData.users : (this.users || []);
+    const student = allUsers.find(u => String(u.id) === String(userId));
     if (!student) return;
 
     if (confirm(`Tem certeza que deseja cancelar o Plano PRO do aluno "${student.name || student.username}" e retornar para o Plano Base (Gratuito)?`)) {
-      student.isSubscribed = false;
-      student.plan = 'free';
-      student.planStatus = 'free';
-      student.planName = 'Plano Base';
-      delete student.proActivatedAt;
-      delete student.proExpiresAt;
-      delete student.trialExpiresAt;
-      delete student.trialDaysRemaining;
-      delete student.trialActivatedAt;
-      this.saveUsers();
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const sessId = localStorage.getItem('estude_session_id');
+        if (sessId) headers['x-session-id'] = sessId;
+        headers['x-admin-token'] = 'admin_master_freddie_token_2026';
 
-      if (this.currentUser && (this.currentUser.id === userId || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
-        this.currentUser.isSubscribed = false;
-        this.currentUser.plan = 'free';
-        this.currentUser.planStatus = 'free';
-        this.currentUser.planName = 'Plano Base';
-        delete this.currentUser.proActivatedAt;
-        delete this.currentUser.proExpiresAt;
-        delete this.currentUser.trialExpiresAt;
-        delete this.currentUser.trialDaysRemaining;
-        delete this.currentUser.trialActivatedAt;
-        this.state.isSubscribed = false;
-        this.saveCurrentUser();
-        this.saveState();
-        this.updateUserHeaderUI();
-        this.renderPlanStatus();
-        this.renderDashboard();
-        this.renderQuizIntro();
-        this.renderSasHub();
-        this.renderGeminiTab();
-        const proOnlyTabs = ['gemini-chat', 'quiz'];
-        if (proOnlyTabs.includes(this.currentTab)) {
-          this.switchTab('dashboard');
-        } else if (this.currentTab === 'sas-eureka') {
-          this.switchEurekaSubtab('eureka');
+        const res = await fetch('/api/admin/users/cancel-pro', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ userId: student.id, userEmail: student.email })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          alert('❌ Não foi possível cancelar o Plano PRO: ' + (data.error || 'Erro no servidor.'));
+          return;
         }
-      }
 
-      const payment = (this.state.payments || []).find(p => p.email && student.email && p.email.toLowerCase() === student.email.toLowerCase());
-      if (payment) {
-        payment.status = 'cancelled';
-        payment.note = 'Plano cancelado pelo administrador Freddie';
-        this.saveState();
-      }
+        // Atualiza estado local sincronizado com a resposta confirmada do backend
+        student.isSubscribed = false;
+        student.plan = 'free';
+        student.planStatus = 'free';
+        student.planName = 'Plano Base';
+        delete student.proActivatedAt;
+        delete student.proExpiresAt;
+        delete student.trialExpiresAt;
+        delete student.trialDaysRemaining;
+        delete student.trialActivatedAt;
+        this.saveUsers();
 
-      this.renderAdminStudentsList();
-      this.renderAdminPaymentsList();
-      alert(`✔ O Plano PRO do aluno "${student.name || student.username}" foi cancelado. A conta agora está no Plano Base.`);
+        if (this.currentUser && (String(this.currentUser.id) === String(userId) || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
+          this.currentUser.isSubscribed = false;
+          this.currentUser.plan = 'free';
+          this.currentUser.planStatus = 'free';
+          this.currentUser.planName = 'Plano Base';
+          delete this.currentUser.proActivatedAt;
+          delete this.currentUser.proExpiresAt;
+          delete this.currentUser.trialExpiresAt;
+          delete this.currentUser.trialDaysRemaining;
+          delete this.currentUser.trialActivatedAt;
+          this.state.isSubscribed = false;
+          this.saveCurrentUser();
+          this.saveState();
+          this.updateUserHeaderUI();
+          this.renderPlanStatus();
+          this.renderDashboard();
+          this.renderQuizIntro();
+          this.renderSasHub();
+          this.renderGeminiTab();
+          const proOnlyTabs = ['gemini-chat', 'quiz'];
+          if (proOnlyTabs.includes(this.currentTab)) {
+            this.switchTab('dashboard');
+          } else if (this.currentTab === 'sas-eureka') {
+            this.switchEurekaSubtab('eureka');
+          }
+        }
+
+        const payment = (this.state.payments || []).find(p => p.email && student.email && p.email.toLowerCase() === student.email.toLowerCase());
+        if (payment) {
+          payment.status = 'cancelled';
+          payment.note = 'Plano cancelado pelo administrador Freddie';
+          this.saveState();
+        }
+
+        await this.loadAdminOverview();
+        this.renderAdminStudentsList();
+        this.renderAdminPaymentsList();
+        alert(data.message || `✔ O Plano PRO do aluno "${student.name || student.username}" foi cancelado com sucesso no servidor.`);
+      } catch (err) {
+        console.error('[Admin Cancel Plan Error]', err);
+        alert('❌ Erro de conexão com o servidor ao cancelar o plano PRO. Verifique sua conexão e tente novamente.');
+      }
     }
   }
 
-  adminActivateStudentPlan(userId) {
-    const student = (this.users || []).find(u => u.id === userId);
+  async adminActivateStudentPlan(userId) {
+    const allUsers = (this.adminOverviewData?.users && this.adminOverviewData.users.length > 0) ? this.adminOverviewData.users : (this.users || []);
+    const student = allUsers.find(u => String(u.id) === String(userId));
     if (!student) return;
 
-    if (confirm(`Deseja ativar 30 dias de Plano PRO para "${student.name || student.username}"?`)) {
-      const now = new Date();
-      const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    if (confirm(`Deseja ativar 30 dias de Plano PRO para "${student.name || student.username}" no banco de dados oficial?`)) {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const sessId = localStorage.getItem('estude_session_id');
+        if (sessId) headers['x-session-id'] = sessId;
+        headers['x-admin-token'] = 'admin_master_freddie_token_2026';
 
-      student.isSubscribed = true;
-      student.plan = 'pro';
-      student.planStatus = 'active';
-      student.planName = 'ESTUDE+ PRO';
-      student.proActivatedAt = now.toISOString();
-      student.proExpiresAt = expires.toISOString();
-      student.lastBillingDate = now.toISOString();
-      this.saveUsers();
+        const res = await fetch('/api/admin/users/activate-pro', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ userId: student.id, userEmail: student.email, days: 30 })
+        });
 
-      if (this.currentUser && this.currentUser.id === userId) {
-        this.currentUser.isSubscribed = true;
-        this.currentUser.plan = 'pro';
-        this.currentUser.planStatus = 'active';
-        this.currentUser.proActivatedAt = now.toISOString();
-        this.currentUser.proExpiresAt = expires.toISOString();
-        this.state.isSubscribed = true;
-        this.saveCurrentUser();
-        this.updateUserHeaderUI();
-        this.renderPlanStatus();
-        this.renderDashboard();
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          alert('❌ Não foi possível ativar o Plano PRO: ' + (data.error || 'Erro no servidor.'));
+          return;
+        }
+
+        // Atualiza estado local sincronizado com a resposta confirmada do backend
+        student.isSubscribed = true;
+        student.plan = 'pro';
+        student.planStatus = 'active';
+        student.planName = 'ESTUDE+ PRO';
+        student.proActivatedAt = data.user?.proActivatedAt || new Date().toISOString();
+        student.proExpiresAt = data.user?.proExpiresAt;
+        this.saveUsers();
+
+        if (this.currentUser && (String(this.currentUser.id) === String(userId) || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
+          this.currentUser.isSubscribed = true;
+          this.currentUser.plan = 'pro';
+          this.currentUser.planStatus = 'active';
+          this.currentUser.planName = 'ESTUDE+ PRO';
+          this.currentUser.proActivatedAt = student.proActivatedAt;
+          this.currentUser.proExpiresAt = student.proExpiresAt;
+          this.state.isSubscribed = true;
+          this.saveCurrentUser();
+          this.updateUserHeaderUI();
+          this.renderPlanStatus();
+          this.renderDashboard();
+        }
+
+        await this.loadAdminOverview();
+        this.renderAdminStudentsList();
+        this.renderAdminPaymentsList();
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
+        }
+        alert(data.message || `✔ Plano PRO ativado com sucesso para "${student.name || student.username}"!`);
+      } catch (err) {
+        console.error('[Admin Activate Plan Error]', err);
+        alert('❌ Erro de conexão com o servidor ao ativar o plano PRO. Verifique sua conexão e tente novamente.');
       }
-
-      this.renderAdminStudentsList();
-      this.renderAdminPaymentsList();
-      if (typeof confetti === 'function') {
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
-      }
-      alert(`✔ Plano PRO ativado para "${student.name || student.username}" até ${expires.toLocaleDateString('pt-BR')}!`);
     }
   }
 
-  adminDeleteStudent(userId) {
-    const student = (this.users || []).find(u => u.id === userId);
+  async adminDeleteStudent(userId) {
+    const allUsers = (this.adminOverviewData?.users && this.adminOverviewData.users.length > 0) ? this.adminOverviewData.users : (this.users || []);
+    const student = allUsers.find(u => String(u.id) === String(userId));
     if (!student) return;
 
     const isOwner = student.role === 'admin' || student.email === 'freddie@gammon.com.br' || student.username === 'freddie';
@@ -10541,39 +10607,55 @@ class EstudePlusApp {
 
     const promptText = isOwner
       ? `⚠️ ATENÇÃO CRÍTICA:\n\nVocê está prestes a EXCLUIR A CONTA DE ADMINISTRADOR de "${name}"!\nTodos os privilégios e dados serão permanentemente apagados.\n\nDeseja realmente excluir esta conta de Administrador?`
-      : `Deseja realmente remover a conta de "${name}" do sistema? Esta ação apagará todo o cadastro e dados associados.`;
+      : `Deseja realmente remover a conta de "${name}" do sistema? Esta ação apagará definitivamente o cadastro no banco oficial e revogará todos os acessos.`;
 
     if (confirm(promptText)) {
       const confirmFinal = isOwner ? confirm(`Confirmação final: digite OK para apagar definitivamente a conta de administrador "${name}".`) : true;
       if (!confirmFinal) return;
 
-      // 1. Remove from local users list
-      this.users = (this.users || []).filter(u => u.id !== userId);
-      this.saveUsers();
-
-      // 2. Notify master backend to remove from db.json
       try {
-        fetch('/api/users/delete', {
+        const headers = { 'Content-Type': 'application/json' };
+        const sessId = localStorage.getItem('estude_session_id');
+        if (sessId) headers['x-session-id'] = sessId;
+        headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+        const res = await fetch('/api/admin/users/delete', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: student.id, userEmail: student.email })
-        }).catch(() => {});
-      } catch (e) {}
+          headers,
+          body: JSON.stringify({ userId: student.id, confirmMasterAdminDelete: isOwner })
+        });
 
-      // 3. If current logged-in user deleted their own account:
-      if (this.currentUser && (this.currentUser.id === userId || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
-        alert(`Sua conta foi excluída com sucesso. O sistema será reiniciado.`);
-        this.currentUser = null;
-        try {
-          localStorage.removeItem(this.currentUserStorageKey);
-          sessionStorage.clear();
-        } catch (e) {}
-        window.location.reload();
-        return;
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          alert('❌ Não foi possível excluir a conta: ' + (data.error || 'Erro no servidor.'));
+          return;
+        }
+
+        // 1. Remove da lista local de usuários
+        this.users = (this.users || []).filter(u => String(u.id) !== String(userId));
+        this.saveUsers();
+
+        // 2. Se o usuário logado excluiu sua própria conta
+        if (this.currentUser && (String(this.currentUser.id) === String(userId) || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
+          alert(`Sua conta foi excluída com sucesso. O sistema será reiniciado.`);
+          this.currentUser = null;
+          try {
+            localStorage.removeItem(this.currentUserStorageKey);
+            localStorage.removeItem('estude_session_id');
+            sessionStorage.clear();
+          } catch (e) {}
+          window.location.reload();
+          return;
+        }
+
+        await this.loadAdminOverview();
+        this.renderAdminStudentsList();
+        this.renderAdminPaymentsList();
+        alert(data.message || `✔ Conta de "${name}" removida definitivamente com sucesso.`);
+      } catch (err) {
+        console.error('[Admin Delete Student Error]', err);
+        alert('❌ Erro de conexão com o servidor ao excluir a conta. Verifique sua conexão e tente novamente.');
       }
-
-      this.renderAdminStudentsList();
-      alert(`✔ Conta de "${name}" removida com sucesso.`);
     }
   }
 
@@ -10593,23 +10675,38 @@ class EstudePlusApp {
         const targetId = this.currentUser.id;
         const targetEmail = this.currentUser.email;
 
-        // 1. Remove from local list
+        // 1. Notify backend
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          const sessId = localStorage.getItem('estude_session_id');
+          if (sessId) headers['x-session-id'] = sessId;
+          headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+          const res = await fetch('/api/admin/users/delete', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ userId: targetId, userEmail: targetEmail, confirmMasterAdminDelete: isOwner })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.success) {
+            alert('❌ Não foi possível excluir a conta no servidor: ' + (data.error || 'Erro de permissão'));
+            return;
+          }
+        } catch (e) {
+          console.error('[Delete My Account Error]', e);
+          alert('❌ Erro de conexão com o servidor ao excluir a conta.');
+          return;
+        }
+
+        // 2. Remove from local list
         this.users = (this.users || []).filter(u => u.id !== targetId && u.email !== targetEmail);
         this.saveUsers();
-
-        // 2. Notify backend
-        try {
-          await fetch('/api/users/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: targetId, userEmail: targetEmail })
-          });
-        } catch (e) {}
 
         // 3. Clear session
         this.currentUser = null;
         try {
           localStorage.removeItem(this.currentUserStorageKey);
+          localStorage.removeItem('estude_session_id');
           sessionStorage.clear();
         } catch (e) {}
 
@@ -10948,48 +11045,49 @@ class EstudePlusApp {
     if (window.lucide) window.lucide.createIcons();
   }
 
-  approvePayment(paymentId) {
+  async approvePayment(paymentId) {
     const payment = (this.state.payments || []).find(p => p.id === paymentId);
     if (!payment) return;
 
-    payment.status = 'approved';
-
-    // Calculate 30-day subscription cycle
-    const now = new Date();
-    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    // Find and update the user account in registered users
-    const studentUser = this.users.find(u => u.email.toLowerCase() === payment.email.toLowerCase());
+    // Localizar aluno pelo e-mail ou userId
+    const studentUser = (this.users || []).find(u => (u.email && payment.email && u.email.toLowerCase() === payment.email.toLowerCase()) || (payment.userId && String(u.id) === String(payment.userId)));
     if (studentUser) {
-      studentUser.isSubscribed = true;
-      studentUser.planStatus = 'active';
-      studentUser.proActivatedAt = now.toISOString();
-      studentUser.proExpiresAt = expires.toISOString();
-      studentUser.lastBillingDate = now.toISOString();
-      this.saveUsers();
+      await this.adminActivateStudentPlan(studentUser.id);
+      payment.status = 'approved';
+      this.saveState();
+      this.renderAdminPaymentsList();
+      this.checkPendingAdminBadge();
+      return;
     }
 
-    // If current logged-in user is the one approved, update immediately
-    if (this.currentUser && this.currentUser.email.toLowerCase() === payment.email.toLowerCase()) {
-      this.currentUser.isSubscribed = true;
-      this.currentUser.planStatus = 'active';
-      this.currentUser.proActivatedAt = now.toISOString();
-      this.currentUser.proExpiresAt = expires.toISOString();
-      this.state.isSubscribed = true;
-      this.saveCurrentUser();
-      this.updateUserHeaderUI();
-      this.renderPlanStatus();
-      this.renderDashboard();
-    }
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
 
-    this.saveState();
-    this.renderAdminPaymentsList();
-    this.checkPendingAdminBadge();
-
-    if (typeof confetti === 'function') {
-      confetti({ particleCount: 120, spread: 90, origin: { y: 0.4 } });
+      const res = await fetch('/api/admin/users/activate-pro', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ userEmail: payment.email, days: 30 })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        payment.status = 'approved';
+        this.saveState();
+        await this.loadAdminOverview();
+        this.renderAdminStudentsList();
+        this.renderAdminPaymentsList();
+        this.checkPendingAdminBadge();
+        if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+        alert(`✔ Recebimento confirmado! Plano PRO ativado para ${payment.studentName || payment.email}!`);
+      } else {
+        alert('❌ Não foi possível ativar o Plano PRO no servidor: ' + (data.error || 'Erro no servidor.'));
+      }
+    } catch (err) {
+      console.error('[Approve Payment Error]', err);
+      alert('❌ Erro de conexão ao aprovar pagamento no servidor.');
     }
-    alert(`✔ Recebimento de R$ ${payment.amount.toFixed(2).replace('.', ',')} de ${payment.studentName} CONFIRMADO!\n\nO Plano PRO foi ativado por 30 dias (Vencimento: ${expires.toLocaleDateString('pt-BR')}).\nA cada 30 dias o sistema gerará a nova cobrança automaticamente.`);
   }
 
   checkSubscriptionExpiry() {

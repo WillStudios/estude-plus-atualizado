@@ -173,255 +173,6 @@
       "proExpiresAt": "2026-11-03T23:44:20.075Z"
     },
     {
-      "id": "usr_1791158058933_m9hp",
-      "name": "dadawdaw",
-      "username": "awawdadaw",
-      "email": "awawdadaw@estude.app",
-      "passwordHash": "96d80419412c75a7d35083cc53102308566e703ec3b4d66847bd3a58a84855451dd452d12999ca38fe33fa582ae298861fe41db9165bf96a63684cf7c34c116f",
-      "passwordSalt": "2c185a8c9104a005e6e9c3b642731816",
-      "role": "student",
-      "isSubscribed": false,
-      "plan": "free",
-      "planStatus": "free",
-      "planName": "Plano Base",
-      "emailVerified": true,
-      "streak": 1,
-      "bestStreak": 1,
-      "dailyGoalMinutes": 15,
-      "studiedDays": [
-        "2026-10-04"
-      ],
-      "todayMinutes": 0,
-      "achievements": [],
-      "createdIp": "127.0.0.1",
-      "createdAt": "2026-10-04T23:54:18.933Z",
-      "lastLogin": "2026-10-04T23:54:18.933Z",
-      "lastDeviceType": "Computador / PC",
-      "studentSettings": {},
-      "preferences": {
-        "themeMode": "light",
-        "fontSize": "normal",
-        "density": "comfortable",
-        "accentColor": "#4f46e5",
-        "accentName": "Índigo Estude+",
-        "reduceMotion": false,
-        "dashboardCards": [
-          {
-            "id": "profile-shortcuts",
-            "label": "👤 Perfil & Atalhos Rápidos",
-            "visible": true,
-            "locked": true
-          },
-          {
-            "id": "focus-strip",
-            "label": "🎯 Foco de Estudos & Metas",
-            "visible": true
-          },
-          {
-            "id": "smart-stats",
-            "label": "📊 Estatísticas Inteligentes & Metas",
-            "visible": true
-          },
-          {
-            "id": "studies-eureka",
-            "label": "🧭 Meus Estudos & Universo Eureka",
-            "visible": true
-          },
-          {
-            "id": "news",
-            "label": "📰 Notícias & Atualizações",
-            "visible": true
-          },
-          {
-            "id": "agenda",
-            "label": "📅 Agenda Escolar Gammon+",
-            "visible": true
-          }
-        ]
-      },
-      "timetable": [
-        {
-          "time": "07:30 - 08:15",
-          "segunda": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "terca": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Arte",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Redação",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "sexta": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "08:15 - 09:00",
-          "segunda": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Educação Física",
-            "room": "Ginásio / Quadra",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "História",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "sexta": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          }
-        },
-        {
-          "time": "09:00 - 09:45",
-          "segunda": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "terca": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Geografia",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": true
-          },
-          "sexta": {
-            "subject": "História",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "10:05 - 10:50",
-          "segunda": {
-            "subject": "Ensino Religioso",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Redação",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "sexta": {
-            "subject": "Ciências",
-            "room": "Lab. Ciências",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "10:50 - 11:35",
-          "segunda": {
-            "subject": "Geografia",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Geografia",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Ciências",
-            "room": "Lab. Ciências",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "sexta": {
-            "subject": "Língua Inglesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        },
-        {
-          "time": "11:35 - 12:20",
-          "segunda": {
-            "subject": "Ciências",
-            "room": "Lab. Ciências",
-            "hasTpc": false
-          },
-          "terca": {
-            "subject": "Matemática",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "quarta": {
-            "subject": "Educação Física",
-            "room": "Ginásio / Quadra",
-            "hasTpc": false
-          },
-          "quinta": {
-            "subject": "História",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          },
-          "sexta": {
-            "subject": "Língua Portuguesa",
-            "room": "Sala 7º Ano",
-            "hasTpc": false
-          }
-        }
-      ],
-      "tasks": {
-        "completedTpcIds": [],
-        "userTpcs": []
-      },
-      "completedTpcIds": [],
-      "userTpcs": [],
-      "lastSync": "2026-10-04T23:54:28.881Z",
-      "loginDays": [
-        "2026-10-04"
-      ],
-      "lastVisitDate": "2026-10-04"
-    },
-    {
       "id": "usr_1791158756152_3mwn",
       "name": "Aluno Teste Quizzes",
       "username": "aluno_teste_1791158756086",
@@ -868,6 +619,309 @@
         }
       ],
       "lastActiveDate": "2026-10-05"
+    },
+    {
+      "id": "usr_1791193691668_zd5o",
+      "name": "Aluno Teste Admin",
+      "username": "aluno_teste_1791193691606",
+      "email": "test_student_1791193691606@example.com",
+      "passwordHash": "9929437276cddfca5ee2dc0b821b233b7fb78ec73fd5d1b4e5f7a99f9578c2dc34a096016a92b2c4a4b05ef680435b6cd04d2058a4bfb9fdd16d94706b1b92a5",
+      "passwordSalt": "6e2e62ab050bae246bcab56a4f57bd6a",
+      "role": "student",
+      "isSubscribed": true,
+      "plan": "pro",
+      "planStatus": "active",
+      "planName": "ESTUDE+ PRO",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T09:48:11.668Z",
+      "lastLogin": "2026-10-05T09:48:11.669Z",
+      "lastDeviceType": "Computador / Desktop",
+      "proActivatedAt": "2026-10-05T09:50:24.739Z",
+      "proExpiresAt": "2026-11-04T09:50:24.739Z",
+      "lastBillingDate": "2026-10-05T09:50:24.739Z"
+    },
+    {
+      "id": "usr_1791193717750_sev2",
+      "name": "adada",
+      "username": "dadada",
+      "email": "dadada@estude.app",
+      "passwordHash": "e7343f02b7e9d1facd9d0b3070ca7d5b47cc92a381260c5fb8032893f67d8b0b1bd59c40b0d0f1c1c90ced477e505c71b94091b6c900a2ad275d6ed0cd4467e2",
+      "passwordSalt": "bac5822329b1884cf44afbd72f5982d8",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 2,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [
+        "2026-10-04",
+        "2026-10-05"
+      ],
+      "todayMinutes": 1,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T09:48:37.750Z",
+      "lastLogin": "2026-10-05T09:48:37.750Z",
+      "lastDeviceType": "Computador / PC",
+      "studentSettings": {},
+      "preferences": {
+        "themeMode": "light",
+        "fontSize": "normal",
+        "density": "comfortable",
+        "accentColor": "#4f46e5",
+        "accentName": "Índigo Estude+",
+        "reduceMotion": false,
+        "dashboardCards": [
+          {
+            "id": "profile-shortcuts",
+            "label": "👤 Perfil & Atalhos Rápidos",
+            "visible": true,
+            "locked": true
+          },
+          {
+            "id": "focus-strip",
+            "label": "🎯 Foco de Estudos & Metas",
+            "visible": true
+          },
+          {
+            "id": "smart-stats",
+            "label": "📊 Estatísticas Inteligentes & Metas",
+            "visible": true
+          },
+          {
+            "id": "studies-eureka",
+            "label": "🧭 Meus Estudos & Universo Eureka",
+            "visible": true
+          },
+          {
+            "id": "news",
+            "label": "📰 Notícias & Atualizações",
+            "visible": true
+          },
+          {
+            "id": "agenda",
+            "label": "📅 Agenda Escolar Gammon+",
+            "visible": true
+          }
+        ]
+      },
+      "timetable": [
+        {
+          "time": "07:30 - 08:15",
+          "segunda": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "terca": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Arte",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Redação",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "08:15 - 09:00",
+          "segunda": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Educação Física",
+            "room": "Ginásio / Quadra",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          }
+        },
+        {
+          "time": "09:00 - 09:45",
+          "segunda": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "terca": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "10:05 - 10:50",
+          "segunda": {
+            "subject": "Ensino Religioso",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Redação",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "10:50 - 11:35",
+          "segunda": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "11:35 - 12:20",
+          "segunda": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Educação Física",
+            "room": "Ginásio / Quadra",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        }
+      ],
+      "tasks": {
+        "completedTpcIds": [],
+        "userTpcs": []
+      },
+      "completedTpcIds": [],
+      "userTpcs": [],
+      "lastSync": "2026-10-05T09:49:07.643Z",
+      "loginDays": [
+        "2026-10-05"
+      ]
+    },
+    {
+      "id": "usr_1791193886356_ayol",
+      "name": "Aluno Teste Admin",
+      "username": "aluno_teste_1791193886304",
+      "email": "test_student_1791193886304@example.com",
+      "passwordHash": "ea8f4c935635e9ffd21a780f8a802ad081bc2c6180d79cbc55ac983698aab068fddd08949748832a772ff442593341f8176d309676247bb187aa9fabf32afc05",
+      "passwordSalt": "ef72b3d9795b80397b16260939c7528e",
+      "role": "student",
+      "isSubscribed": true,
+      "plan": "pro",
+      "planStatus": "active",
+      "planName": "ESTUDE+ PRO",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T09:51:26.356Z",
+      "lastLogin": "2026-10-05T09:51:26.356Z",
+      "lastDeviceType": "Computador / Desktop",
+      "proActivatedAt": "2026-10-05T09:51:26.396Z",
+      "proExpiresAt": "2026-11-04T09:51:26.396Z",
+      "lastBillingDate": "2026-10-05T09:51:26.396Z"
     }
   ],
   "tpcs": [
@@ -905,7 +959,7 @@
   "masterCommands": {
     "broadcastNotice": "",
     "lockdownActive": false,
-    "forceRefreshTimestamp": 1791144054999
+    "forceRefreshTimestamp": 1791194493097
   },
   "connectedDevices": [],
   "planRequests": [
@@ -936,6 +990,118 @@
   "systemEvents": [],
   "auditLogs": [
     {
+      "id": "log_1791194493097",
+      "timestamp": "2026-10-05T10:01:33.097Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791194493053_mzyo",
+      "details": "Conta \"Aluno Teste Admin\" (usr_1791194493053_mzyo) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
+    {
+      "id": "log_1791194493084",
+      "timestamp": "2026-10-05T10:01:33.084Z",
+      "type": "pro_cancelled",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791194493053_mzyo",
+      "details": "Plano PRO cancelado para Aluno Teste Admin (usr_1791194493053_mzyo). Retornado ao Plano Base."
+    },
+    {
+      "id": "log_1791194493064",
+      "timestamp": "2026-10-05T10:01:33.064Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791194493053_mzyo",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791194493053_mzyo) até 2026-11-04T10:01:33.064Z"
+    },
+    {
+      "id": "log_1791194008066",
+      "timestamp": "2026-10-05T09:53:28.066Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791194007987_0pmk",
+      "details": "Conta \"Aluno Teste Admin\" (usr_1791194007987_0pmk) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
+    {
+      "id": "log_1791194008053",
+      "timestamp": "2026-10-05T09:53:28.053Z",
+      "type": "pro_cancelled",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791194007987_0pmk",
+      "details": "Plano PRO cancelado para Aluno Teste Admin (usr_1791194007987_0pmk). Retornado ao Plano Base."
+    },
+    {
+      "id": "log_1791194008032",
+      "timestamp": "2026-10-05T09:53:28.032Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791194007987_0pmk",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791194007987_0pmk) até 2026-11-04T09:53:28.032Z"
+    },
+    {
+      "id": "log_1791193947468",
+      "timestamp": "2026-10-05T09:52:27.468Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193947388_vp5o",
+      "details": "Conta \"Aluno Teste Admin\" (usr_1791193947388_vp5o) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
+    {
+      "id": "log_1791193947455",
+      "timestamp": "2026-10-05T09:52:27.455Z",
+      "type": "pro_cancelled",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193947388_vp5o",
+      "details": "Plano PRO cancelado para Aluno Teste Admin (usr_1791193947388_vp5o). Retornado ao Plano Base."
+    },
+    {
+      "id": "log_1791193947434",
+      "timestamp": "2026-10-05T09:52:27.434Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193947388_vp5o",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791193947388_vp5o) até 2026-11-04T09:52:27.434Z"
+    },
+    {
+      "id": "log_1791193886397",
+      "timestamp": "2026-10-05T09:51:26.396Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193886356_ayol",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791193886356_ayol) até 2026-11-04T09:51:26.396Z"
+    },
+    {
+      "id": "log_1791193824766",
+      "timestamp": "2026-10-05T09:50:24.739Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193691668_zd5o",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791193691668_zd5o) até 2026-11-04T09:50:24.739Z"
+    },
+    {
+      "id": "log_1791193779358",
+      "timestamp": "2026-10-05T09:49:39.358Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193691668_zd5o",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791193691668_zd5o) até 2026-11-04T09:49:39.358Z"
+    },
+    {
+      "id": "log_1791193760320",
+      "timestamp": "2026-10-05T09:49:20.320Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193691668_zd5o",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791193691668_zd5o) até 2026-11-04T09:49:20.320Z"
+    },
+    {
+      "id": "log_1791193691711",
+      "timestamp": "2026-10-05T09:48:11.711Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193691668_zd5o",
+      "details": "Plano PRO ativado para Aluno Teste Admin (usr_1791193691668_zd5o) até 2026-11-04T09:48:11.711Z"
+    },
+    {
       "id": "aud_1791151113722_8ebi",
       "action": "support_answered",
       "actor": "Freddie Pimentel Costa",
@@ -948,6 +1114,110 @@
     }
   ],
   "payments": [
+    {
+      "id": "PAG_1791194493064",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791194493003@example.com",
+      "userId": "usr_1791194493053_mzyo",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "cancelled",
+      "note": "Cancelado pelo administrador Freddie",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T10:01:33.064Z"
+    },
+    {
+      "id": "PAG_1791194008032",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791194007909@example.com",
+      "userId": "usr_1791194007987_0pmk",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "cancelled",
+      "note": "Cancelado pelo administrador Freddie",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:53:28.032Z"
+    },
+    {
+      "id": "PAG_1791193947434",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791193947326@example.com",
+      "userId": "usr_1791193947388_vp5o",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "cancelled",
+      "note": "Cancelado pelo administrador Freddie",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:52:27.434Z"
+    },
+    {
+      "id": "PAG_1791193886397",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791193886304@example.com",
+      "userId": "usr_1791193886356_ayol",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "confirmed",
+      "note": "Plano PRO ativado manualmente pelo administrador (30 dias). Vencimento: 04/11/2026",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:51:26.396Z"
+    },
+    {
+      "id": "PAG_1791193824739",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791193691606@example.com",
+      "userId": "usr_1791193691668_zd5o",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "confirmed",
+      "note": "Plano PRO ativado manualmente pelo administrador (30 dias). Vencimento: 04/11/2026",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:50:24.739Z"
+    },
+    {
+      "id": "PAG_1791193779358",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791193691606@example.com",
+      "userId": "usr_1791193691668_zd5o",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "confirmed",
+      "note": "Plano PRO ativado manualmente pelo administrador (30 dias). Vencimento: 04/11/2026",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:49:39.358Z"
+    },
+    {
+      "id": "PAG_1791193760320",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791193691606@example.com",
+      "userId": "usr_1791193691668_zd5o",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "confirmed",
+      "note": "Plano PRO ativado manualmente pelo administrador (30 dias). Vencimento: 04/11/2026",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:49:20.320Z"
+    },
+    {
+      "id": "PAG_1791193691711",
+      "studentName": "Aluno Teste Admin",
+      "email": "test_student_1791193691606@example.com",
+      "userId": "usr_1791193691668_zd5o",
+      "method": "admin_manual",
+      "amount": 19.9,
+      "date": "2026-10-05",
+      "status": "confirmed",
+      "note": "Plano PRO ativado manualmente pelo administrador (30 dias). Vencimento: 04/11/2026",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T09:48:11.711Z"
+    },
     {
       "id": "PAG_1791157460075",
       "studentName": "Aluno Teste Evolução",

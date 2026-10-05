@@ -331,8 +331,14 @@ function validateAdmin(req) {
     queryToken = parsedUrl.searchParams.get('token') || parsedUrl.searchParams.get('adminToken') || '';
   } catch (e) {}
   const token = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'] || queryToken;
-  if (!token) return false;
-  return adminTokens.has(token);
+  if (token && adminTokens.has(token)) return true;
+
+  const sessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
+  if (sessionId) {
+    const session = activeSessions.get(sessionId);
+    if (session && (session.userRole === 'admin' || session.userName === 'freddie')) return true;
+  }
+  return false;
 }
 
 function getAuthUser(req) {
@@ -473,11 +479,20 @@ const server = http.createServer((req, res) => {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
+      let json = {};
       try {
-        const json = body ? JSON.parse(body) : {};
-        cb(json);
+        json = body ? JSON.parse(body) : {};
       } catch (e) {
-        cb(null);
+        console.warn('[ParseBody JSON Error]', e.message);
+        return cb(null);
+      }
+      try {
+        cb(json);
+      } catch (err) {
+        console.error('[Route Handler Error]', err);
+        if (!res.headersSent) {
+          sendJson({ error: 'Erro interno no servidor: ' + err.message }, 500);
+        }
       }
     });
   };
@@ -539,12 +554,25 @@ const server = http.createServer((req, res) => {
   // GET /api/user/sync ou GET /api/auth/me - Baixa os dados completos e atualizados do usuário autenticado
   if (req.method === 'GET' && (pathname === '/api/user/sync' || pathname === '/api/auth/me')) {
     const auth = getAuthUser(req);
+    const requestedUserId = req.headers['x-user-id'];
+
     if (!auth || !auth.user) {
+      const db = readDb();
+      const userExists = requestedUserId ? (db.users || []).some(u => String(u.id) === String(requestedUserId)) : false;
+      if (requestedUserId && !userExists) {
+        return sendJson({ error: 'Sua conta foi excluída ou desativada pelo administrador.', accountDeleted: true }, 401);
+      }
       return sendJson({ error: 'Não autenticado. Faça login para sincronizar seus dados entre dispositivos.' }, 401);
     }
 
     const db = readDb();
-    const freshUser = (db.users || []).find(u => u.id === auth.user.id) || auth.user;
+    const freshUser = (db.users || []).find(u => String(u.id) === String(auth.user.id));
+    if (!freshUser) {
+      if (auth.session && auth.session.sessionId) {
+        activeSessions.delete(auth.session.sessionId);
+      }
+      return sendJson({ error: 'Sua conta foi excluída ou desativada pelo administrador.', accountDeleted: true }, 401);
+    }
 
     const now = new Date();
     const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
@@ -2046,29 +2074,258 @@ const server = http.createServer((req, res) => {
     });
   }
 
-  // 10. POST /api/users/delete - Excluir qualquer conta (inclusive admins)
-  if (req.method === 'POST' && pathname === '/api/users/delete') {
+  // 10a. POST /api/admin/users/activate-pro - Ativação oficial do Plano PRO (Admin)
+  if (req.method === 'POST' && pathname === '/api/admin/users/activate-pro') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado pode ativar o Plano PRO.' }, 403);
+    }
+
     parseBody((data) => {
-      if (!data || !data.userId) return sendJson({ error: 'ID do usuário não fornecido.' }, 400);
+      const targetId = data?.userId;
+      const targetEmail = data?.userEmail;
+      if (!targetId && !targetEmail) return sendJson({ error: 'ID ou e-mail do usuário é obrigatório.' }, 400);
 
       const db = readDb();
-      const beforeCount = (db.users || []).length;
-      db.users = (db.users || []).filter(u => u.id !== data.userId && u.email !== data.userEmail);
+      const user = (db.users || []).find(u => (targetId && String(u.id) === String(targetId)) || (u.email && targetEmail && u.email.toLowerCase() === String(targetEmail).toLowerCase()));
+      if (!user) {
+        return sendJson({ error: 'Usuário não encontrado no banco de dados oficial.' }, 404);
+      }
 
-      // Remover sessões ativas do usuário excluído
+      const days = Number(data.days) || 30;
+      const now = new Date();
+      const expires = new Date(Date.now() + days * 24 * 3600 * 1000);
+
+      user.isSubscribed = true;
+      user.plan = 'pro';
+      user.planStatus = 'active';
+      user.planName = 'ESTUDE+ PRO';
+      user.proActivatedAt = now.toISOString();
+      user.proExpiresAt = expires.toISOString();
+      user.lastBillingDate = now.toISOString();
+      delete user.trialExpiresAt;
+      delete user.trialDaysRemaining;
+      delete user.trialActivatedAt;
+
+      // Se houver solicitações de plano em análise/pendentes para este usuário, aprova
+      if (Array.isArray(db.planRequests)) {
+        db.planRequests.forEach(r => {
+          if ((String(r.userId) === String(user.id) || (r.email && user.email && r.email.toLowerCase() === user.email.toLowerCase())) && (r.status === 'pending' || r.status === 'in_review')) {
+            r.status = 'approved';
+            r.reviewedBy = auth?.user?.name || 'Administrador Freddie';
+            r.reviewedAt = now.toISOString();
+            r.updatedAt = now.toISOString();
+          }
+        });
+      }
+
+      // Registra pagamento confirmado
+      if (!Array.isArray(db.payments)) db.payments = [];
+      db.payments.unshift({
+        id: 'PAG_' + Date.now(),
+        studentName: user.name || user.username,
+        email: user.email || '',
+        userId: user.id,
+        method: data.method || 'admin_manual',
+        amount: 19.90,
+        date: now.toISOString().slice(0, 10),
+        status: 'confirmed',
+        note: `Plano PRO ativado manualmente pelo administrador (${days} dias). Vencimento: ${expires.toLocaleDateString('pt-BR')}`,
+        confirmedBy: auth?.user?.name || 'Admin',
+        confirmedAt: now.toISOString()
+      });
+
+      // Grava log de auditoria
+      if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+      db.auditLogs.unshift({
+        id: 'log_' + Date.now(),
+        timestamp: now.toISOString(),
+        type: 'pro_activated',
+        ip: clientIp,
+        userId: user.id,
+        details: `Plano PRO ativado para ${user.name || user.username} (${user.id}) até ${expires.toISOString()}`
+      });
+
+      db.masterCommands = db.masterCommands || {};
+      db.masterCommands.forceRefreshTimestamp = Date.now();
+      writeDb(db);
+
+      // Sincroniza com Supabase se configurado
+      if (supabase && supabase.isConfigured && typeof supabase.syncUser === 'function') {
+        supabase.syncUser(user).catch(err => console.warn('[Supabase Sync Activate Pro]', err.message));
+      }
+
+      broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: true, plan: 'pro', planStatus: 'active' });
+
+      return sendJson({
+        success: true,
+        message: `Plano PRO ativado com sucesso para "${user.name || user.username}" até ${expires.toLocaleDateString('pt-BR')}!`,
+        user: {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          isSubscribed: user.isSubscribed,
+          plan: user.plan,
+          planStatus: user.planStatus,
+          planName: user.planName,
+          proExpiresAt: user.proExpiresAt
+        }
+      });
+    });
+    return;
+  }
+
+  // 10b. POST /api/admin/users/cancel-pro - Cancelamento oficial do Plano PRO (Admin)
+  if (req.method === 'POST' && pathname === '/api/admin/users/cancel-pro') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado pode cancelar o Plano PRO.' }, 403);
+    }
+
+    parseBody((data) => {
+      const targetId = data?.userId;
+      const targetEmail = data?.userEmail;
+      if (!targetId && !targetEmail) return sendJson({ error: 'ID ou e-mail do usuário é obrigatório.' }, 400);
+
+      const db = readDb();
+      const user = (db.users || []).find(u => (targetId && String(u.id) === String(targetId)) || (u.email && targetEmail && u.email.toLowerCase() === String(targetEmail).toLowerCase()));
+      if (!user) {
+        return sendJson({ error: 'Usuário não encontrado no banco de dados oficial.' }, 404);
+      }
+
+      user.isSubscribed = false;
+      user.plan = 'free';
+      user.planStatus = 'free';
+      user.planName = 'Plano Base';
+      delete user.proActivatedAt;
+      delete user.proExpiresAt;
+      delete user.trialExpiresAt;
+      delete user.trialDaysRemaining;
+      delete user.trialActivatedAt;
+
+      // Atualiza pagamentos
+      if (Array.isArray(db.payments)) {
+        db.payments.forEach(p => {
+          if ((String(p.userId) === String(user.id) || (p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase())) && p.status === 'confirmed') {
+            p.status = 'cancelled';
+            p.note = 'Cancelado pelo administrador Freddie';
+          }
+        });
+      }
+
+      // Grava log de auditoria
+      if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+      db.auditLogs.unshift({
+        id: 'log_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        type: 'pro_cancelled',
+        ip: clientIp,
+        userId: user.id,
+        details: `Plano PRO cancelado para ${user.name || user.username} (${user.id}). Retornado ao Plano Base.`
+      });
+
+      db.masterCommands = db.masterCommands || {};
+      db.masterCommands.forceRefreshTimestamp = Date.now();
+      writeDb(db);
+
+      // Sincroniza com Supabase se configurado
+      if (supabase && supabase.isConfigured && typeof supabase.syncUser === 'function') {
+        supabase.syncUser(user).catch(err => console.warn('[Supabase Sync Cancel Pro]', err.message));
+      }
+
+      broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: false, plan: 'free', planStatus: 'free' });
+
+      return sendJson({
+        success: true,
+        message: `Plano PRO do aluno "${user.name || user.username}" cancelado com sucesso. A conta retornou ao Plano Base.`,
+        user: {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          isSubscribed: user.isSubscribed,
+          plan: user.plan,
+          planStatus: user.planStatus,
+          planName: user.planName
+        }
+      });
+    });
+    return;
+  }
+
+  // 10c. POST /api/admin/users/delete ou POST /api/users/delete - Exclusão real e definitiva de conta
+  if (req.method === 'POST' && (pathname === '/api/admin/users/delete' || pathname === '/api/users/delete')) {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+
+    parseBody(async (data) => {
+      const targetId = data?.userId;
+      const targetEmail = data?.userEmail;
+      if (!targetId && !targetEmail) return sendJson({ error: 'ID ou e-mail do usuário não fornecido.' }, 400);
+
+      const db = readDb();
+      const targetUser = (db.users || []).find(u => (targetId && String(u.id) === String(targetId)) || (u.email && targetEmail && u.email.toLowerCase() === String(targetEmail).toLowerCase()));
+      if (!targetUser) {
+        return sendJson({ error: 'Conta não encontrada para exclusão.' }, 404);
+      }
+
+      const finalTargetId = targetUser.id;
+      const isSelfDelete = auth && auth.user && String(auth.user.id) === String(finalTargetId);
+      if (!isAdmin && !isSelfDelete) {
+        return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado ou o próprio titular da conta podem excluí-la.' }, 403);
+      }
+
+      // Proteger administrador mestre Freddie contra exclusão sem flag explícita
+      if ((targetUser.username === 'freddie' || targetUser.email === 'freddie@gammon.com.br') && !data.confirmMasterAdminDelete) {
+        return sendJson({ error: 'A conta do Administrador Mestre Freddie é protegida contra exclusão acidental.' }, 403);
+      }
+
+      const beforeCount = db.users.length;
+      db.users = db.users.filter(u => String(u.id) !== String(finalTargetId));
+
+      // 1. Invalidar todas as sessões ativas do usuário excluído em memória
       for (const [sId, s] of activeSessions.entries()) {
-        if (s.userId === data.userId) activeSessions.delete(sId);
+        if (String(s.userId) === String(finalTargetId)) {
+          activeSessions.delete(sId);
+        }
       }
 
-      if (db.users.length < beforeCount) {
-        db.masterCommands = db.masterCommands || {};
-        db.masterCommands.forceRefreshTimestamp = Date.now();
-        writeDb(db);
-
-        broadcastToAdmins('user_deleted', { userId: data.userId });
-        return sendJson({ success: true, message: 'Conta excluída com sucesso!' });
+      // 2. Limpar dados associados (solicitações de plano, tickets)
+      if (Array.isArray(db.planRequests)) {
+        db.planRequests = db.planRequests.filter(r => String(r.userId) !== String(finalTargetId) && (!r.email || !targetUser.email || r.email.toLowerCase() !== targetUser.email.toLowerCase()));
       }
-      return sendJson({ error: 'Conta não encontrada para exclusão.' }, 404);
+
+      // 3. Excluir do Supabase PostgreSQL
+      if (supabase && supabase.isConfigured) {
+        try {
+          await supabase.deleteUser(finalTargetId);
+        } catch (supaErr) {
+          console.warn('[Supabase Delete User Warning]', supaErr.message);
+        }
+      }
+
+      // 4. Gravar log de auditoria
+      if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+      db.auditLogs.unshift({
+        id: 'log_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        type: 'user_deleted',
+        ip: clientIp,
+        userId: targetId,
+        details: `Conta "${targetUser.name || targetUser.username}" (${targetId}) excluída definitivamente do sistema por ${auth?.user?.name || (isAdmin ? 'Admin' : 'Usuário')}.`
+      });
+
+      db.masterCommands = db.masterCommands || {};
+      db.masterCommands.forceRefreshTimestamp = Date.now();
+      writeDb(db);
+
+      broadcastToAdmins('user_deleted', { userId: targetId });
+
+      return sendJson({
+        success: true,
+        message: `Conta de "${targetUser.name || targetUser.username}" excluída definitivamente do sistema com sucesso!`
+      });
     });
     return;
   }
