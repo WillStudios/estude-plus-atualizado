@@ -8080,19 +8080,6 @@ class EstudePlusApp {
       this.selectAccentColor('#4f46e5', 'Índigo Estude+');
     }
 
-    // Tab 5: Schedule
-    const sched = this.currentUser.scheduleWeekly || {};
-    const segInput = document.getElementById('cfgSchedSeg');
-    const terInput = document.getElementById('cfgSchedTer');
-    const quaInput = document.getElementById('cfgSchedQua');
-    const quiInput = document.getElementById('cfgSchedQui');
-    const sexInput = document.getElementById('cfgSchedSex');
-    if (segInput) segInput.value = sched.seg || 'Matemática, Português, Geografia, Inglês';
-    if (terInput) terInput.value = sched.ter || 'Ciências, Matemática, História, Artes';
-    if (quaInput) quaInput.value = sched.qua || 'Português, Redação, Física, Filosofia';
-    if (quiInput) quiInput.value = sched.qui || 'Matemática, Geografia, Química, Inglês';
-    if (sexInput) sexInput.value = sched.sex || 'História, Português, Biologia, Ed. Física';
-
     this.switchSettingsTab('focus');
     this.showModal('studentSettingsModal');
   }
@@ -8162,12 +8149,12 @@ class EstudePlusApp {
     const accentName = document.getElementById('cfgSelectedAccentName')?.innerText || 'Índigo Estude+';
     const reduceMotion = Boolean(document.getElementById('cfgReduceMotion')?.checked);
 
-    const scheduleWeekly = {
-      seg: document.getElementById('cfgSchedSeg')?.value.trim() || '',
-      ter: document.getElementById('cfgSchedTer')?.value.trim() || '',
-      qua: document.getElementById('cfgSchedQua')?.value.trim() || '',
-      qui: document.getElementById('cfgSchedQui')?.value.trim() || '',
-      sex: document.getElementById('cfgSchedSex')?.value.trim() || ''
+    const scheduleWeekly = this.currentUser.scheduleWeekly || {
+      seg: 'Matemática, Português, Geografia, Inglês',
+      ter: 'Ciências, Matemática, História, Artes',
+      qua: 'Português, Redação, Física, Filosofia',
+      qui: 'Matemática, Geografia, Química, Inglês',
+      sex: 'História, Português, Biologia, Ed. Física'
     };
 
     // Update currentUser state
