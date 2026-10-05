@@ -15,10 +15,10 @@
       "streak": 2,
       "bestStreak": 0,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-05T15:48:22.377Z",
+      "lastLogin": "2026-10-05T17:00:33.883Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
-      "lastDeviceType": "Computador / Desktop",
+      "lastDeviceType": "iPhone / iOS",
       "loginDays": [
         "2026-10-04",
         "2026-10-05"
@@ -511,6 +511,17 @@
   ],
   "auditLogs": [
     {
+      "id": "aud_1791219606381_69hn",
+      "action": "user_logout",
+      "actor": "freddie",
+      "details": {
+        "sessionId": "sess_92b9684c26db65c5204f5ac8e56988d1",
+        "device": "Windows / PC"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-05T17:00:06.381Z"
+    },
+    {
       "id": "log_1791215334061",
       "timestamp": "2026-10-05T15:48:54.061Z",
       "type": "user_deleted",
@@ -769,6 +780,23 @@
       "isCompleted": false,
       "startedAt": "2026-10-05T16:08:05.686Z",
       "lastCompletedAt": "2026-10-05T16:08:05.728Z"
+    }
+  ],
+  "sessions": [
+    {
+      "sessionId": "sess_c2bc9fa8d3091e85bf59c39cb5759336",
+      "userId": "admin_freddie",
+      "userName": "Freddie Pimentel Costa",
+      "userRole": "admin",
+      "deviceType": "Windows / PC",
+      "deviceLabel": "Computador Windows • Google Chrome",
+      "loginTime": "2026-10-05T17:00:33.834Z",
+      "createdAt": "2026-10-05T17:00:33.834Z",
+      "lastHeartbeat": 1791219633834,
+      "expiresAt": 1793811633834,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
     }
   ]
 }

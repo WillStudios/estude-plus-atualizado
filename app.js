@@ -663,6 +663,7 @@ class EstudePlusApp {
     this.setupEventListeners();
     this.initChatBot();
     this.checkAuth();
+    this.restoreAuthSession();
     this.trackDailyStreak();
     this.startActiveStudyTracker();
     this.initMasterSync();
@@ -672,6 +673,7 @@ class EstudePlusApp {
     // Sincronização multi-dispositivo (PC, Celular, Tablet)
     if (this.currentUser) {
       this.syncUserData('pull');
+      this.initUserSSE();
       if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
         this.loadAdminOverview();
         this.initAdminSSE();
@@ -8901,6 +8903,70 @@ class EstudePlusApp {
     } catch (e) {}
   }
 
+  async restoreAuthSession() {
+    try {
+      const storedSessionId = localStorage.getItem('estude_session_id') || '';
+      const headers = { 'Content-Type': 'application/json' };
+      if (storedSessionId) {
+        headers['x-session-id'] = storedSessionId;
+      }
+      if (this.currentUser && this.currentUser.id) {
+        headers['x-user-id'] = this.currentUser.id;
+      }
+
+      const resp = await fetch('/api/auth/me', {
+        method: 'GET',
+        headers,
+        credentials: 'include'
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.success && data.user) {
+          this.currentUser = data.user;
+          this.saveCurrentUser();
+          if (data.sessionId) {
+            localStorage.setItem('estude_session_id', data.sessionId);
+          }
+          this.closeAuthOverlay();
+          this.updateUserHeaderUI();
+          this.applyStudentSettingsToUI();
+          this.renderPlanStatus();
+          this.renderDashboard();
+          this.initUserSSE();
+          if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
+            this.loadAdminOverview();
+            this.initAdminSSE();
+          }
+          return true;
+        }
+      } else if (resp.status === 401) {
+        const data = await resp.json().catch(() => ({}));
+        if (data && data.accountDeleted) {
+          alert('Sua conta foi desativada ou excluída.');
+        }
+        if (this.currentUser) {
+          this.currentUser = null;
+          this.saveCurrentUser();
+          localStorage.removeItem('estude_session_id');
+        }
+        this.showAuthOverlay();
+        this.updateUserHeaderUI();
+        return false;
+      }
+    } catch (err) {
+      console.warn('[AUTH] Falha de rede ao restaurar sessão (mantendo cache local se existir):', err);
+    }
+
+    if (this.currentUser) {
+      this.closeAuthOverlay();
+      this.updateUserHeaderUI();
+      this.initUserSSE();
+      return true;
+    }
+    return false;
+  }
+
   checkAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const autoLogin = urlParams.get('login') || urlParams.get('autologin');
@@ -8986,6 +9052,7 @@ class EstudePlusApp {
     if (e && e.preventDefault) e.preventDefault();
     const rawUserOrEmail = document.getElementById('loginEmail')?.value.trim();
     const pass = document.getElementById('loginPassword')?.value;
+    const rememberMe = document.getElementById('loginRememberMe') ? document.getElementById('loginRememberMe').checked : true;
 
     if (!rawUserOrEmail || !pass) {
       alert('Por favor, digite seu nome de usuário e senha.');
@@ -8996,7 +9063,8 @@ class EstudePlusApp {
       const resp = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: rawUserOrEmail, password: pass })
+        credentials: 'include',
+        body: JSON.stringify({ login: rawUserOrEmail, password: pass, rememberMe })
       });
       const data = await resp.json();
 
@@ -9024,6 +9092,12 @@ class EstudePlusApp {
         this.renderSasHub();
         this.renderGeminiTab();
         this.checkPendingAdminBadge();
+        this.initUserSSE();
+
+        if (user.role === 'admin' || user.username === 'freddie') {
+          this.loadAdminOverview();
+          this.initAdminSSE();
+        }
 
         if (typeof confetti === 'function') {
           confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
@@ -9065,6 +9139,7 @@ class EstudePlusApp {
         this.applyStudentSettingsToUI();
         this.renderPlanStatus();
         this.checkPendingAdminBadge();
+        this.initUserSSE();
         alert(`Olá, ${localUser.name}! Bem-vindo(a) ao ESTUDE+!`);
       } else {
         alert('Credenciais incorretas ou usuário não encontrado.');
@@ -9078,6 +9153,7 @@ class EstudePlusApp {
     const username = document.getElementById('regUsername')?.value.trim();
     const pass = document.getElementById('regPassword')?.value;
     const passConfirm = document.getElementById('regPasswordConfirm')?.value;
+    const rememberMe = document.getElementById('regRememberMe') ? document.getElementById('regRememberMe').checked : true;
     const errBox = document.getElementById('registerErrorMsg');
 
     if (errBox) {
@@ -9129,11 +9205,13 @@ class EstudePlusApp {
       const resp = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           name: fullName,
           username: username,
           password: pass,
           confirmPassword: passConfirm,
+          rememberMe,
           grade: '7º Ano (Campus Chácara)'
         })
       });
@@ -9168,6 +9246,7 @@ class EstudePlusApp {
       this.renderQuizIntro();
       this.renderSasHub();
       this.renderGeminiTab();
+      this.initUserSSE();
 
       if (typeof confetti === 'function') {
         confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
@@ -9201,11 +9280,13 @@ class EstudePlusApp {
       fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login: 'freddie', password: passClean })
+        credentials: 'include',
+        body: JSON.stringify({ login: 'freddie', password: passClean, rememberMe: true })
       }).then(r => r.json()).then(data => {
         if (data && data.sessionId) {
           localStorage.setItem('estude_session_id', data.sessionId);
         }
+        this.initUserSSE();
       }).catch(() => {});
 
       const freddie = this.users.find(u => u.email === 'freddie@gammon.com.br' || u.username === 'freddie');
@@ -9238,6 +9319,7 @@ class EstudePlusApp {
     this.applyStudentSettingsToUI();
     this.renderPlanStatus();
     this.checkPendingAdminBadge();
+    this.initUserSSE();
     if (typeof confetti === 'function' && !silent) {
       confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
     }
@@ -9246,12 +9328,248 @@ class EstudePlusApp {
     }
   }
 
-  handleLogout() {
-    if (confirm('Deseja realmente sair da sua conta no ESTUDE+?')) {
+  async handleLogout() {
+    if (confirm('Deseja realmente sair da sua conta no ESTUDE+? (Sua sessão será encerrada com segurança neste dispositivo)')) {
+      const sessionId = localStorage.getItem('estude_session_id') || '';
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-id': sessionId,
+            'x-user-id': this.currentUser?.id || ''
+          },
+          credentials: 'include',
+          body: JSON.stringify({ sessionId })
+        });
+      } catch (e) {
+        console.warn('Erro ao chamar logout no servidor:', e);
+      }
+
+      if (this.userEventSource) {
+        try { this.userEventSource.close(); } catch (e) {}
+        this.userEventSource = null;
+      }
+      if (this.adminEventSource) {
+        try { this.adminEventSource.close(); } catch (e) {}
+        this.adminEventSource = null;
+      }
+
       this.currentUser = null;
       this.saveCurrentUser();
+      localStorage.removeItem('estude_session_id');
       this.showAuthOverlay();
       this.updateUserHeaderUI();
+    }
+  }
+
+  initUserSSE() {
+    if (this.userEventSource) {
+      try { this.userEventSource.close(); } catch (e) {}
+      this.userEventSource = null;
+    }
+    if (!this.currentUser) return;
+
+    try {
+      const sessionId = localStorage.getItem('estude_session_id') || '';
+      const url = `/api/events?userId=${encodeURIComponent(this.currentUser.id)}&sessionId=${encodeURIComponent(sessionId)}`;
+      this.userEventSource = new EventSource(url);
+
+      this.userEventSource.addEventListener('user_updated', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload && payload.data && this.currentUser) {
+            Object.assign(this.currentUser, payload.data);
+            this.saveCurrentUser();
+            this.updateUserHeaderUI();
+            this.renderPlanStatus();
+          }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('pro_status_changed', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload && payload.data && this.currentUser) {
+            Object.assign(this.currentUser, payload.data);
+            this.saveCurrentUser();
+            this.updateUserHeaderUI();
+            this.renderPlanStatus();
+            if (payload.data.isSubscribed) {
+              if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 70 });
+              alert('🎉 Seu Plano PRO foi ativado com sucesso!');
+            }
+          }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('session_revoked', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const currentSessId = localStorage.getItem('estude_session_id');
+          if (payload && payload.data && payload.data.sessionId === currentSessId) {
+            alert('⚠️ Sua sessão foi encerrada a partir de outro dispositivo conectado.');
+            this.currentUser = null;
+            this.saveCurrentUser();
+            localStorage.removeItem('estude_session_id');
+            if (this.userEventSource) {
+              try { this.userEventSource.close(); } catch (e) {}
+              this.userEventSource = null;
+            }
+            this.showAuthOverlay();
+            this.updateUserHeaderUI();
+          }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('account_deleted', () => {
+        alert('Sua conta foi excluída definitivamente.');
+        this.currentUser = null;
+        this.saveCurrentUser();
+        localStorage.removeItem('estude_session_id');
+        if (this.userEventSource) {
+          try { this.userEventSource.close(); } catch (err) {}
+          this.userEventSource = null;
+        }
+        this.showAuthOverlay();
+        this.updateUserHeaderUI();
+      });
+
+      this.userEventSource.onerror = () => {
+        // Fallback para polling se desconectar
+      };
+    } catch (e) {
+      console.warn('[SSE User Error]', e);
+    }
+  }
+
+  async loadConnectedSessions() {
+    const listEl = document.getElementById('connectedSessionsList');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #64748b; font-size: 0.82rem;"><i data-lucide="loader" class="spin"></i> Carregando sessões ativas...</div>';
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const storedSessionId = localStorage.getItem('estude_session_id') || '';
+      const resp = await fetch('/api/auth/sessions', {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-id': storedSessionId,
+          'x-user-id': this.currentUser?.id || ''
+        },
+        credentials: 'include'
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.success && Array.isArray(data.sessions)) {
+        this.renderConnectedSessions(data.sessions, data.currentSessionId || storedSessionId);
+      } else {
+        listEl.innerHTML = `<div style="text-align: center; padding: 18px; color: #ef4444; font-size: 0.82rem;">${data.error || 'Não foi possível carregar as sessões.'}</div>`;
+      }
+    } catch (err) {
+      listEl.innerHTML = '<div style="text-align: center; padding: 18px; color: #64748b; font-size: 0.82rem;">Não foi possível conectar ao servidor para listar as sessões.</div>';
+    }
+  }
+
+  renderConnectedSessions(sessions, currentSessionId) {
+    const listEl = document.getElementById('connectedSessionsList');
+    if (!listEl) return;
+
+    if (!sessions || sessions.length === 0) {
+      listEl.innerHTML = '<div style="text-align: center; padding: 18px; color: #64748b; font-size: 0.82rem;">Nenhuma sessão ativa encontrada.</div>';
+      return;
+    }
+
+    listEl.innerHTML = sessions.map(s => {
+      const isCurrent = s.isCurrent || (s.id === currentSessionId);
+      const isMobile = (s.deviceType || '').toLowerCase().includes('celular') || (s.deviceType || '').toLowerCase().includes('iphone') || (s.deviceType || '').toLowerCase().includes('android');
+      const icon = isMobile ? 'smartphone' : 'laptop';
+      const createdDate = s.createdAt ? new Date(s.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'Recentemente';
+      const statusBadge = isCurrent
+        ? '<span style="background: #dcfce7; color: #15803d; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid #86efac;">Este dispositivo (Ativo)</span>'
+        : (s.isOnline
+          ? '<span style="background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid #93c5fd;">Conectado agora</span>'
+          : '<span style="background: #f1f5f9; color: #64748b; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 999px;">Inativo</span>');
+
+      return `
+        <div style="background: ${isCurrent ? '#f0fdf4' : '#ffffff'}; border: 1.5px solid ${isCurrent ? '#86efac' : '#e2e8f0'}; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: ${isCurrent ? '#bbf7d0' : '#f1f5f9'}; color: ${isCurrent ? '#15803d' : '#475569'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i data-lucide="${icon}" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 0.88rem; color: #0f172a;">${s.deviceLabel || s.deviceType || 'Dispositivo'}</strong>
+                ${statusBadge}
+              </div>
+              <div style="font-size: 0.74rem; color: #64748b; margin-top: 2px;">
+                Conectado em: ${createdDate} • IP: ${s.ip || 'Local'}
+                ${s.rememberMe ? '• <span style="color: #4f46e5; font-weight: 600;">Sessão persistente (30d)</span>' : ''}
+              </div>
+            </div>
+          </div>
+          <div>
+            ${isCurrent ? '' : `
+              <button type="button" onclick="app.revokeSession('${s.id}')" style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 8px; padding: 6px 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Desconectar este dispositivo">
+                <i data-lucide="log-out" style="width: 12px; height: 12px;"></i> Encerrar
+              </button>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async revokeSession(sessionId) {
+    if (!confirm('Deseja realmente desconectar este dispositivo remotamente?')) return;
+    try {
+      const resp = await fetch('/api/auth/sessions/revoke', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-id': localStorage.getItem('estude_session_id') || '',
+          'x-user-id': this.currentUser?.id || ''
+        },
+        credentials: 'include',
+        body: JSON.stringify({ sessionId })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        alert('Sessão remota encerrada com sucesso!');
+        this.loadConnectedSessions();
+      } else {
+        alert(data.error || 'Erro ao encerrar sessão.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao tentar revogar a sessão.');
+    }
+  }
+
+  async revokeAllOtherSessions() {
+    if (!confirm('Deseja realmente desconectar TODOS os outros dispositivos e manter conectado apenas este?')) return;
+    try {
+      const resp = await fetch('/api/auth/sessions/revoke', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-id': localStorage.getItem('estude_session_id') || '',
+          'x-user-id': this.currentUser?.id || ''
+        },
+        credentials: 'include',
+        body: JSON.stringify({ revokeAllOthers: true })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        alert(data.message || 'Todas as outras sessões foram desconectadas com sucesso!');
+        this.loadConnectedSessions();
+      } else {
+        alert(data.error || 'Erro ao desconectar outras sessões.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao tentar desconectar outros dispositivos.');
     }
   }
 
@@ -9557,6 +9875,9 @@ class EstudePlusApp {
     document.querySelectorAll('.settings-tab-pane').forEach(pane => {
       pane.classList.toggle('active', pane.id === `settingsTab-${tabName}`);
     });
+    if (tabName === 'sessions') {
+      this.loadConnectedSessions();
+    }
   }
 
   selectAvatar(emoji) {
@@ -10702,7 +11023,6 @@ class EstudePlusApp {
         alert('🎉 ' + data.message);
       } else {
         alert(data.error || 'Não foi possível registrar a solicitação.');
-      }
       }
     } catch (err) {
       alert('Erro de conexão ao enviar a solicitação. Tente novamente.');
@@ -12130,6 +12450,7 @@ class EstudePlusApp {
             </button>
           </div>
         </div>
+      `;
     }).join('');
 
     container.innerHTML = masterHeaderHtml + cardsHtml;

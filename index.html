@@ -1396,7 +1396,13 @@
           <label>Senha de Acesso</label>
           <input type="password" id="loginPassword" required placeholder="Digite sua senha">
         </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 12px 0 16px; font-size: 0.8rem; color: #475569; line-height: 1.5;">
+        <div class="form-group" style="margin: 8px 0 10px; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="loginRememberMe" checked style="width: 17px; height: 17px; accent-color: #4f46e5; cursor: pointer;">
+          <label for="loginRememberMe" style="margin: 0; font-size: 0.84rem; color: #334155; font-weight: 600; cursor: pointer; user-select: none;">
+            Manter minha sessão conectada
+          </label>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin: 10px 0 14px; font-size: 0.8rem; color: #475569; line-height: 1.5;">
           🎓 <strong>Acesso ESTUDE+:</strong> Digite seu usuário e senha autorizados para entrar. O cadastro de novas contas é gerenciado pelo administrador no PC.
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 4px;">
@@ -1435,6 +1441,12 @@
         <div class="form-group">
           <label>Confirmar Senha</label>
           <input type="password" id="regPasswordConfirm" required minlength="6" placeholder="Repita a mesma senha">
+        </div>
+        <div class="form-group" style="margin: 8px 0 10px; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="regRememberMe" checked style="width: 17px; height: 17px; accent-color: #4f46e5; cursor: pointer;">
+          <label for="regRememberMe" style="margin: 0; font-size: 0.84rem; color: #334155; font-weight: 600; cursor: pointer; user-select: none;">
+            Manter minha sessão conectada
+          </label>
         </div>
         <div id="registerErrorMsg" style="display: none; background: #fef2f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.82rem; color: #dc2626;"></div>
         <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 4px;">
@@ -2415,6 +2427,9 @@
         <button type="button" class="settings-tab-btn" data-settings-tab="schedule" onclick="app.switchSettingsTab('schedule')">
           <span>📅</span> Grade Semanal
         </button>
+        <button type="button" class="settings-tab-btn" data-settings-tab="sessions" onclick="app.switchSettingsTab('sessions')">
+          <span>📱</span> Dispositivos & Sessões
+        </button>
       </div>
 
       <form id="studentSettingsForm" onsubmit="app.handleSaveStudentSettings(event)">
@@ -2749,6 +2764,37 @@
                 <strong>Sexta-feira:</strong>
                 <input type="text" id="cfgSchedSex" class="form-input" value="História, Português, Biologia, Ed. Física">
               </div>
+            </div>
+          </div>
+
+          <!-- TAB 6: DISPOSITIVOS & SESSÕES CONECTADAS -->
+          <div class="settings-tab-pane" id="settingsTab-sessions">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Dispositivos Conectados</h4>
+                <p style="margin: 2px 0 0; font-size: 0.78rem; color: #64748b;">
+                  Visualize onde sua conta está ativa (PC, celular, tablet) e encerre sessões remotas a qualquer momento.
+                </p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-outline" onclick="app.loadConnectedSessions()" style="font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Atualizar
+                </button>
+                <button type="button" class="btn-outline" onclick="app.revokeAllOtherSessions()" style="font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; color: #b91c1c; border-color: #fca5a5; background: #fef2f2; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="shield-alert" style="width: 12px; height: 12px;"></i> Desconectar Outros
+                </button>
+              </div>
+            </div>
+
+            <div id="connectedSessionsList" style="display: flex; flex-direction: column; gap: 10px; min-height: 120px;">
+              <div style="text-align: center; padding: 24px; color: #64748b; font-size: 0.85rem;">
+                Clique para carregar os dispositivos conectados...
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; font-size: 0.76rem; color: #475569; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="shield-check" style="width: 16px; height: 16px; color: #16a34a; flex-shrink: 0;"></i>
+              <span><strong>Segurança:</strong> Suas credenciais são criptografadas no servidor. Nunca salvamos sua senha no navegador.</span>
             </div>
           </div>
 

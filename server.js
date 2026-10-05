@@ -68,6 +68,9 @@ function readDb() {
       if (!Array.isArray(parsed.adminNotifications)) parsed.adminNotifications = [];
       if (!Array.isArray(parsed.systemEvents)) parsed.systemEvents = [];
       if (!Array.isArray(parsed.auditLogs)) parsed.auditLogs = [];
+      if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
+      const nowMs = Date.now();
+      parsed.sessions = parsed.sessions.filter(s => s && s.sessionId && s.userId && (!s.expiresAt || s.expiresAt > nowMs));
       if (!Array.isArray(parsed.materials)) parsed.materials = [];
       if (!Array.isArray(parsed.flashcards)) parsed.flashcards = [];
       if (!Array.isArray(parsed.simulados)) parsed.simulados = [];
@@ -93,6 +96,7 @@ function readDb() {
   }
   return {
     users: [],
+    sessions: [],
     materials: [],
     flashcards: [],
     simulados: [],
@@ -147,18 +151,116 @@ const OFFICIAL_PLANS = {
 };
 
 // Global in-memory state for sessions, presence and rate-limiting
-const activeSessions = new Map(); // sessionId -> { sessionId, userId, userName, userRole, deviceType, loginTime, lastHeartbeat, ip }
+const activeSessions = new Map(); // sessionId -> sessionObj
 const adminTokens = new Set(['admin_master_freddie_token_2026']); // Master token for authenticated admin sessions
 const rateLimitMap = new Map(); // ip -> { loginFailures: count, blockedUntil: timestamp, registrations: [timestamps] }
-const sseClients = new Set(); // SSE connected admin clients
+const adminSseClients = new Set(); // SSE connected admin clients
+const userSseClients = new Map(); // userId -> Set of res objects
+
+// Restauração imediata de todas as sessões ativas do disco para a memória na inicialização
+try {
+  const initialDb = readDb();
+  if (Array.isArray(initialDb.sessions)) {
+    const nowBoot = Date.now();
+    let restoredCount = 0;
+    initialDb.sessions.forEach(s => {
+      if (s && s.sessionId && (!s.expiresAt || s.expiresAt > nowBoot)) {
+        activeSessions.set(s.sessionId, s);
+        restoredCount++;
+      }
+    });
+    console.log(`[AUTH] ${restoredCount} sessão(ões) persistente(s) restaurada(s) do disco com sucesso.`);
+  }
+} catch (e) {
+  console.warn('[AUTH Boot Warning] Falha ao carregar sessões persistentes:', e.message);
+}
+
+function parseCookies(req) {
+  const list = {};
+  const cookieHeader = req.headers && req.headers.cookie;
+  if (!cookieHeader) return list;
+  cookieHeader.split(';').forEach(cookie => {
+    let [name, ...rest] = cookie.split('=');
+    name = name?.trim();
+    if (!name) return;
+    const value = rest.join('=').trim();
+    list[name] = decodeURIComponent(value);
+  });
+  return list;
+}
+
+function createSessionCookieHeader(sessionId, maxAgeSeconds, isSecure = false) {
+  let cookie = `estude_session=${sessionId}; Path=/; HttpOnly; SameSite=Lax`;
+  if (maxAgeSeconds !== undefined && maxAgeSeconds !== null) {
+    cookie += `; Max-Age=${Math.floor(maxAgeSeconds)}`;
+  }
+  if (isSecure) {
+    cookie += `; Secure`;
+  }
+  return cookie;
+}
+
+function clearSessionCookieHeader(isSecure = false) {
+  let cookie = `estude_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  if (isSecure) {
+    cookie += `; Secure`;
+  }
+  return cookie;
+}
+
+function getDeviceLabel(userAgent) {
+  const ua = (userAgent || '').toLowerCase();
+  let browser = 'Navegador Web';
+  if (/edg\//.test(ua)) browser = 'Microsoft Edge';
+  else if (/chrome|crios/.test(ua) && !/edg\//.test(ua)) browser = 'Google Chrome';
+  else if (/firefox|fxios/.test(ua)) browser = 'Firefox';
+  else if (/safari/.test(ua) && !/chrome|crios/.test(ua)) browser = 'Safari';
+
+  let os = 'Computador';
+  if (/iphone/.test(ua)) os = 'iPhone';
+  else if (/ipad/.test(ua)) os = 'iPad';
+  else if (/android/.test(ua)) os = 'Celular Android';
+  else if (/windows/.test(ua)) os = 'Computador Windows';
+  else if (/macintosh|mac os x/.test(ua)) os = 'MacBook / Apple';
+  else if (/linux/.test(ua)) os = 'Computador Linux';
+
+  return `${os} • ${browser}`;
+}
 
 function broadcastToAdmins(eventType, data) {
   const payload = JSON.stringify({ type: eventType, data, timestamp: Date.now() });
-  for (const client of sseClients) {
+  for (const client of adminSseClients) {
     try {
       client.write(`event: ${eventType}\ndata: ${payload}\n\n`);
     } catch (e) {
-      sseClients.delete(client);
+      adminSseClients.delete(client);
+    }
+  }
+}
+
+function broadcastToUser(userId, eventType, data) {
+  const clients = userSseClients.get(String(userId));
+  if (!clients || clients.size === 0) return;
+  const payload = JSON.stringify({ type: eventType, data, timestamp: Date.now() });
+  for (const client of clients) {
+    try {
+      client.write(`event: ${eventType}\ndata: ${payload}\n\n`);
+    } catch (e) {
+      clients.delete(client);
+    }
+  }
+}
+
+function broadcastToAll(eventType, data) {
+  broadcastToAdmins(eventType, data);
+  const payload = JSON.stringify({ type: eventType, data, timestamp: Date.now() });
+  for (const [userId, clients] of userSseClients.entries()) {
+    for (const client of clients) {
+      try {
+        client.write(`event: ${eventType}\ndata: ${payload}\n\n`);
+      } catch (e) {
+        clients.delete(client);
+      }
     }
   }
 }
@@ -379,6 +481,8 @@ function calculatePresence(lastHeartbeat, loginTime) {
 }
 
 function validateAdmin(req) {
+  const cookies = parseCookies(req);
+  const cookieSessionId = cookies['estude_session'];
   const authHeader = req.headers['authorization'] || '';
   let queryToken = '';
   try {
@@ -388,55 +492,85 @@ function validateAdmin(req) {
   const token = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'] || queryToken;
   if (token && adminTokens.has(token)) return true;
 
-  const sessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
+  const sessionId = cookieSessionId || req.headers['x-session-id'] || req.headers['x-session'] || (token.startsWith('sess_') ? token : '');
   if (sessionId) {
-    const session = activeSessions.get(sessionId);
+    let session = activeSessions.get(sessionId);
+    if (!session) {
+      const db = readDb();
+      session = (db.sessions || []).find(s => s.sessionId === sessionId);
+      if (session) activeSessions.set(sessionId, session);
+    }
     if (session && (session.userRole === 'admin' || session.userName === 'freddie')) return true;
   }
   return false;
 }
 
 function getAuthUser(req) {
-  const sessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
+  const cookies = parseCookies(req);
+  const cookieSessionId = cookies['estude_session'];
+  const headerSessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
+  const authHeader = req.headers['authorization'] || '';
+  const bearerToken = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'] || '';
+
+  const sessionId = cookieSessionId || headerSessionId || (bearerToken.startsWith('sess_') ? bearerToken : '');
+
+  const db = readDb();
+  const now = Date.now();
+
   if (sessionId) {
-    const session = activeSessions.get(sessionId);
-    if (session && session.userId) {
-      const db = readDb();
+    let session = activeSessions.get(sessionId);
+    if (!session && Array.isArray(db.sessions)) {
+      session = db.sessions.find(s => s.sessionId === sessionId);
+      if (session) {
+        activeSessions.set(sessionId, session);
+      }
+    }
+
+    if (session) {
+      // Verifica expiração da sessão
+      if (session.expiresAt && session.expiresAt < now) {
+        activeSessions.delete(sessionId);
+        if (Array.isArray(db.sessions)) {
+          db.sessions = db.sessions.filter(s => s.sessionId !== sessionId);
+          writeDb(db);
+        }
+        return null;
+      }
+
+      session.lastHeartbeat = now;
       const user = (db.users || []).find(u => u.id === session.userId);
       if (user) return { user, session };
     }
   }
 
   // Token de autorização (Bearer token ou admin)
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '').trim() || req.headers['x-admin-token'];
-  if (token) {
-    if (activeSessions.has(token)) {
-      const session = activeSessions.get(token);
-      const db = readDb();
+  if (bearerToken) {
+    if (activeSessions.has(bearerToken)) {
+      const session = activeSessions.get(bearerToken);
       const user = (db.users || []).find(u => u.id === session.userId);
       if (user) return { user, session };
     }
-    if (adminTokens.has(token)) {
-      const db = readDb();
+    if (adminTokens.has(bearerToken)) {
       const admin = (db.users || []).find(u => u.role === 'admin') || {
         id: 'admin_freddie',
         name: 'Freddie Pimentel Costa',
         role: 'admin',
         username: 'freddie'
       };
-      return { user: admin, session: { userId: admin.id, userRole: 'admin', userName: admin.name } };
+      return { user: admin, session: { sessionId: 'admin_token', userId: admin.id, userRole: 'admin', userName: admin.name } };
     }
   }
 
   // Suporte a identificação de dispositivo autenticado por x-user-id
   const headerUserId = req.headers['x-user-id'];
   if (headerUserId) {
-    const session = Array.from(activeSessions.values()).find(s => s.userId === headerUserId);
-    const db = readDb();
+    let session = Array.from(activeSessions.values()).find(s => s.userId === headerUserId && (!s.expiresAt || s.expiresAt > now));
+    if (!session && Array.isArray(db.sessions)) {
+      session = db.sessions.find(s => s.userId === headerUserId && (!s.expiresAt || s.expiresAt > now));
+    }
     const user = (db.users || []).find(u => u.id === headerUserId);
     if (user) {
-      return { user, session: session || { userId: user.id, userRole: user.role, userName: user.name } };
+      return { user, session: session || { sessionId: 'fallback_' + user.id, userId: user.id, userRole: user.role, userName: user.name } };
     }
   }
 
@@ -541,13 +675,20 @@ const server = http.createServer((req, res) => {
   const pathname = parsedUrl.pathname;
   const clientIp = getClientIp(req);
 
-  const sendJson = (data, code = 200) => {
-    res.writeHead(code, {
+  const sendJson = (data, code = 200, extraHeaders = {}) => {
+    const origin = req.headers.origin;
+    const baseHeaders = {
       'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-session-id, x-user-id'
-    });
+    };
+    if (origin) {
+      baseHeaders['Access-Control-Allow-Origin'] = origin;
+      baseHeaders['Access-Control-Allow-Credentials'] = 'true';
+    } else {
+      baseHeaders['Access-Control-Allow-Origin'] = '*';
+    }
+    res.writeHead(code, { ...baseHeaders, ...extraHeaders });
     res.end(JSON.stringify(data));
   };
 
@@ -575,11 +716,18 @@ const server = http.createServer((req, res) => {
 
   // CORS preflight
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+    const origin = req.headers.origin;
+    const corsHeaders = {
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-session-id, x-user-id'
-    });
+    };
+    if (origin) {
+      corsHeaders['Access-Control-Allow-Origin'] = origin;
+      corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+    } else {
+      corsHeaders['Access-Control-Allow-Origin'] = '*';
+    }
+    res.writeHead(204, corsHeaders);
     return res.end();
   }
 
@@ -2224,9 +2372,13 @@ const server = http.createServer((req, res) => {
         rateLimitMap.delete(clientIp);
       }
 
-      // Create session
+      // Create persistent session
+      const rememberMe = (data.rememberMe !== false);
+      const maxAge = rememberMe ? (30 * 24 * 3600) : (24 * 3600);
+      const expiresAt = Date.now() + (maxAge * 1000);
       const sessionId = 'sess_' + crypto.randomBytes(16).toString('hex');
       const deviceType = detectDevice(req.headers['user-agent']);
+      const deviceLabel = getDeviceLabel(req.headers['user-agent']);
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0];
 
@@ -2238,7 +2390,6 @@ const server = http.createServer((req, res) => {
       user.lastVisitDate = todayStr;
       user.lastLogin = now.toISOString();
       user.lastDeviceType = deviceType;
-      writeDb(db);
 
       const sessionObj = {
         sessionId,
@@ -2246,11 +2397,21 @@ const server = http.createServer((req, res) => {
         userName: user.name || user.username,
         userRole: user.role || 'student',
         deviceType,
+        deviceLabel,
         loginTime: now.toISOString(),
+        createdAt: now.toISOString(),
         lastHeartbeat: Date.now(),
-        ip: clientIp
+        expiresAt,
+        rememberMe,
+        ip: clientIp,
+        userAgent: (req.headers['user-agent'] || '').substring(0, 150)
       };
+
       activeSessions.set(sessionId, sessionObj);
+      if (!Array.isArray(db.sessions)) db.sessions = [];
+      db.sessions.unshift(sessionObj);
+      if (db.sessions.length > 500) db.sessions = db.sessions.slice(0, 500);
+      writeDb(db);
 
       // Generate admin token if user is authorized admin
       let adminToken = null;
@@ -2263,7 +2424,7 @@ const server = http.createServer((req, res) => {
       broadcastToAdmins('user_login', {
         userId: user.id,
         userName: user.name || user.username,
-        deviceType,
+        deviceType: deviceLabel,
         time: now.toLocaleTimeString('pt-BR'),
         status: 'online'
       });
@@ -2283,10 +2444,16 @@ const server = http.createServer((req, res) => {
         streak: user.streak || 0,
         bestStreak: user.bestStreak || 0,
         sessionId,
-        adminToken
+        adminToken,
+        rememberMe
       };
 
-      return sendJson({ success: true, user: safeUser, adminToken, sessionId });
+      const isSecure = Boolean(req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https');
+      const cookieHeader = createSessionCookieHeader(sessionId, maxAge, isSecure);
+
+      return sendJson({ success: true, user: safeUser, adminToken, sessionId, rememberMe }, 200, {
+        'Set-Cookie': cookieHeader
+      });
     });
     return;
   }
@@ -2369,24 +2536,40 @@ const server = http.createServer((req, res) => {
       db.users.push(newUser);
       writeDb(db);
 
-      // Auto-login imediato após o cadastro bem-sucedido
+      // Auto-login imediato após o cadastro bem-sucedido com sessão persistente
+      const rememberMe = (data.rememberMe !== false);
+      const maxAge = rememberMe ? (30 * 24 * 3600) : (24 * 3600);
+      const expiresAt = Date.now() + (maxAge * 1000);
       const sessionId = 'sess_' + crypto.randomBytes(16).toString('hex');
+      const deviceType = newUser.lastDeviceType;
+      const deviceLabel = getDeviceLabel(req.headers['user-agent']);
+
       const sessionObj = {
         sessionId,
         userId: newUser.id,
         userName: newUser.name,
         userRole: newUser.role,
-        deviceType: newUser.lastDeviceType,
+        deviceType,
+        deviceLabel,
         loginTime: newUser.lastLogin,
+        createdAt: newUser.lastLogin,
         lastHeartbeat: Date.now(),
-        ip: clientIp
+        expiresAt,
+        rememberMe,
+        ip: clientIp,
+        userAgent: (req.headers['user-agent'] || '').substring(0, 150)
       };
+
       activeSessions.set(sessionId, sessionObj);
+      if (!Array.isArray(db.sessions)) db.sessions = [];
+      db.sessions.unshift(sessionObj);
+      if (db.sessions.length > 500) db.sessions = db.sessions.slice(0, 500);
+      writeDb(db);
 
       broadcastToAdmins('user_login', {
         userId: newUser.id,
         userName: newUser.name,
-        deviceType: newUser.lastDeviceType,
+        deviceType: deviceLabel,
         time: new Date().toLocaleTimeString('pt-BR'),
         status: 'online'
       });
@@ -2404,10 +2587,142 @@ const server = http.createServer((req, res) => {
         streak: 0,
         bestStreak: 0,
         sessionId,
-        adminToken: null
+        adminToken: null,
+        rememberMe
       };
 
-      return sendJson({ success: true, message: 'Conta criada com sucesso!', user: safeUser, sessionId });
+      const isSecure = Boolean(req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https');
+      const cookieHeader = createSessionCookieHeader(sessionId, maxAge, isSecure);
+
+      return sendJson({ success: true, message: 'Conta criada com sucesso!', user: safeUser, sessionId, rememberMe }, 200, {
+        'Set-Cookie': cookieHeader
+      });
+    });
+    return;
+  }
+
+  // 3.1. POST /api/auth/logout - Logout seguro com invalidação no servidor e limpeza de cookie
+  if (req.method === 'POST' && pathname === '/api/auth/logout') {
+    const auth = getAuthUser(req);
+    const cookies = parseCookies(req);
+    const cookieSessionId = cookies['estude_session'];
+    const headerSessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
+
+    parseBody((data) => {
+      const sessionId = (data && data.sessionId) || cookieSessionId || headerSessionId || (auth && auth.session && auth.session.sessionId);
+
+      const db = readDb();
+      if (sessionId) {
+        activeSessions.delete(sessionId);
+        if (Array.isArray(db.sessions)) {
+          db.sessions = db.sessions.filter(s => s.sessionId !== sessionId);
+          writeDb(db);
+        }
+      }
+
+      if (auth && auth.user) {
+        logAudit('user_logout', auth.user.username || auth.user.name, { sessionId, device: auth.session?.deviceType }, clientIp);
+        broadcastToAdmins('user_logout', {
+          userId: auth.user.id,
+          userName: auth.user.name,
+          time: new Date().toLocaleTimeString('pt-BR'),
+          status: 'offline'
+        });
+      }
+
+      const isSecure = Boolean(req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https');
+      const clearCookie = clearSessionCookieHeader(isSecure);
+
+      return sendJson({ success: true, message: 'Sessão encerrada com sucesso no servidor!' }, 200, {
+        'Set-Cookie': clearCookie
+      });
+    });
+    return;
+  }
+
+  // 3.2. GET /api/auth/sessions - Lista sessões e dispositivos ativos do usuário
+  if (req.method === 'GET' && pathname === '/api/auth/sessions') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    const db = readDb();
+    const now = Date.now();
+    const currentSessionId = auth.session ? auth.session.sessionId : null;
+
+    const userSessions = (db.sessions || [])
+      .filter(s => String(s.userId) === String(auth.user.id) && (!s.expiresAt || s.expiresAt > now))
+      .map(s => {
+        const inMem = activeSessions.get(s.sessionId);
+        const lastHeartbeat = (inMem && inMem.lastHeartbeat) || s.lastHeartbeat || new Date(s.createdAt).getTime();
+        const isOnline = (now - lastHeartbeat) < 45000;
+        return {
+          id: s.sessionId,
+          deviceType: s.deviceType || 'Dispositivo Web',
+          deviceLabel: s.deviceLabel || s.deviceType || 'Dispositivo Web',
+          ip: s.ip || 'Local',
+          createdAt: s.createdAt,
+          lastHeartbeat,
+          isOnline,
+          isCurrent: Boolean(currentSessionId && s.sessionId === currentSessionId),
+          rememberMe: Boolean(s.rememberMe),
+          expiresAt: s.expiresAt
+        };
+      })
+      .sort((a, b) => (b.isCurrent ? 1 : 0) - (a.isCurrent ? 1 : 0) || (b.lastHeartbeat - a.lastHeartbeat));
+
+    return sendJson({ success: true, sessions: userSessions, currentSessionId });
+  }
+
+  // 3.3. POST /api/auth/sessions/revoke - Revogação remota de sessão de outro dispositivo
+  if (req.method === 'POST' && pathname === '/api/auth/sessions/revoke') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    parseBody((data) => {
+      const db = readDb();
+      const targetSessionId = data?.sessionId;
+      const revokeAllOthers = Boolean(data?.revokeAllOthers);
+      const currentSessionId = auth.session ? auth.session.sessionId : null;
+
+      if (revokeAllOthers) {
+        let count = 0;
+        if (Array.isArray(db.sessions)) {
+          const toRevoke = db.sessions.filter(s => String(s.userId) === String(auth.user.id) && s.sessionId !== currentSessionId);
+          toRevoke.forEach(s => {
+            activeSessions.delete(s.sessionId);
+            broadcastToUser(auth.user.id, 'session_revoked', { sessionId: s.sessionId });
+            count++;
+          });
+          db.sessions = db.sessions.filter(s => String(s.userId) !== String(auth.user.id) || s.sessionId === currentSessionId);
+          writeDb(db);
+        }
+        return sendJson({ success: true, message: `${count} outra(s) sessão(ões) revogada(s) com sucesso!` });
+      }
+
+      if (!targetSessionId) {
+        return sendJson({ error: 'sessionId é obrigatório para revogação.' }, 400);
+      }
+
+      const session = (db.sessions || []).find(s => s.sessionId === targetSessionId);
+      if (!session) {
+        return sendJson({ error: 'Sessão não encontrada.' }, 404);
+      }
+
+      if (String(session.userId) !== String(auth.user.id) && auth.user.role !== 'admin') {
+        return sendJson({ error: 'Você não tem permissão para revogar esta sessão.' }, 403);
+      }
+
+      activeSessions.delete(targetSessionId);
+      db.sessions = db.sessions.filter(s => s.sessionId !== targetSessionId);
+      writeDb(db);
+
+      broadcastToUser(session.userId, 'session_revoked', { sessionId: targetSessionId });
+
+      return sendJson({ success: true, message: 'Sessão revogada com sucesso!' });
     });
     return;
   }
@@ -2538,32 +2853,61 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 7. POST /api/presence/heartbeat - Heartbeat seguro com expiração automática (45s)
+  // 7. POST /api/presence/heartbeat - Heartbeat seguro com expiração automática e persistência
   if (req.method === 'POST' && pathname === '/api/presence/heartbeat') {
-    parseBody((data) => {
-      if (!data || !data.sessionId) return sendJson({ error: 'sessionId required' }, 400);
+    const cookies = parseCookies(req);
+    const cookieSessionId = cookies['estude_session'];
+    const headerSessionId = req.headers['x-session-id'] || req.headers['x-session'] || '';
 
-      const session = activeSessions.get(data.sessionId);
+    parseBody((data) => {
+      const sessionId = (data && data.sessionId) || cookieSessionId || headerSessionId;
+      if (!sessionId) return sendJson({ error: 'sessionId required' }, 400);
+
+      const db = readDb();
+      let session = activeSessions.get(sessionId);
+      if (!session && Array.isArray(db.sessions)) {
+        session = db.sessions.find(s => s.sessionId === sessionId);
+        if (session) activeSessions.set(sessionId, session);
+      }
+
+      const now = Date.now();
       if (session) {
-        session.lastHeartbeat = Date.now();
+        session.lastHeartbeat = now;
+        if (session.rememberMe) {
+          session.expiresAt = now + (30 * 24 * 3600 * 1000);
+        }
+        writeDb(db);
         return sendJson({ success: true, status: 'online' });
       }
 
-      // Se sessão não existe mais na memória, recriá-la se dados fornecidos
-      if (data.userId) {
-        const deviceType = detectDevice(req.headers['user-agent']);
-        const newSess = {
-          sessionId: data.sessionId,
-          userId: data.userId,
-          userName: data.userName || 'Aluno',
-          userRole: data.userRole || 'student',
-          deviceType,
-          loginTime: new Date().toISOString(),
-          lastHeartbeat: Date.now(),
-          ip: clientIp
-        };
-        activeSessions.set(data.sessionId, newSess);
-        return sendJson({ success: true, status: 'online' });
+      // Se sessão não existe mais na memória, recriá-la se dados do usuário forem válidos
+      if (data && data.userId) {
+        const user = (db.users || []).find(u => u.id === data.userId);
+        if (user) {
+          const deviceType = detectDevice(req.headers['user-agent']);
+          const deviceLabel = getDeviceLabel(req.headers['user-agent']);
+          const newSess = {
+            sessionId,
+            userId: user.id,
+            userName: user.name || user.username,
+            userRole: user.role || 'student',
+            deviceType,
+            deviceLabel,
+            loginTime: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            lastHeartbeat: now,
+            expiresAt: now + (30 * 24 * 3600 * 1000),
+            rememberMe: true,
+            ip: clientIp,
+            userAgent: (req.headers['user-agent'] || '').substring(0, 150)
+          };
+          activeSessions.set(sessionId, newSess);
+          if (!Array.isArray(db.sessions)) db.sessions = [];
+          db.sessions.unshift(newSess);
+          if (db.sessions.length > 500) db.sessions = db.sessions.slice(0, 500);
+          writeDb(db);
+          return sendJson({ success: true, status: 'online' });
+        }
       }
 
       return sendJson({ success: false, status: 'expired' });
@@ -2571,24 +2915,68 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 8. GET /api/admin/events - SSE (Server-Sent Events) para atualização em tempo real do painel
-  if (req.method === 'GET' && pathname === '/api/admin/events') {
-    if (!validateAdmin(req)) {
+  // 8. GET /api/events e GET /api/admin/events - SSE para sincronização instantânea entre todos os dispositivos
+  if (req.method === 'GET' && (pathname === '/api/events' || pathname === '/api/admin/events')) {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+
+    if (pathname === '/api/admin/events' && !isAdmin) {
       return sendJson({ error: 'Acesso negado. Token de administrador inválido.' }, 403);
     }
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*'
-    });
+    if (!auth && !isAdmin) {
+      return sendJson({ error: 'Não autenticado para eventos em tempo real.' }, 401);
+    }
 
-    sseClients.add(res);
-    res.write(`data: ${JSON.stringify({ type: 'connected', time: Date.now() })}\n\n`);
+    const origin = req.headers.origin;
+    const sseHeaders = {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive'
+    };
+    if (origin) {
+      sseHeaders['Access-Control-Allow-Origin'] = origin;
+      sseHeaders['Access-Control-Allow-Credentials'] = 'true';
+    } else {
+      sseHeaders['Access-Control-Allow-Origin'] = '*';
+    }
+
+    res.writeHead(200, sseHeaders);
+
+    const userId = auth?.user?.id || (isAdmin ? 'admin_freddie' : null);
+    const sessionId = auth?.session?.sessionId || null;
+
+    if (isAdmin) {
+      adminSseClients.add(res);
+    }
+
+    if (userId) {
+      if (!userSseClients.has(String(userId))) {
+        userSseClients.set(String(userId), new Set());
+      }
+      userSseClients.get(String(userId)).add(res);
+    }
+
+    res.write(`data: ${JSON.stringify({ type: 'connected', userId, sessionId, isAdmin: Boolean(isAdmin), time: Date.now() })}\n\n`);
+
+    const keepaliveTimer = setInterval(() => {
+      try {
+        res.write(`: keepalive ${Date.now()}\n\n`);
+      } catch (e) {
+        clearInterval(keepaliveTimer);
+      }
+    }, 25000);
 
     req.on('close', () => {
-      sseClients.delete(res);
+      clearInterval(keepaliveTimer);
+      if (isAdmin) {
+        adminSseClients.delete(res);
+      }
+      if (userId && userSseClients.has(String(userId))) {
+        const set = userSseClients.get(String(userId));
+        set.delete(res);
+        if (set.size === 0) userSseClients.delete(String(userId));
+      }
     });
     return;
   }
@@ -2765,6 +3153,15 @@ const server = http.createServer((req, res) => {
       }
 
       broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: true, plan: 'pro', planStatus: user.planStatus });
+      broadcastToUser(user.id, 'pro_status_changed', {
+        isSubscribed: true,
+        plan: 'pro',
+        planStatus: user.planStatus,
+        planType: user.planType,
+        planPeriodicity: user.planPeriodicity,
+        planName: user.planName,
+        proExpiresAt: user.proExpiresAt
+      });
 
       return sendJson({
         success: true,
@@ -2846,6 +3243,12 @@ const server = http.createServer((req, res) => {
       }
 
       broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: false, plan: 'free', planStatus: 'free' });
+      broadcastToUser(user.id, 'pro_status_changed', {
+        isSubscribed: false,
+        plan: 'free',
+        planStatus: 'free',
+        planName: 'Plano Base'
+      });
 
       return sendJson({
         success: true,
@@ -2894,12 +3297,16 @@ const server = http.createServer((req, res) => {
       const beforeCount = db.users.length;
       db.users = db.users.filter(u => String(u.id) !== String(finalTargetId));
 
-      // 1. Invalidar todas as sessões ativas do usuário excluído em memória
+      // 1. Invalidar todas as sessões ativas do usuário excluído em memória e no banco
       for (const [sId, s] of activeSessions.entries()) {
         if (String(s.userId) === String(finalTargetId)) {
           activeSessions.delete(sId);
         }
       }
+      if (Array.isArray(db.sessions)) {
+        db.sessions = db.sessions.filter(s => String(s.userId) !== String(finalTargetId));
+      }
+      broadcastToUser(finalTargetId, 'account_deleted', { message: 'Sua conta foi excluída definitivamente.' });
 
       // 2. Limpar dados associados (solicitações de plano, tickets)
       if (Array.isArray(db.planRequests)) {
