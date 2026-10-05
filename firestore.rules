@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Função auxiliar: verifica se o usuário autenticado é um administrador cadastrado
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Coleção admins: apenas administradores podem ler ou cadastrar novos administradores
+    // (O próprio usuário pode checar se seu UID está na coleção para verificação de permissão)
+    match /admins/{adminId} {
+      allow read: if request.auth != null && (request.auth.uid == adminId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Coleção users:
+    // - Aluno lê e escreve apenas o próprio documento users/{uid}
+    // - Aluno NUNCA pode alterar o campo 'plan' (apenas admin pode alterar 'plan')
+    // - Somente admin pode listar todos os usuários, alterar planos e marcar como deletado/excluir
+    match /users/{userId} {
+      // Leitura: Aluno lê seu próprio doc; Admin pode ler qualquer doc e fazer query na coleção
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+
+      // Criação no primeiro login:
+      // Aluno pode criar seu próprio doc, mas 'plan' DEVE ser 'base' e 'status' DEVE ser 'ativo'
+      allow create: if request.auth != null && (
+        (request.auth.uid == userId && request.resource.data.plan == 'base' && request.resource.data.status == 'ativo') ||
+        isAdmin()
+      );
+
+      // Atualização:
+      // Aluno pode atualizar seus dados (como ultimoAcesso), mas NUNCA pode alterar o campo 'plan'
+      // Admin pode atualizar qualquer campo (inclusive 'plan' e 'status')
+      allow update: if request.auth != null && (
+        (
+          request.auth.uid == userId &&
+          request.resource.data.plan == resource.data.plan &&
+          (!('status' in request.resource.data) || request.resource.data.status == resource.data.status)
+        ) ||
+        isAdmin()
+      );
+
+      // Exclusão definitiva: Apenas admin pode excluir
+      allow delete: if isAdmin();
+    }
+
+    // Coleção paymentRequests:
+    // - Aluno pode criar um pedido de pagamento com status 'pendente' e seu próprio uid
+    // - Aluno pode consultar apenas seus próprios pedidos de pagamento
+    // - Somente admin pode ler todos os pedidos de pagamento, aprovar ou recusar
+    match /paymentRequests/{requestId} {
+      allow create: if request.auth != null &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.status == 'pendente';
+
+      allow read: if request.auth != null && (
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        isAdmin()
+      );
+
+      allow update, delete: if isAdmin();
+    }
+  }
+}

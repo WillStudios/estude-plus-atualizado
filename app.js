@@ -669,6 +669,7 @@ class EstudePlusApp {
     this.initMasterSync();
     this.applyStudentSettingsToUI();
     this.updateGeminiKeyBadge();
+    this.initFirebaseIntegration();
 
     // Sincronização multi-dispositivo (PC, Celular, Tablet)
     if (this.currentUser) {
@@ -1494,9 +1495,17 @@ class EstudePlusApp {
      ========================================================================== */
   getApiHeaders() {
     const h = { 'Content-Type': 'application/json' };
-    const session = localStorage.getItem('estude_session_id');
-    if (session) h['Authorization'] = 'Bearer ' + session;
-    if (this.currentUser && this.currentUser.id) h['x-user-id'] = this.currentUser.id;
+    const session = localStorage.getItem('estude_session_id') || this.currentUser?.sessionId || this.token;
+    if (session) {
+      h['Authorization'] = 'Bearer ' + session;
+      h['x-session-id'] = session;
+    }
+    const adminToken = this.currentUser?.adminToken || localStorage.getItem('adminToken') || (this.currentUser?.role === 'admin' ? 'admin_token' : '');
+    if (adminToken) {
+      h['x-admin-token'] = adminToken;
+    }
+    const uid = this.currentUser?.id || localStorage.getItem('estude_user_id');
+    if (uid) h['x-user-id'] = uid;
     return h;
   }
 
@@ -2873,6 +2882,480 @@ class EstudePlusApp {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  getTrilhaStageConfig(stageIndex, stageId) {
+    const configs = [
+      {
+        index: 0,
+        id: 'fundamentos',
+        name: 'Comece Aqui • Fundamentos',
+        levelLabel: 'Nível 1 • Fácil',
+        diffKey: 'facil',
+        count: 3,
+        badgeBg: '#dcfce7',
+        badgeColor: '#15803d',
+        desc: 'Conceito Essencial & Teoria Resumida da apostila SAS',
+        tip: '💡 Dica: Foque nas definições básicas e nos conceitos primários apresentados na apostila.'
+      },
+      {
+        index: 1,
+        id: 'pratica_1',
+        name: 'Prática 1 • Fixação Guiada',
+        levelLabel: 'Nível 2 • Fácil a Moderado',
+        diffKey: 'facil',
+        count: 3,
+        badgeBg: '#e0f2fe',
+        badgeColor: '#0369a1',
+        desc: 'Exercícios conceituais de fixação direta das regras e postulados',
+        tip: '✏️ Dica: Aplique as regras fundamentais de resolução passo a passo.'
+      },
+      {
+        index: 2,
+        id: 'quiz_1',
+        name: 'Quiz 1 • Avaliação Conceitual SAS',
+        levelLabel: 'Nível 3 • Moderado',
+        diffKey: 'medio',
+        count: 3,
+        badgeBg: '#dbeafe',
+        badgeColor: '#1d4ed8',
+        desc: 'Avaliação de múltipla escolha no padrão formativo SAS',
+        tip: '📝 Dica: Avalie cada alternativa com cuidado para descartar os distratores comuns.'
+      },
+      {
+        index: 3,
+        id: 'pratica_2',
+        name: 'Prática 2 • Aplicação Prática',
+        levelLabel: 'Nível 4 • Moderado / Avançado',
+        diffKey: 'medio',
+        count: 3,
+        badgeBg: '#fef3c7',
+        badgeColor: '#b45309',
+        desc: 'Contextualização em problemas do cotidiano e raciocínio prático',
+        tip: '🔍 Dica: Interprete o enunciado e monte a relação matemática/conceitual da situação-problema.'
+      },
+      {
+        index: 4,
+        id: 'quiz_2',
+        name: 'Quiz 2 • Análise & Interpretação',
+        levelLabel: 'Nível 5 • Difícil',
+        diffKey: 'dificil',
+        count: 4,
+        badgeBg: '#ffedd5',
+        badgeColor: '#c2410c',
+        desc: 'Questões analíticas aprofundadas baseadas na matriz de habilidades do SAS',
+        tip: '⚡ Dica: Atenção às etapas encadeadas de dedução lógica e precisão nos cálculos.'
+      },
+      {
+        index: 5,
+        id: 'revisao',
+        name: 'Revisão • Pontos de Atenção',
+        levelLabel: 'Nível 6 • Difícil / Pegadinhas',
+        diffKey: 'dificil',
+        count: 3,
+        badgeBg: '#fee2e2',
+        badgeColor: '#b91c1c',
+        desc: 'Atenção redobrada a sinais, exceções e prevenção de erros comuns de prova',
+        tip: '🔄 Dica: Pegadinhas frequentes envolvem inversão de sinais, parênteses e unidades de medida.'
+      },
+      {
+        index: 6,
+        id: 'desafio_final',
+        name: 'Desafio Final • Prova de Maestria',
+        levelLabel: 'Nível 7 • 🔥 Desafio Máximo SAS',
+        diffKey: 'dificil',
+        count: 4,
+        badgeBg: '#ede9fe',
+        badgeColor: '#6d28d9',
+        desc: 'Desafio decisivo de alto rendimento para demonstrar domínio absoluto do capítulo',
+        tip: '🎯 Dica: Nível olímpico e aprofundamento máximo da Coleção Asas SAS. Pense estrategicamente!'
+      }
+    ];
+
+    return configs[stageIndex] || configs.find(c => c.id === stageId) || configs[0];
+  }
+
+  generateProceduralSasQuestions(subjectKey, bookId, chapterId, stageIndex, stageId, countNeeded) {
+    const subj = this.sasSubjectsData[subjectKey] || this.sasSubjectsData['matematica'];
+    const validBooks = (subj.livros || []).filter(l => l.id <= 3);
+    const book = validBooks.find(b => b.id === bookId) || validBooks[0];
+    const chapter = (book.chapters || []).find(c => c.id === chapterId) || book.chapters[0];
+    const cleanCapName = chapter.title.replace(/Capítulo\s*\d+\s*[–-]\s*/i, '');
+    const desc = chapter.desc || 'Tópicos essenciais da apostila SAS.';
+
+    const templatesPerStage = [
+      // Stage 0: Fundamentos (Fácil)
+      [
+        {
+          text: `[FUNDAMENTOS SAS • 7º ANO] No estudo de "${cleanCapName}" (Apostila ${book.id} do SAS), qual afirmação conceitual expressa o princípio basilar ensinado no início do capítulo?`,
+          correct: `O conceito central de "${cleanCapName}" fundamenta-se em: ${desc.slice(0, 115)}.`,
+          distractors: [
+            `Trata-se de um postulado empírico sem fundamentação matemática ou teórica no currículo formal.`,
+            `A matéria estabelece que tais regras são facultativas e não possuem validade em avaliações escolares.`,
+            `O tema é tratado apenas de forma superficial sem relação com as habilidades exigidas no 7º ano.`
+          ],
+          explanation: `Na introdução curricular do SAS Asas 2026 para "${cleanCapName}", o objetivo principal é dominar: ${desc}.`
+        },
+        {
+          text: `[CONCEITO ESSENCIAL SAS] De acordo com a teoria apresentada na apostila para o capítulo "${cleanCapName}", qual é o termo ou definição correta?`,
+          correct: `A correta identificação dos elementos essenciais de "${cleanCapName}", articulando termos e propriedades fundamentais.`,
+          distractors: [
+            `A mistura aleatória de termos sem observar a hierarquia dos conceitos descritos na teoria.`,
+            `A suposição de que definições conceituais não afetam a resolução prática das questões.`,
+            `O emprego indiscriminado de noções de capítulos anteriores sem conexão lógica com o tema.`
+          ],
+          explanation: `A base conceitual da Coleção Asas SAS exige clareza e precisão na identificação dos termos próprios de ${cleanCapName}.`
+        },
+        {
+          text: `[IDENTIFICAÇÃO DE PROPRIEDADES] Ao analisar os primeiros tópicos de "${cleanCapName}", qual propriedade o estudante deve memorizar e reconhecer de imediato?`,
+          correct: `As propriedades operatórias e definições canônicas estruturadas na Apostila ${book.id} do SAS para "${cleanCapName}".`,
+          distractors: [
+            `Regras informais que dispensam a notação matemática ou conceitual rigorosa.`,
+            `Postulados contraditórios que invertem as regras básicas de interpretação.`,
+            `Apenas opiniões subjetivas desvinculadas das matrizes de habilidades do livro.`
+          ],
+          explanation: `O SAS reforça o domínio imediato das definições primárias para construir a base do aprendizado do capítulo.`
+        }
+      ],
+
+      // Stage 1: Prática 1 (Fácil / Moderado)
+      [
+        {
+          text: `[FIXAÇÃO GUIADA SAS] Ao resolver um exercício de fixação sobre "${cleanCapName}", qual procedimento metodológico é recomendado pela apostila para evitar erros iniciais?`,
+          correct: `Identificar atentamente os dados enunciados, aplicar a propriedade direta de "${cleanCapName}" e conferir o resultado passo a passo.`,
+          distractors: [
+            `Pular o enunciado e tentar adivinhar a resposta baseando-se apenas nos valores numéricos ou termos isolados.`,
+            `Substituir as regras formais por estimativas imprecisas sem validação dos cálculos intermediários.`,
+            `Ignorar as condições iniciais e aplicar fórmulas de matérias distintas sem justificativa.`
+          ],
+          explanation: `A fixação guiada do SAS orienta a resolução metódica: leitura cuidadosa, identificação de propriedades e checagem.`
+        },
+        {
+          text: `[APLICAÇÃO DIRETA SAS] Em uma aplicação direta das regras de "${cleanCapName}" (${desc.slice(0, 80)}...), qual é a conclusão correta?`,
+          correct: `O resultado obtido confirma a relação direta entre as definições teóricas e a resolução passo a passo do problema.`,
+          distractors: [
+            `O resultado é nulo em todas as circunstâncias, independentemente dos dados fornecidos no exercício.`,
+            `A regra de "${cleanCapName}" só se aplica quando todos os valores do problema forem pares e positivos.`,
+            `O cálculo prescinde de qualquer conferência, pois erros de sinal não alteram o resultado final.`
+          ],
+          explanation: `Na prática guiada, o alinhamento rigoroso entre a regra e a operação assegura a pontuação total.`
+        },
+        {
+          text: `[PASSO A PASSO GUIADO] Qual é a ordem correta das etapas na resolução de uma questão fundamental sobre "${cleanCapName}"?`,
+          correct: `1º Organizar os dados; 2º Estabelecer a relação teórica de "${cleanCapName}"; 3º Efetuar as operações; 4º Validar a resposta.`,
+          distractors: [
+            `1º Chutar a resposta; 2º Tentar justificar; 3º Ler o enunciado superficialmente.`,
+            `1º Realizar operações sem organizar os dados; 2º Ignorar as restrições da matéria.`,
+            `1º Inverter os sinais; 2º Desconsiderar as instruções do professor e da apostila.`
+          ],
+          explanation: `O método formativo SAS valoriza o pensamento estruturado e a sequência lógica de resolução.`
+        }
+      ],
+
+      // Stage 2: Quiz 1 (Moderado)
+      [
+        {
+          text: `[SIMULADO FORMATIVO SAS] Em uma questão padrão de prova SAS sobre "${cleanCapName}", propõe-se avaliar a seguinte afirmativa baseada em: "${desc.slice(0, 95)}...". Qual julgamento está correto?`,
+          correct: `A afirmativa é verdadeira, pois reflete os princípios e critérios estipulados na matriz curricular do 7º ano do SAS.`,
+          distractors: [
+            `A afirmativa é falsa, pois os conceitos de "${cleanCapName}" foram reformulados e não possuem mais aplicação prática.`,
+            `A afirmativa só é válida para o Ensino Médio, sendo dispensável para os estudantes do 7º ano do Ensino Fundamental.`,
+            `A afirmativa é contraditória com os postulados científicos adotados pela Coleção Asas 2026.`
+          ],
+          explanation: `No Quiz Formativo do SAS, os conceitos centrais são avaliados exigindo clareza na distinção entre fatos e equívocos.`
+        },
+        {
+          text: `[AVALIAÇÃO DE CRITÉRIOS SAS] Ao comparar duas alternativas conceituais sobre "${cleanCapName}", qual critério permite distinguir a opção plenamente válida?`,
+          correct: `A opção válida articula a fundamentação teórica de "${cleanCapName}" com a precisão dos termos técnicos da apostila.`,
+          distractors: [
+            `A opção válida é sempre a mais curta, sem importar a completude de seu conteúdo.`,
+            `Critérios de generalização excessiva que desconsideram as restrições próprias do tema.`,
+            `Afirmações que ignoram os casos particulares e as propriedades demonstradas em sala.`
+          ],
+          explanation: `A precisão terminológica e conceitual é a marca distintiva do gabarito oficial SAS.`
+        },
+        {
+          text: `[COMPREENSÃO FORMATIVA] Qual das opções abaixo demonstra compreensão adequada das implicações práticas de "${cleanCapName}"?`,
+          correct: `Compreender que as propriedades de "${cleanCapName}" fornecem modelos consistentes para interpretar dados e resolver situações reais.`,
+          distractors: [
+            `Achar que a matéria serve apenas para testes teóricos sem nenhuma conexão com o raciocínio lógico ou com a realidade.`,
+            `Julgar que os resultados variam dependendo da opinião do estudante, sem regras universais.`,
+            `Acreditar que detalhes conceituais não interferem na exatidão das conclusões obtidas.`
+          ],
+          explanation: `A Coleção Asas SAS incentiva a formação integral através da conexão entre teoria formal e interpretação de mundo.`
+        }
+      ],
+
+      // Stage 3: Prática 2 (Moderado / Avançado)
+      [
+        {
+          text: `[SITUAÇÃO-PROBLEMA CONTEXTUALIZADA] Em uma situação prática contextualizada envolvendo o tema de "${cleanCapName}", um aluno precisa analisar um cenário com dados concretos relacionados a: "${desc.slice(0, 90)}...". Qual raciocínio conduz à solução correta?`,
+          correct: `Modelar matematicamente ou conceitualmente a situação com base nas regras de "${cleanCapName}", isolando as variáveis e resolvendo de modo ordenado.`,
+          distractors: [
+            `Interpretar a situação sem vincular aos dados apresentados, formulando uma resposta genérica sem comprovação.`,
+            `Descartar as condições de contorno e supor que as grandezas envolvidas não sofrem influência das restrições do tema.`,
+            `Adotar uma hipótese inicial falsa e recusar-se a corrigi-la mesmo quando os cálculos apontam incoerência.`
+          ],
+          explanation: `A aplicação prática do SAS avalia a capacidade de transitar entre o texto descritivo e o modelo analítico formal.`
+        },
+        {
+          text: `[ANÁLISE DE DADOS E CONTEXTO] Diante de uma tabela ou enunciado descritivo sobre "${cleanCapName}", qual atitude investigativa garante o sucesso na resolução?`,
+          correct: `Confrontar cada dado fornecido com os conceitos de "${cleanCapName}", verificando unidades de medida, sinais e relações de causa e efeito.`,
+          distractors: [
+            `Focar apenas no último parágrafo do problema e desprezar todas as premissas estabelecidas no início.`,
+            `Ignorar a coerência das grandezas e aceitar respostas com dimensões ou sinais incompatíveis com o problema.`,
+            `Concluir a resolução sem realizar o teste da solução no contexto original do enunciado.`
+          ],
+          explanation: `Nas questões contextualizadas do SAS, a conferência de unidades, sinais e consistência é etapa indispensável.`
+        },
+        {
+          text: `[ESTUDO DE CASO PRÁTICO SAS] Em um caso prático abordando "${cleanCapName}", dois estudantes chegam a resultados diferentes. Ao consultar a Apostila ${book.id}, verifica-se que o aluno correto:`,
+          correct: `Respeitou a ordem das propriedades e não violou nenhuma das regras postuladas para "${cleanCapName}".`,
+          distractors: [
+            `Apenas escolheu o número que achou mais esteticamente agradável.`,
+            `Inverteu a relação entre variáveis dependentes e independentes sem justificativa.`,
+            `Desconsiderou os limites de validade indicados explicitamente no material.`
+          ],
+          explanation: `A resolução correta no SAS sempre se fundamenta na adesão irrestrita aos postulados teóricos do capítulo.`
+        }
+      ],
+
+      // Stage 4: Quiz 2 (Difícil - Análise Dedutiva)
+      [
+        {
+          text: `[ANÁLISE DEDUTIVA APROFUNDADA SAS] Em uma questão de alta complexidade do SAS sobre "${cleanCapName}", que exige múltiplos passos dedutivos a partir de: "${desc.slice(0, 100)}...", qual dedução expressa a linha de raciocínio mais consistente?`,
+          correct: `A dedução estruturada que encadeia as propriedades de "${cleanCapName}", demonstrando a validade de cada transição lógica até a conclusão definitiva.`,
+          distractors: [
+            `Extrapolar as premissas dadas e introduzir suposições arbitrárias não autorizadas pelo enunciado.`,
+            `Supor que as regras de "${cleanCapName}" sofrem exceções não documentadas diante de cálculos com números fracionários ou negativos.`,
+            `Ignorar o encadeamento dedutivo e deduzir uma resposta por mera semelhança gráfica com outras questões.`
+          ],
+          explanation: `Questões analíticas de nível 5 exigem encadeamento dedutivo formal e justificação de cada etapa conforme o SAS.`
+        },
+        {
+          text: `[DESAFIO MULTIPASSO SAS] Ao solucionar um problema de múltiplas etapas envolvendo "${cleanCapName}", em qual momento ocorrem os desvios conceituais mais severos?`,
+          correct: `Na transição entre a interpretação do problema e a montagem das expressões ou regras formais de "${cleanCapName}".`,
+          distractors: [
+            `No momento da entrega da prova pelo professor aos alunos na sala.`,
+            `Apenas quando o enunciado contém menos de dez palavras no total.`,
+            `Em nenhuma etapa, pois todas as questões difíceis dispensam atenção analítica.`
+          ],
+          explanation: `O SAS ressalta que a correta transposição da linguagem natural para a linguagem matemática/científica é o ponto crítico do sucesso.`
+        },
+        {
+          text: `[CRÍTICA DE ARGUMENTOS] Analise as seguintes justificativas teóricas sobre "${cleanCapName}". Qual delas apresenta rigor científico compatível com a nota máxima?`,
+          correct: `A justificativa que explicita a causa, cita a propriedade formal do SAS e demonstra a impossibilidade das alternativas concorrentes.`,
+          distractors: [
+            `A justificativa que apela para a intuição pessoal sem citar nenhuma propriedade do Livro ${book.id}.`,
+            `A que considera que contradições aparentes podem ser ignoradas caso o número final pareça razoável.`,
+            `A que afirma que qualquer método não convencional é correto independentemente das regras formais.`
+          ],
+          explanation: `No Quiz 2, o diferencial para atingir a nota 10 é a capacidade de refutar distratores com base em princípios demonstrados.`
+        },
+        {
+          text: `[SÍNTESE DEDUTIVA SAS] Qual é a implicação lógica direta dos conceitos de "${cleanCapName}" quando aplicados a sistemas complexos?`,
+          correct: `Permite prever com exatidão o comportamento do sistema, contanto que as condições de contorno de "${cleanCapName}" sejam rigorosamente mantidas.`,
+          distractors: [
+            `O sistema torna-se imprevisível e nenhuma lei do SAS pode ser aplicada a ele.`,
+            `As variáveis tornam-se todas independentes, dispensando qualquer cálculo correlato.`,
+            `A teoria perde sua validade e precisa ser substituída por regras do ensino primário.`
+          ],
+          explanation: `Modelos dedutivos avançados do SAS oferecem poder preditivo confiável quando operados com rigor metodológico.`
+        }
+      ],
+
+      // Stage 5: Revisão (Difícil / Pegadinhas)
+      [
+        {
+          text: `[ATENÇÃO ÀS PEGADINHAS DE PROVA SAS] Durante a revisão para as avaliações formativas do SAS em "${cleanCapName}", os professores alertam contra as "armadilhas de sinal e leitura". Qual é a pegadinha mais frequente neste capítulo?`,
+          correct: `Esquecer de inverter sinais em distributivas com negativos, desconsiderar parênteses ou confundir termos opostos e inversos no estudo de "${cleanCapName}".`,
+          distractors: [
+            `Escrever o nome do colégio no topo da folha de respostas com letra legível.`,
+            `Utilizar lápis grafite para realizar os rascunhos das contas no verso da prova.`,
+            `Conferir a resposta antes de assinalar o cartão de respostas da avaliação.`
+          ],
+          explanation: `A etapa de Revisão visa blindar o estudante contra pegadinhas clássicas do SAS: jogos de sinal, parênteses e leitura atenta de 'não/exceto'.`
+        },
+        {
+          text: `[PREVENÇÃO DE ERROS RECORRENTES] Um erro clássico apontado no material SAS sobre "${cleanCapName}" ocorre quando o estudante assume precipitadamente que:`,
+          correct: `Toda resposta que resulta em número inteiro ou positivo está automaticamente correta, sem testar a solução na equação ou enunciado original.`,
+          distractors: [
+            `A matéria exige leitura rigorosa de todos os itens antes de marcar a resposta.`,
+            `O método do SAS é construído sobre critérios científicos verificáveis.`,
+            `As propriedades do capítulo devem ser aplicadas com disciplina intelectual.`
+          ],
+          explanation: `Muitos distratores em provas SAS colocam números inteiros atraentes para induzir ao erro quem não confere a resolução.`
+        },
+        {
+          text: `[CHECKPOINT DE REVISÃO SAS] Ao revisar os pontos mais delicados de "${cleanCapName}" (${desc.slice(0, 85)}...), qual verificação final é indispensável antes de finalizar?`,
+          correct: `Validar a solução encontrada substituindo-a nas premissas iniciais do problema para certificar-se de que a igualdade ou sentido conceitual é mantido.`,
+          distractors: [
+            `Modificar a resposta no último minuto baseando-se em palpites sem fundamento.`,
+            `Apagar todos os cálculos e entregar a prova sem justificativa escrita.`,
+            `Assumir que conferir o resultado é desnecessário caso o tempo esteja sobrando.`
+          ],
+          explanation: `O hábito da verificação e prova real é a melhor estratégia ensinada pelo Colégio Gammon e SAS para garantir nota 10.`
+        }
+      ],
+
+      // Stage 6: Desafio Final (Nível 7 • 🔥 Desafio Máximo SAS)
+      [
+        {
+          text: `[🔥 DESAFIO MÁXIMO SAS • PROVA DE MAESTRIA] Checkpoint decisivo de excelência da Coleção Asas 2026: em uma questão olímpica / aprofundamento do 7º ano que sintetiza integralmente "${cleanCapName}" (${desc.slice(0, 110)}...), qual formulação resolve o problema em seu mais alto nível de sofisticação?`,
+          correct: `A articulação completa de todos os postulados de "${cleanCapName}", combinando raciocínio algébrico/conceitual avançado, rigor de notação e verificação inequívoca da solução.`,
+          distractors: [
+            `Uma abordagem simplista que ignora a interdependência dos tópicos avançados apresentados no capítulo.`,
+            `A adoção de atalhos incorretos que violam as propriedades fundamentais demonstradas ao longo da trilha.`,
+            `A tentativa de resolver o problema por ensaio e erro rudimentar, sem demonstração formal.`
+          ],
+          explanation: `O Desafio Final atesta o domínio pleno (100% de maestria) da matriz de habilidades e competências do SAS no capítulo.`
+        },
+        {
+          text: `[🔥 DESAFIO OLÍMPICO SAS] Em um desafio de alto rendimento do SAS envolvendo "${cleanCapName}", um aluno nota 10 demonstra que:`,
+          correct: `Consegue generalizar as propriedades de "${cleanCapName}" para resolver cenários inéditos e não triviais com absoluta precisão.`,
+          distractors: [
+            `Apenas reproduz mecanicamente exercícios sem compreender os fundamentos subjacentes.`,
+            `Recorre a soluções aproximadas que falham quando submetidas a testes de estresse numérico ou lógico.`,
+            `Desconhece a relação entre a teoria estudada e suas aplicações interdisciplinares no currículo.`
+          ],
+          explanation: `O nível 7 da trilha premia a capacidade de abstração, síntese e aplicação de alta performance da matriz curricular SAS.`
+        },
+        {
+          text: `[🔥 SÍNTESE INTEGRAL DO CAPÍTULO] Qual é a síntese conceitual definitiva que coroa o aprendizado completo de "${cleanCapName}" na Apostila ${book.id}?`,
+          correct: `O domínio integrado de: ${desc}. O estudante domina a teoria, os cálculos, a interpretação e a prevenção de erros neste capítulo.`,
+          distractors: [
+            `A memorização mecânica de palavras-chave sem compreensão do seu significado ou aplicação.`,
+            `A ideia de que o conteúdo deste capítulo pode ser esquecido para os próximos ciclos de estudo.`,
+            `A presunção de que testes formativos não refletem a real proficiência intelectual do aluno.`
+          ],
+          explanation: `Parabéns! Ao atingir e concluir o Desafio Final, você consolida o status de Domínio do Capítulo 🏆 no ESTUDE+.`
+        },
+        {
+          text: `[🔥 DOMÍNIO DA MATRIZ CURRICULAR] Para garantir nota máxima em qualquer avaliação nacional ou simulado do SAS sobre "${cleanCapName}", o diferencial indiscutível é:`,
+          correct: `A consistência metodológica aliada ao treino deliberado realizado ao longo das 7 etapas da trilha de aprendizagem.`,
+          distractors: [
+            `Depender exclusivamente da sorte no momento de assinalar o gabarito.`,
+            `Estudar apenas nas vésperas sem realizar os exercícios práticos escalonados.`,
+            `Subestimar a complexidade das questões interdisciplinares da Coleção Asas.`
+          ],
+          explanation: `A metodologia progressiva em 7 etapas garante retenção de longo prazo e domínio definitivo do conteúdo.`
+        }
+      ]
+    ];
+
+    const stageTemplates = templatesPerStage[stageIndex] || templatesPerStage[0];
+    const generated = [];
+
+    for (let i = 0; i < countNeeded; i++) {
+      const t = stageTemplates[i % stageTemplates.length];
+      generated.push({
+        id: `gen_proc_${subjectKey}_${bookId}_${chapterId}_s${stageIndex}_q${i + 1}`,
+        text: t.text,
+        topic: `${chapter.title} • Etapa ${stageIndex + 1}`,
+        options: [
+          { text: t.correct, correct: true },
+          { text: t.distractors[0], correct: false },
+          { text: t.distractors[1], correct: false },
+          { text: t.distractors[2], correct: false }
+        ],
+        explanation: t.explanation,
+        aiGuidance: `Material SAS Asas 2026 • Apostila ${bookId} • ${chapter.title}`
+      });
+    }
+
+    return generated;
+  }
+
+  generateTrilhaStageQuestions(subjectKey, bookId, chapterId, stageIndex, stageId) {
+    const key = `${subjectKey}_${bookId}_${chapterId}`;
+    const stageCfg = this.getTrilhaStageConfig(stageIndex, stageId);
+    const targetCount = stageCfg.count || 3;
+
+    const bank = this.getSasQuestionBank();
+    const chapterCurated = bank[key];
+
+    let rawQuestions = [];
+
+    // Prioriza questões com curadoria do banco para este capítulo
+    if (chapterCurated) {
+      if (stageIndex === 0) {
+        rawQuestions = (chapterCurated.facil || []).slice(0, targetCount);
+      } else if (stageIndex === 1) {
+        const facilRemaining = (chapterCurated.facil || []).slice(1);
+        const medioInit = (chapterCurated.medio || []);
+        rawQuestions = [...facilRemaining, ...medioInit].slice(0, targetCount);
+      } else if (stageIndex === 2) {
+        rawQuestions = (chapterCurated.medio || []).slice(0, targetCount);
+      } else if (stageIndex === 3) {
+        const medioRemaining = (chapterCurated.medio || []).slice(1);
+        rawQuestions = [...medioRemaining].slice(0, targetCount);
+      } else if (stageIndex === 4) {
+        rawQuestions = (chapterCurated.dificil || []).slice(0, targetCount);
+      } else if (stageIndex === 5) {
+        const dificilRev = (chapterCurated.dificil || []).slice(1);
+        rawQuestions = [...dificilRev].slice(0, targetCount);
+      } else if (stageIndex === 6) {
+        rawQuestions = [...(chapterCurated.dificil || [])].slice(0, targetCount);
+      }
+    }
+
+    // Se faltarem questões para atingir a meta da etapa, completa com gerador procedimental curricular
+    if (rawQuestions.length < targetCount) {
+      const proceduralQs = this.generateProceduralSasQuestions(subjectKey, bookId, chapterId, stageIndex, stageId, targetCount - rawQuestions.length);
+      rawQuestions = [...rawQuestions, ...proceduralQs];
+    }
+
+    // Normaliza cada questão com opções A, B, C, D e gabarito determinístico
+    const letters = ['A', 'B', 'C', 'D'];
+    return rawQuestions.slice(0, targetCount).map((q, idx) => {
+      let rawOptions = [];
+      if (Array.isArray(q.options)) {
+        rawOptions = q.options.map(opt => ({
+          text: opt.text || String(opt),
+          correct: !!opt.correct
+        }));
+      }
+
+      if (rawOptions.length < 4) {
+        rawOptions = [
+          { text: 'Conceito em plena consonância com a apostila SAS.', correct: true },
+          { text: 'Interpretação incorreta que desconsidera as regras do capítulo.', correct: false },
+          { text: 'Afirmação contraditória sem respaldo teórico no material didático.', correct: false },
+          { text: 'Generalização equivocada que ignora as restrições da matéria.', correct: false }
+        ];
+      }
+
+      const correctOpt = rawOptions.find(o => o.correct) || rawOptions[0];
+      const incorrectOpts = rawOptions.filter(o => o !== correctOpt);
+
+      // Posiciona a alternativa correta de modo determinístico e variado entre A, B, C, D
+      const correctPos = (stageIndex * 2 + idx + 1) % 4;
+      const finalOptions = [];
+      let incIdx = 0;
+
+      for (let i = 0; i < 4; i++) {
+        if (i === correctPos) {
+          finalOptions.push({ letter: letters[i], text: correctOpt.text, isCorrect: true });
+        } else {
+          const inc = incorrectOpts[incIdx++] || { text: `Alternativa ${letters[i]} complementar.` };
+          finalOptions.push({ letter: letters[i], text: inc.text, isCorrect: false });
+        }
+      }
+
+      return {
+        index: idx,
+        id: q.id || `q_${stageId}_${idx}_${Date.now()}`,
+        text: q.text,
+        topic: q.topic || `${stageCfg.name}`,
+        difficultyLabel: stageCfg.levelLabel,
+        badgeBg: stageCfg.badgeBg,
+        badgeColor: stageCfg.badgeColor,
+        options: finalOptions,
+        correctLetter: letters[correctPos],
+        explanation: q.explanation || `Conforme os postulados e a matriz de habilidades da apostila SAS Asas 2026 para este capítulo.`,
+        aiGuidance: q.aiGuidance || stageCfg.tip
+      };
+    });
+  }
+
   async startTrilhaStage(stageId, stageIndex) {
     if (!this.hasTrilhasAccess()) {
       this.promptProForTrilha();
@@ -2900,75 +3383,190 @@ class EstudePlusApp {
       console.warn('[Trilha Stage Content Check]', err);
     }
 
+    const stageCfg = this.getTrilhaStageConfig(stageIndex, stageId);
+
+    // GERAÇÃO DO QUIZ PROGRESSIVO COM BASE NA MATÉRIA DA APOSTILA SAS
+    const questions = this.generateTrilhaStageQuestions(
+      this.currentTrilhaSubject || 'matematica',
+      book.id,
+      chapter.id,
+      stageIndex,
+      stageId
+    );
+
     this.activeTrilhaSession = {
-      subjectKey: this.currentTrilhaSubject,
+      subjectKey: this.currentTrilhaSubject || 'matematica',
       bookId: book.id,
       chapterId: chapter.id,
       chapterTitle: chapter.title,
       stageId,
       stageIndex,
+      stageCfg,
+      questions,
       answers: {},
-      totalQuestions: 0
+      totalQuestions: questions.length
     };
 
     const modalBadge = document.getElementById('trilhaStageBadge');
     const modalChapterTag = document.getElementById('trilhaStageChapterTag');
     const modalSubjectTag = document.getElementById('trilhaStageSubjectTag');
+    const modalDiffBadge = document.getElementById('trilhaStageDiffBadge');
     const modalTitle = document.getElementById('trilhaStageTitle');
     const modalDesc = document.getElementById('trilhaStageDesc');
     const contentArea = document.getElementById('trilhaStageContentArea');
+    const actionsArea = document.getElementById('trilhaStageActions');
 
-    if (modalBadge) modalBadge.innerText = `ETAPA ${stageIndex + 1}`;
-    if (modalChapterTag) modalChapterTag.innerText = chapter.tag || `Capítulo ${chapter.id}`;
-    if (modalSubjectTag) modalSubjectTag.innerText = subj.name;
-    if (modalTitle) modalTitle.innerText = `${chapter.title} — Etapa ${stageIndex + 1}`;
-
-    // Determina dificuldade calibrada
-    const diff = (stageIndex <= 1) ? 'facil' : (stageIndex <= 4) ? 'medio' : 'dificil';
-    const qCount = (stageIndex === 0) ? 2 : (stageIndex === 6) ? 4 : 3;
-
-    // REUTILIZAÇÃO DO MECANISMO EXISTENTE: this.getQuestionsForChapter
-    const questions = this.getQuestionsForChapter(this.currentTrilhaSubject, book.id, chapter.id, diff, qCount);
-    this.activeTrilhaSession.questions = questions;
-    this.activeTrilhaSession.totalQuestions = questions.length;
-
+    if (modalBadge) {
+      modalBadge.innerText = `ETAPA ${stageIndex + 1} DE 7`;
+      modalBadge.style.background = '#fef3c7';
+      modalBadge.style.color = '#b45309';
+      modalBadge.style.display = 'inline-block';
+    }
+    if (modalChapterTag) {
+      modalChapterTag.innerText = `Apostila ${book.id} • ${chapter.tag || 'Capítulo ' + chapter.id}`;
+    }
+    if (modalSubjectTag) {
+      modalSubjectTag.innerText = subj.name;
+    }
+    if (modalDiffBadge) {
+      modalDiffBadge.innerText = stageCfg.levelLabel;
+      modalDiffBadge.style.background = stageCfg.badgeBg;
+      modalDiffBadge.style.color = stageCfg.badgeColor;
+      modalDiffBadge.style.display = 'inline-block';
+    }
+    if (modalTitle) {
+      modalTitle.innerText = `${chapter.title} — ${stageCfg.name}`;
+    }
     if (modalDesc) {
-      modalDesc.innerText = `Responda às questões conceituais deste ponto da trilha para validar o aprendizado e avançar.`;
+      modalDesc.innerText = `${stageCfg.desc}. Responda com atenção para comprovar domínio e avançar na trilha.`;
     }
 
     if (contentArea) {
-      contentArea.innerHTML = `
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-          <strong style="color: #0369a1; font-size: 0.85rem; display: block; margin-bottom: 4px;">💡 Resumo Teórico do Capítulo:</strong>
-          <p style="margin: 0; font-size: 0.85rem; color: #475569; line-height: 1.45;">${chapter.desc}</p>
-        </div>
-        <div class="trilha-questions-list" style="display: flex; flex-direction: column; gap: 16px;">
-          ${questions.map((q, qIdx) => `
-            <div class="trilha-q-block" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px;">
-              <div style="font-weight: 800; font-size: 0.88rem; color: #0f172a; margin-bottom: 10px;">
-                ${qIdx + 1}. ${q.text}
-              </div>
-              <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px;">
-                ${(q.options || []).map(opt => `
-                  <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 0.85rem; color: #334155; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.15s ease;">
-                    <input type="radio" name="trilha_q_${q.id}" value="${opt.id}" onchange="app.handleTrilhaOptionSelect(${q.id}, '${opt.id}')" style="margin-top: 3px;">
-                    <span><strong>${opt.id})</strong> ${opt.text}</span>
-                  </label>
-                `).join('')}
-              </div>
-            </div>
-          `).join('')}
+      contentArea.innerHTML = this.renderTrilhaQuestionsHtml(chapter, stageCfg, questions);
+    }
+
+    if (actionsArea) {
+      actionsArea.innerHTML = `
+        <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700; border-radius: 10px;">
+          Fechar
+        </button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span id="trilhaStageAnswerCount" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">
+            0 de ${questions.length} respondidas
+          </span>
+          <button type="button" class="btn-primary" id="btnSubmitTrilhaStage" onclick="app.submitCurrentTrilhaStage()" style="padding: 10px 22px; font-weight: 800; background: #0284c7; border-color: #0284c7; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+            <span>Concluir Etapa</span>
+          </button>
         </div>
       `;
+      if (window.lucide) window.lucide.createIcons();
     }
 
     this.showModal('trilhaStageModal');
   }
 
-  handleTrilhaOptionSelect(questionId, selectedOptionId) {
+  renderTrilhaQuestionsHtml(chapter, stageCfg, questions) {
+    return `
+      <!-- Contexto Curricular SAS -->
+      <div style="background: linear-gradient(135deg, #f0fdf4, #e0f2fe); border: 1.5px solid #bae6fd; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+          <strong style="color: #0369a1; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+            📖 Matriz Curricular SAS (Coleção Asas 7º Ano)
+          </strong>
+          <span style="font-size: 0.78rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; background: ${stageCfg.badgeBg}; color: ${stageCfg.badgeColor}; border: 1px solid ${stageCfg.badgeColor}33;">
+            ${stageCfg.levelLabel}
+          </span>
+        </div>
+        <p style="margin: 0 0 6px; font-size: 0.84rem; color: #334155; line-height: 1.45;">
+          ${chapter.desc || 'Conteúdos formativos e habilidades essenciais do SAS.'}
+        </p>
+        <div style="font-size: 0.8rem; font-weight: 700; color: #0284c7;">
+          ${stageCfg.tip}
+        </div>
+      </div>
+
+      <!-- Lista de Questões -->
+      <div class="trilha-questions-list" style="display: flex; flex-direction: column; gap: 16px;">
+        ${questions.map((q, qIdx) => `
+          <div class="trilha-q-block" id="trilha_q_block_${qIdx}" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 6px;">
+                Questão ${qIdx + 1} de ${questions.length}
+              </span>
+              <span style="font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: ${q.badgeBg}; color: ${q.badgeColor};">
+                ${q.difficultyLabel || stageCfg.levelLabel}
+              </span>
+            </div>
+
+            <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; line-height: 1.5; margin-bottom: 14px;">
+              ${q.text}
+            </div>
+
+            <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px;">
+              ${q.options.map(opt => `
+                <label id="trilha_opt_lbl_${qIdx}_${opt.letter}" 
+                       onclick="app.handleTrilhaOptionSelect(${qIdx}, '${opt.letter}')"
+                       style="display: flex; align-items: center; gap: 12px; font-size: 0.86rem; color: #334155; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; cursor: pointer; transition: all 0.15s ease; background: #ffffff;">
+                  <input type="radio" 
+                         name="trilha_question_${qIdx}" 
+                         value="${opt.letter}" 
+                         id="trilha_opt_radio_${qIdx}_${opt.letter}"
+                         style="margin: 0; width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: #f1f5f9; font-weight: 800; font-size: 0.8rem; color: #475569; flex-shrink: 0;">
+                    ${opt.letter}
+                  </span>
+                  <span style="line-height: 1.4; flex: 1;">${opt.text}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  handleTrilhaOptionSelect(qIdx, letter) {
     if (!this.activeTrilhaSession) return;
     if (!this.activeTrilhaSession.answers) this.activeTrilhaSession.answers = {};
-    this.activeTrilhaSession.answers[questionId] = selectedOptionId;
+    this.activeTrilhaSession.answers[qIdx] = letter;
+
+    // Marca o input de rádio
+    const radio = document.getElementById(`trilha_opt_radio_${qIdx}_${letter}`);
+    if (radio) radio.checked = true;
+
+    // Atualiza visual de todas as alternativas daquela questão
+    ['A', 'B', 'C', 'D'].forEach(l => {
+      const lbl = document.getElementById(`trilha_opt_lbl_${qIdx}_${l}`);
+      if (lbl) {
+        if (l === letter) {
+          lbl.style.background = '#eff6ff';
+          lbl.style.borderColor = '#2563eb';
+          lbl.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.15)';
+          lbl.style.color = '#1e3a8a';
+        } else {
+          lbl.style.background = '#ffffff';
+          lbl.style.borderColor = '#cbd5e1';
+          lbl.style.boxShadow = 'none';
+          lbl.style.color = '#334155';
+        }
+      }
+    });
+
+    const block = document.getElementById(`trilha_q_block_${qIdx}`);
+    if (block) {
+      block.style.borderColor = '#93c5fd';
+    }
+
+    const answeredCount = Object.keys(this.activeTrilhaSession.answers).length;
+    const totalCount = this.activeTrilhaSession.totalQuestions;
+    const counterEl = document.getElementById('trilhaStageAnswerCount');
+    if (counterEl) {
+      counterEl.innerText = `${answeredCount} de ${totalCount} respondidas`;
+      if (answeredCount === totalCount) {
+        counterEl.style.color = '#10b981';
+      }
+    }
   }
 
   async submitCurrentTrilhaStage() {
@@ -2977,22 +3575,25 @@ class EstudePlusApp {
 
     const answeredCount = Object.keys(session.answers || {}).length;
     if (answeredCount < session.totalQuestions) {
-      if (!confirm(`Você respondeu ${answeredCount} de ${session.totalQuestions} questões. Deseja concluir a etapa mesmo assim?`)) {
+      if (!confirm(`Você respondeu ${answeredCount} de ${session.totalQuestions} questões desta etapa. Deseja concluir mesmo assim?`)) {
         return;
       }
     }
 
-    // Calcula acertos
+    // Calcula acertos com gabarito exato
     let score = 0;
-    (session.questions || []).forEach(q => {
-      const userAns = session.answers[q.id];
-      if (userAns && String(userAns).toUpperCase() === String(q.correctId || 'A').toUpperCase()) {
+    (session.questions || []).forEach((q, idx) => {
+      const userAns = session.answers[idx];
+      if (userAns && String(userAns).toUpperCase() === String(q.correctLetter).toUpperCase()) {
         score++;
       }
     });
 
     const btn = document.getElementById('btnSubmitTrilhaStage');
-    if (btn) btn.disabled = true;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>Salvando...</span>';
+    }
 
     try {
       const res = await fetch('/api/trilhas/complete-stage', {
@@ -3024,17 +3625,141 @@ class EstudePlusApp {
 
       if (data.success) {
         if (typeof confetti === 'function') {
-          confetti({ particleCount: 80, spread: 90, origin: { y: 0.6 } });
+          confetti({ particleCount: 85, spread: 90, origin: { y: 0.6 } });
         }
-        alert(`🎉 ${data.message}\n\nVocê acertou ${score} de ${session.totalQuestions} questões.`);
-        this.closeModal('trilhaStageModal');
+
+        this.renderTrilhaStageResult(session, score, data);
         await this.loadTrilhasProgress();
         this.renderTrilhaActiveTrail();
       }
     } catch (e) {
       alert('Erro de comunicação com o servidor: ' + e.message);
     } finally {
-      if (btn) btn.disabled = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i><span>Concluir Etapa</span>`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  }
+
+  renderTrilhaStageResult(session, score, data) {
+    const contentArea = document.getElementById('trilhaStageContentArea');
+    const actionsArea = document.getElementById('trilhaStageActions');
+    const modalTitle = document.getElementById('trilhaStageTitle');
+    const modalDesc = document.getElementById('trilhaStageDesc');
+
+    const total = session.totalQuestions;
+    const pct = Math.round((score / total) * 100);
+    const isMastery = score === total;
+    const nextIndex = session.stageIndex + 1;
+    const hasNextStage = nextIndex < 7;
+
+    if (modalTitle) modalTitle.innerText = `Resultado da Etapa ${session.stageIndex + 1} • ${session.chapterTitle}`;
+    if (modalDesc) modalDesc.innerText = `Confira seu gabarito comentado oficial do SAS e os pontos de melhoria para a próxima etapa.`;
+
+    if (contentArea) {
+      contentArea.innerHTML = `
+        <!-- Card de Resumo do Desempenho -->
+        <div style="background: linear-gradient(135deg, ${pct >= 70 ? '#059669' : '#0284c7'}, #1e293b); color: #ffffff; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;">
+                ${pct >= 70 ? '🎉 Excelente Aproveitamento!' : '💪 Bom Esforço! Continue Praticando!'}
+              </span>
+              <h3 style="margin: 4px 0 2px; font-size: 1.45rem; font-weight: 900; color: #ffffff;">
+                Você acertou ${score} de ${total} questões (${pct}%)
+              </h3>
+              <p style="margin: 0; font-size: 0.86rem; color: #e2e8f0;">
+                Progresso no capítulo: <strong>${data.masteryPercentage || 0}% Dominado</strong> • Etapa ${session.stageIndex + 1} registrada no servidor.
+              </p>
+            </div>
+            <div style="font-size: 2.5rem;">
+              ${pct >= 70 ? '🏆' : '📚'}
+            </div>
+          </div>
+        </div>
+
+        <h4 style="margin: 0 0 12px; font-size: 1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+          <span>📝 Gabarito Comentado SAS</span>
+        </h4>
+
+        <!-- Lista de Gabarito Comentado -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          ${(session.questions || []).map((q, idx) => {
+            const userAns = session.answers[idx];
+            const isCorrect = userAns && String(userAns).toUpperCase() === String(q.correctLetter).toUpperCase();
+            return `
+              <div style="background: #ffffff; border: 1.5px solid ${isCorrect ? '#86efac' : '#fca5a5'}; border-radius: 12px; padding: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 0.82rem; font-weight: 800; color: #475569;">
+                    Questão ${idx + 1}
+                  </span>
+                  <span style="font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: ${isCorrect ? '#dcfce7' : '#fee2e2'}; color: ${isCorrect ? '#15803d' : '#b91c1c'};">
+                    ${isCorrect ? '✅ Resposta Correta' : '❌ Resposta Incorreta'}
+                  </span>
+                </div>
+
+                <div style="font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; line-height: 1.4;">
+                  ${q.text}
+                </div>
+
+                <div style="font-size: 0.83rem; color: #334155; margin-bottom: 8px; background: #f8fafc; padding: 8px 12px; border-radius: 8px;">
+                  <div>Sua resposta: <strong>[${userAns || 'Não respondida'}]</strong></div>
+                  <div>Gabarito Oficial SAS: <strong>[${q.correctLetter}]</strong></div>
+                </div>
+
+                <div style="font-size: 0.82rem; color: #475569; line-height: 1.45; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+                  <strong style="color: #0369a1;">💡 Explicação SAS:</strong> ${q.explanation}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    if (actionsArea) {
+      actionsArea.innerHTML = `
+        <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700; border-radius: 10px;">
+          Fechar & Ver Trilha
+        </button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button type="button" class="btn-outline" onclick="app.startTrilhaStage('${session.stageId}', ${session.stageIndex})" style="padding: 10px 16px; font-weight: 700; border-radius: 10px;">
+            Refazer Etapa
+          </button>
+          ${hasNextStage ? `
+            <button type="button" class="btn-primary" onclick="app.advanceToNextTrilhaStage(${nextIndex})" style="padding: 10px 22px; font-weight: 800; background: #0284c7; border-color: #0284c7; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>Avançar para Etapa ${nextIndex + 1}</span>
+              <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </button>
+          ` : `
+            <button type="button" class="btn-primary" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 22px; font-weight: 800; background: #10b981; border-color: #10b981; border-radius: 10px;">
+              🏆 Capítulo 100% Dominado!
+            </button>
+          `}
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  advanceToNextTrilhaStage(nextStageIndex) {
+    const stages = [
+      { id: 'fundamentos' },
+      { id: 'pratica_1' },
+      { id: 'quiz_1' },
+      { id: 'pratica_2' },
+      { id: 'quiz_2' },
+      { id: 'revisao' },
+      { id: 'desafio_final' }
+    ];
+    const nextStage = stages[nextStageIndex];
+    if (nextStage) {
+      this.startTrilhaStage(nextStage.id, nextStageIndex);
+    } else {
+      this.closeModal('trilhaStageModal');
+      this.renderTrilhaActiveTrail();
     }
   }
 
@@ -3554,14 +4279,9 @@ class EstudePlusApp {
     }
   }
 
-  getQuestionsForChapter(subjectKey, bookId, chapterId, difficulty = 'dificil', count = 8) {
-    const key = `${subjectKey}_${bookId}_${chapterId}`;
-    const dailyInfo = this.getDailyQuizInfo();
-    const seedStr = `${dailyInfo.dateStr}_rot${this.quizRotationOffset || 0}_${key}_${difficulty}`;
-    const prng = this.createPrng(seedStr);
-
-    // Curated pedagogical question bank for 7th grade SAS Asas 2026
-    const questionBank = {
+  getSasQuestionBank() {
+    if (this._sasQuestionBank) return this._sasQuestionBank;
+    this._sasQuestionBank = {
       'ciencias_2_5': {
         "facil": [
                 {
@@ -6003,7 +6723,16 @@ class EstudePlusApp {
         ]
       }
     };
+    return this._sasQuestionBank;
+  }
 
+  getQuestionsForChapter(subjectKey, bookId, chapterId, difficulty = 'dificil', count = 8) {
+    const key = `${subjectKey}_${bookId}_${chapterId}`;
+    const dailyInfo = this.getDailyQuizInfo();
+    const seedStr = `${dailyInfo.dateStr}_rot${this.quizRotationOffset || 0}_${key}_${difficulty}`;
+    const prng = this.createPrng(seedStr);
+
+    const questionBank = this.getSasQuestionBank();
     let questionsList = [];
 
     // Check curated questions
@@ -6907,7 +7636,10 @@ class EstudePlusApp {
 
   showModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.add('active');
+    if (modal) {
+      modal.style.display = 'flex';
+      modal.classList.add('active');
+    }
     if (modalId === 'adminPaymentsModal') {
       this.switchAdminTab('students');
     }
@@ -6915,7 +7647,10 @@ class EstudePlusApp {
 
   closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('active');
+    }
   }
 
   handleNewExam(e) {
@@ -7352,11 +8087,15 @@ class EstudePlusApp {
   }
 
   toggleTpcStatus(id) {
+    if (this._togglingTpc) return;
+    this._togglingTpc = true;
+    setTimeout(() => { this._togglingTpc = false; }, 400);
+
     const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
     if (!item) return;
 
     // Se o item estiver pendente ("NÃO FEITO"), exibe o aviso "Você realmente fez?"
-    if (item.status === 'pending') {
+    if (item.status === 'pending' || !item.status) {
       this.pendingTpcToDoneId = id;
       const subjEl = document.getElementById('confirmTpcDoneSubject');
       const titleEl = document.getElementById('confirmTpcDoneTitle');
@@ -7367,37 +8106,58 @@ class EstudePlusApp {
       return;
     }
 
-    // Se já estava feito e foi clicado para reabrir
+    // Se já estava feito e foi clicado para reabrir como pendente
     item.status = 'pending';
     item.dismissed = false;
     delete item.doneAt;
+    if (Array.isArray(this.state.completedTpcIds)) {
+      this.state.completedTpcIds = this.state.completedTpcIds.filter(x => String(x) !== String(id));
+    }
     this.saveState();
+    this.syncUserData('push');
     this.renderTpcs();
     this.renderDashboard();
     this.refreshBadges();
   }
 
-  executeTpcCompletion() {
+  async executeTpcCompletion() {
     const id = this.pendingTpcToDoneId;
-    const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
-    if (item) {
-      item.status = 'done';
-      item.dismissed = true; // "se vc clicar em sim o tpc desaparece"
-      item.doneAt = new Date().toISOString();
-      this.recordValidActivity('tpc_completed', { tpcId: id, title: item.title, discipline: item.discipline || item.subject });
-      this.saveState();
+    if (!id) return;
 
-      this.closeModal('confirmTpcDoneModal');
-
-      if (typeof confetti === 'function') {
-        confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
-      }
-
-      this.renderTpcs();
-      this.renderDashboard();
-      this.refreshBadges();
+    const btnSubmit = document.getElementById('btnConfirmTpcDoneSubmit');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerText = 'Salvando...';
     }
-    this.pendingTpcToDoneId = null;
+
+    try {
+      const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
+      if (item) {
+        item.status = 'done';
+        item.dismissed = true; // "se vc clicar em sim o tpc desaparece"
+        item.doneAt = new Date().toISOString();
+        this.state.completedTpcIds = Array.from(new Set([...(this.state.completedTpcIds || []).map(String), String(id)]));
+        this.recordValidActivity('tpc_completed', { tpcId: id, title: item.title, discipline: item.discipline || item.subject });
+        this.saveState();
+        await this.syncUserData('push');
+
+        this.closeModal('confirmTpcDoneModal');
+
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
+        }
+
+        this.renderTpcs();
+        this.renderDashboard();
+        this.refreshBadges();
+      }
+    } finally {
+      this.pendingTpcToDoneId = null;
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = 'Sim, já fiz!';
+      }
+    }
   }
 
   
@@ -11786,13 +12546,26 @@ class EstudePlusApp {
   }
 
   async showAdminModal() {
-    if (!this.currentUser || (this.currentUser.role !== 'admin' && this.currentUser.username !== 'freddie' && this.currentUser.email !== 'freddie@gammon.com.br')) {
-      alert('🔒 Acesso Restrito: Apenas o administrador autorizado (Freddie Costa) tem permissão para acessar a Central Única.');
+    const uid = this.currentUser?.id || this.currentUser?.uid;
+    let isFbAdmin = false;
+    if (window.estudeFirebase) {
+      isFbAdmin = await window.estudeFirebase.checkAdminPermission(uid);
+    }
+    const isLocalAdmin = Boolean(this.currentUser && (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie' || this.currentUser.email === 'freddie@gammon.com.br' || this.currentUser.email === 'claudianostudio@gmail.com'));
+
+    if (!isFbAdmin && !isLocalAdmin) {
+      console.error('[Admin Permission Denied] O usuário atual não possui documento em admins/{uid} nem privilégio de administrador.');
+      this.showAdminError(new Error('Acesso negado: Você não possui documento em admins/{uid}.'));
+      alert('🔒 Acesso Restrito: Apenas administradores cadastrados em admins/{uid} têm permissão para acessar o Painel Admin.');
+      const btn = document.getElementById('adminPaymentsBtn');
+      if (btn) btn.style.display = 'none';
       return;
     }
+
     this.showModal('adminPaymentsModal');
     this.currentAdminTab = this.currentAdminTab || 'students';
     this.switchAdminTab(this.currentAdminTab);
+    this.startFirebaseAdminListeners();
     await this.loadAdminOverview();
   }
 
@@ -14747,6 +15520,550 @@ startxref
     }
     this.switchTab('gemini-chat');
     this.sendGeminiTabPrompt('Como resolver com facilidade as trilhas do Eureka SAS e entender a 1ª Lei de Newton?');
+  }
+
+  /* ==========================================================================
+     FIREBASE AUTH, FIRESTORE & PAINEL DE ADMINISTRAÇÃO EM TEMPO REAL
+     ========================================================================== */
+
+  initFirebaseIntegration() {
+    if (!window.estudeFirebase) {
+      console.warn('[FirebaseIntegration] window.estudeFirebase não está disponível.');
+      return;
+    }
+
+    // Listener: Quando o Plano PRO é ativado em tempo real no Firestore pelo admin
+    window.estudeFirebase.on('pro_activated', (userDoc) => {
+      this.onFirebaseProActivated(userDoc);
+    });
+
+    // Listener: Quando o plano volta para Base
+    window.estudeFirebase.on('plan_downgraded', (userDoc) => {
+      this.onFirebasePlanDowngraded(userDoc);
+    });
+
+    // Listener: Atualização das solicitações de pagamento do aluno
+    window.estudeFirebase.on('user_payments_updated', (data) => {
+      this.onFirebaseUserPaymentsUpdated(data.pending, data.list);
+    });
+
+    // Listener: Notificação para o Admin de novo pedido de pagamento
+    window.estudeFirebase.on('new_payment_notification', (newReq) => {
+      this.notifyNewPaymentRequest(newReq);
+    });
+
+    // Listener: Mudança de status de permissão de Administrador
+    window.estudeFirebase.on('admin_status_changed', (isAdmin) => {
+      const btn = document.getElementById('adminPaymentsBtn');
+      if (btn) btn.style.display = isAdmin ? 'inline-flex' : 'none';
+    });
+
+    // Sincronizar documento users/{uid} se o usuário já estiver autenticado
+    if (this.currentUser) {
+      const uid = this.currentUser.id || this.currentUser.uid || ('usr_' + (this.currentUser.email || this.currentUser.username));
+      window.estudeFirebase.handleUserLogin({
+        uid: uid,
+        email: this.currentUser.email || (this.currentUser.username + '@gammon.com.br'),
+        displayName: this.currentUser.name || this.currentUser.username
+      }, { nome: this.currentUser.name }).then(doc => {
+        if (doc) {
+          if (doc.status === 'deletado') {
+            alert('⚠️ Sua conta foi desativada ou excluída pelo administrador.');
+            this.handleLogout();
+            return;
+          }
+          if (doc.plan === 'pro') {
+            this.currentUser.plan = 'pro';
+            this.currentUser.isSubscribed = true;
+            this.state.isSubscribed = true;
+            this.updateUserHeaderUI();
+            this.renderPlanStatus();
+          }
+        }
+      }).catch(err => {
+        console.error('[Firebase Init Error]', err);
+        if (err.message && err.message.includes('desativada ou excluída')) {
+          alert('⚠️ Sua conta foi desativada ou excluída pelo administrador.');
+          this.handleLogout();
+        }
+      });
+    }
+  }
+
+  /**
+   * Aluno clica em "Já fiz o pagamento"
+   * Cria o documento em paymentRequests com: uid, nome, email, data e status "pendente"
+   * Mostra ao aluno "Pagamento em análise" enquanto estiver pendente e impede envios repetidos.
+   */
+  async handleStudentPaymentDeclared() {
+    if (!this.currentUser) {
+      alert('Faça login primeiro para informar o pagamento.');
+      this.openAuthOverlay();
+      return;
+    }
+
+    if (this.isUserPro()) {
+      alert('💎 Você já é um assinante PRO ativo! Todos os recursos estão liberados.');
+      return;
+    }
+
+    const btnModal = document.getElementById('btnSubModalJaFizPagamento');
+    const btnTab = document.getElementById('btnPlansTabJaFizPagamento');
+
+    const planId = this.selectedPlanId === 'pro_anual' ? 'pro_anual' : 'pro_mensal';
+    const isAnual = planId === 'pro_anual';
+    const valor = isAnual ? 120.00 : 10.00;
+    const planName = isAnual ? 'Plano PRO Anual (R$ 120,00)' : 'Plano PRO Mensal (R$ 10,00)';
+
+    if (btnModal) { btnModal.disabled = true; btnModal.innerText = 'Enviando...'; }
+    if (btnTab) { btnTab.disabled = true; btnTab.innerText = 'Enviando...'; }
+
+    try {
+      if (window.estudeFirebase) {
+        await window.estudeFirebase.createPaymentRequest(planId, valor, `Pagamento comunicado pelo aluno (${planName})`);
+      }
+
+      // Atualiza estado local e UI
+      this.currentUser.planStatus = 'payment_pending';
+      this.saveCurrentUser();
+
+      this.onFirebaseUserPaymentsUpdated({ status: 'pendente' });
+
+      alert(`✅ Pagamento Comunicado ao Administrador!\n\nSeu aviso para o ${planName} foi enviado com status "PENDENTE".\n\nAssim que o administrador Freddie confirmar o recebimento, seus recursos PRO serão liberados automaticamente em tempo real!`);
+    } catch (err) {
+      console.error('[Payment Declaration Error]', err);
+      alert(err.message || 'Erro ao registrar aviso de pagamento. Verifique o console.');
+    } finally {
+      if (btnModal && !btnModal.innerText.includes('em análise')) {
+        btnModal.disabled = false;
+        btnModal.innerText = 'Já fiz o pagamento';
+      }
+      if (btnTab && !btnTab.innerText.includes('em análise')) {
+        btnTab.disabled = false;
+        btnTab.innerText = 'Já fiz o pagamento';
+      }
+    }
+  }
+
+  /**
+   * Aluno recebe notificação em tempo real (onSnapshot) de que o PRO foi ativado
+   */
+  onFirebaseProActivated(userDoc) {
+    this.currentUser.plan = 'pro';
+    this.currentUser.planStatus = 'pro_mensal_active';
+    this.currentUser.isSubscribed = true;
+    this.state.isSubscribed = true;
+    this.saveCurrentUser();
+    this.saveState();
+
+    this.updateUserHeaderUI();
+    this.renderPlanStatus();
+    this.renderDashboard();
+
+    // Resetar botões de pagamento e esconder banners de análise
+    const pBannerModal = document.getElementById('paymentPendingStudentBanner');
+    const pBannerTab = document.getElementById('plansTabPendingBanner');
+    if (pBannerModal) pBannerModal.style.display = 'none';
+    if (pBannerTab) pBannerTab.style.display = 'none';
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } });
+    }
+
+    alert('🎉 PARABÉNS! SEU PLANO PRO FOI ATIVADO!\n\nO administrador aprovou seu pagamento em tempo real. Todos os recursos do Gemini IA, PDFs, Trilhas e TPCs estão 100% desbloqueados!');
+  }
+
+  /**
+   * Plano alterado para Base pelo Administrador
+   */
+  onFirebasePlanDowngraded(userDoc) {
+    this.currentUser.plan = 'base';
+    this.currentUser.planStatus = 'base';
+    this.currentUser.isSubscribed = false;
+    this.state.isSubscribed = false;
+    this.saveCurrentUser();
+    this.saveState();
+
+    this.updateUserHeaderUI();
+    this.renderPlanStatus();
+    this.renderDashboard();
+  }
+
+  /**
+   * Atualiza a interface do aluno conforme o status dos pagamentos no Firestore
+   */
+  onFirebaseUserPaymentsUpdated(pendingRequest, allRequests = []) {
+    const isPending = Boolean(pendingRequest && pendingRequest.status === 'pendente');
+
+    const pBannerModal = document.getElementById('paymentPendingStudentBanner');
+    const pBannerTab = document.getElementById('plansTabPendingBanner');
+    const btnModal = document.getElementById('btnSubModalJaFizPagamento');
+    const btnModalText = document.getElementById('btnSubModalJaFizText');
+    const btnTab = document.getElementById('btnPlansTabJaFizPagamento');
+    const btnTabText = document.getElementById('btnPlansTabJaFizText');
+
+    if (isPending) {
+      if (pBannerModal) pBannerModal.style.display = 'block';
+      if (pBannerTab) pBannerTab.style.display = 'block';
+
+      if (btnModal) {
+        btnModal.disabled = true;
+        btnModal.style.opacity = '0.75';
+        btnModal.style.cursor = 'not-allowed';
+      }
+      if (btnModalText) btnModalText.textContent = '⏳ Pagamento em análise';
+
+      if (btnTab) {
+        btnTab.disabled = true;
+        btnTab.style.opacity = '0.75';
+        btnTab.style.cursor = 'not-allowed';
+      }
+      if (btnTabText) btnTabText.textContent = '⏳ Pagamento em análise';
+    } else {
+      if (pBannerModal) pBannerModal.style.display = 'none';
+      if (pBannerTab) pBannerTab.style.display = 'none';
+
+      if (btnModal) {
+        btnModal.disabled = false;
+        btnModal.style.opacity = '1';
+        btnModal.style.cursor = 'pointer';
+      }
+      if (btnModalText) btnModalText.textContent = 'Já fiz o pagamento';
+
+      if (btnTab) {
+        btnTab.disabled = false;
+        btnTab.style.opacity = '1';
+        btnTab.style.cursor = 'pointer';
+      }
+      if (btnTabText) btnTabText.textContent = 'Já fiz o pagamento';
+    }
+  }
+
+  /**
+   * Notificação visual e sonora quando o Admin recebe um novo pedido de pagamento
+   */
+  notifyNewPaymentRequest(req) {
+    const badge = document.getElementById('adminPlanRequestsBadgeCount');
+    const topBadge = document.getElementById('adminPendingCountBadge');
+    if (badge) {
+      badge.style.display = 'inline-block';
+      badge.textContent = Number(badge.textContent || 0) + 1;
+    }
+    if (topBadge) {
+      topBadge.style.display = 'inline-flex';
+      topBadge.textContent = Number(topBadge.textContent || 0) + 1;
+    }
+
+    this.showAdminToast(
+      '🔔 Novo Pagamento Informado!',
+      `${req.nome || 'Aluno'} comunicou pagamento do Plano PRO (${req.planId === 'pro_anual' ? 'R$ 120,00' : 'R$ 10,00'}).`,
+      () => {
+        this.showAdminModal();
+        this.switchAdminTab('plan_requests');
+      }
+    );
+  }
+
+  /**
+   * Inicia listeners em tempo real (onSnapshot) para o Painel de Administração
+   */
+  startFirebaseAdminListeners() {
+    if (!window.estudeFirebase) return;
+
+    // 1. Lista em tempo real (onSnapshot) de todos os usuários
+    window.estudeFirebase.listenAllUsers((users) => {
+      this.fbAdminUsersList = users;
+      const searchVal = document.getElementById('adminStudentSearch')?.value || '';
+      this.renderFirebaseAdminUsers(users, searchVal);
+    }, (err) => {
+      this.showAdminError(err);
+    });
+
+    // 2. Seção "Pagamentos pendentes" em tempo real (onSnapshot)
+    window.estudeFirebase.listenPendingPaymentRequests((pendingList) => {
+      this.fbPendingPaymentsList = pendingList;
+      this.renderFirebasePendingPayments(pendingList);
+    }, (err) => {
+      this.showAdminError(err);
+    });
+  }
+
+  /**
+   * Renderiza a lista de usuários em tempo real com indicador "online agora" (últimos 5 minutos)
+   */
+  renderFirebaseAdminUsers(users, searchFilter = '') {
+    const container = document.getElementById('adminStudentsListContainer');
+    if (!container) return;
+
+    let list = Array.isArray(users) ? users : [];
+
+    // Filtro de busca por nome ou email
+    if (searchFilter.trim()) {
+      const q = searchFilter.trim().toLowerCase();
+      list = list.filter(u => 
+        (u.nome && u.nome.toLowerCase().includes(q)) || 
+        (u.email && u.email.toLowerCase().includes(q))
+      );
+    }
+
+    // Atualizar KPI de estatísticas no topo
+    const totalUsersEl = document.getElementById('statTotalUsers');
+    const onlineUsersEl = document.getElementById('statActiveOnline');
+    const proUsersEl = document.getElementById('statProUsers');
+    if (totalUsersEl) totalUsersEl.textContent = (users || []).filter(u => u.status !== 'deletado').length;
+    if (onlineUsersEl) onlineUsersEl.textContent = (users || []).filter(u => u.isOnline).length;
+    if (proUsersEl) proUsersEl.textContent = (users || []).filter(u => u.plan === 'pro' && u.status !== 'deletado').length;
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: #64748b; padding: 36px 20px; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 14px;">
+          <i data-lucide="users" style="width: 38px; height: 38px; color: #94a3b8; margin-bottom: 8px;"></i>
+          <p style="font-weight: 700; margin: 0; color: #334155;">Nenhum usuário encontrado</p>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    container.innerHTML = list.map(u => {
+      const isDeleted = u.status === 'deletado';
+      const isPro = u.plan === 'pro';
+
+      let lastAccessFmt = 'Nunca';
+      if (u.ultimoAcessoMs) {
+        lastAccessFmt = new Date(u.ultimoAcessoMs).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+      }
+
+      // Indicador "online agora": verde vivo nos últimos 5 minutos
+      const onlineBadge = u.isOnline
+        ? `<span style="font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; display: inline-flex; align-items: center; gap: 5px;">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e;"></span>
+            Online agora
+          </span>`
+        : `<span style="font-size: 0.72rem; color: #64748b; background: #f1f5f9; padding: 2px 7px; border-radius: 6px;">Visto: ${lastAccessFmt}</span>`;
+
+      return `
+        <div style="background: #ffffff; border: 1.5px solid ${isDeleted ? '#fca5a5' : (isPro ? '#86efac' : '#e2e8f0')}; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); opacity: ${isDeleted ? '0.7' : '1'};">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 240px;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: ${isPro ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0284c7, #38bdf8)'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0;">
+                ${(u.nome || 'AL').substring(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <strong style="color: #0f172a; font-size: 1rem;">${u.nome}</strong>
+                  ${isDeleted ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fee2e2; color: #b91c1c;">🚫 Deletado / Bloqueado</span>
+                  ` : isPro ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">👑 Plano PRO Ativo</span>
+                  ` : `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
+                  `}
+                  ${onlineBadge}
+                </div>
+                <div style="font-size: 0.8rem; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span>E-mail: <strong>${u.email}</strong></span>
+                  &bull; <span>UID: <code style="font-size: 0.72rem; background: #f1f5f9; padding: 1px 4px; border-radius: 4px;">${u.uid || u.id}</code></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botões de Ação do Admin -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              ${!isDeleted ? `
+                ${isPro ? `
+                  <button type="button" class="btn-outline" onclick="app.adminSetFirebaseUserPlan('${u.uid || u.id}', 'base')" style="color: #b91c1c; border-color: #fca5a5; background: #fff1f2; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                    <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+                    <span>Voltar para Base</span>
+                  </button>
+                ` : `
+                  <button type="button" class="btn-primary" onclick="app.adminSetFirebaseUserPlan('${u.uid || u.id}', 'pro')" style="background: #059669; font-size: 0.8rem; font-weight: 800; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);">
+                    <i data-lucide="crown" style="width: 14px; height: 14px;"></i>
+                    <span>Ativar Pro</span>
+                  </button>
+                `}
+                <button type="button" class="btn-outline" onclick="app.adminDeleteFirebaseUser('${u.uid || u.id}')" style="color: #dc2626; border-color: #fca5a5; background: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px; color: #dc2626;"></i>
+                  <span>Excluir conta</span>
+                </button>
+              ` : `
+                <button type="button" class="btn-outline" onclick="app.adminSetFirebaseUserPlan('${u.uid || u.id}', 'base')" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; color: #0284c7;">
+                  Reativar Conta
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  /**
+   * Renderiza em tempo real a seção "Pagamentos pendentes" com botões "Aprovar" e "Recusar"
+   */
+  renderFirebasePendingPayments(pendingRequests) {
+    const container = document.getElementById('adminPlanRequestsListContainer');
+    if (!container) return;
+
+    const list = Array.isArray(pendingRequests) ? pendingRequests : [];
+
+    // Atualizar badge do menu
+    const badge = document.getElementById('adminPlanRequestsBadgeCount');
+    const statPending = document.getElementById('statPendingPlans');
+    if (badge) {
+      badge.textContent = list.length;
+      badge.style.display = list.length > 0 ? 'inline-block' : 'none';
+    }
+    if (statPending) statPending.textContent = list.length;
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; color: #64748b; background: #f8fafc; border-radius: 14px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">💎</div>
+          <p style="margin: 0; font-weight: 700; color: #1e1b4b; font-size: 0.95rem;">Nenhum pagamento pendente no momento.</p>
+          <span style="font-size: 0.8rem; color: #64748b;">Quando um aluno clicar em "Já fiz o pagamento" pelo app, ele aparecerá aqui em tempo real.</span>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    container.innerHTML = list.map(r => {
+      const dateFmt = r.dataCriacao ? new Date(r.dataCriacao).toLocaleString('pt-BR') : 'Hoje';
+
+      return `
+        <div style="background: #ffffff; border: 1.5px solid #f59e0b; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="font-size: 1.05rem; color: #0f172a;">${r.nome}</strong>
+                <span style="background: #fef3c7; color: #92400e; font-weight: 800; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px;">🟡 Pendente</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">
+                E-mail: <strong>${r.email}</strong> &bull;
+                Valor: <strong style="color: #059669;">R$ ${Number(r.valor || 10).toFixed(2).replace('.', ',')}</strong> &bull;
+                Data: <strong>${dateFmt}</strong>
+              </p>
+            </div>
+            <div style="font-size: 0.75rem; background: #eef2ff; color: #4338ca; padding: 4px 10px; border-radius: 6px; font-weight: 700;">
+              ${r.planId === 'pro_anual' ? '👑 PRO Anual (365 dias)' : '💎 PRO Mensal (30 dias)'}
+            </div>
+          </div>
+
+          ${r.note ? `
+            <div style="background: #f8fafc; border-left: 3px solid #f59e0b; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; color: #334155; margin-bottom: 12px;">
+              "${r.note}"
+            </div>
+          ` : ''}
+
+          <!-- Botões "Aprovar" e "Recusar" -->
+          <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+            <button type="button" class="btn-outline" onclick="app.adminRejectFirebasePayment('${r.id}')" style="color: #dc2626; border-color: #fca5a5; background: #fff1f2; font-size: 0.8rem; font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+              <span>Recusar</span>
+            </button>
+            <button type="button" class="btn-primary" onclick="app.adminApproveFirebasePayment('${r.id}', '${r.uid}', '${r.planId || 'pro_mensal'}')" style="background: #059669; border-color: #059669; font-size: 0.82rem; font-weight: 800; padding: 8px 20px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);">
+              <i data-lucide="check-check" style="width: 15px; height: 15px;"></i>
+              <span>Aprovar & Ativar PRO</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  /**
+   * Admin clica em Aprovar pagamento
+   */
+  async adminApproveFirebasePayment(requestId, userUid, planId) {
+    try {
+      if (window.estudeFirebase) {
+        await window.estudeFirebase.adminApprovePaymentRequest(requestId, userUid, planId);
+      }
+      if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 60, origin: { y: 0.5 } });
+      alert('✅ Pagamento Aprovado com Sucesso!\n\nO plano PRO foi ativado no Firestore e liberado instantaneamente na tela do aluno.');
+    } catch (err) {
+      console.error('[Admin Approve Error]', err);
+      this.showAdminError(err);
+      alert('Erro ao aprovar pagamento: ' + err.message);
+    }
+  }
+
+  /**
+   * Admin clica em Recusar pagamento
+   */
+  async adminRejectFirebasePayment(requestId) {
+    const reason = prompt('Motivo da recusa do pagamento (será comunicado ao aluno):', 'Comprovante não localizado na conta');
+    if (reason === null) return;
+
+    try {
+      if (window.estudeFirebase) {
+        await window.estudeFirebase.adminRejectPaymentRequest(requestId, reason);
+      }
+      alert('Pedido de pagamento recusado com sucesso.');
+    } catch (err) {
+      console.error('[Admin Reject Error]', err);
+      this.showAdminError(err);
+      alert('Erro ao recusar pagamento: ' + err.message);
+    }
+  }
+
+  /**
+   * Admin clica em "Ativar Pro" ou "Voltar para Base" direto no usuário
+   */
+  async adminSetFirebaseUserPlan(userUid, newPlan) {
+    try {
+      if (window.estudeFirebase) {
+        await window.estudeFirebase.adminSetUserPlan(userUid, newPlan);
+      }
+      alert(`Plano do usuário atualizado com sucesso para "${newPlan === 'pro' ? 'PRO' : 'Base'}".`);
+    } catch (err) {
+      console.error('[Admin Set Plan Error]', err);
+      this.showAdminError(err);
+      alert('Erro ao alterar plano: ' + err.message);
+    }
+  }
+
+  /**
+   * Admin clica em "Excluir conta"
+   */
+  async adminDeleteFirebaseUser(userUid) {
+    try {
+      if (window.estudeFirebase) {
+        await window.estudeFirebase.adminDeleteUser(userUid);
+      }
+      alert('Conta marcada como deletada e dados apagados com sucesso.');
+    } catch (err) {
+      console.error('[Admin Delete User Error]', err);
+      this.showAdminError(err);
+      alert('Erro ao excluir conta: ' + err.message);
+    }
+  }
+
+  /**
+   * Exibe erros reais na tela e no console
+   */
+  showAdminError(err) {
+    const message = err?.message || String(err);
+    console.error('[Painel Admin Erro Real]:', err);
+
+    const banner = document.getElementById('adminErrorBanner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+          <div>
+            <strong style="display: block; font-size: 0.9rem; color: #b91c1c; margin-bottom: 2px;">⚠️ Falha Detectada no Firestore:</strong>
+            <span style="font-size: 0.82rem; color: #7f1d1d; word-break: break-word;">${message}</span>
+          </div>
+          <button onclick="this.parentElement.parentElement.style.display='none'" style="border: none; background: transparent; color: #991b1b; font-weight: 800; cursor: pointer; font-size: 1.1rem;">&times;</button>
+        </div>
+      `;
+    }
   }
 }
 

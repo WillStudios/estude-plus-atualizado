@@ -872,8 +872,22 @@
                   <i data-lucide="sparkles"></i> PRO Anual (R$ 120)
                 </button>
               </div>
+              <!-- Banner de Pagamento em Análise na Aba de Planos -->
+              <div id="plansTabPendingBanner" style="display: none; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 12px 16px; text-align: left;">
+                <strong style="color: #92400e; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span> ⏳ Pagamento em análise
+                </strong>
+                <p style="margin: 4px 0 0; font-size: 0.8rem; color: #78350f;">
+                  Aguardando confirmação do administrador. Seus recursos PRO serão liberados automaticamente assim que aprovado.
+                </p>
+              </div>
+
+              <button type="button" class="btn-primary" id="btnPlansTabJaFizPagamento" onclick="app.handleStudentPaymentDeclared()" style="width: 100%; font-size: 0.88rem; padding: 12px; font-weight: 800; border-radius: 10px; background: #059669; border-color: #059669; justify-content: center; display: inline-flex; align-items: center; gap: 8px;">
+                <i data-lucide="check-circle-2"></i> <span id="btnPlansTabJaFizText">Já fiz o pagamento</span>
+              </button>
+
               <button type="button" class="btn-outline" id="btnProPlanCard" onclick="app.showSubscriptionModal('pro_mensal')" style="width: 100%; font-size: 0.88rem; padding: 10px; font-weight: 700; color: #4338ca; border-color: #c7d2fe; background: #eef2ff; border-radius: 10px; justify-content: center;">
-                <i data-lucide="qrcode"></i> Pagar Assinatura PRO (Pix ou Dinheiro)
+                <i data-lucide="qrcode"></i> Ver Detalhes / Chave Pix e Dinheiro
               </button>
             </div>
           </div>
@@ -1525,8 +1539,19 @@
           </div>
         </div>
 
-        <button class="btn-checkout" onclick="app.confirmPixPayment()" style="margin-top: 16px; font-size: 1rem; padding: 14px;">
-          <i data-lucide="check-circle"></i> Já transferi para o CPF / Confirmar Pagamento
+        <!-- Status de Pagamento em Análise -->
+        <div id="paymentPendingStudentBanner" style="display: none; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 14px 18px; margin-top: 14px; text-align: left;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b;"></div>
+            <strong style="color: #92400e; font-size: 0.95rem;">⏳ Pagamento em análise</strong>
+          </div>
+          <p style="margin: 6px 0 0; font-size: 0.82rem; color: #78350f; line-height: 1.5;">
+            Seu pagamento foi comunicado e está aguardando confirmação do administrador. Seus recursos PRO serão liberados automaticamente assim que aprovado!
+          </p>
+        </div>
+
+        <button class="btn-checkout" id="btnSubModalJaFizPagamento" onclick="app.handleStudentPaymentDeclared()" style="margin-top: 16px; font-size: 1rem; padding: 14px;">
+          <i data-lucide="check-circle"></i> <span id="btnSubModalJaFizText">Já fiz o pagamento</span>
         </button>
       </div>
 
@@ -1653,6 +1678,9 @@
 
         <!-- 1. USUÁRIOS E DISPOSITIVOS -->
         <div id="adminStudentsView">
+          <!-- Banner de Exibição de Erros Reais para Diagnóstico do Admin -->
+          <div id="adminErrorBanner" style="display: none; background: #fef2f2; border: 1.5px solid #ef4444; color: #991b1b; padding: 12px 16px; border-radius: 12px; margin-bottom: 14px; font-size: 0.85rem; font-weight: 600; line-height: 1.4;"></div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
             <p class="subtitle" style="margin: 0; font-size: 0.82rem; color: #475569;">
               Usuários cadastrados no servidor. Controle planos, veja presença em tempo real e tipo de dispositivo:
@@ -2093,17 +2121,17 @@
     </div>
   </div>
 
-  <!-- Add Material Modal -->
-  <div class="modal-overlay" id="addMaterialModal">
+  <!-- Add Material Modal (Origem SAS legado) -->
+  <div class="modal-overlay" id="addSasMaterialModal">
     <div class="modal-box">
-      <button class="modal-close" onclick="app.closeModal('addMaterialModal')">&times;</button>
+      <button class="modal-close" onclick="app.closeModal('addSasMaterialModal')">&times;</button>
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
         <span style="background: #ff7a00; color: #fff; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.72rem;">ORIGEM SAS</span>
         <h3 style="margin-bottom: 0;">Cadastrar Conteúdo Oficial do SAS</h3>
       </div>
       <p class="subtitle">Adicione o capítulo, apostila ou simulado que o colégio determinou para estudo.</p>
       
-      <form id="addMaterialForm" onsubmit="app.handleNewMaterial(event)">
+      <form id="addSasMaterialForm" onsubmit="app.handleNewMaterial(event)">
         <div class="form-group">
           <label>Livro / Capítulo / Simulado SAS</label>
           <input type="text" id="materialTitle" required placeholder="Ex: Livro 3 - Cap. 8: Frações e Porcentagens">
@@ -2132,7 +2160,7 @@
           <textarea id="materialSummary" rows="2" placeholder="Ex: Páginas 45 a 52, foco em resolução de problemas com frações para a prova."></textarea>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-outline" onclick="app.closeModal('addMaterialModal')">Cancelar</button>
+          <button type="button" class="btn-outline" onclick="app.closeModal('addSasMaterialModal')">Cancelar</button>
           <button type="submit" class="btn-primary" style="background: #ff7a00;">Salvar Conteúdo SAS</button>
         </div>
       </form>
@@ -2185,7 +2213,7 @@
   </div>
 
   <!-- Confirm TPC Done Modal ("Você realmente fez?") -->
-  <div class="modal-overlay" id="confirmTpcDoneModal" style="display: none;">
+  <div class="modal-overlay" id="confirmTpcDoneModal">
     <div class="modal-box" style="max-width: 440px; text-align: center; padding: 28px 24px; border-radius: 18px;">
       <button class="modal-close" onclick="app.closeModal('confirmTpcDoneModal')">&times;</button>
       <div style="width: 58px; height: 58px; border-radius: 50%; background: #eff6ff; color: #0284c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
@@ -2211,27 +2239,29 @@
   </div>
 
   <!-- Modal: Execução de Etapa da Trilha SAS -->
-  <div class="modal-overlay" id="trilhaStageModal" style="display: none;">
-    <div class="modal-box" style="max-width: 680px; border-radius: 20px; padding: 26px;">
+  <div class="modal-overlay" id="trilhaStageModal">
+    <div class="modal-box" style="max-width: 720px; border-radius: 20px; padding: 26px;">
       <button class="modal-close" onclick="app.closeModal('trilhaStageModal')">&times;</button>
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
         <span class="badge-accent" id="trilhaStageBadge" style="background: #fef3c7; color: #b45309; font-weight: 800;">ETAPA 1</span>
         <span id="trilhaStageChapterTag" style="font-size: 0.82rem; font-weight: 700; color: #64748b;"></span>
         <span id="trilhaStageSubjectTag" class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 700;"></span>
+        <span id="trilhaStageDiffBadge" class="badge-accent" style="background: #dcfce7; color: #15803d; font-weight: 800;">Fácil</span>
       </div>
-      <h3 id="trilhaStageTitle" style="margin: 0 0 8px; font-size: 1.35rem; font-weight: 800; color: #0f172a;"></h3>
-      <p id="trilhaStageDesc" style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin: 0 0 18px;"></p>
+      <h3 id="trilhaStageTitle" style="margin: 0 0 6px; font-size: 1.35rem; font-weight: 800; color: #0f172a;"></h3>
+      <p id="trilhaStageDesc" style="color: #64748b; font-size: 0.88rem; line-height: 1.5; margin: 0 0 16px;"></p>
 
-      <div id="trilhaStageContentArea" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 20px; max-height: 55vh; overflow-y: auto;">
-        <!-- Perguntas ou conteúdo conceitual renderizado dinamicamente -->
+      <div id="trilhaStageContentArea" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 20px; max-height: 58vh; overflow-y: auto;">
+        <!-- Perguntas do Quiz renderizadas dinamicamente -->
       </div>
 
-      <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <div class="modal-actions" id="trilhaStageActions" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
         <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700;">
           Fechar
         </button>
-        <button type="button" class="btn-primary" id="btnSubmitTrilhaStage" onclick="app.submitCurrentTrilhaStage()" style="padding: 10px 24px; font-weight: 800; background: #0284c7; border-color: #0284c7;">
-          Concluir Etapa & Salvar Progresso
+        <button type="button" class="btn-primary" id="btnSubmitTrilhaStage" onclick="app.submitCurrentTrilhaStage()" style="padding: 10px 24px; font-weight: 800; background: #0284c7; border-color: #0284c7; display: inline-flex; align-items: center; gap: 6px;">
+          <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+          <span>Concluir Etapa & Salvar Progresso</span>
         </button>
       </div>
     </div>
@@ -2275,7 +2305,7 @@
   </div>
 
   <!-- ================= MODAL: ADICIONAR NOVO MATERIAL DE ESTUDO ================= -->
-  <div class="modal-overlay" id="addMaterialModal" style="display: none;">
+  <div class="modal-overlay" id="addMaterialModal">
     <div class="modal-card" style="max-width: 620px; width: 95%;">
       <button class="modal-close" onclick="app.closeModal('addMaterialModal')">&times;</button>
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
@@ -3332,6 +3362,13 @@
       </div>
     </div>
   </div>
+
+  <!-- Firebase SDK (Compat v10) & Services -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="firebase_config.js"></script>
+  <script src="firebase_service.js"></script>
 
   <!-- Script Logic -->
   <script src="app.js"></script>
