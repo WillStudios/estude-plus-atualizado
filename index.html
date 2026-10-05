@@ -1858,6 +1858,9 @@
         <button type="button" class="settings-tab-btn" data-settings-tab="profile" onclick="app.switchSettingsTab('profile')">
           <span>👤</span> Perfil & Visual
         </button>
+        <button type="button" class="settings-tab-btn" data-settings-tab="schedule" onclick="app.switchSettingsTab('schedule')">
+          <span>📅</span> Grade Semanal
+        </button>
       </div>
 
       <form id="studentSettingsForm" onsubmit="app.handleSaveStudentSettings(event)">
@@ -2165,6 +2168,36 @@
               </button>
             </div>
           </div>
+
+          <!-- TAB 5: GRADE SEMANAL PERSONALIZADA -->
+          <div class="settings-tab-pane" id="settingsTab-schedule">
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0; margin-bottom: 12px;">
+              Indique as principais matérias que você tem em cada dia da semana para o sistema priorizar seus TPCs diários:
+            </p>
+            <div class="schedule-config-grid">
+              <div class="schedule-day-col">
+                <strong>Segunda-feira:</strong>
+                <input type="text" id="cfgSchedSeg" class="form-input" value="Matemática, Português, Geografia, Inglês">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Terça-feira:</strong>
+                <input type="text" id="cfgSchedTer" class="form-input" value="Ciências, Matemática, História, Artes">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Quarta-feira:</strong>
+                <input type="text" id="cfgSchedQua" class="form-input" value="Português, Redação, Física, Filosofia">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Quinta-feira:</strong>
+                <input type="text" id="cfgSchedQui" class="form-input" value="Matemática, Geografia, Química, Inglês">
+              </div>
+              <div class="schedule-day-col">
+                <strong>Sexta-feira:</strong>
+                <input type="text" id="cfgSchedSex" class="form-input" value="História, Português, Biologia, Ed. Física">
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid var(--border-light); background: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center;">
