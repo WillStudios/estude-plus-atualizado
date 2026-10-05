@@ -40,6 +40,10 @@
         <i data-lucide="home" style="width: 16px; height: 16px;"></i>
         <span>Início</span>
       </button>
+      <button class="sas-center-nav-btn" id="centerNavMaterials" onclick="app.switchTab('materials')">
+        <i data-lucide="book-marked" style="width: 16px; height: 16px;"></i>
+        <span>Materiais & IA</span>
+      </button>
       <button class="sas-center-nav-btn" id="centerNavChat" onclick="app.switchTab('gemini-chat')">
         <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
         <span>Chat IA</span>
@@ -124,6 +128,11 @@
         <button class="nav-btn active" data-tab="dashboard">
           <i data-lucide="layout-dashboard"></i>
           <span>Início & Treino</span>
+        </button>
+        <button class="nav-btn" data-tab="materials" style="border-left: 3px solid #6366f1;">
+          <i data-lucide="book-marked" style="color: #6366f1;"></i>
+          <span>📚 Materiais & Workspace</span>
+          <span class="badge-accent" style="background: #eef2ff; color: #4338ca;">All-in-One</span>
         </button>
         <button class="nav-btn" onclick="app.openStudentSettingsModal()" style="border-left: 3px solid #8b5cf6;">
           <i data-lucide="sliders" style="color: #8b5cf6;"></i>
@@ -999,6 +1008,156 @@
         </div>
       </section>
 
+      <!-- ================= TAB: BIBLIOTECA DE MATERIAIS (ALL-IN-ONE) ================= -->
+      <section id="tab-materials" class="tab-pane">
+        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 22px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+              <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.75rem; letter-spacing: 0.5px;">ESTUDE+ ALL-IN-ONE</span>
+              <h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;">📚 Biblioteca de Materiais</h2>
+            </div>
+            <p class="subtitle" style="margin: 0; font-size: 0.9rem; color: #64748b;">
+              Seus materiais conectados: envie conteúdos para gerar <strong>resumos, flashcards, questões, simulados e mapas mentais</strong> com o mesmo contexto.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="app.openAddMaterialModal()" style="background: linear-gradient(135deg, #4f46e5, #6366f1); padding: 11px 20px; font-weight: 800; font-size: 0.88rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);">
+              <i data-lucide="plus-circle" style="width: 17px; height: 17px;"></i>
+              <span>Adicionar Novo Material</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Métricas Rápidas dos Estudos -->
+        <div class="materials-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">📚</div>
+            <div>
+              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Meus Materiais</span>
+              <strong id="statTotalMaterials" style="font-size: 1.35rem; color: #0f172a; font-weight: 800;">0</strong>
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🗂️</div>
+            <div>
+              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Flashcards Ativos</span>
+              <strong id="statTotalFlashcards" style="font-size: 1.35rem; color: #db2777; font-weight: 800;">0</strong>
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🎯</div>
+            <div>
+              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Simulados Feitos</span>
+              <strong id="statTotalSimulados" style="font-size: 1.35rem; color: #059669; font-weight: 800;">0</strong>
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🧠</div>
+            <div>
+              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Mapas Mentais</span>
+              <strong id="statTotalMindmaps" style="font-size: 1.35rem; color: #d97706; font-weight: 800;">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Filtros & Busca -->
+        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div style="position: relative; flex: 1; min-width: 240px;">
+            <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
+            <input type="text" id="materialsSearchInput" placeholder="Buscar materiais por título, assunto ou matéria..." oninput="app.filterMaterialsList()" style="width: 100%; padding: 10px 14px 10px 38px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; outline: none;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;">Disciplina:</span>
+            <select id="materialsSubjectFilter" onchange="app.filterMaterialsList()" style="padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.86rem; font-weight: 700; background: #fff; cursor: pointer; color: #0f172a;">
+              <option value="all">Todas as Disciplinas</option>
+              <option value="Matemática">Matemática</option>
+              <option value="Português">Língua Portuguesa</option>
+              <option value="Ciências">Ciências da Natureza</option>
+              <option value="História">História</option>
+              <option value="Geografia">Geografia</option>
+              <option value="Física">Física</option>
+              <option value="Química">Química</option>
+              <option value="Biologia">Biologia</option>
+              <option value="Inglês">Língua Inglesa</option>
+              <option value="Redação">Redação SAS</option>
+              <option value="Filosofia">Filosofia</option>
+              <option value="Arte">Arte</option>
+              <option value="Geral">Geral</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grid de Cards de Materiais -->
+        <div id="materialsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+          <!-- Renderizado dinamicamente por app.renderMaterialsLibrary() -->
+        </div>
+      </section>
+
+      <!-- ================= TAB: WORKSPACE CENTRAL INTEGRADO ================= -->
+      <section id="tab-workspace" class="tab-pane">
+        <!-- Barra Superior do Workspace: Navegação e Ações Rápidas -->
+        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <button type="button" class="btn-outline" onclick="app.closeWorkspaceAndReturnToMaterials()" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+                <span>Biblioteca</span>
+              </button>
+              <span id="wsSubjectBadge" style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;">Ciências</span>
+              <h3 id="wsMaterialTitle" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Título do Material</h3>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" class="btn-outline" onclick="app.openEditMaterialModal()" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i> Editar
+              </button>
+              <button type="button" class="btn-outline" onclick="app.deleteCurrentActiveMaterial()" style="color: #ef4444; border-color: #fca5a5; font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i> Excluir
+              </button>
+            </div>
+          </div>
+
+          <!-- Modos de Estudo Conectados (Ask Maeve Inspired Flow) -->
+          <div class="workspace-tabs-nav">
+            <button type="button" class="ws-tab-btn active" data-ws-tab="summary" onclick="app.switchWorkspaceTab('summary')">
+              <span>📑</span> <strong>Resumo</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="flashcards" onclick="app.switchWorkspaceTab('flashcards')">
+              <span>🗂️</span> <strong>Flashcards</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="questions" onclick="app.switchWorkspaceTab('questions')">
+              <span>❓</span> <strong>Questões</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="simulado" onclick="app.switchWorkspaceTab('simulado')">
+              <span>🎯</span> <strong>Simulado</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="mindmap" onclick="app.switchWorkspaceTab('mindmap')">
+              <span>🧠</span> <strong>Mapa Mental</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="tutor" onclick="app.switchWorkspaceTab('tutor')">
+              <span>🤖</span> <strong>Tutor Contextual</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="notes" onclick="app.switchWorkspaceTab('notes')">
+              <span>📝</span> <strong>Notas de Aula</strong>
+            </button>
+            <button type="button" class="ws-tab-btn" data-ws-tab="voice" onclick="app.switchWorkspaceTab('voice')">
+              <span>🎙️</span> <strong>Tutor por Voz</strong>
+            </button>
+          </div>
+        </div>
+
+        <!-- Conteúdo Interno das Ferramentas do Workspace -->
+        <div class="workspace-tab-content">
+          <div id="wsTabPane-summary" class="ws-tab-pane"></div>
+          <div id="wsTabPane-flashcards" class="ws-tab-pane" style="display: none;"></div>
+          <div id="wsTabPane-questions" class="ws-tab-pane" style="display: none;"></div>
+          <div id="wsTabPane-simulado" class="ws-tab-pane" style="display: none;"></div>
+          <div id="wsTabPane-mindmap" class="ws-tab-pane" style="display: none;"></div>
+          <div id="wsTabPane-tutor" class="ws-tab-pane" style="display: none;"></div>
+          <div id="wsTabPane-notes" class="ws-tab-pane" style="display: none;"></div>
+          <div id="wsTabPane-voice" class="ws-tab-pane" style="display: none;"></div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -1821,6 +1980,89 @@
           <button type="button" class="btn-outline" onclick="app.closeModal('importScheduleModal')">Cancelar</button>
           <button type="submit" class="btn-primary" style="background: #0284c7;">
             <i data-lucide="check"></i> Processar e Salvar Grade
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADICIONAR NOVO MATERIAL DE ESTUDO ================= -->
+  <div class="modal-overlay" id="addMaterialModal" style="display: none;">
+    <div class="modal-card" style="max-width: 620px; width: 95%;">
+      <button class="modal-close" onclick="app.closeModal('addMaterialModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+          📚
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Adicionar Material de Estudo</h3>
+          <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Suba um arquivo ou cole seu texto para transformar em resumos, simulados e flashcards</p>
+        </div>
+      </div>
+
+      <!-- Seletor de Modo: Upload vs Colar Texto -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+        <button type="button" class="auth-tab-btn active" id="btnMatModeUpload" onclick="app.switchMaterialInputMode('upload')" style="font-size: 0.82rem; padding: 7px 14px;">
+          📁 Upload de Arquivo (PDF / TXT)
+        </button>
+        <button type="button" class="auth-tab-btn" id="btnMatModeText" onclick="app.switchMaterialInputMode('text')" style="font-size: 0.82rem; padding: 7px 14px;">
+          ✍️ Colar Texto / Anotação
+        </button>
+      </div>
+
+      <form id="addMaterialForm" onsubmit="app.handleSaveNewMaterial(event)">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Título do Material *</label>
+          <input type="text" id="matFormTitle" required placeholder="Ex: Fotossíntese e Cadeia Alimentar (Capítulo 3)" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Disciplina *</label>
+            <select id="matFormSubject" required style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff;">
+              <option value="Ciências" selected>🔬 Ciências</option>
+              <option value="Matemática">📐 Matemática</option>
+              <option value="Português">✍️ Português</option>
+              <option value="História">🏛️ História</option>
+              <option value="Geografia">🌍 Geografia</option>
+              <option value="Física">⚡ Física</option>
+              <option value="Química">🧪 Química</option>
+              <option value="Biologia">🌱 Biologia</option>
+              <option value="Inglês">🇬🇧 Inglês</option>
+              <option value="Redação">📝 Redação</option>
+              <option value="Filosofia">🧠 Filosofia</option>
+              <option value="Arte">🎨 Arte</option>
+              <option value="Geral">📚 Geral</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Assunto / Tópico</label>
+            <input type="text" id="matFormTopic" placeholder="Ex: Cadeias e Teias Tróficas" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem;">
+          </div>
+        </div>
+
+        <!-- Zona de Upload de Arquivos -->
+        <div id="matUploadZone" style="border: 2px dashed #818cf8; border-radius: 12px; padding: 20px; text-align: center; background: #f8faff; margin-bottom: 14px; cursor: pointer;" onclick="document.getElementById('matFileInput').click()">
+          <input type="file" id="matFileInput" accept=".txt,.pdf,.doc,.docx,.md" style="display: none;" onchange="app.handleMaterialFileSelect(event)">
+          <i data-lucide="upload-cloud" style="width: 32px; height: 32px; color: #4f46e5; margin-bottom: 8px;"></i>
+          <p style="margin: 0; font-weight: 700; font-size: 0.9rem; color: #1e1b4b;">Clique ou arraste um arquivo aqui</p>
+          <span style="font-size: 0.78rem; color: #64748b;">Suporta arquivos de texto (.txt), PDFs (.pdf) ou documentos</span>
+          <div id="matSelectedFileBadge" style="display: none; margin-top: 10px; background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;"></div>
+        </div>
+
+        <!-- Área de Conteúdo / Texto do Material -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #334155;">Conteúdo do Material *</label>
+            <span id="matWordCount" style="font-size: 0.75rem; color: #64748b;">0 palavras</span>
+          </div>
+          <textarea id="matFormContent" required placeholder="Cole aqui o texto do seu resumo, capítulo de apostila, anotações de aula ou exercício..." rows="8" oninput="app.updateMaterialWordCount()" style="width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; line-height: 1.5; font-family: inherit; resize: vertical;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addMaterialModal')" style="padding: 9px 18px; font-size: 0.85rem;">Cancelar</button>
+          <button type="submit" id="btnSubmitMaterial" class="btn-primary" style="background: #4f46e5; padding: 9px 20px; font-size: 0.85rem; font-weight: 700;">
+            <i data-lucide="check" style="width: 14px; height: 14px;"></i> Salvar e Abrir no Workspace
           </button>
         </div>
       </form>

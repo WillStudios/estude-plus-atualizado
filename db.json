@@ -12,10 +12,10 @@
       "planName": "Plano Administrador PRO",
       "grade": "7º Ano (Campus Chácara)",
       "emailVerified": true,
-      "streak": 5,
-      "bestStreak": 5,
+      "streak": 2,
+      "bestStreak": 0,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-05T15:37:23.213Z",
+      "lastLogin": "2026-10-05T15:48:22.377Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
       "lastDeviceType": "Computador / Desktop",
@@ -24,17 +24,263 @@
         "2026-10-05"
       ],
       "studiedDays": [
-        "2026-10-04"
+        "2026-10-04",
+        "2026-10-05"
       ],
-      "lastVisitDate": "2026-10-05"
+      "lastVisitDate": "2026-10-05",
+      "studentSettings": {},
+      "preferences": {
+        "themeMode": "light",
+        "fontSize": "normal",
+        "density": "comfortable",
+        "accentColor": "#4f46e5",
+        "accentName": "Índigo Estude+",
+        "reduceMotion": false,
+        "dashboardCards": [
+          {
+            "id": "profile-shortcuts",
+            "label": "👤 Perfil & Atalhos Rápidos",
+            "visible": true,
+            "locked": true
+          },
+          {
+            "id": "focus-strip",
+            "label": "🎯 Foco de Estudos & Metas",
+            "visible": true
+          },
+          {
+            "id": "smart-stats",
+            "label": "📊 Estatísticas Inteligentes & Metas",
+            "visible": true
+          },
+          {
+            "id": "studies-eureka",
+            "label": "🧭 Meus Estudos & Universo Eureka",
+            "visible": true
+          },
+          {
+            "id": "news",
+            "label": "📰 Notícias & Atualizações",
+            "visible": true
+          },
+          {
+            "id": "agenda",
+            "label": "📅 Agenda Escolar Gammon+",
+            "visible": true
+          }
+        ]
+      },
+      "dailyGoalMinutes": 15,
+      "todayMinutes": 1,
+      "achievements": [],
+      "timetable": [
+        {
+          "time": "07:30 - 08:15",
+          "segunda": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "terca": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Arte",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Redação",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "08:15 - 09:00",
+          "segunda": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Educação Física",
+            "room": "Ginásio / Quadra",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          }
+        },
+        {
+          "time": "09:00 - 09:45",
+          "segunda": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "terca": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": true
+          },
+          "sexta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "10:05 - 10:50",
+          "segunda": {
+            "subject": "Ensino Religioso",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Redação",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "10:50 - 11:35",
+          "segunda": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Geografia",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Língua Inglesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        },
+        {
+          "time": "11:35 - 12:20",
+          "segunda": {
+            "subject": "Ciências",
+            "room": "Lab. Ciências",
+            "hasTpc": false
+          },
+          "terca": {
+            "subject": "Matemática",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "quarta": {
+            "subject": "Educação Física",
+            "room": "Ginásio / Quadra",
+            "hasTpc": false
+          },
+          "quinta": {
+            "subject": "História",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          },
+          "sexta": {
+            "subject": "Língua Portuguesa",
+            "room": "Sala 7º Ano",
+            "hasTpc": false
+          }
+        }
+      ],
+      "tasks": {
+        "completedTpcIds": [],
+        "userTpcs": []
+      },
+      "completedTpcIds": [],
+      "userTpcs": [],
+      "lastSync": "2026-10-05T15:45:32.980Z",
+      "activityLog": [
+        {
+          "id": "act_1791215030524_3feqr",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T15:43:50.524Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109863",
+            "title": "TPC Diário - Matemática"
+          }
+        },
+        {
+          "id": "act_1791215024402_y22li",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T15:43:44.402Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109863",
+            "title": "TPC Diário - Matemática"
+          }
+        }
+      ],
+      "lastActiveDate": "2026-10-05"
     },
     {
-      "id": "usr_1791193717750_sev2",
-      "name": "adada",
-      "username": "dadada",
-      "email": "dadada@estude.app",
-      "passwordHash": "e7343f02b7e9d1facd9d0b3070ca7d5b47cc92a381260c5fb8032893f67d8b0b1bd59c40b0d0f1c1c90ced477e505c71b94091b6c900a2ad275d6ed0cd4467e2",
-      "passwordSalt": "bac5822329b1884cf44afbd72f5982d8",
+      "id": "usr_1791215296881_zox1",
+      "name": "daad",
+      "username": "awawaw",
+      "email": "awawaw@estude.app",
+      "passwordHash": "51747132ba92de116fa087c5d27535e14b0efb0e1f218d39e1191cf2ad201a5defeb461642ddd147b0364e492c0dcd6a21f62a1640a29cc95a87ad47b081c1e8",
+      "passwordSalt": "096317c91225d6215e2705c81d8b7e2c",
       "role": "student",
       "isSubscribed": false,
       "plan": "free",
@@ -51,8 +297,8 @@
       "todayMinutes": 1,
       "achievements": [],
       "createdIp": "127.0.0.1",
-      "createdAt": "2026-10-05T09:48:37.750Z",
-      "lastLogin": "2026-10-05T09:48:37.750Z",
+      "createdAt": "2026-10-05T15:48:16.881Z",
+      "lastLogin": "2026-10-05T15:48:16.881Z",
       "lastDeviceType": "Computador / PC",
       "studentSettings": {},
       "preferences": {
@@ -272,7 +518,7 @@
       },
       "completedTpcIds": [],
       "userTpcs": [],
-      "lastSync": "2026-10-05T09:49:07.643Z",
+      "lastSync": "2026-10-05T15:48:18.538Z",
       "loginDays": [
         "2026-10-05"
       ]
@@ -295,7 +541,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_110651",
@@ -313,7 +559,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_108645",
@@ -331,7 +577,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_108850",
@@ -349,7 +595,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_109112",
@@ -367,7 +613,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_109136",
@@ -385,7 +631,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107496",
@@ -403,7 +649,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107725",
@@ -421,7 +667,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107736",
@@ -439,7 +685,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.752Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107747",
@@ -457,7 +703,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107758",
@@ -475,7 +721,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107769",
@@ -493,7 +739,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_107438",
@@ -511,7 +757,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_105605",
@@ -529,7 +775,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_104427",
@@ -547,7 +793,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_103418",
@@ -565,7 +811,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_103649",
@@ -583,7 +829,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_102471",
@@ -601,7 +847,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_103296",
@@ -619,7 +865,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_101370",
@@ -637,7 +883,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_101527",
@@ -655,7 +901,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_99950",
@@ -673,7 +919,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_100092",
@@ -691,7 +937,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_100391",
@@ -709,7 +955,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_99666",
@@ -727,7 +973,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_99775",
@@ -745,7 +991,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_99073",
@@ -763,7 +1009,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_97772",
@@ -781,7 +1027,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_97960",
@@ -799,7 +1045,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_97999",
@@ -817,7 +1063,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_98101",
@@ -835,7 +1081,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_96553",
@@ -853,7 +1099,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_96871",
@@ -871,7 +1117,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_95453",
@@ -889,7 +1135,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_95538",
@@ -907,7 +1153,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_93763",
@@ -925,7 +1171,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_93874",
@@ -943,7 +1189,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_94093",
@@ -961,7 +1207,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_94164",
@@ -979,7 +1225,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_94214",
@@ -997,7 +1243,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_93582",
@@ -1015,7 +1261,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_92156",
@@ -1033,7 +1279,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_91095",
@@ -1051,7 +1297,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_89814",
@@ -1069,7 +1315,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_89944",
@@ -1087,7 +1333,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_89537",
@@ -1105,7 +1351,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_88771",
@@ -1123,7 +1369,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_88785",
@@ -1141,7 +1387,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_88919",
@@ -1159,7 +1405,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_86919",
@@ -1177,7 +1423,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_86042",
@@ -1195,7 +1441,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_85939",
@@ -1213,7 +1459,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_85388",
@@ -1231,7 +1477,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_85448",
@@ -1249,7 +1495,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_84329",
@@ -1267,7 +1513,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_84353",
@@ -1285,7 +1531,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_83660",
@@ -1303,7 +1549,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_82493",
@@ -1321,7 +1567,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_81135",
@@ -1339,7 +1585,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_80000",
@@ -1357,7 +1603,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_80078",
@@ -1375,7 +1621,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_80126",
@@ -1393,7 +1639,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_78331",
@@ -1411,7 +1657,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_78427",
@@ -1429,7 +1675,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_76892",
@@ -1447,7 +1693,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_77033",
@@ -1465,7 +1711,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_76627",
@@ -1483,7 +1729,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_75953",
@@ -1501,7 +1747,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.028Z"
     },
     {
       "id": "gammon_75347",
@@ -1519,7 +1765,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_74727",
@@ -1537,7 +1783,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_74831",
@@ -1555,7 +1801,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_73963",
@@ -1573,7 +1819,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_74040",
@@ -1591,7 +1837,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_72317",
@@ -1609,7 +1855,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_71444",
@@ -1627,7 +1873,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_70328",
@@ -1645,7 +1891,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_70427",
@@ -1663,7 +1909,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_70481",
@@ -1681,7 +1927,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_69160",
@@ -1699,7 +1945,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_68264",
@@ -1717,7 +1963,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_68290",
@@ -1735,7 +1981,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_67455",
@@ -1753,7 +1999,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_66452",
@@ -1771,7 +2017,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_65067",
@@ -1789,7 +2035,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_66248",
@@ -1807,7 +2053,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_64915",
@@ -1825,7 +2071,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_64860",
@@ -1843,7 +2089,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_63787",
@@ -1861,7 +2107,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_63176",
@@ -1879,7 +2125,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_63347",
@@ -1897,7 +2143,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_63601",
@@ -1915,7 +2161,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_62799",
@@ -1933,7 +2179,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_63046",
@@ -1951,7 +2197,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_62248",
@@ -1969,7 +2215,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_61129",
@@ -1987,7 +2233,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_61412",
@@ -2005,7 +2251,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_60092",
@@ -2023,7 +2269,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_60118",
@@ -2041,7 +2287,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_60373",
@@ -2059,7 +2305,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_59579",
@@ -2077,7 +2323,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_58856",
@@ -2095,7 +2341,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_57800",
@@ -2113,7 +2359,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_57942",
@@ -2131,7 +2377,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_55651",
@@ -2149,7 +2395,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_53907",
@@ -2167,7 +2413,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_53933",
@@ -2185,7 +2431,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_54004",
@@ -2203,7 +2449,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_54082",
@@ -2221,7 +2467,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_53156",
@@ -2239,7 +2485,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_51227",
@@ -2257,7 +2503,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_49996",
@@ -2275,7 +2521,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_47511",
@@ -2293,7 +2539,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_45992",
@@ -2311,7 +2557,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_46041",
@@ -2329,7 +2575,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_46434",
@@ -2347,7 +2593,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_45039",
@@ -2365,7 +2611,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_45282",
@@ -2383,7 +2629,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_44323",
@@ -2401,7 +2647,7 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     },
     {
       "id": "gammon_42764",
@@ -2419,25 +2665,31 @@
       "source": "portal_gammon_sync",
       "status": "pending",
       "done": false,
-      "syncedAt": "2026-10-05T13:54:00.753Z"
+      "syncedAt": "2026-10-05T15:43:49.029Z"
     }
   ],
   "gammonStatus": {
     "status": "success",
-    "lastSync": "2026-10-05T13:54:01.004Z",
+    "lastSync": "2026-10-05T15:43:49.405Z",
     "totalCaptured": 119,
     "message": "119 TPCs sincronizados do Portal Gammon!"
   },
   "masterCommands": {
     "broadcastNotice": "",
     "lockdownActive": false,
-    "forceRefreshTimestamp": 1791208441004
+    "forceRefreshTimestamp": 1791215029405
   },
   "connectedDevices": [],
   "planRequests": [],
   "supportRequests": [],
   "studyReports": [],
   "agendaSyncLogs": [
+    {
+      "timestamp": "2026-10-05T15:43:49.405Z",
+      "status": "success",
+      "totalCaptured": 119,
+      "message": "119 TPCs sincronizados com sucesso do Portal Gammon!"
+    },
     {
       "timestamp": "2026-10-05T13:54:01.004Z",
       "status": "success",
@@ -2447,6 +2699,16 @@
   ],
   "adminNotifications": [],
   "systemEvents": [
+    {
+      "id": "evt_1791215029409_8cq4",
+      "level": "info",
+      "source": "gammon_sync",
+      "message": "Sincronização Gammon concluída com 119 TPCs",
+      "details": {
+        "count": 119
+      },
+      "timestamp": "2026-10-05T15:43:49.409Z"
+    },
     {
       "id": "evt_1791208441007_ltgc",
       "level": "info",
@@ -2459,6 +2721,56 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud_1791215302431_shf2",
+      "action": "delete_material",
+      "actor": "freddie",
+      "details": {
+        "materialId": "mat_1791215302394_445ky"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-05T15:48:22.431Z"
+    },
+    {
+      "id": "aud_1791215302397_s3xz",
+      "action": "create_material",
+      "actor": "freddie",
+      "details": {
+        "materialId": "mat_1791215302394_445ky",
+        "title": "Apostila SAS: Reinos dos Seres Vivos"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-05T15:48:22.397Z"
+    },
+    {
+      "id": "log_1791214947497",
+      "timestamp": "2026-10-05T15:42:27.497Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791193717750_sev2",
+      "details": "Conta \"adada\" (usr_1791193717750_sev2) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
+    {
+      "id": "aud_1791214945165_8754",
+      "action": "delete_material",
+      "actor": "freddie",
+      "details": {
+        "materialId": "mat_1791214945138_7jvmw"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-05T15:42:25.165Z"
+    },
+    {
+      "id": "aud_1791214945142_h39p",
+      "action": "create_material",
+      "actor": "freddie",
+      "details": {
+        "materialId": "mat_1791214945138_7jvmw",
+        "title": "Capítulo 3: Fotossíntese e Energia"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-05T15:42:25.142Z"
+    },
     {
       "id": "log_1791194493097",
       "timestamp": "2026-10-05T10:01:33.097Z",
@@ -2623,5 +2935,10 @@
       "confirmedBy": "Freddie Pimentel Costa",
       "confirmedAt": "2026-10-05T09:52:27.434Z"
     }
-  ]
+  ],
+  "materials": [],
+  "flashcards": [],
+  "simulados": [],
+  "mindmaps": [],
+  "studentNotes": []
 }

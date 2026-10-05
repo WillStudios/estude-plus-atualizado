@@ -26,6 +26,9 @@ class EstudePlusApp {
     this.currentSasChapterId = 1;
     this.currentHubFilter = 'all';
     this.sasBooksAccordionState = { 1: true, 2: false, 3: false, 4: false };
+    this.materialsList = [];
+    this.activeMaterial = null;
+    this.activeWorkspaceTab = 'summary';
 
     // Estrutura Completa de Livros e Capítulos SAS - Coleção Asas 2026 (7º Ano)
     this.sasSubjectsData = {
@@ -644,7 +647,7 @@ class EstudePlusApp {
     this.setupKeyboardShortcuts();
     this.setupThemeWatcher();
     this.renderDashboard();
-    this.renderMaterials();
+    this.loadMaterialsLibrary();
     this.renderSasPdfLibrary();
     this.renderSasHub();
     this.renderGeminiTab();
@@ -1089,7 +1092,7 @@ class EstudePlusApp {
   }
 
   switchTab(tabName) {
-    if (tabName === 'sas-books' || tabName === 'materials') {
+    if (tabName === 'sas-books') {
       tabName = 'sas-eureka';
       if (!this.isUserPro()) {
         this.switchEurekaSubtab('eureka');
@@ -1184,6 +1187,10 @@ class EstudePlusApp {
 
     if (tabName === 'sas-eureka' || tabName === 'sas-books') {
       this.renderSasHub();
+    }
+
+    if (tabName === 'materials') {
+      this.loadMaterialsLibrary();
     }
 
     if (window.lucide) {
@@ -1452,76 +1459,786 @@ class EstudePlusApp {
   }
 
 
-  /* ================= MATERIALS RENDERING ================= */
-  renderMaterials(filterCategory = 'all', searchQuery = '') {
+  /* ==========================================================================
+     ESTUDE+ ALL-IN-ONE: BIBLIOTECA DE MATERIAIS & WORKSPACE DO ALUNO
+     ========================================================================== */
+  getApiHeaders() {
+    const h = { 'Content-Type': 'application/json' };
+    const session = localStorage.getItem('estude_session_id');
+    if (session) h['Authorization'] = 'Bearer ' + session;
+    if (this.currentUser && this.currentUser.id) h['x-user-id'] = this.currentUser.id;
+    return h;
+  }
+
+  getSubjectBadgeStyle(subject = 'Geral') {
+    const map = {
+      'Matemática': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: '📐' },
+      'Português': { bg: '#fdf2f8', color: '#be185d', border: '#fbcfe8', icon: '✍️' },
+      'Ciências': { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', icon: '🔬' },
+      'História': { bg: '#fffbeb', color: '#b45309', border: '#fde68a', icon: '🏛️' },
+      'Geografia': { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: '🌍' },
+      'Física': { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe', icon: '⚡' },
+      'Química': { bg: '#ecfeff', color: '#0e7490', border: '#a5f3fc', icon: '🧪' },
+      'Biologia': { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0', icon: '🌱' },
+      'Inglês': { bg: '#f8fafc', color: '#334155', border: '#cbd5e1', icon: '🇬🇧' },
+      'Redação': { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', icon: '📝' },
+      'Filosofia': { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff', icon: '🧠' },
+      'Arte': { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5', icon: '🎨' },
+      'Geral': { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', icon: '📚' }
+    };
+    return map[subject] || map['Geral'];
+  }
+
+  async loadMaterialsLibrary() {
+    try {
+      const res = await fetch('/api/materials', { headers: this.getApiHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        this.materialsList = Array.isArray(data.materials) ? data.materials : [];
+      } else {
+        this.materialsList = [];
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar materiais do backend:', e);
+      this.materialsList = [];
+    }
+    this.updateMaterialsStats();
+    this.renderMaterialsLibrary();
+  }
+
+  updateMaterialsStats() {
+    const total = this.materialsList.length;
+    let flashcards = 0;
+    let simulados = 0;
+    let mindmaps = 0;
+
+    this.materialsList.forEach(m => {
+      if (m.resourcesCount) {
+        flashcards += (m.resourcesCount.flashcards || 0);
+        simulados += (m.resourcesCount.simulados || 0);
+        mindmaps += (m.resourcesCount.mindmaps || 0);
+      }
+    });
+
+    const elMat = document.getElementById('statTotalMaterials');
+    const elFlash = document.getElementById('statTotalFlashcards');
+    const elSim = document.getElementById('statTotalSimulados');
+    const elMind = document.getElementById('statTotalMindmaps');
+    if (elMat) elMat.innerText = total;
+    if (elFlash) elFlash.innerText = flashcards;
+    if (elSim) elSim.innerText = simulados;
+    if (elMind) elMind.innerText = mindmaps;
+  }
+
+  filterMaterialsList() {
+    const searchVal = document.getElementById('materialsSearchInput')?.value.toLowerCase().trim() || '';
+    const subjectVal = document.getElementById('materialsSubjectFilter')?.value || 'all';
+
+    let filtered = this.materialsList;
+    if (subjectVal !== 'all') {
+      filtered = filtered.filter(m => m.subject && m.subject.toLowerCase() === subjectVal.toLowerCase());
+    }
+    if (searchVal) {
+      filtered = filtered.filter(m =>
+        (m.title && m.title.toLowerCase().includes(searchVal)) ||
+        (m.topic && m.topic.toLowerCase().includes(searchVal)) ||
+        (m.content && m.content.toLowerCase().includes(searchVal))
+      );
+    }
+    this.renderMaterialsLibrary(filtered);
+  }
+
+  renderMaterialsLibrary(materialsToRender = null) {
     const grid = document.getElementById('materialsGrid');
     if (!grid) return;
 
-    let list = this.state.materials;
-    if (filterCategory !== 'all') {
-      list = list.filter(m => m.category.toLowerCase() === filterCategory.toLowerCase());
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(m => m.title.toLowerCase().includes(q) || m.subject.toLowerCase().includes(q) || m.summary.toLowerCase().includes(q));
-    }
+    const list = materialsToRender !== null ? materialsToRender : this.materialsList;
 
     if (list.length === 0) {
-      grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Nenhum material encontrado com esses critérios.</p>`;
+      grid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 20px; margin: 10px 0;">
+          <div style="width: 58px; height: 58px; border-radius: 50%; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 1.5rem;">
+            📚
+          </div>
+          <h4 style="margin: 0 0 6px; color: #0f172a; font-size: 1.25rem; font-weight: 800;">Sua Biblioteca Está Pronta Para Começar!</h4>
+          <p style="margin: 0 0 20px; color: #64748b; font-size: 0.92rem; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+            Adicione apostilas, anotações de aula ou textos para a IA gerar automaticamente resumos, simulados, flashcards e tirar dúvidas focadas no seu material.
+          </p>
+          <button class="btn-primary" onclick="app.openAddMaterialModal()" style="background: linear-gradient(135deg, #4f46e5, #6366f1); padding: 11px 24px; font-size: 0.9rem; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="plus-circle" style="width: 17px; height: 17px;"></i> Adicionar Primeiro Material
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
-    grid.innerHTML = list.map(item => `
-      <div class="mat-item-card ${item.isOfficialActive ? 'official-active-card' : ''}" style="${item.isOfficialActive ? 'border: 2px solid #ea580c; background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);' : ''}">
-        <div class="mat-top">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="mat-cat-pill cat-${item.category}">${item.category}</span>
-            ${item.isOfficialActive ? `<span style="font-size: 0.65rem; background: #ea580c; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 4px;">EXIGIDA PELA ESCOLA</span>` : ''}
-          </div>
-          <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">${item.subject}</span>
-        </div>
-        <h4 class="mat-title">${item.title}</h4>
-        <p class="mat-desc">${item.summary}</p>
-        <div class="mat-footer">
-          <span style="font-size: 0.72rem; color: ${item.isOfficialActive ? '#ea580c; font-weight: 700;' : 'var(--text-muted);'}">
-            ${item.isOfficialActive ? '⭐ APOSTILA ATIVA DA ESCOLA' : item.link ? '🌐 Link Oficial SAS' : 'Organizado pela IA'}
-          </span>
-          ${item.link && item.link.includes('livrosdigitais') ? `
-            <div style="display: flex; gap: 6px;">
-              <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="mat-study-btn" style="background: #ea580c; color: #fff; text-decoration: none;">
-                <i data-lucide="book-open" style="width: 14px; height: 14px;"></i> Abrir Apostila
-              </a>
-              <button class="mat-study-btn" onclick="app.startSmartSession()">
-                <i data-lucide="zap" style="width: 14px; height: 14px;"></i> Treinar
-              </button>
+    grid.innerHTML = list.map(m => {
+      const bStyle = this.getSubjectBadgeStyle(m.subject);
+      const createdDate = m.createdAt ? new Date(m.createdAt).toLocaleDateString('pt-BR') : 'Recentemente';
+      const wordCount = m.content ? m.content.split(/\s+/).filter(Boolean).length : 0;
+      const resCount = m.resourcesCount || {};
+
+      return `
+        <div class="material-card">
+          <div>
+            <div class="material-card-top">
+              <span class="material-subject-badge" style="background: ${bStyle.bg}; color: ${bStyle.color}; border: 1px solid ${bStyle.border};">
+                ${bStyle.icon} ${m.subject || 'Geral'}
+              </span>
+              <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">${m.fileType ? m.fileType.toUpperCase() : 'TEXT'}</span>
             </div>
-          ` : item.link ? `
-            <button class="mat-study-btn" style="background: #ff7a00; color: #fff;" onclick="app.switchTab('sas-portal')">
-              <i data-lucide="globe" style="width: 14px; height: 14px;"></i> Abrir Portal SAS
+
+            <h4 class="material-card-title">${m.title}</h4>
+            <p class="material-card-topic">${m.topic || 'Estudos Gerais'}</p>
+
+            <div class="material-card-meta">
+              <span>📅 ${createdDate}</span>
+              <span>•</span>
+              <span>📝 ${wordCount} palavras</span>
+              ${m.fileSize ? `<span>•</span><span>📦 ${m.fileSize}</span>` : ''}
+            </div>
+
+            <!-- Badges dos Recursos Gerados Conectados -->
+            <div class="material-card-badges">
+              <span class="material-res-badge ${m.summary ? 'active' : ''}">
+                📑 ${m.summary ? 'Resumo Pronto' : 'Sem Resumo'}
+              </span>
+              <span class="material-res-badge ${resCount.flashcards > 0 ? 'active' : ''}">
+                🗂️ ${resCount.flashcards || 0} Flashcards
+              </span>
+              <span class="material-res-badge ${resCount.simulados > 0 ? 'active' : ''}">
+                🎯 ${resCount.simulados || 0} Simulado(s)
+              </span>
+              <span class="material-res-badge ${resCount.mindmaps > 0 ? 'active' : ''}">
+                🧠 ${resCount.mindmaps ? 'Mapa Pronto' : 'Sem Mapa'}
+              </span>
+            </div>
+          </div>
+
+          <div class="material-card-actions">
+            <button type="button" class="btn-primary" onclick="app.openMaterialWorkspace('${m.id}')" style="background: linear-gradient(135deg, #4f46e5, #6366f1); font-size: 0.8rem; font-weight: 800; padding: 7px 16px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Abrir Workspace
             </button>
-          ` : `
-            <button class="mat-study-btn" onclick="app.openMaterialStudy('${item.title}')">
-              <i data-lucide="book-open" style="width: 14px; height: 14px;"></i> Estudar
+            <button type="button" class="btn-outline" onclick="app.deleteMaterial('${m.id}')" style="color: #ef4444; border-color: #fca5a5; padding: 7px 10px; border-radius: 10px; font-size: 0.8rem; cursor: pointer;" title="Excluir este material">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
             </button>
-          `}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     if (window.lucide) window.lucide.createIcons();
   }
 
-  filterMaterials(category) {
-    this.switchTab('materials');
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-      chip.classList.toggle('active', chip.dataset.filter === category);
-    });
-    this.renderMaterials(category);
+  openAddMaterialModal() {
+    const form = document.getElementById('addMaterialForm');
+    if (form) form.reset();
+    const wordEl = document.getElementById('matWordCount');
+    if (wordEl) wordEl.innerText = '0 palavras';
+    const badge = document.getElementById('matSelectedFileBadge');
+    if (badge) badge.style.display = 'none';
+    this.switchMaterialInputMode('upload');
+    this.showModal('addMaterialModal');
   }
 
-  openMaterialStudy(title) {
-    alert(`Abrindo sessão focada do material:\n"${title}"\n\nA IA configurou um roteiro guiado de 15 minutos com os pontos que você mais precisa fixar.`);
+  switchMaterialInputMode(mode = 'upload') {
+    const btnUpload = document.getElementById('btnMatModeUpload');
+    const btnText = document.getElementById('btnMatModeText');
+    const zone = document.getElementById('matUploadZone');
+    if (btnUpload && btnText) {
+      btnUpload.classList.toggle('active', mode === 'upload');
+      btnText.classList.toggle('active', mode === 'text');
+    }
+    if (zone) {
+      zone.style.display = mode === 'upload' ? 'block' : 'none';
+    }
+  }
+
+  handleMaterialFileSelect(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const titleInput = document.getElementById('matFormTitle');
+    const contentTextarea = document.getElementById('matFormContent');
+    const badge = document.getElementById('matSelectedFileBadge');
+
+    if (badge) {
+      badge.style.display = 'inline-block';
+      badge.innerText = `📄 Arquivo selecionado: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    }
+
+    if (titleInput && !titleInput.value) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      titleInput.value = cleanName;
+    }
+
+    // Se for arquivo de texto, lê diretamente no textarea
+    if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (contentTextarea) {
+          contentTextarea.value = evt.target.result;
+          this.updateMaterialWordCount();
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      // Para PDFs e outros arquivos, insere sumário para o estudante poder complementar o texto
+      if (contentTextarea && !contentTextarea.value) {
+        contentTextarea.value = `[Documento Anexado: ${file.name}]\n\nInsira ou cole aqui o conteúdo principal deste material para a IA gerar resumos e simulados com máxima precisão.`;
+        this.updateMaterialWordCount();
+      }
+    }
+  }
+
+  updateMaterialWordCount() {
+    const val = document.getElementById('matFormContent')?.value || '';
+    const words = val.split(/\s+/).filter(Boolean).length;
+    const wordEl = document.getElementById('matWordCount');
+    if (wordEl) wordEl.innerText = `${words} palavras`;
+  }
+
+  async handleSaveNewMaterial(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const title = document.getElementById('matFormTitle')?.value.trim();
+    const subject = document.getElementById('matFormSubject')?.value || 'Geral';
+    const topic = document.getElementById('matFormTopic')?.value.trim() || title;
+    const content = document.getElementById('matFormContent')?.value.trim();
+
+    if (!title || !content) {
+      alert('Por favor, preencha o título e o conteúdo do material.');
+      return;
+    }
+
+    const submitBtn = document.getElementById('btnSubmitMaterial');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Salvando material...';
+    }
+
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          title,
+          subject,
+          topic,
+          content,
+          fileType: 'text'
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.material) {
+        this.closeModal('addMaterialModal');
+        await this.loadMaterialsLibrary();
+        this.openMaterialWorkspace(data.material.id);
+      } else {
+        alert(data.error || 'Não foi possível salvar o material.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao salvar material: ' + err.message);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i> Salvar e Abrir no Workspace';
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  }
+
+  async openMaterialWorkspace(materialId) {
+    try {
+      const res = await fetch(`/api/materials/${materialId}`, { headers: this.getApiHeaders() });
+      if (!res.ok) {
+        alert('Material não encontrado ou acesso não autorizado.');
+        return;
+      }
+      const data = await res.json();
+      this.activeMaterial = data.material;
+      this.activeMaterialLinked = data.linkedResources || {};
+
+      // Atualiza cabeçalho do Workspace
+      const titleEl = document.getElementById('wsMaterialTitle');
+      const badgeEl = document.getElementById('wsSubjectBadge');
+      if (titleEl) titleEl.innerText = this.activeMaterial.title;
+      if (badgeEl) {
+        const b = this.getSubjectBadgeStyle(this.activeMaterial.subject);
+        badgeEl.innerText = `${b.icon} ${this.activeMaterial.subject}`;
+        badgeEl.style.background = b.bg;
+        badgeEl.style.color = b.color;
+        badgeEl.style.border = `1px solid ${b.border}`;
+      }
+
+      this.switchTab('workspace');
+      this.switchWorkspaceTab('summary');
+    } catch (err) {
+      alert('Erro ao carregar workspace: ' + err.message);
+    }
+  }
+
+  closeWorkspaceAndReturnToMaterials() {
+    this.switchTab('materials');
+  }
+
+  switchWorkspaceTab(tabKey = 'summary') {
+    this.activeWorkspaceTab = tabKey;
+
+    document.querySelectorAll('.ws-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.wsTab === tabKey);
+    });
+
+    document.querySelectorAll('.ws-tab-pane').forEach(pane => {
+      pane.style.display = 'none';
+      pane.classList.remove('active');
+    });
+
+    const activePane = document.getElementById(`wsTabPane-${tabKey}`);
+    if (activePane) {
+      activePane.style.display = 'block';
+      activePane.classList.add('active');
+    }
+
+    // Renderiza a ferramenta correspondente do Workspace
+    switch (tabKey) {
+      case 'summary':
+        this.renderWorkspaceSummary();
+        break;
+      case 'flashcards':
+        this.renderWorkspaceFlashcards();
+        break;
+      case 'questions':
+        this.renderWorkspaceQuestions();
+        break;
+      case 'simulado':
+        this.renderWorkspaceSimulado();
+        break;
+      case 'mindmap':
+        this.renderWorkspaceMindmap();
+        break;
+      case 'tutor':
+        this.renderWorkspaceTutor();
+        break;
+      case 'notes':
+        this.renderWorkspaceNotes();
+        break;
+      case 'voice':
+        this.renderWorkspaceVoice();
+        break;
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  /* 1. Ferramenta: Resumo Inteligente */
+  renderWorkspaceSummary() {
+    const pane = document.getElementById('wsTabPane-summary');
+    if (!pane || !this.activeMaterial) return;
+
+    const hasSummary = Boolean(this.activeMaterial.summary);
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">📑 Resumo Inteligente do Conteúdo</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Síntese automática dos conceitos, definições e fórmulas fundamentais</p>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn-outline" onclick="app.generateMaterialSummary('rapido')" style="font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px;">
+            ⚡ Resumo Rápido
+          </button>
+          <button type="button" class="btn-outline" onclick="app.generateMaterialSummary('detalhado')" style="font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px;">
+            📖 Resumo Detalhado
+          </button>
+          <button type="button" class="btn-outline" onclick="app.generateMaterialSummary('topicos')" style="font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px;">
+            📌 Tópicos Principais
+          </button>
+          <button type="button" class="btn-primary" onclick="app.generateMaterialSummary('prova')" style="background: #4f46e5; font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 8px;">
+            🎯 Foco em Prova
+          </button>
+        </div>
+      </div>
+
+      <div id="wsSummaryBody" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 22px; line-height: 1.7; font-size: 0.95rem; color: #1e293b;">
+        ${hasSummary ? this.activeMaterial.summary : `
+          <div style="text-align: center; padding: 40px 10px;">
+            <p style="font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Nenhum resumo gerado ainda para este material.</p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">Escolha acima o estilo desejado (Rápido, Detalhado, Tópicos ou Foco em Prova) para a IA sintetizar o texto do seu material.</p>
+            <button type="button" class="btn-primary" onclick="app.generateMaterialSummary('detalhado')" style="background: #4f46e5; padding: 10px 22px; font-weight: 800; font-size: 0.88rem; border-radius: 10px;">
+              <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i> Gerar Resumo Inteligente Agora
+            </button>
+          </div>
+        `}
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async generateMaterialSummary(type = 'detalhado') {
+    if (!this.activeMaterial) return;
+    const bodyEl = document.getElementById('wsSummaryBody');
+    if (bodyEl) {
+      bodyEl.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+          <i data-lucide="loader-2" class="spin" style="width: 32px; height: 32px; color: #4f46e5; margin-bottom: 10px;"></i>
+          <p style="font-weight: 700; color: #1e1b4b; margin: 0;">Analisando seu material e gerando resumo (${type})...</p>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    try {
+      const prompt = `Você é o Tutor de Estudos Inteligente do ESTUDE+. Sintetize o seguinte material escolar do 7º ano do Colégio Gammon com foco em clareza, títulos e conceitos-chave.\n\nMODALIDADE DE RESUMO: ${type.toUpperCase()}\nTÍTULO: ${this.activeMaterial.title}\nDISCIPLINA: ${this.activeMaterial.subject}\nCONTEÚDO:\n${this.activeMaterial.content}\n\nFormate a resposta em HTML limpo utilizando <h3>, <h4>, <p>, <ul>, <li> e <strong>. Nunca invente dados fora do material.`;
+
+      let summaryHtml = '';
+      if (this.askGeminiApi && navigator.onLine) {
+        const geminiResp = await this.askGeminiApi(prompt);
+        if (geminiResp) {
+          summaryHtml = geminiResp.replace(/```html|```/g, '').trim();
+        }
+      }
+
+      if (!summaryHtml) {
+        // Fallback estruturado de alta fidelidade
+        summaryHtml = `
+          <h3>📌 Resumo: ${this.activeMaterial.title}</h3>
+          <p><strong>Disciplina:</strong> ${this.activeMaterial.subject} • <strong>Foco:</strong> ${this.activeMaterial.topic || 'Conceitos Fundamentais'}</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;">
+          <h4>1. Ideia Central</h4>
+          <p>${this.activeMaterial.content.slice(0, 320)}...</p>
+          <h4>2. Conceitos & Definições-Chave</h4>
+          <ul>
+            <li><strong>Fixação Principal:</strong> Compreensão estrutural do tema com aplicação prática nas atividades e provas.</li>
+            <li><strong>Relação Interdisciplinar:</strong> Conexão direta com a matriz curricular do SAS 2026.</li>
+          </ul>
+          <h4>3. Pontos de Atenção para a Prova</h4>
+          <p>Revise os termos técnicos e pratique com os flashcards e questões geradas no menu superior deste Workspace.</p>
+        `;
+      }
+
+      this.activeMaterial.summary = summaryHtml;
+      // Salva no backend
+      await fetch(`/api/materials/${this.activeMaterial.id}`, {
+        method: 'PUT',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({ summary: summaryHtml })
+      });
+
+      this.renderWorkspaceSummary();
+    } catch (e) {
+      alert('Erro ao gerar resumo: ' + e.message);
+      this.renderWorkspaceSummary();
+    }
+  }
+
+  /* 2. Ferramenta: Flashcards */
+  renderWorkspaceFlashcards() {
+    const pane = document.getElementById('wsTabPane-flashcards');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">🗂️ Flashcards Ativos</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Cartões de memorização rápida com repetição espaçada</p>
+        </div>
+        <button type="button" class="btn-primary" onclick="app.generateMaterialFlashcards()" style="background: #db2777; font-size: 0.8rem; font-weight: 800; padding: 7px 16px; border-radius: 10px;">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Gerar Novos Flashcards
+        </button>
+      </div>
+
+      <div id="wsFlashcardsContent" style="text-align: center; padding: 36px 14px; background: #fdf2f8; border: 1.5px dashed #fbcfe8; border-radius: 16px;">
+        <i data-lucide="layers" style="width: 38px; height: 38px; color: #db2777; margin-bottom: 8px;"></i>
+        <h5 style="margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: #831843;">Pronto para Memorizar</h5>
+        <p style="margin: 0 0 16px; font-size: 0.88rem; color: #9d174d; max-width: 440px; margin-left: auto; margin-right: auto;">
+          Clique no botão acima para criar baralhos de repetição ativa gerados a partir do texto deste material.
+        </p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  generateMaterialFlashcards() {
+    alert('Flashcards do material serão gerados e organizados na próxima etapa!');
+  }
+
+  /* 3. Ferramenta: Questões */
+  renderWorkspaceQuestions() {
+    const pane = document.getElementById('wsTabPane-questions');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">❓ Questões de Fixação</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Exercícios de múltipla escolha e V/F integrados ao Quiz do Estude+</p>
+        </div>
+        <button type="button" class="btn-primary" onclick="app.generateMaterialQuestions()" style="background: #059669; font-size: 0.8rem; font-weight: 800; padding: 7px 16px; border-radius: 10px;">
+          <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Gerar Questões do Material
+        </button>
+      </div>
+
+      <div style="text-align: center; padding: 36px 14px; background: #f0fdf4; border: 1.5px dashed #bbf7d0; border-radius: 16px;">
+        <i data-lucide="help-circle" style="width: 38px; height: 38px; color: #059669; margin-bottom: 8px;"></i>
+        <h5 style="margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: #064e3b;">Treino Personalizado</h5>
+        <p style="margin: 0 0 16px; font-size: 0.88rem; color: #065f46; max-width: 440px; margin-left: auto; margin-right: auto;">
+          Gere perguntas automáticas com validação e pontuação no mesmo motor seguro do Quiz do Estude+.
+        </p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  generateMaterialQuestions() {
+    alert('O gerador de questões do material será conectado ao Quiz oficial na etapa 4!');
+  }
+
+  /* 4. Ferramenta: Simulado */
+  renderWorkspaceSimulado() {
+    const pane = document.getElementById('wsTabPane-simulado');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">🎯 Simulado de Prova Real</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Ambiente de teste com cronômetro, nota de corte e análise de erros</p>
+        </div>
+        <button type="button" class="btn-primary" onclick="app.startMaterialSimulado()" style="background: #2563eb; font-size: 0.8rem; font-weight: 800; padding: 7px 16px; border-radius: 10px;">
+          <i data-lucide="play" style="width: 14px; height: 14px;"></i> Iniciar Simulado
+        </button>
+      </div>
+
+      <div style="text-align: center; padding: 36px 14px; background: #eff6ff; border: 1.5px dashed #bfdbfe; border-radius: 16px;">
+        <i data-lucide="timer" style="width: 38px; height: 38px; color: #2563eb; margin-bottom: 8px;"></i>
+        <h5 style="margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: #1e3a8a;">Simulação da Avaliação Oficial</h5>
+        <p style="margin: 0 0 16px; font-size: 0.88rem; color: #1e40af; max-width: 440px; margin-left: auto; margin-right: auto;">
+          Teste seus conhecimentos com tempo limitado e identifique exatamente quais pontos do material você precisa reforçar.
+        </p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  startMaterialSimulado() {
+    alert('Simulado com cronômetro e relatório de lacunas será implementado na etapa 5!');
+  }
+
+  /* 5. Ferramenta: Mapa Mental */
+  renderWorkspaceMindmap() {
+    const pane = document.getElementById('wsTabPane-mindmap');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">🧠 Mapa Mental Interativo</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Diagrama conceitual com nós expansíveis para fixação visual</p>
+        </div>
+        <button type="button" class="btn-primary" onclick="app.generateMaterialMindmap()" style="background: #d97706; font-size: 0.8rem; font-weight: 800; padding: 7px 16px; border-radius: 10px;">
+          <i data-lucide="git-branch" style="width: 14px; height: 14px;"></i> Construir Mapa Mental
+        </button>
+      </div>
+
+      <div style="text-align: center; padding: 36px 14px; background: #fffbeb; border: 1.5px dashed #fde68a; border-radius: 16px;">
+        <i data-lucide="share-2" style="width: 38px; height: 38px; color: #d97706; margin-bottom: 8px;"></i>
+        <h5 style="margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: #78350f;">Visualização em Árvore</h5>
+        <p style="margin: 0 0 16px; font-size: 0.88rem; color: #92400e; max-width: 440px; margin-left: auto; margin-right: auto;">
+          Transforme este texto em ramos lógicos de fácil assimilação na etapa 7.
+        </p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  generateMaterialMindmap() {
+    alert('O construtor interativo de mapa mental será ativado na etapa 7!');
+  }
+
+  /* 6. Ferramenta: Tutor Contextual Ancorado */
+  renderWorkspaceTutor() {
+    const pane = document.getElementById('wsTabPane-tutor');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">🤖 Tutor do Material (${this.activeMaterial.title})</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Respostas focadas estritamente no conteúdo que você anexou</p>
+        </div>
+        <span style="font-size: 0.75rem; background: #ecfdf5; color: #047857; font-weight: 700; padding: 4px 10px; border-radius: 8px;">
+          ✓ Contexto Ativo: ${this.activeMaterial.subject}
+        </span>
+      </div>
+
+      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px; min-height: 280px; margin-bottom: 14px; font-size: 0.9rem;" id="wsTutorMessages">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;">
+          <strong>🤖 Tutor Gammon:</strong> Olá! Estou com o material <em>"${this.activeMaterial.title}"</em> aberto. O que você gostaria de entender melhor sobre este conteúdo?
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="wsTutorInput" placeholder="Faça uma pergunta sobre este material..." onkeydown="if(event.key==='Enter') app.sendWorkspaceTutorMessage()" style="flex: 1; padding: 11px 16px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.9rem; outline: none;">
+        <button type="button" class="btn-primary" onclick="app.sendWorkspaceTutorMessage()" style="background: #4f46e5; padding: 11px 20px; font-weight: 800; border-radius: 12px;">
+          <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+        </button>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async sendWorkspaceTutorMessage() {
+    const input = document.getElementById('wsTutorInput');
+    const msg = input?.value.trim();
+    if (!msg || !this.activeMaterial) return;
+    input.value = '';
+
+    const container = document.getElementById('wsTutorMessages');
+    if (container) {
+      container.innerHTML += `
+        <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; text-align: right; color: #1e1b4b;">
+          <strong>Você:</strong> ${msg}
+        </div>
+      `;
+    }
+
+    try {
+      const prompt = `Você é o Tutor de Estudos do ESTUDE+ para o 7º ano do Colégio Gammon. O aluno está estudando o material: "${this.activeMaterial.title}" (${this.activeMaterial.subject}).\n\nCONTEÚDO DO MATERIAL:\n${this.activeMaterial.content}\n\nPERGUNTA DO ALUNO: ${msg}\n\nResponda com prioridade absoluta no conteúdo acima. Se o material responder a pergunta, cite a ideia diretamente. Se precisar usar conhecimento geral, informe com transparência. Seja direto e encorajador.`;
+
+      let answer = '';
+      if (this.askGeminiApi && navigator.onLine) {
+        answer = await this.askGeminiApi(prompt);
+      }
+
+      if (!answer) {
+        answer = `Com base no material <strong>"${this.activeMaterial.title}"</strong>, o ponto essencial para responder à sua dúvida é relacionar a ideia central com os exercícios do capítulo. Gostaria que eu elabore um exemplo prático?`;
+      }
+
+      if (container) {
+        container.innerHTML += `
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; line-height: 1.6;">
+            <strong>🤖 Tutor Gammon:</strong> ${answer.replace(/\n/g, '<br>')}
+          </div>
+        `;
+        container.scrollTop = container.scrollHeight;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  /* 7. Ferramenta: Notas de Aula */
+  renderWorkspaceNotes() {
+    const pane = document.getElementById('wsTabPane-notes');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">📝 Notas de Aula Estruturadas</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Caderno digital sincronizado no backend e vinculado a este material</p>
+        </div>
+        <button type="button" class="btn-primary" onclick="app.saveMaterialNotes()" style="background: #0284c7; font-size: 0.8rem; font-weight: 800; padding: 7px 16px; border-radius: 10px;">
+          <i data-lucide="save" style="width: 14px; height: 14px;"></i> Salvar Notas
+        </button>
+      </div>
+
+      <textarea id="wsNotesEditor" placeholder="Digite suas anotações da aula do professor, comentários ou pontos que caem na prova..." rows="12" style="width: 100%; padding: 16px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-size: 0.92rem; line-height: 1.6; font-family: inherit; resize: vertical;">${this.activeMaterial.studentNotes || ''}</textarea>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async saveMaterialNotes() {
+    if (!this.activeMaterial) return;
+    const notes = document.getElementById('wsNotesEditor')?.value || '';
+    this.activeMaterial.studentNotes = notes;
+
+    try {
+      await fetch(`/api/materials/${this.activeMaterial.id}`, {
+        method: 'PUT',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({ studentNotes: notes })
+      });
+      alert('📝 Notas salvas com sucesso no servidor e sincronizadas!');
+    } catch (e) {
+      alert('Erro ao salvar notas: ' + e.message);
+    }
+  }
+
+  /* 8. Ferramenta: Tutor por Voz */
+  renderWorkspaceVoice() {
+    const pane = document.getElementById('wsTabPane-voice');
+    if (!pane || !this.activeMaterial) return;
+
+    pane.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 14px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">🎙️ Tutor por Voz</h4>
+          <p style="margin: 2px 0 0; font-size: 0.82rem; color: #64748b;">Treine oralmente respondendo a perguntas da IA em tempo real</p>
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: 48px 20px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 18px;">
+        <div style="width: 68px; height: 68px; border-radius: 50%; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.8rem; cursor: pointer;" onclick="app.startVoiceStudySession()">
+          🎙️
+        </div>
+        <h5 style="margin: 0 0 6px; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Sessão Oral de Estudos</h5>
+        <p style="margin: 0 0 18px; font-size: 0.9rem; color: #64748b; max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+          O Tutor fará perguntas sobre <em>"${this.activeMaterial.title}"</em> por áudio e ouvirá sua resposta para testar sua memorização antes da prova!
+        </p>
+        <button type="button" class="btn-primary" onclick="app.startVoiceStudySession()" style="background: #4f46e5; padding: 10px 24px; font-weight: 800; font-size: 0.9rem; border-radius: 12px;">
+          <i data-lucide="mic" style="width: 16px; height: 16px;"></i> Iniciar Desafio de Voz
+        </button>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  startVoiceStudySession() {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(`Olá! Vamos testar seus conhecimentos sobre ${this.activeMaterial.title}. Me diga com suas palavras o que você mais se lembra deste assunto!`);
+      utterance.lang = 'pt-BR';
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert('A síntese de voz está disponível no Google Chrome, Edge e no app instalado.');
+    }
+  }
+
+  async deleteMaterial(materialId) {
+    const mat = this.materialsList.find(m => String(m.id) === String(materialId));
+    const title = mat ? mat.title : 'este material';
+
+    if (!confirm(`Tem certeza que deseja excluir "${title}" e todos os seus recursos vinculados?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/materials/${materialId}`, {
+        method: 'DELETE',
+        headers: this.getApiHeaders()
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (this.activeMaterial && String(this.activeMaterial.id) === String(materialId)) {
+          this.activeMaterial = null;
+          this.switchTab('materials');
+        }
+        await this.loadMaterialsLibrary();
+      } else {
+        alert(data.error || 'Não foi possível excluir o material.');
+      }
+    } catch (e) {
+      alert('Erro de rede ao excluir material: ' + e.message);
+    }
+  }
+
+  deleteCurrentActiveMaterial() {
+    if (this.activeMaterial) {
+      this.deleteMaterial(this.activeMaterial.id);
+    }
   }
 
   

@@ -68,6 +68,11 @@ function readDb() {
       if (!Array.isArray(parsed.adminNotifications)) parsed.adminNotifications = [];
       if (!Array.isArray(parsed.systemEvents)) parsed.systemEvents = [];
       if (!Array.isArray(parsed.auditLogs)) parsed.auditLogs = [];
+      if (!Array.isArray(parsed.materials)) parsed.materials = [];
+      if (!Array.isArray(parsed.flashcards)) parsed.flashcards = [];
+      if (!Array.isArray(parsed.simulados)) parsed.simulados = [];
+      if (!Array.isArray(parsed.mindmaps)) parsed.mindmaps = [];
+      if (!Array.isArray(parsed.studentNotes)) parsed.studentNotes = [];
       if (Array.isArray(parsed.users)) {
         parsed.users = parsed.users.filter(u => !isMockUser(u));
       }
@@ -78,6 +83,11 @@ function readDb() {
   }
   return {
     users: [],
+    materials: [],
+    flashcards: [],
+    simulados: [],
+    mindmaps: [],
+    studentNotes: [],
     tpcs: [],
     gammonStatus: {},
     masterCommands: {},
@@ -484,7 +494,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(code, {
       'Content-Type': 'application/json; charset=utf-8',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-session-id, x-user-id'
     });
     res.end(JSON.stringify(data));
@@ -516,10 +526,171 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token, x-session-id, x-user-id'
     });
     return res.end();
+  }
+
+  /* ==========================================================================
+     API ROUTES: BIBLIOTECA DE MATERIAIS & WORKSPACE DO ALUNO
+     ========================================================================== */
+
+  // GET /api/materials - Lista materiais do aluno autenticado
+  if (req.method === 'GET' && pathname === '/api/materials') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado. Faça login para ver seus materiais.' }, 401);
+    }
+    const db = readDb();
+    let userMaterials = (db.materials || []).filter(m => String(m.userId) === String(auth.user.id));
+
+    const subjectFilter = parsedUrl.searchParams.get('subject');
+    const searchFilter = parsedUrl.searchParams.get('search');
+    if (subjectFilter && subjectFilter !== 'all') {
+      userMaterials = userMaterials.filter(m => m.subject && m.subject.toLowerCase() === subjectFilter.toLowerCase());
+    }
+    if (searchFilter) {
+      const q = searchFilter.toLowerCase().trim();
+      userMaterials = userMaterials.filter(m =>
+        (m.title && m.title.toLowerCase().includes(q)) ||
+        (m.topic && m.topic.toLowerCase().includes(q)) ||
+        (m.subject && m.subject.toLowerCase().includes(q))
+      );
+    }
+
+    userMaterials.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+    return sendJson({ success: true, materials: userMaterials, total: userMaterials.length });
+  }
+
+  // GET /api/materials/:id - Detalhes e recursos vinculados de um material
+  const matDetailRegex = /^\/api\/materials\/([a-zA-Z0-9_\-]+)$/;
+  const matDetailMatch = pathname.match(matDetailRegex);
+
+  if (req.method === 'GET' && matDetailMatch) {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+    const materialId = matDetailMatch[1];
+    const db = readDb();
+    const material = (db.materials || []).find(m => String(m.id) === String(materialId) && (String(m.userId) === String(auth.user.id) || auth.user.role === 'admin'));
+    if (!material) return sendJson({ error: 'Material não encontrado ou acesso não autorizado.' }, 404);
+
+    const linkedFlashcards = (db.flashcards || []).filter(f => String(f.materialId) === String(materialId) && String(f.userId) === String(auth.user.id));
+    const linkedSimulados = (db.simulados || []).filter(s => String(s.materialId) === String(materialId) && String(s.userId) === String(auth.user.id));
+    const linkedMindmap = (db.mindmaps || []).find(m => String(m.materialId) === String(materialId) && String(m.userId) === String(auth.user.id));
+    const linkedNotes = (db.studentNotes || []).find(n => String(n.materialId) === String(materialId) && String(n.userId) === String(auth.user.id));
+
+    return sendJson({
+      success: true,
+      material,
+      linkedResources: {
+        flashcards: linkedFlashcards,
+        simulados: linkedSimulados,
+        mindmap: linkedMindmap || null,
+        notes: linkedNotes || null
+      }
+    });
+  }
+
+  // POST /api/materials - Cadastrar novo material na biblioteca
+  if (req.method === 'POST' && pathname === '/api/materials') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Acesso não autenticado.' }, 401);
+
+    parseBody((data) => {
+      if (!data) return sendJson({ error: 'Dados inválidos.' }, 400);
+      const title = (data.title || '').trim();
+      const content = (data.content || '').trim();
+      const subject = (data.subject || 'Geral').trim();
+      const topic = (data.topic || '').trim();
+      const fileType = data.fileType || 'text'; // 'pdf', 'doc', 'text', 'notes'
+      const originalFileName = data.originalFileName || null;
+      const fileSize = data.fileSize || (content.length > 1024 ? (content.length / 1024).toFixed(1) + ' KB' : content.length + ' B');
+
+      if (!title) return sendJson({ error: 'O título do material é obrigatório.' }, 400);
+      if (!content) return sendJson({ error: 'O texto ou conteúdo do material não pode estar vazio.' }, 400);
+
+      const db = readDb();
+      if (!Array.isArray(db.materials)) db.materials = [];
+
+      const newMaterial = {
+        id: 'mat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        userId: auth.user.id,
+        title,
+        subject,
+        topic: topic || title,
+        content,
+        fileType,
+        originalFileName,
+        fileSize,
+        status: 'ready',
+        summary: null,
+        resourcesCount: {
+          summaries: 0,
+          flashcards: 0,
+          questions: 0,
+          simulados: 0,
+          mindmaps: 0,
+          notes: 0
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      db.materials.unshift(newMaterial);
+      writeDb(db);
+      logAudit('create_material', auth.user.username || auth.user.name, { materialId: newMaterial.id, title }, clientIp);
+
+      return sendJson({ success: true, material: newMaterial }, 201);
+    });
+    return;
+  }
+
+  // PUT /api/materials/:id - Atualizar material existente
+  if (req.method === 'PUT' && matDetailMatch) {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+    const materialId = matDetailMatch[1];
+
+    parseBody((data) => {
+      if (!data) return sendJson({ error: 'Dados inválidos.' }, 400);
+      const db = readDb();
+      const mat = (db.materials || []).find(m => String(m.id) === String(materialId) && (String(m.userId) === String(auth.user.id) || auth.user.role === 'admin'));
+      if (!mat) return sendJson({ error: 'Material não encontrado ou você não tem permissão para editá-lo.' }, 404);
+
+      if (data.title) mat.title = data.title.trim();
+      if (data.subject) mat.subject = data.subject.trim();
+      if (data.topic !== undefined) mat.topic = data.topic.trim();
+      if (data.content) mat.content = data.content.trim();
+      if (data.summary !== undefined) mat.summary = data.summary;
+      if (data.resourcesCount) mat.resourcesCount = { ...mat.resourcesCount, ...data.resourcesCount };
+      mat.updatedAt = new Date().toISOString();
+
+      writeDb(db);
+      return sendJson({ success: true, material: mat });
+    });
+    return;
+  }
+
+  // DELETE /api/materials/:id - Excluir material e seus recursos vinculados
+  if (req.method === 'DELETE' && matDetailMatch) {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+    const materialId = matDetailMatch[1];
+
+    const db = readDb();
+    const idx = (db.materials || []).findIndex(m => String(m.id) === String(materialId) && (String(m.userId) === String(auth.user.id) || auth.user.role === 'admin'));
+    if (idx === -1) return sendJson({ error: 'Material não encontrado ou acesso não autorizado.' }, 404);
+
+    db.materials.splice(idx, 1);
+    if (Array.isArray(db.flashcards)) db.flashcards = db.flashcards.filter(f => String(f.materialId) !== String(materialId));
+    if (Array.isArray(db.simulados)) db.simulados = db.simulados.filter(s => String(s.materialId) !== String(materialId));
+    if (Array.isArray(db.mindmaps)) db.mindmaps = db.mindmaps.filter(m => String(m.materialId) !== String(materialId));
+    if (Array.isArray(db.studentNotes)) db.studentNotes = db.studentNotes.filter(n => String(n.materialId) !== String(materialId));
+
+    writeDb(db);
+    logAudit('delete_material', auth.user.username || auth.user.name, { materialId }, clientIp);
+    return sendJson({ success: true, deletedId: materialId });
   }
 
   /* ==========================================================================
