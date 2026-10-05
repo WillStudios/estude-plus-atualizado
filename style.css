@@ -6376,3 +6376,235 @@ body.dark-mode .command-palette-item.active {
     font-size: 0.78rem;
   }
 }
+
+/* ==========================================================================
+   ESTILOS OFICIAIS: TRILHAS SAS (APOSTILAS 1, 2 E 3)
+   ========================================================================== */
+
+.trilhas-crumb-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.trilhas-crumb-btn:hover:not([disabled]) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.trilhas-crumb-btn.active {
+  color: #0284c7;
+  font-weight: 800;
+  background: #e0f2fe;
+}
+
+.trilhas-crumb-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cards de Matéria das Trilhas */
+.trilhas-subject-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.trilhas-subject-card:hover {
+  transform: translateY(-4px);
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08);
+}
+
+.trilhas-subject-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.trilhas-subject-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Cards de Apostila (Apostilas 1, 2 e 3) */
+.trilhas-apostila-card {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.trilhas-apostila-card:hover {
+  transform: translateY(-4px);
+  border-color: #0284c7;
+  box-shadow: 0 10px 20px -4px rgba(2, 132, 199, 0.15);
+}
+
+/* Cards de Capítulo */
+.trilhas-chapter-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.trilhas-chapter-card:hover {
+  border-color: #cbd5e1;
+  background: #fbfcfe;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+/* Vertical Journey Trail Pathway */
+.trail-journey-wrapper {
+  position: relative;
+}
+
+.trail-nodes-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.trail-step-item {
+  display: flex;
+  gap: 20px;
+  position: relative;
+  padding-bottom: 34px;
+}
+
+.trail-step-item:last-child {
+  padding-bottom: 0;
+}
+
+/* Vertical Connector Line */
+.trail-connector-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.trail-node-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.25rem;
+  z-index: 2;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.trail-node-circle.completed {
+  background: #10b981;
+  color: #ffffff;
+  border: 3px solid #d1fae5;
+}
+
+.trail-node-circle.active {
+  background: #0284c7;
+  color: #ffffff;
+  border: 3px solid #bae6fd;
+  box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.2);
+  animation: pulseTrail 2s infinite;
+}
+
+@keyframes pulseTrail {
+  0% {
+    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(2, 132, 199, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0);
+  }
+}
+
+.trail-node-circle.locked {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: 2px solid #e2e8f0;
+}
+
+.trail-node-circle.mastery {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  border: 3px solid #fef3c7;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);
+}
+
+.trail-vertical-line {
+  position: absolute;
+  top: 50px;
+  bottom: 0;
+  width: 4px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.trail-vertical-line.completed-line {
+  background: #10b981;
+}
+
+/* Step Content Card */
+.trail-step-card {
+  flex: 1;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 20px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.trail-step-card.active-card {
+  border-color: #0284c7;
+  box-shadow: 0 6px 18px -4px rgba(2, 132, 199, 0.12);
+}
+
+.trail-step-card.completed-card {
+  border-color: #86efac;
+  background: #fcfdfd;
+}
+
+.trail-step-card.locked-card {
+  opacity: 0.72;
+  background: #f8fafc;
+}
+

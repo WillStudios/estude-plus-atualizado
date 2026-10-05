@@ -1193,6 +1193,10 @@ class EstudePlusApp {
       this.loadMaterialsLibrary();
     }
 
+    if (tabName === 'trilhas') {
+      this.initTrilhas();
+    }
+
     if (window.lucide) {
       window.lucide.createIcons();
     }
@@ -1243,7 +1247,7 @@ class EstudePlusApp {
     if (badge) badge.innerText = pendingErrors;
 
     // TPC Pending count
-    const pendingTpcs = (this.state.tpcs || []).filter(t => t.status === 'pending').length;
+    const pendingTpcs = (this.state.tpcs || []).filter(t => t.status === 'pending' && !t.dismissed).length;
     const tpcBadge = document.getElementById('tpcPendingBadge');
     if (tpcBadge) tpcBadge.innerText = pendingTpcs;
 
@@ -1302,7 +1306,7 @@ class EstudePlusApp {
     // 2. Update "Meus estudos" pill
     const studiesPill = document.getElementById('painelStudiesPill');
     if (studiesPill) {
-      const pendingTpcs = (this.state.tpcs || []).filter(t => t.status === 'pending');
+      const pendingTpcs = (this.state.tpcs || []).filter(t => t.status === 'pending' && !t.dismissed);
       if (pendingTpcs.length === 0) {
         studiesPill.innerText = 'Sem atividades pendentes';
         studiesPill.style.background = '#f1f5f9';
@@ -1395,12 +1399,12 @@ class EstudePlusApp {
     }
 
     if (feed) {
-      const tpcs = this.state.tpcs || [];
+      const tpcs = (this.state.tpcs || []).filter(t => t.status === 'pending' && !t.dismissed);
       if (tpcs.length === 0) {
         feed.innerHTML = `
           <div class="agenda-event-row">
             <div class="event-date-col">Hoje (${days.find(d => d.num === this.agendaSelectedDay)?.name || 'Dia'} ${this.agendaSelectedDay})</div>
-            <div class="event-desc-col" style="color: #64748b;">Nenhum TPC agendado para esta data</div>
+            <div class="event-desc-col" style="color: #64748b;">Nenhum TPC pendente para esta data</div>
           </div>
         `;
       } else {
@@ -2242,7 +2246,683 @@ class EstudePlusApp {
   }
 
   
-    /* ================= QUIZ ENGINE (CENA 6 & 7) ================= */
+    /* ==========================================================================
+     SISTEMA OFICIAL DE TRILHAS SAS (APOSTILAS 1, 2 E 3) & PROGRESSÃO DE CAPÍTULOS
+     ========================================================================== */
+
+  async initTrilhas() {
+    this.currentTrilhaSubject = this.currentTrilhaSubject || 'matematica';
+    this.currentTrilhaBookId = this.currentTrilhaBookId || 1;
+    this.currentTrilhaChapterId = this.currentTrilhaChapterId || 1;
+    this.currentTrilhaView = this.currentTrilhaView || 'subjects';
+    
+    await this.loadTrilhasProgress();
+    this.switchTrilhasView(this.currentTrilhaView);
+  }
+
+  async loadTrilhasProgress() {
+    try {
+      const res = await fetch('/api/trilhas/progress', { headers: this.getApiHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        this.trilhasProgressData = Array.isArray(data.progress) ? data.progress : [];
+        this.trilhasSummary = data.summary || {
+          totalChaptersCompleted: 0,
+          totalStagesCompleted: 0,
+          avgMastery: 0
+        };
+      } else {
+        this.trilhasProgressData = [];
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar progresso das trilhas:', e);
+      this.trilhasProgressData = [];
+    }
+    this.updateTrilhasSummaryStats();
+  }
+
+  updateTrilhasSummaryStats() {
+    const elChapters = document.getElementById('trilhasStatChaptersCompleted');
+    const elStages = document.getElementById('trilhasStatStagesCompleted');
+    const elMastery = document.getElementById('trilhasStatAvgMastery');
+    const elStreak = document.getElementById('trilhasStatStreak');
+
+    if (elChapters) elChapters.innerText = this.trilhasSummary?.totalChaptersCompleted || 0;
+    if (elStages) elStages.innerText = this.trilhasSummary?.totalStagesCompleted || 0;
+    if (elMastery) elMastery.innerText = (this.trilhasSummary?.avgMastery || 0) + '%';
+    if (elStreak) elStreak.innerText = `${this.state?.streak || 0} dias`;
+  }
+
+  switchTrilhasView(viewName) {
+    this.currentTrilhaView = viewName;
+
+    const views = {
+      subjects: document.getElementById('trilhasViewSubjects'),
+      apostilas: document.getElementById('trilhasViewApostilas'),
+      chapters: document.getElementById('trilhasViewChapters'),
+      trail: document.getElementById('trilhasViewActiveTrail')
+    };
+
+    Object.keys(views).forEach(k => {
+      if (views[k]) views[k].style.display = (k === viewName) ? 'block' : 'none';
+    });
+
+    const crumbSubjects = document.getElementById('crumbSubjects');
+    const crumbApostilas = document.getElementById('crumbApostilas');
+    const crumbChapters = document.getElementById('crumbChapters');
+    const crumbTrail = document.getElementById('crumbTrail');
+    const btnBackSubjects = document.getElementById('btnTrilhasBackToSubjects');
+
+    if (crumbSubjects) {
+      crumbSubjects.classList.toggle('active', viewName === 'subjects');
+    }
+    if (crumbApostilas) {
+      crumbApostilas.disabled = (viewName === 'subjects');
+      crumbApostilas.classList.toggle('active', viewName === 'apostilas');
+    }
+    if (crumbChapters) {
+      crumbChapters.disabled = (viewName === 'subjects' || viewName === 'apostilas');
+      crumbChapters.classList.toggle('active', viewName === 'chapters');
+    }
+    if (crumbTrail) {
+      crumbTrail.disabled = (viewName !== 'trail');
+      crumbTrail.classList.toggle('active', viewName === 'trail');
+    }
+    if (btnBackSubjects) {
+      btnBackSubjects.style.display = (viewName !== 'subjects') ? 'inline-flex' : 'none';
+    }
+
+    if (viewName === 'subjects') this.renderTrilhasSubjects();
+    else if (viewName === 'apostilas') this.renderTrilhasApostilas();
+    else if (viewName === 'chapters') this.renderTrilhasChapters();
+    else if (viewName === 'trail') this.renderTrilhaActiveTrail();
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  renderTrilhasSubjects() {
+    const container = document.getElementById('trilhasSubjectsGrid');
+    if (!container) return;
+
+    const subjects = [
+      { key: 'matematica', name: 'Matemática', icon: '📐', color: '#2563eb', desc: 'Divisibilidade, inteiros, frações, equações, geometria e probabilidade.' },
+      { key: 'portugues', name: 'Língua Portuguesa', icon: '✍️', color: '#059669', desc: 'Notícia, crônica, transitividade verbal, concordância e figuras de linguagem.' },
+      { key: 'ciencias', name: 'Ciências da Natureza', icon: '🔬', color: '#0891b2', desc: 'Máquinas simples, calor, temperatura, propagação e ecossistemas.' },
+      { key: 'historia', name: 'História', icon: '🏛️', color: '#b45309', desc: 'Idade Média, feudalismo, expansão marítima e sociedades pré-colombianas.' },
+      { key: 'geografia', name: 'Geografia', icon: '🌍', color: '#4f46e5', desc: 'Território brasileiro, domínios morfoclimáticos, urbanização e demografia.' },
+      { key: 'ingles', name: 'Língua Inglesa', icon: '🌐', color: '#db2777', desc: 'Simple Present, Routine, Daily activities, Reading comprehension and vocabulary.' }
+    ];
+
+    container.innerHTML = subjects.map(s => {
+      const subjData = this.sasSubjectsData[s.key];
+      // STRICT: Only Apostilas 1, 2, and 3
+      const validBooks = (subjData?.livros || []).filter(l => l.id <= 3);
+      const totalCaps = validBooks.reduce((acc, b) => acc + (b.chapters?.length || 0), 0);
+      
+      const userProgress = (this.trilhasProgressData || []).filter(p => p.subjectKey === s.key);
+      const completedCaps = userProgress.filter(p => p.isCompleted).length;
+      const masteryPct = totalCaps > 0 ? Math.round((completedCaps / totalCaps) * 100) : 0;
+
+      return `
+        <div class="trilhas-subject-card" style="border-top: 4px solid ${s.color};">
+          <div>
+            <div class="trilhas-subject-header">
+              <div class="trilhas-subject-icon" style="background: ${s.color}15; color: ${s.color};">
+                ${s.icon}
+              </div>
+              <div>
+                <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">${s.name}</h4>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #64748b;">3 Apostilas Oficiais (1, 2 e 3)</span>
+              </div>
+            </div>
+            <p style="color: #64748b; font-size: 0.88rem; line-height: 1.45; margin: 0 0 16px;">
+              ${s.desc}
+            </p>
+          </div>
+
+          <div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px;">
+                <span>Domínio da Matéria</span>
+                <span style="color: ${s.color}; font-weight: 800;">${completedCaps} de ${totalCaps} Capítulos (${masteryPct}%)</span>
+              </div>
+              <div style="width: 100%; height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                <div style="width: ${masteryPct}%; height: 100%; background: ${s.color}; border-radius: 999px;"></div>
+              </div>
+            </div>
+
+            <button class="btn-primary" onclick="app.selectTrilhaSubject('${s.key}')" style="width: 100%; background: ${s.color}; border-color: ${s.color}; padding: 11px; font-weight: 800; font-size: 0.9rem; justify-content: center;">
+              Acessar Apostilas 1, 2 e 3 →
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  selectTrilhaSubject(subjKey) {
+    this.currentTrilhaSubject = subjKey;
+    this.switchTrilhasView('apostilas');
+  }
+
+  renderTrilhasApostilas() {
+    const container = document.getElementById('trilhasApostilasGrid');
+    const headerTag = document.getElementById('trilhasApostilaHeaderTag');
+    if (!container) return;
+
+    const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
+    if (headerTag) headerTag.innerText = `Matéria Selecionada: ${subj.name}`;
+
+    // STRICT: Apostilas 1, 2 e 3 ONLY - NEVER Apostila 4
+    const validBooks = (subj.livros || []).filter(l => l.id <= 3);
+
+    container.innerHTML = validBooks.map(b => {
+      const caps = b.chapters || [];
+      const totalCaps = caps.length;
+      const userProgress = (this.trilhasProgressData || []).filter(p => p.subjectKey === this.currentTrilhaSubject && Number(p.bookId) === b.id);
+      const completedCaps = userProgress.filter(p => p.isCompleted).length;
+      const pct = totalCaps > 0 ? Math.round((completedCaps / totalCaps) * 100) : 0;
+
+      const trimestres = { 1: '1º Trimestre', 2: '2º Trimestre', 3: '3º Trimestre' };
+      const trimLabel = trimestres[b.id] || `Trimestre ${b.id}`;
+
+      return `
+        <div class="trilhas-apostila-card" style="border-top: 5px solid ${subj.color || '#2563eb'};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <span class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.78rem;">
+              ${trimLabel}
+            </span>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b;">
+              ${totalCaps} Capítulos
+            </span>
+          </div>
+
+          <h4 style="margin: 0 0 6px; font-size: 1.3rem; font-weight: 900; color: #0f172a;">
+            📖 Apostila ${b.id}
+          </h4>
+          <p style="color: #64748b; font-size: 0.88rem; line-height: 1.45; margin: 0 0 16px;">
+            Capítulos do ${trimLabel} com trilhas de aprendizagem, testes conceituais e exercícios alinhados ao SAS.
+          </p>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px;">
+              <span>Progresso da Apostila</span>
+              <span style="color: #10b981; font-weight: 800;">${completedCaps} de ${totalCaps} (${pct}%)</span>
+            </div>
+            <div style="width: 100%; height: 7px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+              <div style="width: ${pct}%; height: 100%; background: #10b981; border-radius: 999px;"></div>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="app.selectTrilhaApostila(${b.id})" style="width: 100%; background: ${subj.color || '#2563eb'}; border-color: ${subj.color || '#2563eb'}; padding: 11px; font-weight: 800; justify-content: center;">
+            Ver Capítulos da Apostila ${b.id} →
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  selectTrilhaApostila(bookId) {
+    if (Number(bookId) > 3) {
+      alert('Apenas as Apostilas 1, 2 e 3 existem no currículo oficial do SAS 7º ano.');
+      return;
+    }
+    this.currentTrilhaBookId = Number(bookId);
+    this.switchTrilhasView('chapters');
+  }
+
+  renderTrilhasChapters() {
+    const container = document.getElementById('trilhasChaptersGrid');
+    const headerTag = document.getElementById('trilhasChapterHeaderTag');
+    if (!container) return;
+
+    const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
+    const validBooks = (subj.livros || []).filter(l => l.id <= 3);
+    const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
+
+    if (headerTag) {
+      headerTag.innerText = `${subj.name} • Apostila ${book.id}`;
+    }
+
+    const caps = book.chapters || [];
+    container.innerHTML = caps.map(c => {
+      const rec = (this.trilhasProgressData || []).find(p =>
+        p.subjectKey === this.currentTrilhaSubject &&
+        Number(p.bookId) === book.id &&
+        Number(p.chapterId) === c.id
+      );
+
+      const isCompleted = rec?.isCompleted || false;
+      const completedCount = rec?.completedStages?.length || 0;
+      const masteryPct = rec?.masteryPercentage || 0;
+
+      let statusBadge = '';
+      if (isCompleted) {
+        statusBadge = `<span class="badge-accent" style="background: #dcfce7; color: #15803d; font-weight: 800;">🏆 Domínio Alcançado (100%)</span>`;
+      } else if (completedCount > 0) {
+        statusBadge = `<span class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 800;">⏳ Em Progresso (${completedCount}/7 Etapas • ${masteryPct}%)</span>`;
+      } else {
+        statusBadge = `<span class="badge-accent" style="background: #f1f5f9; color: #64748b; font-weight: 700;">🌱 Não Iniciado (0/7 Etapas)</span>`;
+      }
+
+      return `
+        <div class="trilhas-chapter-card">
+          <div style="flex: 1; min-width: 260px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+              <span class="badge-accent" style="background: ${subj.color || '#2563eb'}18; color: ${subj.color || '#2563eb'}; font-weight: 800;">
+                ${c.tag || `Capítulo ${c.id}`}
+              </span>
+              ${statusBadge}
+            </div>
+            <h4 style="margin: 0 0 6px; font-size: 1.15rem; font-weight: 800; color: #0f172a;">
+              ${c.title}
+            </h4>
+            <p style="margin: 0; color: #64748b; font-size: 0.88rem; line-height: 1.45;">
+              ${c.desc || 'Tópicos essenciais de aprendizagem e matriz de habilidades do SAS.'}
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn-primary" onclick="app.selectTrilhaChapter(${c.id})" style="background: ${subj.color || '#2563eb'}; border-color: ${subj.color || '#2563eb'}; padding: 10px 18px; font-weight: 800; font-size: 0.88rem; white-space: nowrap;">
+              ${isCompleted ? 'Revisar Trilha 🏆' : (completedCount > 0 ? 'Continuar Trilha 🚀' : 'Iniciar Trilha →')}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  selectTrilhaChapter(chapterId) {
+    this.currentTrilhaChapterId = Number(chapterId);
+    this.switchTrilhasView('trail');
+  }
+
+  renderTrilhaActiveTrail() {
+    const container = document.getElementById('trailNodesContainer');
+    const breadcrumb = document.getElementById('trilhaActiveBreadcrumb');
+    const titleEl = document.getElementById('trilhaActiveTitle');
+    const descEl = document.getElementById('trilhaActiveDesc');
+    const progressPctEl = document.getElementById('trilhaActiveProgressPct');
+    const progressBarEl = document.getElementById('trilhaActiveProgressBar');
+
+    if (!container) return;
+
+    const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
+    const validBooks = (subj.livros || []).filter(l => l.id <= 3);
+    const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
+    const chapter = (book.chapters || []).find(c => c.id === this.currentTrilhaChapterId) || book.chapters[0];
+
+    if (breadcrumb) {
+      breadcrumb.innerText = `${subj.name} > Apostila ${book.id} > ${chapter.tag || `Capítulo ${chapter.id}`}`;
+    }
+    if (titleEl) {
+      titleEl.innerText = chapter.title;
+    }
+    if (descEl) {
+      descEl.innerText = chapter.desc;
+    }
+
+    const rec = (this.trilhasProgressData || []).find(p =>
+      p.subjectKey === this.currentTrilhaSubject &&
+      Number(p.bookId) === book.id &&
+      Number(p.chapterId) === chapter.id
+    );
+
+    const completedStages = rec?.completedStages || [];
+    const isChapterCompleted = rec?.isCompleted || false;
+    const masteryPct = rec?.masteryPercentage || 0;
+
+    if (progressPctEl) progressPctEl.innerText = `${masteryPct}% Dominado`;
+    if (progressBarEl) progressBarEl.style.width = `${masteryPct}%`;
+
+    // 8 Etapas Canônicas da Trilha Progressiva do Capítulo
+    const stages = [
+      { id: 'fundamentos', name: 'Comece Aqui • Fundamentos', icon: '🌱', subtitle: 'Conceito Essencial & Teoria Resumida' },
+      { id: 'pratica_1', name: 'Prática 1 • Fixação Guiada', icon: '✏️', subtitle: 'Exercícios conceituais de fixação dos fundamentos' },
+      { id: 'quiz_1', name: 'Quiz 1 • Avaliação Conceitual SAS', icon: '📝', subtitle: '3 Questões de múltipla escolha com gabarito comentado' },
+      { id: 'pratica_2', name: 'Prática 2 • Aplicação Prática', icon: '🔍', subtitle: 'Contextualização em problemas reais e dados' },
+      { id: 'quiz_2', name: 'Quiz 2 • Análise & Interpretação', icon: '⚡', subtitle: 'Desafios intermediários com foco na matriz do SAS' },
+      { id: 'revisao', name: 'Revisão • Pontos de Atenção', icon: '🔄', subtitle: 'Síntese ativa, macetes e prevenção de pegadinhas' },
+      { id: 'desafio_final', name: 'Desafio Final • Prova de Maestria', icon: '🎯', subtitle: 'Checkpoint decisivo para garantir o domínio total' },
+      { id: 'dominio', name: 'Domínio do Capítulo 🏆', icon: '🏆', subtitle: 'Certificado de maestria curricular e nota máxima atingida!' }
+    ];
+
+    container.innerHTML = stages.map((stg, idx) => {
+      const isMasteryNode = stg.id === 'dominio';
+      let state = 'locked'; // 'completed', 'active', 'locked'
+
+      if (isMasteryNode) {
+        state = isChapterCompleted ? 'completed' : 'locked';
+      } else {
+        if (completedStages.includes(stg.id)) {
+          state = 'completed';
+        } else {
+          // Desbloqueia se for a primeira etapa OU se a etapa anterior foi concluída
+          const prevStage = stages[idx - 1];
+          if (idx === 0 || (prevStage && completedStages.includes(prevStage.id))) {
+            state = 'active';
+          } else {
+            state = 'locked';
+          }
+        }
+      }
+
+      const stageResult = rec?.stageResults?.[stg.id];
+      const isLastNode = idx === stages.length - 1;
+
+      return `
+        <div class="trail-step-item">
+          <div class="trail-connector-col">
+            <div class="trail-node-circle ${state} ${isMasteryNode ? 'mastery' : ''}">
+              ${state === 'completed' ? (isMasteryNode ? '🏆' : '✔') : (state === 'active' ? stg.icon : '🔒')}
+            </div>
+            ${!isLastNode ? `<div class="trail-vertical-line ${state === 'completed' ? 'completed-line' : ''}"></div>` : ''}
+          </div>
+
+          <div class="trail-step-card ${state}-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+              <span class="badge-accent" style="background: ${state === 'completed' ? '#dcfce7' : (state === 'active' ? '#e0f2fe' : '#f1f5f9')}; color: ${state === 'completed' ? '#15803d' : (state === 'active' ? '#0369a1' : '#64748b')}; font-weight: 800; font-size: 0.76rem;">
+                ${isMasteryNode ? 'CERTIFICADO FINAL' : `ETAPA ${idx + 1} DE 7`}
+              </span>
+              ${stageResult ? `<span style="font-size: 0.78rem; font-weight: 800; color: #10b981;">Aproveitamento: ${stageResult.percentage}%</span>` : ''}
+            </div>
+
+            <h4 style="margin: 0 0 4px; font-size: 1.15rem; font-weight: 800; color: #0f172a;">
+              ${stg.name}
+            </h4>
+            <p style="margin: 0 0 14px; color: #64748b; font-size: 0.86rem; line-height: 1.45;">
+              ${stg.subtitle}
+            </p>
+
+            <div>
+              ${state === 'completed' && !isMasteryNode ? `
+                <button class="btn-outline" onclick="app.startTrilhaStage('${stg.id}', ${idx})" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 700; color: #059669; border-color: #86efac;">
+                  <i data-lucide="rotate-ccw"></i> Refazer Etapa
+                </button>
+              ` : ''}
+
+              ${state === 'active' && !isMasteryNode ? `
+                <button class="btn-primary" onclick="app.startTrilhaStage('${stg.id}', ${idx})" style="padding: 9px 18px; font-size: 0.85rem; font-weight: 800; background: #0284c7; border-color: #0284c7;">
+                  Iniciar Etapa Agora →
+                </button>
+              ` : ''}
+
+              ${state === 'locked' && !isMasteryNode ? `
+                <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                  <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Conclua a etapa anterior para desbloquear
+                </span>
+              ` : ''}
+
+              ${isMasteryNode && isChapterCompleted ? `
+                <div style="background: #fef3c7; border: 1.5px solid #fde68a; border-radius: 10px; padding: 10px 14px; color: #92400e; font-weight: 800; font-size: 0.85rem;">
+                  🎉 Você dominou com sucesso todos os tópicos deste capítulo!
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  startTrilhaStage(stageId, stageIndex) {
+    const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
+    const validBooks = (subj.livros || []).filter(l => l.id <= 3);
+    const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
+    const chapter = (book.chapters || []).find(c => c.id === this.currentTrilhaChapterId) || book.chapters[0];
+
+    this.activeTrilhaSession = {
+      subjectKey: this.currentTrilhaSubject,
+      bookId: book.id,
+      chapterId: chapter.id,
+      chapterTitle: chapter.title,
+      stageId,
+      stageIndex,
+      answers: {},
+      totalQuestions: 0
+    };
+
+    const modalBadge = document.getElementById('trilhaStageBadge');
+    const modalChapterTag = document.getElementById('trilhaStageChapterTag');
+    const modalSubjectTag = document.getElementById('trilhaStageSubjectTag');
+    const modalTitle = document.getElementById('trilhaStageTitle');
+    const modalDesc = document.getElementById('trilhaStageDesc');
+    const contentArea = document.getElementById('trilhaStageContentArea');
+
+    if (modalBadge) modalBadge.innerText = `ETAPA ${stageIndex + 1}`;
+    if (modalChapterTag) modalChapterTag.innerText = chapter.tag || `Capítulo ${chapter.id}`;
+    if (modalSubjectTag) modalSubjectTag.innerText = subj.name;
+    if (modalTitle) modalTitle.innerText = `${chapter.title} — Etapa ${stageIndex + 1}`;
+
+    // Determina dificuldade calibrada
+    const diff = (stageIndex <= 1) ? 'facil' : (stageIndex <= 4) ? 'medio' : 'dificil';
+    const qCount = (stageIndex === 0) ? 2 : (stageIndex === 6) ? 4 : 3;
+
+    // REUTILIZAÇÃO DO MECANISMO EXISTENTE: this.getQuestionsForChapter
+    const questions = this.getQuestionsForChapter(this.currentTrilhaSubject, book.id, chapter.id, diff, qCount);
+    this.activeTrilhaSession.questions = questions;
+    this.activeTrilhaSession.totalQuestions = questions.length;
+
+    if (modalDesc) {
+      modalDesc.innerText = `Responda às questões conceituais deste ponto da trilha para validar o aprendizado e avançar.`;
+    }
+
+    if (contentArea) {
+      contentArea.innerHTML = `
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+          <strong style="color: #0369a1; font-size: 0.85rem; display: block; margin-bottom: 4px;">💡 Resumo Teórico do Capítulo:</strong>
+          <p style="margin: 0; font-size: 0.85rem; color: #475569; line-height: 1.45;">${chapter.desc}</p>
+        </div>
+        <div class="trilha-questions-list" style="display: flex; flex-direction: column; gap: 16px;">
+          ${questions.map((q, qIdx) => `
+            <div class="trilha-q-block" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+              <div style="font-weight: 800; font-size: 0.88rem; color: #0f172a; margin-bottom: 10px;">
+                ${qIdx + 1}. ${q.text}
+              </div>
+              <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px;">
+                ${(q.options || []).map(opt => `
+                  <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 0.85rem; color: #334155; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.15s ease;">
+                    <input type="radio" name="trilha_q_${q.id}" value="${opt.id}" onchange="app.handleTrilhaOptionSelect(${q.id}, '${opt.id}')" style="margin-top: 3px;">
+                    <span><strong>${opt.id})</strong> ${opt.text}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    this.showModal('trilhaStageModal');
+  }
+
+  handleTrilhaOptionSelect(questionId, selectedOptionId) {
+    if (!this.activeTrilhaSession) return;
+    if (!this.activeTrilhaSession.answers) this.activeTrilhaSession.answers = {};
+    this.activeTrilhaSession.answers[questionId] = selectedOptionId;
+  }
+
+  async submitCurrentTrilhaStage() {
+    if (!this.activeTrilhaSession) return;
+    const session = this.activeTrilhaSession;
+
+    const answeredCount = Object.keys(session.answers || {}).length;
+    if (answeredCount < session.totalQuestions) {
+      if (!confirm(`Você respondeu ${answeredCount} de ${session.totalQuestions} questões. Deseja concluir a etapa mesmo assim?`)) {
+        return;
+      }
+    }
+
+    // Calcula acertos
+    let score = 0;
+    (session.questions || []).forEach(q => {
+      const userAns = session.answers[q.id];
+      if (userAns && String(userAns).toUpperCase() === String(q.correctId || 'A').toUpperCase()) {
+        score++;
+      }
+    });
+
+    const btn = document.getElementById('btnSubmitTrilhaStage');
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/trilhas/complete-stage', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          subjectKey: session.subjectKey,
+          bookId: session.bookId,
+          chapterId: session.chapterId,
+          chapterTitle: session.chapterTitle,
+          stageId: session.stageId,
+          stageIndex: session.stageIndex,
+          score,
+          total: session.totalQuestions
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 80, spread: 90, origin: { y: 0.6 } });
+        }
+        alert(`🎉 ${data.message}\n\nVocê acertou ${score} de ${session.totalQuestions} questões.`);
+        this.closeModal('trilhaStageModal');
+        await this.loadTrilhasProgress();
+        this.renderTrilhaActiveTrail();
+      } else {
+        alert(data.error || 'Não foi possível registrar a etapa.');
+      }
+    } catch (e) {
+      alert('Erro de comunicação com o servidor: ' + e.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async resetCurrentTrilhaChapter() {
+    if (!confirm('Deseja realmente reiniciar o progresso deste capítulo para praticar desde o início?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/trilhas/reset-chapter', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          subjectKey: this.currentTrilhaSubject,
+          bookId: this.currentTrilhaBookId,
+          chapterId: this.currentTrilhaChapterId
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await this.loadTrilhasProgress();
+        this.renderTrilhaActiveTrail();
+      } else {
+        alert(data.error || 'Erro ao reiniciar trilha.');
+      }
+    } catch (e) {
+      alert('Erro de rede: ' + e.message);
+    }
+  }
+
+  async syncTrilhasWithSas() {
+    try {
+      const res = await fetch('/api/trilhas/sas-sync', {
+        method: 'POST',
+        headers: this.getApiHeaders()
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`🧭 Sincronizador Autorizado SAS:\n\n${data.message}`);
+      } else {
+        alert(data.error || 'Erro ao acionar sincronizador.');
+      }
+    } catch (e) {
+      alert('Erro de rede ao sincronizar com SAS: ' + e.message);
+    }
+  }
+
+  async renderAdminTrilhas() {
+    const syncCard = document.getElementById('adminTrilhasSyncCard');
+    const tableContainer = document.getElementById('adminTrilhasStudentsTable');
+
+    if (syncCard) {
+      try {
+        const res = await fetch('/api/trilhas/sas-sync-status', { headers: this.getApiHeaders() });
+        const st = await res.json();
+        syncCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <span class="badge-accent" style="background: #ecfdf5; color: #059669; font-weight: 800; font-size: 0.78rem;">
+                STATUS: ${st.status.toUpperCase()}
+              </span>
+              <strong style="color: #0f172a; margin-left: 8px; font-size: 0.88rem;">${st.message}</strong>
+            </div>
+            <span style="font-size: 0.75rem; color: #64748b;">Apostilas Mapeadas: 1, 2 e 3 (Sem Apostila 4)</span>
+          </div>
+        `;
+      } catch (e) {
+        syncCard.innerHTML = `<span style="color: #dc2626; font-size: 0.8rem;">Status SAS não disponível</span>`;
+      }
+    }
+
+    if (tableContainer) {
+      try {
+        const res = await fetch('/api/trilhas/progress', { headers: this.getApiHeaders() });
+        const data = await res.json();
+        const all = data.allProgress || data.progress || [];
+
+        if (all.length === 0) {
+          tableContainer.innerHTML = `
+            <div style="text-align: center; padding: 24px; color: #64748b; font-size: 0.84rem;">
+              Nenhum progresso de trilhas registrado até o momento.
+            </div>
+          `;
+        } else {
+          tableContainer.innerHTML = `
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1.5px solid #e2e8f0; font-size: 0.78rem; color: #64748b; text-transform: uppercase;">
+                  <th style="padding: 8px;">Aluno</th>
+                  <th style="padding: 8px;">Matéria</th>
+                  <th style="padding: 8px;">Apostila</th>
+                  <th style="padding: 8px;">Capítulo</th>
+                  <th style="padding: 8px;">Maestria</th>
+                  <th style="padding: 8px;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${all.slice(0, 20).map(r => `
+                  <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.82rem;">
+                    <td style="padding: 8px; font-weight: 700;">${r.userId}</td>
+                    <td style="padding: 8px; text-transform: capitalize;">${r.subjectKey}</td>
+                    <td style="padding: 8px;">Apostila ${r.bookId}</td>
+                    <td style="padding: 8px;">Capítulo ${r.chapterId}</td>
+                    <td style="padding: 8px; font-weight: 800; color: #0284c7;">${r.masteryPercentage || 0}%</td>
+                    <td style="padding: 8px;">${r.isCompleted ? '<span style="color: #10b981; font-weight: 800;">🏆 Concluído</span>' : '<span style="color: #f59e0b;">⏳ Em andamento</span>'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+      } catch (e) {
+        tableContainer.innerHTML = `<span style="color: #dc2626; font-size: 0.8rem;">Erro ao carregar dados dos alunos.</span>`;
+      }
+    }
+  }
+
+  /* ================= QUIZ ENGINE (CENA 6 & 7) ================= */
   getDailyQuizInfo() {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10);
@@ -6303,7 +6983,8 @@ class EstudePlusApp {
       return isMath;
     });
 
-    if (recentList.length === 0) {
+    const isSeeded = localStorage.getItem('estude_gammon_tpc_seeded_v3');
+    if (recentList.length === 0 && !isSeeded) {
       recentList = [{
         id: 'gammon_109863',
         gammonId: 109863,
@@ -6318,15 +6999,20 @@ class EstudePlusApp {
         tpcType: 'TPC Diário'
       }];
       this.state.tpcs = recentList;
+      localStorage.setItem('estude_gammon_tpc_seeded_v3', 'true');
       this.saveState();
     }
 
     let list = recentList;
 
+    // Conforme solicitado pelo usuário: se foi feito/confirmado, o TPC desaparece da lista principal
     if (filter === 'pending') {
-      list = list.filter(t => t.status === 'pending');
+      list = list.filter(t => t.status === 'pending' && !t.dismissed);
     } else if (filter === 'done') {
       list = list.filter(t => t.status === 'done');
+    } else {
+      // 'all' ou default: exibe apenas os que ainda não foram concluídos/descartados
+      list = list.filter(t => t.status === 'pending' && !t.dismissed);
     }
 
     if (searchQuery.trim()) {
@@ -6350,8 +7036,8 @@ class EstudePlusApp {
     });
     if (tpcsListChanged) this.saveState();
 
-    const pending = list.filter(t => t.status === 'pending').length;
-    const completed = list.filter(t => t.status === 'done').length;
+    const pending = (recentList || []).filter(t => t.status === 'pending' && !t.dismissed).length;
+    const completed = (recentList || []).filter(t => t.status === 'done').length;
 
     const pendingEl = document.getElementById('tpcPendingCount');
     const completedEl = document.getElementById('tpcCompletedCount');
@@ -6360,13 +7046,13 @@ class EstudePlusApp {
 
     if (list.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; margin: 16px 0;">
-          <div style="width: 52px; height: 52px; border-radius: 50%; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
-            <i data-lucide="clipboard-list" style="width: 26px; height: 26px;"></i>
+        <div style="text-align: center; padding: 48px 20px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; margin: 16px 0;">
+          <div style="width: 58px; height: 58px; border-radius: 50%; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 1.8rem;">
+            🎉
           </div>
-          <h4 style="margin: 0 0 6px; color: #0f172a; font-size: 1.15rem; font-weight: 800;">Nenhum TPC no momento</h4>
-          <p style="margin: 0 0 16px; color: #64748b; font-size: 0.88rem; max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-            Assim que a escola lançar novos TPCs Diários, o sistema atualizará aqui rapidamente!
+          <h4 style="margin: 0 0 6px; color: #0f172a; font-size: 1.2rem; font-weight: 800;">Nenhum TPC pendente no momento!</h4>
+          <p style="margin: 0 0 16px; color: #64748b; font-size: 0.9rem; max-width: 460px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+            Excelente trabalho! Você concluiu suas tarefas de casa. Quando o colégio postar novos TPCs no Portal Gammon, eles serão atualizados aqui automaticamente.
           </p>
         </div>
       `;
@@ -6438,7 +7124,7 @@ class EstudePlusApp {
             <p class="tpc-details" style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">${item.details || item.description || ''}</p>
           </div>
           <div class="tpc-actions-col" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-left: 14px;">
-            <button class="btn-status-toggle ${isDone ? 'is-done' : 'is-pending'}" onclick="app.toggleTpcStatus('${item.id}')" title="Clique para alternar entre FEITO e NÃO FEITO" style="cursor: pointer; padding: 10px 16px; font-weight: 700; border-radius: 10px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
+            <button class="btn-status-toggle ${isDone ? 'is-done' : 'is-pending'}" onclick="app.toggleTpcStatus('${item.id}')" title="Clique para concluir este TPC" style="cursor: pointer; padding: 10px 16px; font-weight: 700; border-radius: 10px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="${isDone ? 'check-circle' : 'circle'}"></i>
               <span>${isDone ? 'FEITO' : 'NÃO FEITO'}</span>
             </button>
@@ -6452,23 +7138,51 @@ class EstudePlusApp {
 
   toggleTpcStatus(id) {
     const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
+    if (!item) return;
+
+    // Se o item estiver pendente ("NÃO FEITO"), exibe o aviso "Você realmente fez?"
+    if (item.status === 'pending') {
+      this.pendingTpcToDoneId = id;
+      const subjEl = document.getElementById('confirmTpcDoneSubject');
+      const titleEl = document.getElementById('confirmTpcDoneTitle');
+      if (subjEl) subjEl.textContent = (item.subject || 'Matemática') + (item.teacher ? ` • ${item.teacher}` : '');
+      if (titleEl) titleEl.textContent = item.title + (item.pages ? ` — ${item.pages}` : '');
+
+      this.showModal('confirmTpcDoneModal');
+      return;
+    }
+
+    // Se já estava feito e foi clicado para reabrir
+    item.status = 'pending';
+    item.dismissed = false;
+    delete item.doneAt;
+    this.saveState();
+    this.renderTpcs();
+    this.renderDashboard();
+    this.refreshBadges();
+  }
+
+  executeTpcCompletion() {
+    const id = this.pendingTpcToDoneId;
+    const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
     if (item) {
-      if (item.status === 'pending') {
-        item.status = 'done';
-        item.doneAt = new Date().toISOString();
-        this.recordValidActivity('tpc_completed', { tpcId: id, title: item.title, discipline: item.discipline });
-      } else {
-        item.status = 'pending';
-        delete item.doneAt;
-      }
+      item.status = 'done';
+      item.dismissed = true; // "se vc clicar em sim o tpc desaparece"
+      item.doneAt = new Date().toISOString();
+      this.recordValidActivity('tpc_completed', { tpcId: id, title: item.title, discipline: item.discipline || item.subject });
       this.saveState();
+
+      this.closeModal('confirmTpcDoneModal');
+
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
+      }
+
       this.renderTpcs();
       this.renderDashboard();
       this.refreshBadges();
-      if (item.status === 'done' && typeof confetti === 'function') {
-        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-      }
     }
+    this.pendingTpcToDoneId = null;
   }
 
   
@@ -9171,6 +9885,7 @@ class EstudePlusApp {
       { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => this.switchTab('sas-eureka'), shortcut: 'Alt 3' },
       { group: 'Navegação', title: 'TPC Diário & Ocorrências Gammon+', icon: 'clipboard-list', action: () => this.switchTab('gammon-tpc'), shortcut: 'Alt 4' },
       { group: 'Navegação', title: 'Planos & Assinatura PRO', icon: 'crown', action: () => this.switchTab('plans-pricing'), shortcut: 'PRO' },
+      { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS (Apostilas 1 a 3)', icon: 'map', action: () => this.switchTab('trilhas') },
       { group: 'Navegação', title: 'Relatórios de Desempenho e Erros', icon: 'bar-chart-2', action: () => this.switchTab('review') },
       { group: 'Navegação', title: 'Quiz Diário de 15 Minutos', icon: 'zap', action: () => this.switchTab('quiz') },
 
@@ -10284,7 +10999,8 @@ class EstudePlusApp {
       study_reports: { btn: 'tabAdminStudyReportsBtn', view: 'adminStudyReportsView' },
       agenda_sync: { btn: 'tabAdminAgendaSyncBtn', view: 'adminAgendaSyncView' },
       notifications: { btn: 'tabAdminNotificationsBtn', view: 'adminNotificationsView' },
-      system_health: { btn: 'tabAdminSystemHealthBtn', view: 'adminSystemHealthView' }
+      system_health: { btn: 'tabAdminSystemHealthBtn', view: 'adminSystemHealthView' },
+      trilhas: { btn: 'tabAdminTrilhasBtn', view: 'adminTrilhasView' }
     };
 
     Object.keys(tabMap).forEach(key => {
@@ -10313,6 +11029,7 @@ class EstudePlusApp {
     else if (tab === 'agenda_sync') this.renderAdminAgendaSyncLogs();
     else if (tab === 'notifications') this.renderAdminNotificationsList();
     else if (tab === 'system_health') this.renderAdminSystemHealth();
+    else if (tab === 'trilhas') this.renderAdminTrilhas();
   }
 
   renderAdminPlanRequestsList() {

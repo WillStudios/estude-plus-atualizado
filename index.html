@@ -149,6 +149,11 @@
           <span>🧭 Eureka & Apostilas SAS</span>
           <span class="badge-accent" id="sidebarBooksBadge" style="background: #fff7ed; color: #ea580c;">Asas 2026</span>
         </button>
+        <button class="nav-btn" data-tab="trilhas" style="border-left: 3px solid #f59e0b;">
+          <i data-lucide="map" style="color: #f59e0b;"></i>
+          <span>🗺️ Trilhas SAS</span>
+          <span class="badge-accent" style="background: #fef3c7; color: #b45309;">Apostilas 1-3</span>
+        </button>
         <button class="nav-btn" data-tab="plans-pricing" style="border-left: 3px solid #10b981;">
           <i data-lucide="crown" style="color: #10b981;"></i>
           <span>💎 Planos & Assinatura</span>
@@ -1158,6 +1163,184 @@
         </div>
       </section>
 
+      <!-- ================= TAB: TRILHAS SAS (APOSTILAS 1, 2 E 3) ================= -->
+      <section id="tab-trilhas" class="tab-pane">
+        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 22px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+              <span class="badge-accent" style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.8rem;">
+                🗺️ TRILHAS PROGRESSIVAS SAS
+              </span>
+              <span class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.76rem;">
+                7º Ano • Ensino Fundamental
+              </span>
+              <span class="badge-accent" style="background: #dcfce7; color: #15803d; font-weight: 700; font-size: 0.76rem;">
+                ✔ Apostilas 1, 2 e 3 Oficiais
+              </span>
+            </div>
+            <h2 style="margin: 0; font-size: 1.7rem; font-weight: 900; color: #0f172a;">Trilhas de Aprendizagem SAS</h2>
+            <p style="margin: 4px 0 0; color: #64748b; font-size: 0.92rem;">
+              Avance capítulo a capítulo com teoria essencial, fixação guiada, quizzes conceituais e desafios de maestria.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-outline" onclick="app.syncTrilhasWithSas()" title="Sincronizar com o Portal SAS sem armazenar senhas" style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
+              <i data-lucide="refresh-cw"></i>
+              <span>Sincronizar SAS</span>
+            </button>
+            <button class="btn-outline" onclick="app.switchTrilhasView('subjects')" id="btnTrilhasBackToSubjects" style="display: none; align-items: center; gap: 8px; font-weight: 700;">
+              <i data-lucide="arrow-left"></i>
+              <span>Trocar Matéria</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Breadcrumb de Navegação nas Trilhas -->
+        <div class="trilhas-breadcrumb-bar" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 0.88rem; flex-wrap: wrap;">
+          <span style="font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="compass" style="width: 16px; height: 16px; color: #f59e0b;"></i> Jornada:
+          </span>
+          <button type="button" class="trilhas-crumb-btn active" id="crumbSubjects" onclick="app.switchTrilhasView('subjects')">
+            1. Matérias
+          </button>
+          <span style="color: #cbd5e1;">›</span>
+          <button type="button" class="trilhas-crumb-btn" id="crumbApostilas" onclick="app.switchTrilhasView('apostilas')" disabled>
+            2. Apostila (1, 2 ou 3)
+          </button>
+          <span style="color: #cbd5e1;">›</span>
+          <button type="button" class="trilhas-crumb-btn" id="crumbChapters" onclick="app.switchTrilhasView('chapters')" disabled>
+            3. Capítulos
+          </button>
+          <span style="color: #cbd5e1;">›</span>
+          <button type="button" class="trilhas-crumb-btn" id="crumbTrail" onclick="app.switchTrilhasView('trail')" disabled>
+            4. Trilha do Capítulo
+          </button>
+        </div>
+
+        <!-- Painel de Métricas e Maestria Geral do Aluno -->
+        <div class="trilhas-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              🏆
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Capítulos Dominados</div>
+              <strong id="trilhasStatChaptersCompleted" style="font-size: 1.3rem; color: #0f172a;">0</strong>
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              ⚡
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Etapas Concluídas</div>
+              <strong id="trilhasStatStagesCompleted" style="font-size: 1.3rem; color: #0f172a;">0</strong>
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              📊
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Maestria Média SAS</div>
+              <strong id="trilhasStatAvgMastery" style="font-size: 1.3rem; color: #059669;">0%</strong>
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+              🔥
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Ofensiva Ativa</div>
+              <strong id="trilhasStatStreak" style="font-size: 1.3rem; color: #ea580c;">0 dias</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TELA 1: ESCOLHA SUA MATÉRIA ================= -->
+        <div id="trilhasViewSubjects" class="trilhas-view-container">
+          <div style="margin-bottom: 16px;">
+            <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">1. Escolha sua Matéria</h3>
+            <p style="margin: 0; color: #64748b; font-size: 0.88rem;">Selecione a disciplina para explorar as trilhas de aprendizagem disponíveis no SAS.</p>
+          </div>
+          <div id="trilhasSubjectsGrid" class="trilhas-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- ================= TELA 2: ESCOLHA A APOSTILA ================= -->
+        <div id="trilhasViewApostilas" class="trilhas-view-container" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div id="trilhasApostilaHeaderTag" style="font-size: 0.8rem; font-weight: 800; color: #2563eb; text-transform: uppercase;"></div>
+              <h3 style="margin: 2px 0 4px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">2. Escolha a Apostila</h3>
+              <p style="margin: 0; color: #64748b; font-size: 0.88rem;">Apenas as apostilas oficiais autorizadas (1, 2 e 3 do SAS). Sem Apostila 4.</p>
+            </div>
+            <button class="btn-outline" onclick="app.switchTrilhasView('subjects')" style="padding: 8px 14px; font-size: 0.85rem; font-weight: 700;">
+              ← Voltar para Matérias
+            </button>
+          </div>
+          <div id="trilhasApostilasGrid" class="trilhas-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+            <!-- Renderizado dinamicamente (Apostila 1, Apostila 2, Apostila 3 - STRICT NO APOSTILA 4) -->
+          </div>
+        </div>
+
+        <!-- ================= TELA 3: ESCOLHA O CAPÍTULO ================= -->
+        <div id="trilhasViewChapters" class="trilhas-view-container" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div id="trilhasChapterHeaderTag" style="font-size: 0.8rem; font-weight: 800; color: #2563eb; text-transform: uppercase;"></div>
+              <h3 style="margin: 2px 0 4px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">3. Escolha o Capítulo</h3>
+              <p style="margin: 0; color: #64748b; font-size: 0.88rem;">Capítulos reais e conteúdos alinhados com o currículo do SAS Educação.</p>
+            </div>
+            <button class="btn-outline" onclick="app.switchTrilhasView('apostilas')" style="padding: 8px 14px; font-size: 0.85rem; font-weight: 700;">
+              ← Voltar para Apostilas
+            </button>
+          </div>
+          <div id="trilhasChaptersGrid" class="trilhas-chapters-list" style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- ================= TELA 4: TRILHA VISUAL DO CAPÍTULO ================= -->
+        <div id="trilhasViewActiveTrail" class="trilhas-view-container" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div id="trilhaActiveBreadcrumb" style="font-size: 0.82rem; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 4px;"></div>
+              <h2 id="trilhaActiveTitle" style="margin: 0 0 6px; font-size: 1.45rem; font-weight: 900; color: #0f172a;"></h2>
+              <p id="trilhaActiveDesc" style="margin: 0; color: #64748b; font-size: 0.9rem; max-width: 720px; line-height: 1.5;"></p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <button class="btn-outline" onclick="app.resetCurrentTrilhaChapter()" title="Reiniciar etapas para praticar novamente" style="padding: 8px 14px; font-size: 0.84rem; color: #dc2626; border-color: #fecdd3; font-weight: 700;">
+                <i data-lucide="rotate-ccw"></i> Reiniciar Trilha
+              </button>
+              <button class="btn-outline" onclick="app.switchTrilhasView('chapters')" style="padding: 8px 14px; font-size: 0.85rem; font-weight: 700;">
+                ← Voltar para Capítulos
+              </button>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso de Maestria do Capítulo -->
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 0.85rem; font-weight: 800; color: #0f172a;">PROGRESSO DE DOMÍNIO DO CAPÍTULO</span>
+              <span id="trilhaActiveProgressPct" style="font-size: 0.95rem; font-weight: 900; color: #0284c7;">0%</span>
+            </div>
+            <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+              <div id="trilhaActiveProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7, #10b981); transition: width 0.4s ease; border-radius: 999px;"></div>
+            </div>
+          </div>
+
+          <!-- Trilha Visual Conectada (Vertical Pathway) -->
+          <div class="trail-journey-wrapper" style="max-width: 680px; margin: 0 auto; padding: 20px 0;">
+            <div id="trailNodesContainer" class="trail-nodes-container">
+              <!-- Renderizado dinamicamente com nós de etapas e linhas conectadas -->
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -1446,6 +1629,9 @@
         <button class="auth-tab-btn" id="tabAdminSystemHealthBtn" onclick="app.switchAdminTab('system_health')" style="white-space: nowrap; font-size: 0.8rem; padding: 8px 12px;">
           <i data-lucide="server" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Sistema & Auditoria
         </button>
+        <button class="auth-tab-btn" id="tabAdminTrilhasBtn" onclick="app.switchAdminTab('trilhas')" style="white-space: nowrap; font-size: 0.8rem; padding: 8px 12px;">
+          <i data-lucide="map" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Trilhas SAS
+        </button>
       </div>
 
       <!-- TAB CONTENT CONTAINER (Scrollable) -->
@@ -1596,6 +1782,32 @@
               Trilha de Auditoria Administrativa (Audit Logs)
             </h5>
             <div id="adminAuditLogsContainer" style="max-height: 220px; overflow-y: auto; font-family: monospace; font-size: 0.78rem;"></div>
+          </div>
+        </div>
+
+        <!-- 8. TRILHAS SAS (APOSTILAS 1, 2 E 3) & MONITORAMENTO -->
+        <div id="adminTrilhasView" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div>
+              <h4 style="margin: 0 0 2px; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Monitoramento de Trilhas SAS</h4>
+              <p class="subtitle" style="margin: 0; font-size: 0.8rem; color: #64748b;">
+                Apostilas 1, 2 e 3 oficiais • Sem Apostila 4 • Progresso e sincronizador seguro
+              </p>
+            </div>
+            <button class="btn-primary" onclick="app.syncTrilhasWithSas()" style="background: #f59e0b; border-color: #f59e0b; padding: 7px 14px; font-size: 0.8rem; font-weight: 700;">
+              <i data-lucide="refresh-cw"></i> Sincronizar com Portal SAS
+            </button>
+          </div>
+
+          <div id="adminTrilhasSyncCard" style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+            <!-- Renderizado dinamicamente com status do sincronizador -->
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+            <h5 style="margin: 0 0 10px; font-size: 0.88rem; font-weight: 800; color: #1e1b4b;">Progresso Recente de Alunos nas Trilhas</h5>
+            <div id="adminTrilhasStudentsTable" style="max-height: 220px; overflow-y: auto; font-size: 0.82rem;">
+              <!-- Renderizado dinamicamente -->
+            </div>
           </div>
         </div>
 
@@ -1946,6 +2158,59 @@
           <button type="submit" class="btn-primary" style="background: #0284c7;">Cadastrar TPC GAMMON+</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Confirm TPC Done Modal ("Você realmente fez?") -->
+  <div class="modal-overlay" id="confirmTpcDoneModal" style="display: none;">
+    <div class="modal-box" style="max-width: 440px; text-align: center; padding: 28px 24px; border-radius: 18px;">
+      <button class="modal-close" onclick="app.closeModal('confirmTpcDoneModal')">&times;</button>
+      <div style="width: 58px; height: 58px; border-radius: 50%; background: #eff6ff; color: #0284c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <i data-lucide="help-circle" style="width: 32px; height: 32px; color: #0284c7;"></i>
+      </div>
+      <h3 style="margin: 0 0 10px; font-size: 1.35rem; font-weight: 800; color: #0f172a;">Você realmente fez?</h3>
+      <p id="confirmTpcDoneText" style="color: #64748b; font-size: 0.92rem; margin: 0 0 18px; line-height: 1.5;">
+        Confirme se você concluiu todas as páginas e exercícios desta tarefa. Ao confirmar, o TPC desaparecerá da sua lista de pendentes!
+      </p>
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 22px; text-align: left;">
+        <div id="confirmTpcDoneSubject" style="font-weight: 800; font-size: 0.82rem; color: #0284c7; text-transform: uppercase; margin-bottom: 4px;"></div>
+        <div id="confirmTpcDoneTitle" style="font-weight: 700; font-size: 0.95rem; color: #0f172a;"></div>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('confirmTpcDoneModal')" style="flex: 1; padding: 10px 16px; font-weight: 700;">
+          Não, voltar
+        </button>
+        <button type="button" class="btn-primary" id="btnConfirmTpcDoneSubmit" onclick="app.executeTpcCompletion()" style="flex: 1; background: #10b981; border-color: #10b981; padding: 10px 20px; font-weight: 800;">
+          Sim, já fiz!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Execução de Etapa da Trilha SAS -->
+  <div class="modal-overlay" id="trilhaStageModal" style="display: none;">
+    <div class="modal-box" style="max-width: 680px; border-radius: 20px; padding: 26px;">
+      <button class="modal-close" onclick="app.closeModal('trilhaStageModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+        <span class="badge-accent" id="trilhaStageBadge" style="background: #fef3c7; color: #b45309; font-weight: 800;">ETAPA 1</span>
+        <span id="trilhaStageChapterTag" style="font-size: 0.82rem; font-weight: 700; color: #64748b;"></span>
+        <span id="trilhaStageSubjectTag" class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 700;"></span>
+      </div>
+      <h3 id="trilhaStageTitle" style="margin: 0 0 8px; font-size: 1.35rem; font-weight: 800; color: #0f172a;"></h3>
+      <p id="trilhaStageDesc" style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin: 0 0 18px;"></p>
+
+      <div id="trilhaStageContentArea" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 20px; max-height: 55vh; overflow-y: auto;">
+        <!-- Perguntas ou conteúdo conceitual renderizado dinamicamente -->
+      </div>
+
+      <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700;">
+          Fechar
+        </button>
+        <button type="button" class="btn-primary" id="btnSubmitTrilhaStage" onclick="app.submitCurrentTrilhaStage()" style="padding: 10px 24px; font-weight: 800; background: #0284c7; border-color: #0284c7;">
+          Concluir Etapa & Salvar Progresso
+        </button>
+      </div>
     </div>
   </div>
 

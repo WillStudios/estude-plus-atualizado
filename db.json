@@ -252,6 +252,36 @@
       "lastSync": "2026-10-05T15:45:32.980Z",
       "activityLog": [
         {
+          "id": "act_1791216485728_sypoj",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T16:08:05.728Z",
+          "type": "trilha_stage_completed",
+          "details": {
+            "subjectKey": "matematica",
+            "bookId": 1,
+            "chapterId": 1,
+            "chapterTitle": "Capítulo 1 – Divisibilidade",
+            "stageId": "pratica_1",
+            "score": 3,
+            "total": 3
+          }
+        },
+        {
+          "id": "act_1791216485714_aqvyt",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T16:08:05.687Z",
+          "type": "trilha_stage_completed",
+          "details": {
+            "subjectKey": "matematica",
+            "bookId": 1,
+            "chapterId": 1,
+            "chapterTitle": "Capítulo 1 – Divisibilidade",
+            "stageId": "fundamentos",
+            "score": 2,
+            "total": 2
+          }
+        },
+        {
           "id": "act_1791215725212_6ugjj",
           "date": "2026-10-05",
           "timestamp": "2026-10-05T15:55:25.183Z",
@@ -2466,6 +2496,36 @@
   "adminNotifications": [],
   "systemEvents": [
     {
+      "id": "evt_1791216485733_c4k1",
+      "level": "info",
+      "source": "trilhas",
+      "message": "Etapa [pratica_1] da trilha de Capítulo 1 – Divisibilidade concluída pelo aluno",
+      "details": {
+        "userId": "admin_freddie",
+        "subjectKey": "matematica",
+        "bookId": 1,
+        "chapterId": 1,
+        "masteryPercentage": 29,
+        "isCompleted": false
+      },
+      "timestamp": "2026-10-05T16:08:05.733Z"
+    },
+    {
+      "id": "evt_1791216485719_fwik",
+      "level": "info",
+      "source": "trilhas",
+      "message": "Etapa [fundamentos] da trilha de Capítulo 1 – Divisibilidade concluída pelo aluno",
+      "details": {
+        "userId": "admin_freddie",
+        "subjectKey": "matematica",
+        "bookId": 1,
+        "chapterId": 1,
+        "masteryPercentage": 14,
+        "isCompleted": false
+      },
+      "timestamp": "2026-10-05T16:08:05.719Z"
+    },
+    {
       "id": "evt_1791215725216_ndfl",
       "level": "info",
       "source": "trilhas",
@@ -2730,5 +2790,37 @@
   "simulados": [],
   "mindmaps": [],
   "studentNotes": [],
-  "trilhasProgress": []
+  "trilhasProgress": [
+    {
+      "id": "trilha_admin_freddie_matematica_1_1",
+      "userId": "admin_freddie",
+      "subjectKey": "matematica",
+      "bookId": 1,
+      "chapterId": 1,
+      "chapterTitle": "Capítulo 1 – Divisibilidade",
+      "currentStageIndex": 2,
+      "completedStages": [
+        "fundamentos",
+        "pratica_1"
+      ],
+      "stageResults": {
+        "fundamentos": {
+          "completedAt": "2026-10-05T16:08:05.686Z",
+          "score": 2,
+          "total": 2,
+          "percentage": 100
+        },
+        "pratica_1": {
+          "completedAt": "2026-10-05T16:08:05.728Z",
+          "score": 3,
+          "total": 3,
+          "percentage": 100
+        }
+      },
+      "masteryPercentage": 29,
+      "isCompleted": false,
+      "startedAt": "2026-10-05T16:08:05.686Z",
+      "lastCompletedAt": "2026-10-05T16:08:05.728Z"
+    }
+  ]
 }
