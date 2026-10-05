@@ -1,26 +1,26 @@
 {
   "status": "success",
-  "lastSync": "2026-10-04T19:43:24.364Z",
-  "lastSyncFormatted": "04/10/2026, 16:43:24",
-  "totalCaptured": 121,
-  "totalTpcs": 118,
+  "lastSync": "2026-10-05T15:43:49.031Z",
+  "lastSyncFormatted": "05/10/2026, 12:43:49",
+  "totalCaptured": 122,
+  "totalTpcs": 119,
   "latestTpc": {
-    "id": "gammon_109863",
-    "gammonId": 109863,
+    "id": "gammon_110651",
+    "gammonId": 110651,
     "subject": "Matemática",
     "title": "TPC Diário - Matemática",
-    "description": "Atividade Suplementar - página 50, para o dia 05/10.",
+    "description": "Páginas 93 e 96, para amanhã 06/10.",
     "teacher": "ELAINE APARECIDA LEANDRO DOS SANTOS",
     "classGroup": "17B",
     "term": "3º T",
     "type": "TPC Diário",
-    "createdDate": "2026-10-02",
-    "createdDateBr": "02/10/2026",
+    "createdDate": "2026-10-05",
+    "createdDateBr": "05/10/2026",
     "dueDate": "2026-10-05",
     "source": "portal_gammon_sync",
     "status": "pending",
     "done": false,
-    "syncedAt": "2026-10-04T19:43:24.361Z"
+    "syncedAt": "2026-10-05T15:43:49.028Z"
   },
-  "message": "Sincronização concluída! 118 TPCs Diários importados diretamente do Portal Gammon."
+  "message": "Sincronização concluída! 119 TPCs Diários importados diretamente do Portal Gammon."
 }

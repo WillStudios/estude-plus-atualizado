@@ -74,6 +74,15 @@ function readDb() {
       if (!Array.isArray(parsed.mindmaps)) parsed.mindmaps = [];
       if (!Array.isArray(parsed.studentNotes)) parsed.studentNotes = [];
       if (!Array.isArray(parsed.trilhasProgress)) parsed.trilhasProgress = [];
+      if (!Array.isArray(parsed.tpcs)) parsed.tpcs = [];
+      if (parsed.tpcs.length > 5) {
+        parsed.tpcs = parsed.tpcs.sort((a, b) => {
+          const timeA = new Date(a.createdDate || a.dueDate || 0).getTime();
+          const timeB = new Date(b.createdDate || b.dueDate || 0).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+          return (Number(b.gammonId) || 0) - (Number(a.gammonId) || 0);
+        }).slice(0, 5);
+      }
       if (Array.isArray(parsed.users)) {
         parsed.users = parsed.users.filter(u => !isMockUser(u));
       }
@@ -117,6 +126,25 @@ function writeDb(data) {
     console.error('Error writing DB:', e);
   }
 }
+
+const OFFICIAL_PLANS = {
+  pro_mensal: {
+    id: 'pro_mensal',
+    name: 'Plano ESTUDE+ PRO Mensal',
+    amount: 10.00,
+    periodicity: 'mensal',
+    durationDays: 30,
+    description: 'Acesso completo ao Estude+ PRO por 30 dias (R$ 10,00/mês)'
+  },
+  pro_anual: {
+    id: 'pro_anual',
+    name: 'Plano ESTUDE+ PRO Anual',
+    amount: 120.00,
+    periodicity: 'anual',
+    durationDays: 365,
+    description: 'Acesso completo ao Estude+ PRO por 1 ano / 365 dias (R$ 120,00/ano)'
+  }
+};
 
 // Global in-memory state for sessions, presence and rate-limiting
 const activeSessions = new Map(); // sessionId -> { sessionId, userId, userName, userRole, deviceType, loginTime, lastHeartbeat, ip }
@@ -401,14 +429,14 @@ function getAuthUser(req) {
     }
   }
 
-  // Suporte a identificação de dispositivo autenticado por x-user-id se houver sessão ativa
+  // Suporte a identificação de dispositivo autenticado por x-user-id
   const headerUserId = req.headers['x-user-id'];
   if (headerUserId) {
     const session = Array.from(activeSessions.values()).find(s => s.userId === headerUserId);
-    if (session) {
-      const db = readDb();
-      const user = (db.users || []).find(u => u.id === headerUserId);
-      if (user) return { user, session };
+    const db = readDb();
+    const user = (db.users || []).find(u => u.id === headerUserId);
+    if (user) {
+      return { user, session: session || { userId: user.id, userRole: user.role, userName: user.name } };
     }
   }
 
@@ -448,29 +476,50 @@ function triggerGammonSync(callback) {
       if (fs.existsSync(tpcsFile)) {
         const freshTpcs = JSON.parse(fs.readFileSync(tpcsFile, 'utf8'));
         const db = readDb();
-        const existingMap = new Map();
-        (db.tpcs || []).forEach(t => existingMap.set(t.id, t));
-        freshTpcs.forEach(t => existingMap.set(t.id, t));
-        db.tpcs = Array.from(existingMap.values());
+        
+        // REGRA OFICIAL: Manter estritamente os 5 TPCs diários mais recentes
+        const tpcMap = new Map();
+        // Preserva status de 'done' / 'dismissed' do aluno caso já tenha marcado como feito
+        (db.tpcs || []).forEach(t => tpcMap.set(String(t.id), t));
+        freshTpcs.forEach(t => {
+          const key = String(t.id);
+          const prev = tpcMap.get(key);
+          if (prev) {
+            tpcMap.set(key, { ...t, status: prev.status, done: prev.done, dismissed: prev.dismissed, doneAt: prev.doneAt });
+          } else {
+            tpcMap.set(key, t);
+          }
+        });
+
+        // Ordena rigorosamente pelos mais recentes (data/horário e ID Gammon)
+        const sorted = Array.from(tpcMap.values()).sort((a, b) => {
+          const timeA = new Date(a.createdDate || a.dueDate || 0).getTime();
+          const timeB = new Date(b.createdDate || b.dueDate || 0).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+          return (Number(b.gammonId) || 0) - (Number(a.gammonId) || 0);
+        });
+
+        // Janela deslizante de no máximo 5 TPCs
+        db.tpcs = sorted.slice(0, 5);
         db.gammonStatus = {
           status: 'success',
           lastSync: new Date().toISOString(),
-          totalCaptured: freshTpcs.length,
-          message: `${freshTpcs.length} TPCs sincronizados do Portal Gammon!`
+          totalCaptured: db.tpcs.length,
+          message: `${db.tpcs.length} TPCs mais recentes sincronizados do Portal Gammon!`
         };
         if (!Array.isArray(db.agendaSyncLogs)) db.agendaSyncLogs = [];
         db.agendaSyncLogs.unshift({
           timestamp: new Date().toISOString(),
           status: 'success',
-          totalCaptured: freshTpcs.length,
-          message: `${freshTpcs.length} TPCs sincronizados com sucesso do Portal Gammon!`
+          totalCaptured: db.tpcs.length,
+          message: `${db.tpcs.length} TPCs diários mais recentes sincronizados com sucesso do Portal Gammon!`
         });
         if (db.agendaSyncLogs.length > 50) db.agendaSyncLogs = db.agendaSyncLogs.slice(0, 50);
         db.masterCommands = db.masterCommands || {};
         db.masterCommands.forceRefreshTimestamp = Date.now();
         writeDb(db);
-        logSystemEvent('info', 'gammon_sync', `Sincronização Gammon concluída com ${freshTpcs.length} TPCs`, { count: freshTpcs.length });
-        broadcastToAdmins('gammon_sync', { totalTpcs: freshTpcs.length });
+        logSystemEvent('info', 'gammon_sync', `Sincronização Gammon concluída com ${db.tpcs.length} TPCs mais recentes`, { count: db.tpcs.length });
+        broadcastToAdmins('gammon_sync', { totalTpcs: db.tpcs.length });
       }
     } catch (e) {
       console.error('Erro ao mesclar TPCs:', e);
@@ -778,6 +827,14 @@ const server = http.createServer((req, res) => {
       .filter(r => r.userId === freshUser.id)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] || null;
 
+    // Verifica expiração automática de assinatura
+    if (freshUser.isSubscribed && freshUser.proExpiresAt && new Date(freshUser.proExpiresAt).getTime() <= Date.now()) {
+      freshUser.isSubscribed = false;
+      freshUser.plan = 'free';
+      freshUser.planStatus = 'expired';
+      writeDb(db);
+    }
+
     return sendJson({
       success: true,
       user: {
@@ -790,7 +847,10 @@ const server = http.createServer((req, res) => {
         isSubscribed: Boolean(freshUser.isSubscribed),
         plan: freshUser.plan || 'free',
         planStatus: freshUser.planStatus || 'free',
+        planType: freshUser.planType || (freshUser.planStatus === 'pro_anual_active' ? 'pro_anual' : (freshUser.isSubscribed ? 'pro_mensal' : 'free')),
+        planPeriodicity: freshUser.planPeriodicity || (freshUser.planStatus === 'pro_anual_active' ? 'anual' : (freshUser.isSubscribed ? 'mensal' : 'gratuito')),
         planName: freshUser.planName || 'Plano Base',
+        proActivatedAt: freshUser.proActivatedAt || null,
         proExpiresAt: freshUser.proExpiresAt || null,
         trialExpiresAt: freshUser.trialExpiresAt || null,
         streak: Number(freshUser.streak) || 0,
@@ -1407,10 +1467,18 @@ const server = http.createServer((req, res) => {
   }
 
   /* ==========================================================================
-     SOLICITAÇÕES DO PLANO PRO
+     PLANOS OFICIAIS & SOLICITAÇÕES DO PLANO PRO
      ========================================================================== */
 
-  // POST /api/plans/request - Aluno solicita ativação do Plano Pro
+  // GET /api/plans - Fonte única da verdade para os planos e preços oficiais
+  if (req.method === 'GET' && pathname === '/api/plans') {
+    return sendJson({
+      success: true,
+      plans: OFFICIAL_PLANS
+    });
+  }
+
+  // POST /api/plans/request - Aluno solicita ativação do Plano Pro (Mensal ou Anual)
   if (req.method === 'POST' && pathname === '/api/plans/request') {
     const auth = getAuthUser(req);
     if (!auth || !auth.user) {
@@ -1435,6 +1503,10 @@ const server = http.createServer((req, res) => {
         }, 409);
       }
 
+      // Backend é a ÚNICA fonte da verdade para valores - NUNCA confia em valores do navegador
+      const requestedPlanId = (data.planId === 'pro_anual') ? 'pro_anual' : 'pro_mensal';
+      const planConfig = OFFICIAL_PLANS[requestedPlanId] || OFFICIAL_PLANS.pro_mensal;
+
       const reqId = 'req_' + Date.now() + '_' + crypto.randomBytes(3).toString('hex');
       const newReq = {
         id: reqId,
@@ -1442,13 +1514,16 @@ const server = http.createServer((req, res) => {
         userName: user.name || user.username || 'Aluno Gammon',
         userEmail: user.email || '',
         userGrade: user.grade || '7º Ano',
+        planId: planConfig.id,
         plan: 'pro',
-        planName: 'Plano ESTUDE+ PRO (R$ 19,90/mês)',
-        amount: 19.90,
+        planName: planConfig.name,
+        planPeriodicity: planConfig.periodicity,
+        durationDays: planConfig.durationDays,
+        amount: planConfig.amount, // Oficial: 10.00 (mensal) ou 120.00 (anual)
         contactMethod: (data.contactMethod || 'whatsapp').trim(),
         contactInfo: (data.contactInfo || '').trim(),
         note: (data.note || '').trim(),
-        status: 'pending', // 'pending', 'in_review', 'approved', 'rejected'
+        status: 'pending', // Pagamento pendente de conferência
         statusReason: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -1456,13 +1531,17 @@ const server = http.createServer((req, res) => {
         reviewedAt: null
       };
 
+      // Atualiza status do usuário para pagamento pendente
+      user.planStatus = 'payment_pending';
+      user.pendingPlanId = planConfig.id;
+
       db.planRequests.unshift(newReq);
       writeDb(db);
 
       // Notifica administradores conectados em tempo real via SSE
       broadcastToAdmins('new_plan_request', {
         request: newReq,
-        message: `🔔 Nova solicitação de Plano PRO recebida de ${newReq.userName}!`
+        message: `🔔 Nova solicitação do ${planConfig.name} recebida de ${newReq.userName}!`
       });
 
       // Grava log de auditoria
@@ -1473,13 +1552,13 @@ const server = http.createServer((req, res) => {
           type: 'plan_request_created',
           ip: clientIp,
           userId: user.id,
-          details: `Aluno ${newReq.userName} (${user.id}) solicitou o Plano PRO via ${newReq.contactMethod}`
+          details: `Aluno ${newReq.userName} (${user.id}) solicitou o ${planConfig.name} (R$ ${planConfig.amount.toFixed(2)}) via ${newReq.contactMethod}`
         });
       }
 
       return sendJson({
         success: true,
-        message: 'Solicitação do Plano PRO enviada com sucesso! O administrador já foi notificado.',
+        message: `Solicitação do ${planConfig.name} enviada com sucesso! O administrador já foi notificado.`,
         request: newReq
       });
     });
@@ -1501,7 +1580,7 @@ const server = http.createServer((req, res) => {
     });
   }
 
-  // POST /api/admin/plan-requests/status - Altera status da solicitação (Em análise, Aprovada, Recusada)
+  // POST /api/admin/plan-requests/status - Altera status da solicitação (Em análise, Aprovada, Recusada, Cancelada)
   if (req.method === 'POST' && pathname === '/api/admin/plan-requests/status') {
     const auth = getAuthUser(req);
     const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
@@ -1514,9 +1593,9 @@ const server = http.createServer((req, res) => {
         return sendJson({ error: 'requestId e status são obrigatórios.' }, 400);
       }
 
-      const validStatuses = ['pending', 'in_review', 'approved', 'rejected'];
+      const validStatuses = ['pending', 'in_review', 'approved', 'rejected', 'cancel_requested', 'canceled'];
       if (!validStatuses.includes(data.status)) {
-        return sendJson({ error: 'Status inválido. Use pending, in_review, approved ou rejected.' }, 400);
+        return sendJson({ error: 'Status inválido. Use pending, in_review, approved, rejected, cancel_requested ou canceled.' }, 400);
       }
 
       const db = readDb();
@@ -1535,37 +1614,62 @@ const server = http.createServer((req, res) => {
 
       const targetUser = (db.users || []).find(u => u.id === targetReq.userId);
 
-      // Quando o administrador APROVA: ativa os benefícios do Plano PRO no banco
+      // Quando o administrador APROVA: ativa os benefícios do Plano PRO no banco de forma estrita
       if (data.status === 'approved' && targetUser) {
+        const isAnual = targetReq.planId === 'pro_anual';
+        const durationDays = targetReq.durationDays || (isAnual ? 365 : 30);
+        const planConfig = isAnual ? OFFICIAL_PLANS.pro_anual : OFFICIAL_PLANS.pro_mensal;
+        const now = new Date();
+        const expires = new Date(now.getTime() + durationDays * 24 * 3600 * 1000);
+
         targetUser.isSubscribed = true;
         targetUser.plan = 'pro';
-        targetUser.planStatus = 'active';
-        targetUser.planName = 'Plano Administrador PRO';
-        targetUser.proExpiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+        targetUser.planType = planConfig.id;
+        targetUser.planPeriodicity = planConfig.periodicity;
+        targetUser.planStatus = isAnual ? 'pro_anual_active' : 'pro_mensal_active';
+        targetUser.planName = planConfig.name;
+        targetUser.proActivatedAt = now.toISOString();
+        targetUser.proExpiresAt = expires.toISOString();
+        targetUser.lastBillingDate = now.toISOString();
+        delete targetUser.trialExpiresAt;
+        delete targetUser.trialDaysRemaining;
+        delete targetUser.trialActivatedAt;
+        delete targetUser.pendingPlanId;
 
-        // Registra o pagamento confirmado em db.payments
+        // Registra o pagamento confirmado em db.payments com o valor oficial do plano
         if (!Array.isArray(db.payments)) db.payments = [];
         const paymentRecord = {
           id: 'PAG_' + Date.now(),
           studentName: targetReq.userName,
           email: targetReq.userEmail,
           userId: targetReq.userId,
+          planId: planConfig.id,
+          planPeriodicity: planConfig.periodicity,
           method: targetReq.contactMethod || 'cash',
-          amount: targetReq.amount || 19.90,
-          date: new Date().toISOString().slice(0, 10),
+          amount: planConfig.amount, // Oficial: 10.00 ou 120.00
+          date: now.toISOString().slice(0, 10),
           status: 'confirmed',
-          note: `Aprovado pelo administrador ${adminName}. Motivo/Obs: ${targetReq.statusReason || 'Recebimento validado'}`,
+          note: `Aprovado pelo administrador ${adminName}. ${planConfig.name} (${durationDays} dias). Motivo/Obs: ${targetReq.statusReason || 'Recebimento validado'}`,
           confirmedBy: adminName,
-          confirmedAt: new Date().toISOString()
+          confirmedAt: now.toISOString()
         };
         db.payments.unshift(paymentRecord);
       } else if (data.status === 'rejected' && targetUser) {
-        // Se foi recusada, reverte status de pendência
-        if (targetUser.planStatus === 'pending_cash' || targetUser.planStatus === 'pending') {
-          targetUser.planStatus = 'free';
-          targetUser.plan = 'free';
+        // Se foi recusada, define status de recusa
+        targetUser.planStatus = 'payment_declined';
+        if (targetUser.plan !== 'pro') {
           targetUser.isSubscribed = false;
+          targetUser.plan = 'free';
         }
+      } else if (data.status === 'canceled' && targetUser) {
+        targetUser.planStatus = 'canceled';
+        targetUser.isSubscribed = false;
+        targetUser.plan = 'free';
+        targetUser.planName = 'Plano Base';
+        delete targetUser.proActivatedAt;
+        delete targetUser.proExpiresAt;
+      } else if (data.status === 'cancel_requested' && targetUser) {
+        targetUser.planStatus = 'cancel_requested';
       }
 
       writeDb(db);
@@ -1586,12 +1690,46 @@ const server = http.createServer((req, res) => {
           id: targetUser.id,
           name: targetUser.name,
           plan: targetUser.plan,
+          planType: targetUser.planType,
+          planPeriodicity: targetUser.planPeriodicity,
           planStatus: targetUser.planStatus,
-          isSubscribed: targetUser.isSubscribed
+          isSubscribed: targetUser.isSubscribed,
+          proExpiresAt: targetUser.proExpiresAt
         } : null
       });
     });
     return;
+  }
+
+  // POST /api/subscription/cancel - Usuário autenticado solicita cancelamento de sua assinatura
+  if (req.method === 'POST' && pathname === '/api/subscription/cancel') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    const db = readDb();
+    const user = (db.users || []).find(u => u.id === auth.user.id);
+    if (!user) {
+      return sendJson({ error: 'Usuário não encontrado.' }, 404);
+    }
+
+    user.isSubscribed = false;
+    user.plan = 'free';
+    user.planStatus = 'canceled';
+    user.planName = 'Plano Base';
+    delete user.proActivatedAt;
+    delete user.proExpiresAt;
+    delete user.trialExpiresAt;
+    delete user.trialDaysRemaining;
+    delete user.trialActivatedAt;
+
+    writeDb(db);
+
+    return sendJson({
+      success: true,
+      message: 'Assinatura cancelada com sucesso. Sua conta retornou ao Plano Base.'
+    });
   }
 
   /* ==========================================================================
@@ -1644,6 +1782,8 @@ const server = http.createServer((req, res) => {
         isSubscribed: Boolean(u.isSubscribed),
         plan: u.plan || 'free',
         planStatus: u.planStatus || 'free',
+        planType: u.planType || (u.planStatus === 'pro_anual_active' ? 'pro_anual' : (u.isSubscribed ? 'pro_mensal' : 'free')),
+        planPeriodicity: u.planPeriodicity || (u.planStatus === 'pro_anual_active' ? 'anual' : (u.isSubscribed ? 'mensal' : 'gratuito')),
         planName: u.planName || 'Plano Base',
         proActivatedAt: u.proActivatedAt,
         proExpiresAt: u.proExpiresAt,
@@ -2553,20 +2693,26 @@ const server = http.createServer((req, res) => {
         return sendJson({ error: 'Usuário não encontrado no banco de dados oficial.' }, 404);
       }
 
-      const days = Number(data.days) || 30;
+      const requestedPlanId = (data?.planId === 'pro_anual') ? 'pro_anual' : 'pro_mensal';
+      const planConfig = OFFICIAL_PLANS[requestedPlanId] || OFFICIAL_PLANS.pro_mensal;
+      const isAnual = planConfig.id === 'pro_anual';
+      const days = isAnual ? 365 : (Number(data.days) || planConfig.durationDays || 30);
       const now = new Date();
       const expires = new Date(Date.now() + days * 24 * 3600 * 1000);
 
       user.isSubscribed = true;
       user.plan = 'pro';
-      user.planStatus = 'active';
-      user.planName = 'ESTUDE+ PRO';
+      user.planType = planConfig.id;
+      user.planPeriodicity = planConfig.periodicity;
+      user.planStatus = isAnual ? 'pro_anual_active' : 'pro_mensal_active';
+      user.planName = planConfig.name;
       user.proActivatedAt = now.toISOString();
       user.proExpiresAt = expires.toISOString();
       user.lastBillingDate = now.toISOString();
       delete user.trialExpiresAt;
       delete user.trialDaysRemaining;
       delete user.trialActivatedAt;
+      delete user.pendingPlanId;
 
       // Se houver solicitações de plano em análise/pendentes para este usuário, aprova
       if (Array.isArray(db.planRequests)) {
@@ -2580,18 +2726,20 @@ const server = http.createServer((req, res) => {
         });
       }
 
-      // Registra pagamento confirmado
+      // Registra pagamento confirmado com o valor oficial do plano
       if (!Array.isArray(db.payments)) db.payments = [];
       db.payments.unshift({
         id: 'PAG_' + Date.now(),
         studentName: user.name || user.username,
         email: user.email || '',
         userId: user.id,
+        planId: planConfig.id,
+        planPeriodicity: planConfig.periodicity,
         method: data.method || 'admin_manual',
-        amount: 19.90,
+        amount: planConfig.amount, // Oficial: 10.00 ou 120.00
         date: now.toISOString().slice(0, 10),
         status: 'confirmed',
-        note: `Plano PRO ativado manualmente pelo administrador (${days} dias). Vencimento: ${expires.toLocaleDateString('pt-BR')}`,
+        note: `Plano PRO ativado manualmente pelo administrador (${planConfig.name} - ${days} dias). Vencimento: ${expires.toLocaleDateString('pt-BR')}`,
         confirmedBy: auth?.user?.name || 'Admin',
         confirmedAt: now.toISOString()
       });
@@ -2604,7 +2752,7 @@ const server = http.createServer((req, res) => {
         type: 'pro_activated',
         ip: clientIp,
         userId: user.id,
-        details: `Plano PRO ativado para ${user.name || user.username} (${user.id}) até ${expires.toISOString()}`
+        details: `Plano PRO (${planConfig.name}) ativado para ${user.name || user.username} (${user.id}) até ${expires.toISOString()}`
       });
 
       db.masterCommands = db.masterCommands || {};
@@ -2616,17 +2764,19 @@ const server = http.createServer((req, res) => {
         supabase.syncUser(user).catch(err => console.warn('[Supabase Sync Activate Pro]', err.message));
       }
 
-      broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: true, plan: 'pro', planStatus: 'active' });
+      broadcastToAdmins('user_updated', { userId: user.id, isSubscribed: true, plan: 'pro', planStatus: user.planStatus });
 
       return sendJson({
         success: true,
-        message: `Plano PRO ativado com sucesso para "${user.name || user.username}" até ${expires.toLocaleDateString('pt-BR')}!`,
+        message: `Plano PRO (${planConfig.name}) ativado com sucesso para "${user.name || user.username}" até ${expires.toLocaleDateString('pt-BR')}!`,
         user: {
           id: user.id,
           name: user.name,
           username: user.username,
           isSubscribed: user.isSubscribed,
           plan: user.plan,
+          planType: user.planType,
+          planPeriodicity: user.planPeriodicity,
           planStatus: user.planStatus,
           planName: user.planName,
           proExpiresAt: user.proExpiresAt
@@ -2657,7 +2807,7 @@ const server = http.createServer((req, res) => {
 
       user.isSubscribed = false;
       user.plan = 'free';
-      user.planStatus = 'free';
+      user.planStatus = 'canceled';
       user.planName = 'Plano Base';
       delete user.proActivatedAt;
       delete user.proExpiresAt;

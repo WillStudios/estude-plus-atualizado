@@ -171,10 +171,12 @@ async function syncGammonPortal() {
       throw new Error('Não foi possível obter a lista de ocorrências da API.');
     }
 
-    // Filtrar e normalizar TPCs
-    const tpcsList = occurrencesData
+    // Filtrar, deduplicar e normalizar TPCs
+    const tpcMap = new Map();
+    occurrencesData
       .filter(o => o.DESCTIPOOCOR === 'TPC Diário' || o.DESCTIPOOCOR === 'TPC incompleto' || o.DESCTIPOOCOR === 'Não realizou TPC')
-      .map(o => {
+      .forEach(o => {
+        const idKey = `gammon_${o.IDOCORALUNO}`;
         // Formatar data limpa YYYY-MM-DD
         const dataRaw = o.DATAOCORRENCIA ? o.DATAOCORRENCIA.slice(0, 10) : new Date().toISOString().slice(0, 10);
         const [year, month, day] = dataRaw.split('-');
@@ -191,8 +193,8 @@ async function syncGammonPortal() {
           dueDate = dataRaw;
         }
 
-        return {
-          id: `gammon_${o.IDOCORALUNO}`,
+        const tpcItem = {
+          id: idKey,
           gammonId: o.IDOCORALUNO,
           subject: (o.DISCIPLINA || 'Geral').trim(),
           title: `TPC Diário - ${(o.DISCIPLINA || 'Geral').trim()}`,
@@ -209,10 +211,24 @@ async function syncGammonPortal() {
           done: false,
           syncedAt: new Date().toISOString()
         };
+
+        // Atualiza ou insere (sem duplicatas)
+        tpcMap.set(idKey, tpcItem);
       });
 
-    // Salvar arquivo de TPCs sincronizados
-    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(tpcsList, null, 2), 'utf8');
+    // Ordenação consistente pelos mais recentes (data e ID Gammon)
+    const sortedTpcs = Array.from(tpcMap.values()).sort((a, b) => {
+      const timeA = new Date(a.createdDate || a.dueDate || 0).getTime();
+      const timeB = new Date(b.createdDate || b.dueDate || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return (Number(b.gammonId) || 0) - (Number(a.gammonId) || 0);
+    });
+
+    // REGRA PRINCIPAL: Selecionar e manter ESTRITAMENTE os 5 TPCs DIÁRIOS MAIS RECENTES
+    const top5Tpcs = sortedTpcs.slice(0, 5);
+
+    // Salvar arquivo de TPCs sincronizados (apenas os 5 mais recentes)
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(top5Tpcs, null, 2), 'utf8');
 
     // Salvar status de sucesso
     const statusPayload = {
@@ -220,13 +236,13 @@ async function syncGammonPortal() {
       lastSync: new Date().toISOString(),
       lastSyncFormatted: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
       totalCaptured: occurrencesData.length,
-      totalTpcs: tpcsList.length,
-      latestTpc: tpcsList[0] || null,
-      message: `Sincronização concluída! ${tpcsList.length} TPCs Diários importados diretamente do Portal Gammon.`
+      totalTpcs: top5Tpcs.length,
+      latestTpc: top5Tpcs[0] || null,
+      message: `Sincronização concluída! Os ${top5Tpcs.length} TPCs Diários mais recentes foram importados do Portal Gammon.`
     };
     fs.writeFileSync(STATUS_FILE, JSON.stringify(statusPayload, null, 2), 'utf8');
 
-    console.log(`[${new Date().toISOString()}] SUCESSO: ${tpcsList.length} TPCs sincronizados com o Gammon!`);
+    console.log(`[${new Date().toISOString()}] SUCESSO: ${top5Tpcs.length} TPCs recentes sincronizados com o Gammon!`);
     return statusPayload;
 
   } catch (err) {

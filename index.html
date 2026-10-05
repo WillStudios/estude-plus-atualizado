@@ -157,7 +157,7 @@
         <button class="nav-btn" data-tab="plans-pricing" style="border-left: 3px solid #10b981;">
           <i data-lucide="crown" style="color: #10b981;"></i>
           <span>💎 Planos & Assinatura</span>
-          <span class="badge-accent" style="background: #ecfdf5; color: #047857;">R$ 19,90</span>
+          <span class="badge-accent" style="background: #ecfdf5; color: #047857;">R$ 10,00/mês</span>
         </button>
         <button class="nav-btn" data-tab="gammon-tpc" style="border-left: 3px solid #0284c7;">
           <i data-lucide="clipboard-list" style="color: #0284c7;"></i>
@@ -194,7 +194,7 @@
           <span class="sparkle-tag">PLANO PRO</span>
           <h4>Desbloqueie todo o poder</h4>
         </div>
-        <p>Experimente <strong>5 dias grátis</strong> ou assine por apenas <strong>R$ 19,90/mês</strong>.</p>
+        <p>Experimente <strong>5 dias grátis</strong> ou assine por <strong>R$ 10,00/mês</strong> ou <strong>R$ 120,00/ano</strong>.</p>
         <button class="btn-upgrade">Ver Detalhes do Plano</button>
       </div>
 
@@ -850,28 +850,57 @@
           <!-- 3. PRO Plan Mensal -->
           <div style="background: #ffffff; border: 2px solid #4f46e5; border-radius: 20px; padding: 24px; position: relative; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.15);">
             <div style="position: absolute; top: -12px; right: 20px; background: linear-gradient(135deg, #4f46e5, #06b6d4); color: white; font-weight: 800; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);">
-              MAIS ESCOLHIDO NA ESCOLA
+              PLANO MENSAL
             </div>
-            <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">ACESSO TOTAL ILIMITADO</span>
-            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: #0f172a;">ESTUDE+ PRO</h3>
-            <p style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Desbloqueie todo o potencial para garantir as melhores notas no Gammon.</p>
+            <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">PERIODICIDADE MENSAL</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: #0f172a;">ESTUDE+ PRO Mensal</h3>
+            <p style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Acesso total ilimitado renovado a cada 30 dias com máxima flexibilidade.</p>
             <div style="font-size: 2rem; font-weight: 900; color: #4f46e5; margin-bottom: 18px;">
-              R$ 19,90 <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">/ por mês</span>
+              R$ 10,00 <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">/ por mês</span>
             </div>
             <ul class="benefits-list" style="margin-bottom: 24px; font-size: 0.82rem;">
               <li><i data-lucide="check" class="check"></i> 👑 <strong>Gemini 2.5 Flash Ilimitado:</strong> Resolução de dúvidas em segundos 24h</li>
-              <li><i data-lucide="check" class="check"></i> 📚 <strong>Download em PDF Completo:</strong> Todas as 12 Apostilas SAS Asas 2026</li>
+              <li><i data-lucide="check" class="check"></i> 📚 <strong>Apostilas SAS em PDF:</strong> Todas as apostilas autorizadas Asas 2026</li>
               <li><i data-lucide="check" class="check"></i> 🧭 <strong>Gabarito & Eureka Comentado:</strong> Resoluções passo a passo</li>
               <li><i data-lucide="check" class="check"></i> 🎯 <strong>Aprender com os Erros Turbo:</strong> Diagnóstico de notas</li>
               <li><i data-lucide="check" class="check"></i> ⚡ <strong>Quizzes & Treinos Ilimitados:</strong> Escolha dificuldade e matérias</li>
-              <li><i data-lucide="check" class="check"></i> 🤝 <strong>Pagamento Super Flexível:</strong> Pix ou <strong>Dinheiro Vivo na Escola</strong> com Freddie!</li>
+              <li><i data-lucide="check" class="check"></i> 🤝 <strong>Pagamento Flexível:</strong> Pix ou <strong>Dinheiro Vivo na Escola</strong> com Freddie!</li>
             </ul>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button class="btn-primary" id="btnRequestProPlanCard" onclick="app.openProRequestModal()" style="width: 100%; font-size: 0.95rem; padding: 13px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border: none; font-weight: 800; border-radius: 12px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
-                <i data-lucide="crown"></i> Solicitar Plano PRO (R$ 19,90)
+              <button class="btn-primary" id="btnRequestProPlanCardMensal" onclick="app.openProRequestModal('pro_mensal')" style="width: 100%; font-size: 0.95rem; padding: 13px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border: none; font-weight: 800; border-radius: 12px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);">
+                <i data-lucide="crown"></i> Solicitar PRO Mensal (R$ 10,00)
               </button>
-              <button type="button" class="btn-outline" onclick="app.showModal('subscriptionModal')" style="width: 100%; font-size: 0.85rem; padding: 9px; font-weight: 700; color: #4338ca; border-color: #c7d2fe; background: #eef2ff;">
-                <i data-lucide="qrcode"></i> Ver Detalhes / Chave Pix e Dinheiro
+              <button type="button" class="btn-outline" onclick="app.showSubscriptionModal('pro_mensal')" style="width: 100%; font-size: 0.85rem; padding: 9px; font-weight: 700; color: #4338ca; border-color: #c7d2fe; background: #eef2ff;">
+                <i data-lucide="qrcode"></i> Pagar Mensal (Pix ou Dinheiro)
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. PRO Plan Anual -->
+          <div style="background: #ffffff; border: 2px solid #059669; border-radius: 20px; padding: 24px; position: relative; box-shadow: 0 10px 30px rgba(5, 150, 105, 0.15);">
+            <div style="position: absolute; top: -12px; right: 20px; background: linear-gradient(135deg, #059669, #10b981); color: white; font-weight: 800; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);">
+              PLANO ANUAL • 365 DIAS
+            </div>
+            <span style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px;">PERIODICIDADE ANUAL</span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: #0f172a;">ESTUDE+ PRO Anual</h3>
+            <p style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Acesso contínuo garantido por 365 dias sem se preocupar em renovar a cada mês.</p>
+            <div style="font-size: 2rem; font-weight: 900; color: #059669; margin-bottom: 18px;">
+              R$ 120,00 <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">/ por ano</span>
+            </div>
+            <ul class="benefits-list" style="margin-bottom: 24px; font-size: 0.82rem;">
+              <li><i data-lucide="check" style="color: #059669; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> 👑 <strong>Acesso Total por 365 Dias:</strong> Ano letivo inteiro garantido</li>
+              <li><i data-lucide="check" style="color: #059669; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> 👑 <strong>Gemini 2.5 Flash Ilimitado:</strong> Resolução de dúvidas em segundos 24h</li>
+              <li><i data-lucide="check" style="color: #059669; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> 📚 <strong>Apostilas SAS em PDF:</strong> Todas as apostilas autorizadas Asas 2026</li>
+              <li><i data-lucide="check" style="color: #059669; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> 🧭 <strong>Gabarito & Eureka Comentado:</strong> Resoluções passo a passo</li>
+              <li><i data-lucide="check" style="color: #059669; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> 🎯 <strong>Aprender com os Erros Turbo:</strong> Diagnóstico de notas</li>
+              <li><i data-lucide="check" style="color: #059669; width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> 🤝 <strong>Pagamento Oficial:</strong> Pix direto ou <strong>Dinheiro Vivo</strong> com Freddie!</li>
+            </ul>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <button class="btn-primary" id="btnRequestProPlanCardAnual" onclick="app.openProRequestModal('pro_anual')" style="width: 100%; font-size: 0.95rem; padding: 13px; background: linear-gradient(135deg, #059669, #10b981); border: none; font-weight: 800; border-radius: 12px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
+                <i data-lucide="crown"></i> Solicitar PRO Anual (R$ 120,00)
+              </button>
+              <button type="button" class="btn-outline" onclick="app.showSubscriptionModal('pro_anual')" style="width: 100%; font-size: 0.85rem; padding: 9px; font-weight: 700; color: #047857; border-color: #a7f3d0; background: #ecfdf5;">
+                <i data-lucide="qrcode"></i> Pagar Anual (Pix ou Dinheiro)
               </button>
             </div>
           </div>
@@ -1429,10 +1458,20 @@
         <p>Acesso total ao Gemini 2.5 Ilimitado, Apostilas em PDF e resoluções do Eureka</p>
       </div>
 
+      <!-- Selector between Mensal and Anual -->
+      <div style="display: flex; gap: 8px; justify-content: center; margin: 14px 0 16px;">
+        <button type="button" id="btnSubModalTierMensal" onclick="app.selectSubModalPlan('pro_mensal')" style="flex: 1; padding: 10px 12px; border-radius: 12px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 2px solid #4f46e5; background: #eef2ff; color: #4338ca; transition: all 0.2s;">
+          <i data-lucide="calendar" style="width: 15px; height: 15px; display: inline; vertical-align: middle;"></i> PRO Mensal (R$ 10,00/mês)
+        </button>
+        <button type="button" id="btnSubModalTierAnual" onclick="app.selectSubModalPlan('pro_anual')" style="flex: 1; padding: 10px 12px; border-radius: 12px; font-weight: 800; font-size: 0.85rem; cursor: pointer; border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; transition: all 0.2s;">
+          <i data-lucide="crown" style="width: 15px; height: 15px; display: inline; vertical-align: middle;"></i> PRO Anual (R$ 120,00/ano)
+        </button>
+      </div>
+
       <div class="price-display">
         <span class="curr">R$</span>
-        <span class="amount">19,90</span>
-        <span class="period">/ mês</span>
+        <span class="amount" id="subModalAmountDisplay">10,00</span>
+        <span class="period" id="subModalPeriodDisplay">/ mês</span>
       </div>
 
       <!-- Quick PRO Benefits Pills in Modal -->
@@ -1460,7 +1499,7 @@
       </div>
 
       <!-- Choose Payment Method -->
-      <label style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-top: 10px; display: block; text-align: left;">Ou Assine o Plano PRO Mensal (R$ 19,90):</label>
+      <label id="subModalMethodLabel" style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-top: 10px; display: block; text-align: left;">Escolha a Forma de Pagamento (R$ 10,00):</label>
       <div class="payment-methods-grid">
         <!-- Option 1: Pix -->
         <div class="payment-method-card active" id="methodCardPix" onclick="app.selectPaymentMethod('pix')">
@@ -1491,8 +1530,8 @@
           </div>
 
           <h4 style="margin: 0 0 6px; font-size: 1.15rem; color: #0f172a;">Pagamento via PIX (Chave CPF)</h4>
-          <p style="margin: 0 0 16px; font-size: 0.84rem; color: #64748b;">
-            Transfira <strong>R$ 19,90</strong> no app do seu banco usando a chave CPF abaixo:
+          <p style="margin: 0 0 16px; font-size: 0.84rem; color: #64748b;" id="subModalPixPrompt">
+            Transfira <strong>R$ 10,00</strong> no app do seu banco usando a chave CPF abaixo:
           </p>
 
           <!-- Highlight Box: Chave Pix CPF Oficial -->
@@ -1506,7 +1545,7 @@
 
           <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-top: 16px; text-align: left; font-size: 0.82rem; color: #334155; line-height: 1.7;">
             <div>👤 <strong>Titular:</strong> Freddie Pimentel Costa</div>
-            <div>💰 <strong>Valor:</strong> R$ 19,90 (Acesso Mensal PRO)</div>
+            <div id="subModalPixSummary">💰 <strong>Valor:</strong> R$ 10,00 (Acesso Mensal PRO - 30 dias)</div>
             <div>🏫 <strong>Instituição:</strong> Colégio Gammon • Lavras - MG</div>
           </div>
         </div>
@@ -1528,7 +1567,7 @@
               <p style="color: #78350f; font-size: 0.82rem; line-height: 1.5; margin: 0;">
                 1. Você solicita a assinatura aqui no aplicativo.<br>
                 2. O status ficará como <strong>"PENDENTE"</strong>.<br>
-                3. Você entrega o valor de <strong>R$ 19,90 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).<br>
+                <span id="subModalCashPricePrompt">3. Você entrega o valor de <strong>R$ 10,00 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).</span><br>
                 4. Assim que o Freddie receber, ele confirma no app dele e <strong>seus benefícios do plano PRO são liberados imediatamente</strong>!
               </p>
             </div>
@@ -1917,7 +1956,7 @@
           <i data-lucide="crown" style="width: 28px; height: 28px;"></i>
         </div>
         <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a;">Solicitar Plano ESTUDE+ PRO</h3>
-        <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">R$ 19,90/mês &bull; Sincronizado no Celular, Tablet e PC</p>
+        <p style="margin: 4px 0 0; font-size: 0.82rem; color: #64748b;">R$ 10,00/mês ou R$ 120,00/ano &bull; Sincronizado no Celular, Tablet e PC</p>
       </div>
 
       <!-- Dados da Conta Autenticada -->
@@ -1940,6 +1979,14 @@
       <div id="proReqCurrentStatusBanner" style="display: none; margin-bottom: 16px;"></div>
 
       <form id="proRequestForm" onsubmit="app.submitProPlanRequest(event)">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: #334155;">Plano Escolhido:</label>
+          <select id="proReqPlanSelect" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #4f46e5; font-size: 0.88rem; background: white; font-weight: 700;">
+            <option value="pro_mensal" selected>💎 ESTUDE+ PRO Mensal — R$ 10,00 / mês (30 dias)</option>
+            <option value="pro_anual">👑 ESTUDE+ PRO Anual — R$ 120,00 / ano (365 dias)</option>
+          </select>
+        </div>
+
         <div class="form-group" style="margin-bottom: 12px;">
           <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: #334155;">Método de Contato Autorizado:</label>
           <select id="proReqContactMethod" onchange="app.handleContactMethodChange(this.value)" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.88rem; background: white;">
@@ -3201,7 +3248,7 @@
           </div>
           <ul style="margin: 0; padding-left: 20px; font-size: 0.83rem; color: #334155; line-height: 1.6;">
             <li>Integração das 12 Apostilas SAS Oficiais do 7º Ano.</li>
-            <li>118 Tarefas TPC dos professores do Colégio Gammon.</li>
+            <li>Os 5 TPCs Diários mais recentes dos professores do Colégio Gammon sempre atualizados.</li>
             <li>Tutor Gemini IA com respostas diretas e suporte a dúvidas 24 horas.</li>
           </ul>
         </div>

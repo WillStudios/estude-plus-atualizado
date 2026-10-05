@@ -323,10 +323,10 @@ class EstudePlusApp {
           studentName: 'Lucas Gammon',
           email: 'aluno@gammon.com.br',
           method: 'cash',
-          amount: 19.90,
+          amount: 10.00,
           date: '2026-10-03',
           status: 'pending',
-          note: 'Dinheiro vivo em mãos na escola para o Freddie'
+          note: 'Dinheiro vivo em mãos na escola para o Freddie (Plano Mensal)'
         }
       ],
             // TPCs Diários (Adicionados pelo usuário / professor)
@@ -977,19 +977,20 @@ class EstudePlusApp {
     if (!this.currentUser) return false;
 
     // Active PRO subscription on current user account (all accounts, even admin, require active PRO)
-    if (this.currentUser.isSubscribed === true || this.currentUser.planStatus === 'active' || this.currentUser.plan === 'pro') {
+    const proStatuses = ['active', 'pro_mensal_active', 'pro_anual_active'];
+    if (proStatuses.includes(this.currentUser.planStatus) || (this.currentUser.isSubscribed === true && this.currentUser.planStatus !== 'canceled' && this.currentUser.planStatus !== 'expired') || this.currentUser.plan === 'pro') {
       if (this.currentUser.proExpiresAt) {
         const now = Date.now();
         const exp = new Date(this.currentUser.proExpiresAt).getTime();
         if (now >= exp) {
           this.currentUser.isSubscribed = false;
-          this.currentUser.planStatus = 'free';
+          this.currentUser.planStatus = 'expired';
           this.currentUser.plan = 'free';
           this.saveCurrentUser();
           const inList = (this.users || []).find(u => u.id === this.currentUser.id);
           if (inList) {
             inList.isSubscribed = false;
-            inList.planStatus = 'free';
+            inList.planStatus = 'expired';
             inList.plan = 'free';
             this.saveUsers();
           }
@@ -1009,14 +1010,14 @@ class EstudePlusApp {
           return true;
         } else {
           // 5-day trial expired -> revert to free base plan
-          this.currentUser.planStatus = 'free';
+          this.currentUser.planStatus = 'expired';
           this.currentUser.plan = 'free';
           this.currentUser.trialExpired = true;
           this.currentUser.trialDaysRemaining = 0;
           this.saveCurrentUser();
           const userInList = (this.users || []).find(u => u.id === this.currentUser.id);
           if (userInList) {
-            userInList.planStatus = 'free';
+            userInList.planStatus = 'expired';
             userInList.plan = 'free';
             this.saveUsers();
           }
@@ -1034,7 +1035,7 @@ class EstudePlusApp {
       return;
     }
     if (this.currentUser.trialUsed && this.currentUser.role !== 'admin') {
-      alert('⚠️ Você já utilizou a sua degustação de 5 dias grátis nesta conta!\n\nPara continuar aproveitando o Chat IA, Quizzes e Apostilas, assine o Plano PRO por R$ 19,90/mês ou ative com o administrador na escola.');
+      alert('⚠️ Você já utilizou a sua degustação de 5 dias grátis nesta conta!\n\nPara continuar aproveitando o Chat IA, Quizzes e Apostilas, assine o Plano PRO por R$ 10,00/mês ou R$ 120,00/ano ou ative com o administrador na escola.');
       this.showModal('subscriptionModal');
       return;
     }
@@ -1108,7 +1109,7 @@ class EstudePlusApp {
         'quiz': 'Quiz Diário de 15 Minutos'
       };
       const label = names[tabName] || 'Recurso Exclusivo PRO';
-      alert(`🔒 Recurso Bloqueado no Plano Base!\n\nO "${label}" NÃO está disponível no Plano Base gratuito.\n\nPara liberar o Chatbot IA e os Quizzes Diários, ative a opção de 5 dias grátis de degustação ou assine o ESTUDE+ PRO por R$ 19,90/mês!`);
+      alert(`🔒 Recurso Bloqueado no Plano Base!\n\nO "${label}" NÃO está disponível no Plano Base gratuito.\n\nPara liberar o Chatbot IA e os Quizzes Diários, ative a opção de 5 dias grátis de degustação ou assine o ESTUDE+ PRO por R$ 10,00/mês ou R$ 120,00/ano!`);
       this.switchTab('plans-pricing');
       this.showModal('subscriptionModal');
       return;
@@ -2982,7 +2983,7 @@ class EstudePlusApp {
           <span style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px;">🔒 BLOQUEADO NO PLANO BASE</span>
           <h2 style="font-size: 1.6rem; font-weight: 900; color: #0f172a; margin: 12px 0 8px;">Quizzes Diários & Treinos Inteligentes</h2>
           <p style="color: #64748b; font-size: 0.92rem; line-height: 1.6; margin: 0 auto 24px; max-width: 520px;">
-            No <strong>Plano Base</strong>, os testes e simulados estão <strong>bloqueados</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> ou assinar o <strong>ESTUDE+ PRO</strong> (R$ 19,90/mês) para treinar com questões personalizadas da Coleção Asas 2026 que mudam a cada 24 horas, escolher a dificuldade e receber explicações passo a passo da IA!
+            No <strong>Plano Base</strong>, os testes e simulados estão <strong>bloqueados</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> ou assinar o <strong>ESTUDE+ PRO</strong> (a partir de R$ 10,00/mês ou R$ 120,00/ano) para treinar com questões personalizadas da Coleção Asas 2026 que mudam a cada 24 horas, escolher a dificuldade e receber explicações passo a passo da IA!
           </p>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 24px; text-align: left;">
             <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem; margin-bottom: 10px;">⚡ Vantagens do Quiz no Plano PRO:</div>
@@ -2998,7 +2999,7 @@ class EstudePlusApp {
               <i data-lucide="zap"></i> Ativar 5 Dias Grátis
             </button>
             <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #059669; padding: 12px 20px; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
-              <i data-lucide="crown"></i> Assinar PRO (R$ 19,90/mês)
+              <i data-lucide="crown"></i> Assinar PRO (R$ 10,00/mês)
             </button>
           </div>
         </div>
@@ -6799,17 +6800,27 @@ class EstudePlusApp {
     if (typeof confetti === 'function') {
       confetti({ particleCount: 120, spread: 100, origin: { y: 0.4 } });
     }
-    alert('🎉 Parabéns! Assinatura ESTUDE+ PRO ativada com sucesso por R$ 19,90/mês.\nSeu acesso ao Chatbot IA, Quizzes e Apostilas SAS foi liberado!');
+    alert('🎉 Parabéns! Assinatura ESTUDE+ PRO ativada com sucesso!\nSeu acesso ao Chatbot IA, Quizzes e Apostilas SAS foi liberado!');
   }
 
-  cancelSubscription() {
+  async cancelSubscription() {
     if (confirm('Tem certeza de que deseja cancelar o Plano PRO? Seu acesso retornará imediatamente ao Plano Base (Gratuito).')) {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        const sessId = localStorage.getItem('estude_session_id');
+        if (sessId) headers['x-session-id'] = sessId;
+        if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+        await fetch('/api/subscription/cancel', { method: 'POST', headers });
+      } catch (e) {
+        console.warn('Erro ao notificar backend de cancelamento:', e);
+      }
+
       this.state.isSubscribed = false;
       const user = this.getCurrentUser ? this.getCurrentUser() : this.currentUser;
       if (user) {
         user.isSubscribed = false;
         user.plan = 'free';
-        user.planStatus = 'free';
+        user.planStatus = 'canceled';
         user.planName = 'Plano Base';
         delete user.proActivatedAt;
         delete user.proExpiresAt;
@@ -6970,38 +6981,39 @@ class EstudePlusApp {
   }
 
   /* ================= GAMMON+ TPCS (TAREFAS PARA CASA) ================= */
+  normalizeTpcsList(tpcs) {
+    if (!Array.isArray(tpcs)) return [];
+    const seen = new Set();
+    const unique = [];
+    for (const t of tpcs) {
+      if (!t) continue;
+      const key = String(t.id || t.gammonId || t.title);
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(t);
+      }
+    }
+    // Sort descending by date/occurrence and ID
+    unique.sort((a, b) => {
+      const dateA = a.date || a.dueDate || a.DATAOCORRENCIA || '';
+      const dateB = b.date || b.dueDate || b.DATAOCORRENCIA || '';
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      const idA = Number(a.gammonId || String(a.id).replace(/\D/g, '') || 0);
+      const idB = Number(b.gammonId || String(b.id).replace(/\D/g, '') || 0);
+      return idB - idA;
+    });
+    // Sliding window: strictly top 5 most recent TPCs
+    return unique.slice(0, 5);
+  }
+
   renderTpcs(filter = 'all', searchQuery = '') {
     const container = document.getElementById('tpcGridList');
     if (!container) return;
 
-    // 1. Filtrar para manter apenas TPCs recentes (no momento, exclusivamente Matemática)
+    // Regra oficial: sliding window com SOMENTE OS 5 TPCs DIÁRIOS MAIS RECENTES disponíveis
     let rawList = (this.state.tpcs && this.state.tpcs.length > 0) ? this.state.tpcs : [];
-    
-    // Regra do usuário: manter somente o TPC de Matemática recente para começar
-    let recentList = rawList.filter(t => {
-      const isMath = t.subject && t.subject.toLowerCase().includes('matem');
-      return isMath;
-    });
-
-    const isSeeded = localStorage.getItem('estude_gammon_tpc_seeded_v3');
-    if (recentList.length === 0 && !isSeeded) {
-      recentList = [{
-        id: 'gammon_109863',
-        gammonId: 109863,
-        subject: 'Matemática',
-        title: 'TPC Diário - Matemática',
-        pages: 'Página 50 (Atividade Suplementar)',
-        details: 'Atividade Suplementar - página 50, para o dia 05/10. Postado no Portal Gammon por Profª ELAINE APARECIDA LEANDRO DOS SANTOS (Turma 17B • 3º Trimestre).',
-        teacher: 'Profª Elaine Aparecida Leandro dos Santos',
-        dueDate: '2026-10-05',
-        status: 'pending',
-        difficulty: 'Média',
-        tpcType: 'TPC Diário'
-      }];
-      this.state.tpcs = recentList;
-      localStorage.setItem('estude_gammon_tpc_seeded_v3', 'true');
-      this.saveState();
-    }
+    let recentList = this.normalizeTpcsList(rawList);
+    this.state.tpcs = recentList;
 
     let list = recentList;
 
@@ -10197,14 +10209,64 @@ class EstudePlusApp {
   }
 
   
+  selectSubModalPlan(planId = 'pro_mensal') {
+    this.selectedPlanId = planId === 'pro_anual' ? 'pro_anual' : 'pro_mensal';
+    const btnMensal = document.getElementById('btnSubModalTierMensal');
+    const btnAnual = document.getElementById('btnSubModalTierAnual');
+    const amountDisplay = document.getElementById('subModalAmountDisplay');
+    const periodDisplay = document.getElementById('subModalPeriodDisplay');
+    const methodLabel = document.getElementById('subModalMethodLabel');
+    const pixPrompt = document.getElementById('subModalPixPrompt');
+    const pixSummary = document.getElementById('subModalPixSummary');
+    const cashPrompt = document.getElementById('subModalCashPricePrompt');
+
+    if (this.selectedPlanId === 'pro_anual') {
+      if (btnAnual) {
+        btnAnual.style.border = '2px solid #059669';
+        btnAnual.style.background = '#ecfdf5';
+        btnAnual.style.color = '#047857';
+      }
+      if (btnMensal) {
+        btnMensal.style.border = '1.5px solid #cbd5e1';
+        btnMensal.style.background = '#ffffff';
+        btnMensal.style.color = '#475569';
+      }
+      if (amountDisplay) amountDisplay.innerText = '120,00';
+      if (periodDisplay) periodDisplay.innerText = '/ ano (365 dias)';
+      if (methodLabel) methodLabel.innerText = 'Escolha a Forma de Pagamento (R$ 120,00):';
+      if (pixPrompt) pixPrompt.innerHTML = 'Transfira <strong>R$ 120,00</strong> no app do seu banco usando a chave CPF abaixo:';
+      if (pixSummary) pixSummary.innerHTML = '💰 <strong>Valor:</strong> R$ 120,00 (Acesso Anual PRO - 365 dias)';
+      if (cashPrompt) cashPrompt.innerHTML = '3. Você entrega o valor de <strong>R$ 120,00 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).';
+    } else {
+      if (btnMensal) {
+        btnMensal.style.border = '2px solid #4f46e5';
+        btnMensal.style.background = '#eef2ff';
+        btnMensal.style.color = '#4338ca';
+      }
+      if (btnAnual) {
+        btnAnual.style.border = '1.5px solid #cbd5e1';
+        btnAnual.style.background = '#ffffff';
+        btnAnual.style.color = '#475569';
+      }
+      if (amountDisplay) amountDisplay.innerText = '10,00';
+      if (periodDisplay) periodDisplay.innerText = '/ mês (30 dias)';
+      if (methodLabel) methodLabel.innerText = 'Escolha a Forma de Pagamento (R$ 10,00):';
+      if (pixPrompt) pixPrompt.innerHTML = 'Transfira <strong>R$ 10,00</strong> no app do seu banco usando a chave CPF abaixo:';
+      if (pixSummary) pixSummary.innerHTML = '💰 <strong>Valor:</strong> R$ 10,00 (Acesso Mensal PRO - 30 dias)';
+      if (cashPrompt) cashPrompt.innerHTML = '3. Você entrega o valor de <strong>R$ 10,00 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).';
+    }
+  }
+
   copyPixCpf() {
     const cpf = '183.199.286.80';
+    const isAnual = this.selectedPlanId === 'pro_anual';
+    const amountStr = isAnual ? '120,00' : '10,00';
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(cpf).then(() => {
         if (typeof confetti === 'function') {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
         }
-        alert('✔ Chave PIX (CPF do Freddie: 183.199.286.80) copiada com sucesso!\n\nAbra o aplicativo do seu banco, escolha transferir por "Chave CPF", cole e confirme o envio de R$ 19,90.');
+        alert(`✔ Chave PIX (CPF do Freddie: 183.199.286.80) copiada com sucesso!\n\nAbra o aplicativo do seu banco, escolha transferir por "Chave CPF", cole e confirme o envio de R$ ${amountStr}.`);
       }).catch(() => {
         prompt('Copie a chave Pix CPF abaixo:', cpf);
       });
@@ -10228,29 +10290,63 @@ class EstudePlusApp {
     }
   }
 
-  confirmPixPayment() {
+  async confirmPixPayment() {
     if (!this.currentUser) {
       alert('Faça login primeiro para assinar.');
       return;
     }
 
+    const planId = this.selectedPlanId === 'pro_anual' ? 'pro_anual' : 'pro_mensal';
+    const isAnual = planId === 'pro_anual';
+    const amount = isAnual ? 120.00 : 10.00;
+    const amountStr = isAnual ? '120,00' : '10,00';
+    const planDays = isAnual ? 365 : 30;
+    const planName = isAnual ? 'ESTUDE+ PRO Anual' : 'ESTUDE+ PRO Mensal';
     const orderId = 'PIX-' + Math.floor(1000 + Math.random() * 9000);
+
+    const note = `Pix de R$ ${amountStr} enviado para a chave CPF 183.199.286.80 de Freddie Pimentel Costa (${planName})`;
+
+    // Enviar solicitação ao backend (backend valida e fixa o preço oficial)
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      await fetch('/api/plans/request', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          planId,
+          contactMethod: 'pix',
+          contactInfo: this.currentUser.email || this.currentUser.username,
+          note
+        })
+      });
+    } catch (e) {
+      console.warn('Erro ao notificar backend de pedido Pix:', e);
+    }
+
     const newPayment = {
       id: orderId,
-      studentName: this.currentUser.name,
+      studentName: this.currentUser.name || this.currentUser.username,
       email: this.currentUser.email,
       method: 'pix',
-      amount: 19.90,
+      amount,
+      planId,
+      planName,
       date: new Date().toISOString().split('T')[0],
       status: 'pending',
-      note: 'Pix de R$ 19,90 enviado para a chave CPF 183.199.286.80 de Freddie Pimentel Costa'
+      note
     };
 
     if (!this.state.payments) this.state.payments = [];
     this.state.payments.unshift(newPayment);
     
-    // Status MUST remain pending approval until Freddie approves in his account
-    this.currentUser.planStatus = 'pending_pix';
+    // Status MUST remain payment_pending until Freddie approves in his account
+    this.currentUser.planStatus = 'payment_pending';
+    this.currentUser.pendingOrderId = orderId;
+    this.currentUser.pendingPlanId = planId;
     this.currentUser.isSubscribed = false;
     this.state.isSubscribed = false;
 
@@ -10262,33 +10358,66 @@ class EstudePlusApp {
     this.checkPendingAdminBadge();
     this.closeModal('subscriptionModal');
 
-    alert(`⏳ Pedido ${orderId} registrado com sucesso!\n\nO seu pagamento permanecerá como PENDENTE até que o Freddie Pimentel Costa confira o recebimento de R$ 19,90 na conta dele e aprove no aplicativo.\n\nAssim que ele confirmar no app dele, seu Plano PRO será ativado por 30 dias!`);
+    alert(`⏳ Pedido ${orderId} (${planName}) registrado com sucesso!\n\nO seu pagamento permanecerá como PENDENTE até que o Freddie Pimentel Costa confira o recebimento de R$ ${amountStr} na conta dele e aprove no aplicativo.\n\nAssim que ele confirmar no app dele, seu Plano PRO será ativado por ${planDays} dias!`);
   }
 
-  requestCashInSchoolPayment() {
+  async requestCashInSchoolPayment() {
     if (!this.currentUser) {
       alert('Faça login primeiro para solicitar a assinatura.');
       return;
     }
 
+    const planId = this.selectedPlanId === 'pro_anual' ? 'pro_anual' : 'pro_mensal';
+    const isAnual = planId === 'pro_anual';
+    const amount = isAnual ? 120.00 : 10.00;
+    const amountStr = isAnual ? '120,00' : '10,00';
+    const planDays = isAnual ? 365 : 30;
+    const planName = isAnual ? 'ESTUDE+ PRO Anual' : 'ESTUDE+ PRO Mensal';
     const orderId = 'DIN-' + Math.floor(1000 + Math.random() * 9000);
+
+    const note = `Aguardando entrega de R$ ${amountStr} em dinheiro vivo para o Freddie na escola (${planName})`;
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      await fetch('/api/plans/request', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          planId,
+          contactMethod: 'escola',
+          contactInfo: this.currentUser.name || this.currentUser.username,
+          note
+        })
+      });
+    } catch (e) {
+      console.warn('Erro ao notificar backend de pedido Dinheiro:', e);
+    }
+
     const newPayment = {
       id: orderId,
-      studentName: this.currentUser.name,
+      studentName: this.currentUser.name || this.currentUser.username,
       email: this.currentUser.email,
       method: 'cash',
-      amount: 19.90,
+      amount,
+      planId,
+      planName,
       date: new Date().toISOString().split('T')[0],
       status: 'pending',
-      note: 'Aguardando entrega de R$ 19,90 em dinheiro vivo para o Freddie na escola'
+      note
     };
 
     if (!this.state.payments) this.state.payments = [];
     this.state.payments.unshift(newPayment);
 
     // Update current user status to pending
-    this.currentUser.planStatus = 'pending_cash';
+    this.currentUser.planStatus = 'payment_pending';
     this.currentUser.pendingOrderId = orderId;
+    this.currentUser.pendingPlanId = planId;
+    this.currentUser.isSubscribed = false;
     this.saveState();
     this.saveCurrentUser();
     this.updateUserHeaderUI();
@@ -10296,7 +10425,7 @@ class EstudePlusApp {
     this.checkPendingAdminBadge();
     this.closeModal('subscriptionModal');
 
-    alert(`⏳ Solicitação de pagamento registrada com sucesso! (Código: ${orderId})\n\nAgora você deve entregar R$ 19,90 em dinheiro vivo para o Freddie Pimentel Costa na escola.\n\nEnquanto você não entregar, seu plano permanecerá como PENDENTE. Assim que o Freddie confirmar no aplicativo dele que recebeu o dinheiro, o seu plano PRO será liberado na hora!`);
+    alert(`⏳ Solicitação de pagamento registrada com sucesso! (Código: ${orderId} - ${planName})\n\nAgora você deve entregar R$ ${amountStr} em dinheiro vivo para o Freddie Pimentel Costa na escola.\n\nEnquanto você não entregar, seu plano permanecerá como PENDENTE. Assim que o Freddie confirmar no aplicativo dele que recebeu o dinheiro, o seu plano PRO (${planDays} dias) será liberado na hora!`);
   }
 
   /* ==========================================================================
@@ -10457,7 +10586,7 @@ class EstudePlusApp {
   /* ==========================================================================
      SOLICITAÇÃO DO PLANO PRO
      ========================================================================== */
-  openProRequestModal() {
+  openProRequestModal(planId = 'pro_mensal') {
     if (!this.currentUser) {
       this.showAuthOverlay();
       return;
@@ -10466,6 +10595,11 @@ class EstudePlusApp {
     if (this.isUserPro()) {
       alert('👑 Sua conta já possui o Plano ESTUDE+ PRO ativo!');
       return;
+    }
+
+    const planSelect = document.getElementById('proReqPlanSelect');
+    if (planSelect && planId) {
+      planSelect.value = planId;
     }
 
     const userNameEl = document.getElementById('proReqUserName');
@@ -10531,6 +10665,7 @@ class EstudePlusApp {
       return;
     }
 
+    const planId = document.getElementById('proReqPlanSelect')?.value || 'pro_mensal';
     const method = document.getElementById('proReqContactMethod')?.value || 'whatsapp';
     const info = document.getElementById('proReqContactInfo')?.value || '';
     const note = document.getElementById('proReqNote')?.value || '';
@@ -10550,12 +10685,15 @@ class EstudePlusApp {
       const res = await fetch('/api/plans/request', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ contactMethod: method, contactInfo: info, note })
+        body: JSON.stringify({ planId, contactMethod: method, contactInfo: info, note })
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         this.activePlanRequest = data.request;
+        this.currentUser.planStatus = 'payment_pending';
+        this.currentUser.pendingPlanId = planId;
+        this.saveCurrentUser();
         this.closeModal('proRequestModal');
         this.renderPlanStatus();
         if (typeof confetti === 'function') {
@@ -10564,6 +10702,7 @@ class EstudePlusApp {
         alert('🎉 ' + data.message);
       } else {
         alert(data.error || 'Não foi possível registrar a solicitação.');
+      }
       }
     } catch (err) {
       alert('Erro de conexão ao enviar a solicitação. Tente novamente.');
@@ -10686,22 +10825,90 @@ class EstudePlusApp {
     const plansBadge = document.getElementById('plansTabCurrentBadge');
 
     const isPro = this.isUserPro();
-    const status = this.currentUser?.planStatus || (isPro ? 'active' : 'free');
+    const status = this.currentUser?.planStatus || (isPro ? (this.currentUser?.planPeriodicity === 'anual' ? 'pro_anual_active' : 'pro_mensal_active') : 'free');
 
     let bannerHtml = '';
-    if (status === 'pending_cash') {
+    if (status === 'pending_cash' || status === 'pending_pix' || status === 'payment_pending') {
+      const isPix = status === 'pending_pix';
       bannerHtml = `
-        <div class="pending-alert-banner">
-          <i data-lucide="clock-alert" style="width: 28px; height: 28px; color: #b45309; flex-shrink: 0;"></i>
-          <div style="flex: 1;">
-            <strong>⏳ Pagamento em Dinheiro Vivo Pendente:</strong>
-            <p style="margin: 2px 0 0; font-size: 0.85rem; line-height: 1.4;">
-              Você solicitou a ativação do <strong>Plano PRO</strong> entregando <strong>R$ 19,90 em dinheiro na escola</strong> para o Freddie. 
-              Assim que o Freddie confirmar o recebimento em mãos, todos os benefícios (Chatbot IA, Quizzes e Apostilas) serão liberados!
-            </p>
+        <div class="pending-alert-banner" style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <i data-lucide="clock-alert" style="width: 28px; height: 28px; color: #b45309; flex-shrink: 0;"></i>
+            <div>
+              <strong style="color: #92400e; font-size: 0.95rem;">⏳ Pagamento de Assinatura PRO Pendente:</strong>
+              <p style="margin: 2px 0 0; font-size: 0.84rem; color: #78350f; line-height: 1.45;">
+                Você solicitou a ativação do <strong>Plano ESTUDE+ PRO</strong> ${isPix ? 'via <strong>Pix</strong>' : 'entregando em <strong>dinheiro vivo na escola</strong> para o Freddie'}. 
+                Assim que o Freddie conferir e confirmar no aplicativo, seu acesso ilimitado será liberado instantaneamente!
+              </p>
+            </div>
           </div>
-          <button class="btn-sm" onclick="app.showModal('subscriptionModal')" style="background: #b45309; color: white; white-space: nowrap;">
-            Ver Pedido
+          <button class="btn-sm" onclick="app.showModal('subscriptionModal')" style="background: #b45309; color: white; white-space: nowrap; font-weight: 700; padding: 8px 14px; border-radius: 8px;">
+            Ver Dados do Pagamento
+          </button>
+        </div>
+      `;
+    } else if (status === 'payment_declined') {
+      bannerHtml = `
+        <div style="background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <i data-lucide="x-circle" style="width: 28px; height: 28px; color: #dc2626; flex-shrink: 0;"></i>
+            <div>
+              <strong style="color: #991b1b; font-size: 0.95rem;">❌ Pagamento Não Confirmado / Recusado:</strong>
+              <p style="margin: 2px 0 0; font-size: 0.84rem; color: #7f1d1d; line-height: 1.45;">
+                Não foi possível validar o pagamento anterior. Você pode tentar novamente via Pix ou combinar pessoalmente com o Freddie.
+              </p>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #dc2626; color: white; font-weight: 700; padding: 8px 14px; border-radius: 8px;">
+            Tentar Novamente
+          </button>
+        </div>
+      `;
+    } else if (status === 'cancel_requested') {
+      bannerHtml = `
+        <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <i data-lucide="alert-triangle" style="width: 28px; height: 28px; color: #ea580c; flex-shrink: 0;"></i>
+            <div>
+              <strong style="color: #9a3412; font-size: 0.95rem;">⚠️ Cancelamento Solicitado:</strong>
+              <p style="margin: 2px 0 0; font-size: 0.84rem; color: #7c2d12; line-height: 1.45;">
+                Você solicitou o cancelamento da sua assinatura PRO. Seu plano permanecerá ativo até o fim do período já pago.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (status === 'canceled') {
+      bannerHtml = `
+        <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <i data-lucide="info" style="width: 28px; height: 28px; color: #64748b; flex-shrink: 0;"></i>
+            <div>
+              <strong style="color: #334155; font-size: 0.95rem;">Assinatura Cancelada (Plano Base Gratuito):</strong>
+              <p style="margin: 2px 0 0; font-size: 0.84rem; color: #64748b; line-height: 1.45;">
+                Sua assinatura foi cancelada e você está no Plano Base. Assine novamente a qualquer momento por R$ 10,00/mês ou R$ 120,00/ano!
+              </p>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #059669; font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 8px;">
+            <i data-lucide="crown"></i> Assinar PRO (R$ 10,00/mês)
+          </button>
+        </div>
+      `;
+    } else if (status === 'expired') {
+      bannerHtml = `
+        <div style="background: #fef2f2; border: 1.5px solid #f87171; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <i data-lucide="alert-circle" style="width: 28px; height: 28px; color: #dc2626; flex-shrink: 0;"></i>
+            <div>
+              <strong style="color: #991b1b; font-size: 0.95rem;">⚠️ Sua assinatura do Plano PRO venceu!</strong>
+              <p style="margin: 2px 0 0; font-size: 0.84rem; color: #7f1d1d; line-height: 1.45;">
+                Seu período de acesso expirou e sua conta retornou ao plano normal. Renove agora via Pix (R$ 10,00/mês ou R$ 120,00/ano) para reativar o Chat IA, Quizzes e Apostilas!
+              </p>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="app.showSubscriptionModal()" style="background: #dc2626; font-size: 0.85rem; padding: 8px 16px; white-space: nowrap;">
+            Renovar Plano PRO
           </button>
         </div>
       `;
@@ -10714,22 +10921,23 @@ class EstudePlusApp {
             <div>
               <strong style="font-size: 1rem;">⚡ Degustação PRO Ativa (${days} dias restantes):</strong>
               <p style="margin: 2px 0 0; font-size: 0.85rem; color: #b45309;">
-                Você está experimentando gratuitamente o Chatbot IA, Quizzes e Apostilas SAS. Assine o Plano PRO mensal (R$ 19,90) para manter o acesso ilimitado!
+                Você está experimentando gratuitamente o Chatbot IA, Quizzes e Apostilas SAS. Assine o Plano PRO mensal (R$ 10,00/mês) ou anual (R$ 120,00/ano) para manter o acesso ilimitado!
               </p>
             </div>
           </div>
           <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
-            <i data-lucide="crown" style="width: 15px; height: 15px;"></i> Assinar PRO (R$ 19,90)
+            <i data-lucide="crown" style="width: 15px; height: 15px;"></i> Assinar PRO (R$ 10,00)
           </button>
         </div>
       `;
     } else if (isPro) {
+      const isAnual = status === 'pro_anual_active' || this.currentUser?.planPeriodicity === 'anual';
       bannerHtml = `
         <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
           <div style="display: flex; align-items: center; gap: 14px;">
             <i data-lucide="shield-check" style="width: 28px; height: 28px; color: #059669; flex-shrink: 0;"></i>
             <div>
-              <strong style="font-size: 1rem;">👑 Plano ESTUDE+ PRO Ativo:</strong>
+              <strong style="font-size: 1rem;">👑 Plano ESTUDE+ PRO ${isAnual ? 'Anual (R$ 120,00/ano)' : 'Mensal (R$ 10,00/mês)'} Ativo:</strong>
               <p style="margin: 2px 0 0; font-size: 0.85rem; color: #047857;">
                 Você tem acesso total e irrestrito: Chatbot IA Super Inteligente, Quizzes Diários e as 12 Apostilas SAS em PDF.
               </p>
@@ -10762,7 +10970,7 @@ class EstudePlusApp {
               <i data-lucide="zap" style="width: 14px; height: 14px;"></i> 5 Dias Grátis
             </button>
             <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; background: #059669;">
-              <i data-lucide="crown" style="width: 14px; height: 14px;"></i> Assinar PRO (R$ 19,90)
+              <i data-lucide="crown" style="width: 14px; height: 14px;"></i> Assinar PRO (R$ 10,00)
             </button>
           </div>
         </div>
@@ -10795,9 +11003,10 @@ class EstudePlusApp {
       `;
     }
 
+    const isPending = status === 'pending_cash' || status === 'pending_pix' || status === 'payment_pending';
     if (dashBanner) {
-      dashBanner.innerHTML = status === 'pending_cash' ? bannerHtml : '';
-      dashBanner.style.display = status === 'pending_cash' ? 'block' : 'none';
+      dashBanner.innerHTML = isPending ? bannerHtml : '';
+      dashBanner.style.display = isPending ? 'block' : 'none';
     }
 
     if (plansBannerContainer) {
@@ -10818,7 +11027,7 @@ class EstudePlusApp {
         btnRequestPro.onclick = () => this.openProRequestModal();
       } else {
         btnRequestPro.style.display = 'block';
-        btnRequestPro.innerHTML = '<i data-lucide="crown"></i> Solicitar Plano PRO (R$ 19,90)';
+        btnRequestPro.innerHTML = '<i data-lucide="crown"></i> Solicitar Plano PRO (a partir de R$ 10,00/mês)';
         btnRequestPro.style.background = 'linear-gradient(135deg, #4f46e5, #7c3aed)';
         btnRequestPro.onclick = () => this.openProRequestModal();
       }
@@ -10831,7 +11040,7 @@ class EstudePlusApp {
         btnProCard.style = 'width: 100%; font-size: 0.95rem; padding: 12px; border-color: #fca5a5; color: #dc2626; background: #fff; font-weight: 700; cursor: pointer;';
         btnProCard.onclick = () => this.cancelSubscription();
       } else {
-        btnProCard.innerHTML = '<i data-lucide="crown"></i> Assinar Plano PRO (R$ 19,90)';
+        btnProCard.innerHTML = '<i data-lucide="crown"></i> Assinar Plano PRO (R$ 10,00/mês)';
         btnProCard.className = 'btn-primary';
         btnProCard.style = 'width: 100%; font-size: 1rem; padding: 14px;';
         btnProCard.onclick = () => this.showModal('subscriptionModal');
@@ -10866,8 +11075,13 @@ class EstudePlusApp {
     }
 
     if (plansBadge) {
-      if (isPro) {
-        plansBadge.innerText = 'PLANO PRO ATIVO';
+      if (status === 'pro_anual_active' || (isPro && this.currentUser?.planPeriodicity === 'anual')) {
+        plansBadge.innerText = 'PLANO PRO ANUAL ATIVO';
+        plansBadge.className = 'badge-partner';
+        plansBadge.style.background = '#dcfce7';
+        plansBadge.style.color = '#15803d';
+      } else if (isPro) {
+        plansBadge.innerText = 'PLANO PRO MENSAL ATIVO';
         plansBadge.className = 'badge-partner';
         plansBadge.style.background = '#dcfce7';
         plansBadge.style.color = '#15803d';
@@ -10877,11 +11091,16 @@ class EstudePlusApp {
         plansBadge.className = 'badge-accent';
         plansBadge.style.background = '#fef3c7';
         plansBadge.style.color = '#b45309';
-      } else if (status === 'pending_cash') {
-        plansBadge.innerText = 'AGUARDANDO PAGAMENTO NA ESCOLA';
+      } else if (isPending) {
+        plansBadge.innerText = 'PAGAMENTO PENDENTE DE APROVAÇÃO';
         plansBadge.className = 'badge-accent';
         plansBadge.style.background = '#fef3c7';
         plansBadge.style.color = '#b45309';
+      } else if (status === 'expired') {
+        plansBadge.innerText = 'ASSINATURA PRO VENCIDA';
+        plansBadge.className = 'badge-accent';
+        plansBadge.style.background = '#fee2e2';
+        plansBadge.style.color = '#dc2626';
       } else {
         plansBadge.innerText = 'PLANO BASE (GRATUITO)';
         plansBadge.className = 'badge-free';
@@ -11074,7 +11293,7 @@ class EstudePlusApp {
               </div>
               <p style="margin: 4px 0 0; font-size: 0.78rem; color: #64748b;">
                 ${r.userGrade ? `Turma: <strong>${r.userGrade}</strong> &bull; ` : ''}
-                Plano: <strong>${r.planName || 'Plano PRO'} (R$ ${Number(r.amount || 19.9).toFixed(2).replace('.', ',')})</strong> &bull;
+                Plano: <strong>${r.planName || 'Plano PRO'} (R$ ${Number(r.amount || 10.0).toFixed(2).replace('.', ',')})</strong> &bull;
                 Data: <strong>${dateFmt}</strong>
               </p>
             </div>
@@ -11803,7 +12022,7 @@ class EstudePlusApp {
           </button>
           <button type="button" class="btn-outline" id="btnMasterGammonSync" onclick="app.masterTriggerGammonSync()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); font-size: 0.78rem; font-weight: 700; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
-            Sincronizar Gammon+ Oficial (118 TPCs)
+            Sincronizar Gammon+ Oficial (5 TPCs Recentes)
           </button>
           <button type="button" class="btn-outline" onclick="app.masterSendBroadcastNotice()" style="color: #fcd34d; border-color: rgba(252, 211, 77, 0.4); background: rgba(252, 211, 77, 0.1); font-size: 0.78rem; font-weight: 700; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
             <i data-lucide="megaphone" style="width: 14px; height: 14px;"></i>
@@ -11830,9 +12049,11 @@ class EstudePlusApp {
 
     const cardsHtml = filtered.map(u => {
       const isOwner = u.role === 'admin' || u.email === 'freddie@gammon.com.br' || u.username === 'freddie';
-      const isPro = u.isSubscribed === true || u.planStatus === 'active';
+      const isProAnual = u.planStatus === 'pro_anual_active' || u.planPeriodicity === 'anual';
+      const isProMensal = u.planStatus === 'pro_mensal_active' || u.planPeriodicity === 'mensal';
+      const isPro = u.isSubscribed === true || u.planStatus === 'active' || isProAnual || isProMensal;
       const isTrial5d = u.planStatus === 'trial_5d';
-      const isPending = u.planStatus === 'pending_cash';
+      const isPending = u.planStatus === 'pending_cash' || u.planStatus === 'pending_pix' || u.planStatus === 'payment_pending';
 
       const createdDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : 'Recentemente';
       const lastLoginDate = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Hoje';
@@ -11862,12 +12083,14 @@ class EstudePlusApp {
                 ` : `
                   <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">🎓 Aluno</span>
                 `}
-                ${isPro ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">💎 PRO Ativo</span>
+                ${isProAnual ? `
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">👑 PRO Anual (R$ 120/ano)</span>
+                ` : isProMensal || isPro ? `
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">💎 PRO Mensal (R$ 10/mês)</span>
                 ` : isTrial5d ? `
                   <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⚡ Degustação (5 dias)</span>
                 ` : isPending ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">💵 Pgto Pendente</span>
+                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⏳ Pgto Pendente</span>
                 ` : `
                   <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
                 `}
@@ -11877,6 +12100,7 @@ class EstudePlusApp {
                 <span>Usuário: <code style="background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #0f172a;">${u.username || u.email}</code></span>
                 ${u.email ? `&bull; <span>E-mail: <strong>${u.email}</strong></span>` : ''}
                 &bull; <span>Cadastrado: ${createdDate}</span>
+                ${u.proExpiresAt ? `&bull; <span>Expira: <strong>${new Date(u.proExpiresAt).toLocaleDateString('pt-BR')}</strong></span>` : ''}
                 &bull; <span>Último acesso: ${lastLoginDate}</span>
               </div>
             </div>
@@ -11889,9 +12113,13 @@ class EstudePlusApp {
                 <span>Voltar ao Plano Base</span>
               </button>
             ` : `
-              <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}')" style="background: #059669; font-size: 0.8rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(5,150,105,0.25);" title="Liberar 30 dias de Plano PRO no servidor">
-                <i data-lucide="crown" style="width: 14px; height: 14px;"></i>
-                <span>Ativar PRO</span>
+              <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_mensal')" style="background: #4f46e5; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 30 dias de Plano PRO Mensal (R$ 10,00)">
+                <i data-lucide="calendar" style="width: 13px; height: 13px;"></i>
+                <span>+ Mensal (R$ 10)</span>
+              </button>
+              <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_anual')" style="background: #059669; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 365 dias de Plano PRO Anual (R$ 120,00)">
+                <i data-lucide="crown" style="width: 13px; height: 13px;"></i>
+                <span>+ Anual (R$ 120)</span>
               </button>
             `}
 
@@ -11902,7 +12130,6 @@ class EstudePlusApp {
             </button>
           </div>
         </div>
-      `;
     }).join('');
 
     container.innerHTML = masterHeaderHtml + cardsHtml;
@@ -11990,12 +12217,16 @@ class EstudePlusApp {
     }
   }
 
-  async adminActivateStudentPlan(userId) {
+  async adminActivateStudentPlan(userId, planId = 'pro_mensal') {
     const allUsers = (this.adminOverviewData?.users && this.adminOverviewData.users.length > 0) ? this.adminOverviewData.users : (this.users || []);
     const student = allUsers.find(u => String(u.id) === String(userId));
     if (!student) return;
 
-    if (confirm(`Deseja ativar 30 dias de Plano PRO para "${student.name || student.username}" no banco de dados oficial?`)) {
+    const isAnual = planId === 'pro_anual';
+    const planLabel = isAnual ? 'Plano PRO Anual (365 dias - R$ 120,00)' : 'Plano PRO Mensal (30 dias - R$ 10,00)';
+    const days = isAnual ? 365 : 30;
+
+    if (confirm(`Deseja ativar o ${planLabel} para "${student.name || student.username}" no banco de dados oficial?`)) {
       try {
         const headers = { 'Content-Type': 'application/json' };
         const sessId = localStorage.getItem('estude_session_id');
@@ -12005,7 +12236,7 @@ class EstudePlusApp {
         const res = await fetch('/api/admin/users/activate-pro', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ userId: student.id, userEmail: student.email, days: 30 })
+          body: JSON.stringify({ userId: student.id, userEmail: student.email, planId, days })
         });
 
         const data = await res.json();
@@ -12017,8 +12248,9 @@ class EstudePlusApp {
         // Atualiza estado local sincronizado com a resposta confirmada do backend
         student.isSubscribed = true;
         student.plan = 'pro';
-        student.planStatus = 'active';
-        student.planName = 'ESTUDE+ PRO';
+        student.planStatus = isAnual ? 'pro_anual_active' : 'pro_mensal_active';
+        student.planName = isAnual ? 'ESTUDE+ PRO Anual' : 'ESTUDE+ PRO Mensal';
+        student.planPeriodicity = isAnual ? 'anual' : 'mensal';
         student.proActivatedAt = data.user?.proActivatedAt || new Date().toISOString();
         student.proExpiresAt = data.user?.proExpiresAt;
         this.saveUsers();
@@ -12026,8 +12258,9 @@ class EstudePlusApp {
         if (this.currentUser && (String(this.currentUser.id) === String(userId) || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
           this.currentUser.isSubscribed = true;
           this.currentUser.plan = 'pro';
-          this.currentUser.planStatus = 'active';
-          this.currentUser.planName = 'ESTUDE+ PRO';
+          this.currentUser.planStatus = student.planStatus;
+          this.currentUser.planName = student.planName;
+          this.currentUser.planPeriodicity = student.planPeriodicity;
           this.currentUser.proActivatedAt = student.proActivatedAt;
           this.currentUser.proExpiresAt = student.proExpiresAt;
           this.state.isSubscribed = true;
@@ -12262,7 +12495,7 @@ class EstudePlusApp {
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="refresh-cw"></i> Sincronizar Gammon+ Oficial (118 TPCs)`;
+        btn.innerHTML = `<i data-lucide="refresh-cw"></i> Sincronizar Gammon+ Oficial (5 TPCs Recentes)`;
       }
       if (window.lucide) window.lucide.createIcons();
     }
@@ -12570,9 +12803,9 @@ class EstudePlusApp {
               <div style="display: flex; align-items: center; gap: 12px;">
                 <i data-lucide="alert-circle" style="width: 28px; height: 28px; color: #dc2626; flex-shrink: 0;"></i>
                 <div>
-                  <strong style="color: #991b1b; font-size: 0.95rem;">⚠️ Sua mensalidade de R$ 19,90 do Plano PRO venceu!</strong>
+                  <strong style="color: #991b1b; font-size: 0.95rem;">⚠️ Sua assinatura do Plano PRO venceu!</strong>
                   <p style="margin: 2px 0 0; font-size: 0.82rem; color: #7f1d1d;">
-                    Seus 30 dias expiraram e sua conta retornou ao plano normal. Faça o Pix de R$ 19,90 para o Freddie confirmar e reativar seus benefícios!
+                    Seu período PRO expirou e sua conta retornou ao plano normal. Renove seu plano (R$ 10,00/mês ou R$ 120,00/ano) via Pix para reativar seus benefícios!
                   </p>
                 </div>
               </div>
@@ -12590,9 +12823,9 @@ class EstudePlusApp {
             <div style="display: flex; align-items: center; gap: 10px;">
               <i data-lucide="clock" style="width: 24px; height: 24px; color: #d97706; flex-shrink: 0;"></i>
               <div>
-                <strong style="color: #92400e; font-size: 0.9rem;">⏳ Mensalidade vencendo em ${daysLeft} dia${daysLeft > 1 ? 's' : ''}!</strong>
+                <strong style="color: #92400e; font-size: 0.9rem;">⏳ Assinatura PRO vencendo em ${daysLeft} dia${daysLeft > 1 ? 's' : ''}!</strong>
                 <p style="margin: 2px 0 0; font-size: 0.8rem; color: #78350f;">
-                  Transfira a renovação de R$ 19,90 via Pix para o Freddie confirmar e manter o PRO ativo sem interrupção.
+                  Transfira a renovação (R$ 10,00/mês ou R$ 120,00/ano) via Pix para o Freddie confirmar e manter o PRO ativo sem interrupção.
                 </p>
               </div>
             </div>
@@ -12693,14 +12926,14 @@ class EstudePlusApp {
             <span style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.72rem; padding: 3px 10px; border-radius: 6px;">🔒 BLOQUEADO NO PLANO BASE</span>
             <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 10px 0 6px;">12 Apostilas SAS e Downloads em PDF Bloqueados</h3>
             <p style="color: #64748b; font-size: 0.88rem; max-width: 480px; margin: 0 auto 20px; line-height: 1.5;">
-              No <strong>Plano Base</strong>, as apostilas digitais e PDFs da Coleção Asas 2026 estão <strong>bloqueados</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> para experimentar ou assinar o <strong>Plano PRO</strong> por R$ 19,90/mês para desbloquear todos os livros, resumos e PDFs!
+              No <strong>Plano Base</strong>, as apostilas digitais e PDFs da Coleção Asas 2026 estão <strong>bloqueados</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> para experimentar ou assinar o <strong>Plano PRO</strong> (a partir de R$ 10,00/mês ou R$ 120,00/ano) para desbloquear todos os livros, resumos e PDFs!
             </p>
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
               <button class="btn-primary" onclick="app.activate5DaysTrial()" style="background: linear-gradient(135deg, #9333ea, #4f46e5); padding: 12px 20px; font-weight: 800; font-size: 0.92rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(147, 51, 234, 0.25);">
                 <i data-lucide="zap"></i> Ativar 5 Dias Grátis
               </button>
               <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="padding: 12px 20px; font-size: 0.92rem; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; background: #059669; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
-                <i data-lucide="crown"></i> Assinar PRO (R$ 19,90)
+                <i data-lucide="crown"></i> Assinar PRO (R$ 10,00/mês)
               </button>
             </div>
           </div>
@@ -13389,7 +13622,7 @@ startxref
             title: 'Ideias para criar um app SaaS',
             messages: [
               { sender: 'user', text: 'Como começar a planejar um app SaaS para estudantes como o ESTUDE+?' },
-              { sender: 'bot', text: '🚀 **Etapas de Sucesso para um SaaS Educacional:**<br><br>1. **Identificar a Dor Real:** Alunos precisam de um lugar centralizado para TPCs, apostilas e um assistente inteligente disponível 24 horas.<br>2. **Experiência Visual Moderna:** Layout intuitivo, sem poluição visual e rápido tanto no celular quanto no PC.<br>3. **Modelo de Assinatura Simples:** Cobrança mensal acessível (como R$ 19,90) via PIX e dinheiro vivo, com confirmação direta pelo criador (Freddie).<br>4. **Vantagens PRO Reais:** Memória ilimitada e o poderoso *Modo Pensar* para destrinchar problemas difíceis!' }
+              { sender: 'bot', text: '🚀 **Etapas de Sucesso para um SaaS Educacional:**<br><br>1. **Identificar a Dor Real:** Alunos precisam de um lugar centralizado para TPCs, apostilas e um assistente inteligente disponível 24 horas.<br>2. **Experiência Visual Moderna:** Layout intuitivo, sem poluição visual e rápido tanto no celular quanto no PC.<br>3. **Modelo de Assinatura Simples:** Cobrança acessível (como R$ 10,00/mês ou R$ 120,00/ano) via PIX e dinheiro vivo, com confirmação direta pelo criador (Freddie).<br>4. **Vantagens PRO Reais:** Memória ilimitada e o poderoso *Modo Pensar* para destrinchar problemas difíceis!' }
             ]
           },
           'curiosidades': {
@@ -13508,7 +13741,7 @@ startxref
           <span style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.72rem; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px;">🔒 BLOQUEADO NO PLANO BASE</span>
           <h2 style="font-size: 1.5rem; font-weight: 900; color: #0f172a; margin: 12px 0 8px;">Chatbot IA Super Inteligente</h2>
           <p style="color: #64748b; font-size: 0.88rem; line-height: 1.6; margin-bottom: 20px;">
-            No <strong>Plano Base</strong>, o Chatbot IA está <strong>bloqueado</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> para experimentar ou assinar o <strong>ESTUDE+ PRO</strong> por R$ 19,90/mês para tirar dúvidas 24h por dia com cálculos passo a passo e respostas diretas!
+            No <strong>Plano Base</strong>, o Chatbot IA está <strong>bloqueado</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> para experimentar ou assinar o <strong>ESTUDE+ PRO</strong> (a partir de R$ 10,00/mês ou R$ 120,00/ano) para tirar dúvidas 24h por dia com cálculos passo a passo e respostas diretas!
           </p>
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 24px; text-align: left; font-size: 0.82rem; color: #334155; line-height: 1.7;">
             <div>✨ <strong>Respostas Diretas:</strong> pergunte <em>2+2</em> e ele responde <em>4.</em></div>
@@ -13520,7 +13753,7 @@ startxref
               <i data-lucide="zap"></i> Ativar 5 Dias Grátis
             </button>
             <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #059669; padding: 12px 20px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
-              <i data-lucide="crown"></i> Assinar PRO (R$ 19,90)
+              <i data-lucide="crown"></i> Assinar PRO (R$ 10,00/mês)
             </button>
           </div>
         </div>
