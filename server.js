@@ -45,6 +45,18 @@ const MIME_TYPES = {
   '.zip': 'application/zip'
 };
 
+function isMockUser(u) {
+  if (!u) return true;
+  if (u.id === 'usr-student' || u.id === 'aluno_lucas' || u.id === 'user_streak_break_test') return true;
+  const name = (u.name || '').toLowerCase();
+  const username = (u.username || '').toLowerCase();
+  const email = (u.email || '').toLowerCase();
+  if (name.includes('teste') || username.includes('teste') || email.includes('teste')) return true;
+  if (username.includes('aluna_mobile')) return true;
+  if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas' || username === 'pedro') return true;
+  return false;
+}
+
 function readDb() {
   try {
     if (fs.existsSync(DB_FILE)) {
@@ -56,6 +68,9 @@ function readDb() {
       if (!Array.isArray(parsed.adminNotifications)) parsed.adminNotifications = [];
       if (!Array.isArray(parsed.systemEvents)) parsed.systemEvents = [];
       if (!Array.isArray(parsed.auditLogs)) parsed.auditLogs = [];
+      if (Array.isArray(parsed.users)) {
+        parsed.users = parsed.users.filter(u => !isMockUser(u));
+      }
       return parsed;
     }
   } catch (e) {

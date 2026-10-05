@@ -7385,7 +7385,17 @@ class EstudePlusApp {
         let list = JSON.parse(data);
         if (Array.isArray(list)) {
           // Remove old test mock student accounts
-          list = list.filter(u => u.id !== 'usr-student' && u.email !== 'aluno@gammon.com.br');
+          list = list.filter(u => {
+            if (!u) return false;
+            if (u.id === 'usr-student' || u.id === 'aluno_lucas' || u.id === 'user_streak_break_test') return false;
+            const name = (u.name || '').toLowerCase();
+            const username = (u.username || '').toLowerCase();
+            const email = (u.email || '').toLowerCase();
+            if (name.includes('teste') || username.includes('teste') || email.includes('teste')) return false;
+            if (username.includes('aluna_mobile')) return false;
+            if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas' || username === 'pedro') return false;
+            return true;
+          });
           // Ensure admin Freddie has correct adm@123 password
           const freddie = list.find(u => u.email === 'freddie@gammon.com.br' || u.username === 'freddie');
           if (freddie) {
@@ -10300,10 +10310,20 @@ class EstudePlusApp {
     const badgeCount = document.getElementById('adminStudentsBadgeCount');
     if (!container) return;
 
-    const term = (searchTerm || '').toLowerCase().trim();
-    const allUsers = (this.adminOverviewData && Array.isArray(this.adminOverviewData.users) && this.adminOverviewData.users.length > 0)
+    const rawUsers = (this.adminOverviewData && Array.isArray(this.adminOverviewData.users) && this.adminOverviewData.users.length > 0)
       ? this.adminOverviewData.users
       : (this.users || []);
+    const allUsers = rawUsers.filter(u => {
+      if (!u) return false;
+      if (u.id === 'usr-student' || u.id === 'aluno_lucas' || u.id === 'user_streak_break_test') return false;
+      const name = (u.name || '').toLowerCase();
+      const username = (u.username || '').toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      if (name.includes('teste') || username.includes('teste') || email.includes('teste')) return false;
+      if (username.includes('aluna_mobile')) return false;
+      if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas' || username === 'pedro') return false;
+      return true;
+    });
     if (!this.adminOverviewData && this.currentUser && (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie')) {
       this.loadAdminOverview();
     }

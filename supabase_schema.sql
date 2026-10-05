@@ -196,27 +196,6 @@ INSERT INTO public.users (
     'eaedb18c203d18af0d29e2162e62c8b9'
 ) ON CONFLICT (id) DO UPDATE SET role = 'admin', is_subscribed = true;
 
--- Aluno Demonstração: Lucas Silva
-INSERT INTO public.users (
-    id, name, username, email, role, is_subscribed, plan, plan_status, plan_name, grade, email_verified, streak, best_streak, password_hash, password_salt
-) VALUES (
-    'aluno_lucas',
-    'Lucas Silva',
-    'lucas',
-    'lucas@gammon.com.br',
-    'student',
-    false,
-    'free',
-    'free',
-    'Plano Base',
-    '7º Ano B',
-    true,
-    0,
-    0,
-    'cc9be4cf8432a524c09038b4dc517aebea60142311514d29ea6d1b0871974a4b3b494f41ac1c14db2c0a6739b21107d56cb893966cf27e040b7a286f6ecd979d',
-    'd70fc66bbe8bbad19e3bb312dabecd06'
-) ON CONFLICT (id) DO NOTHING;
-
 -- TPCs Iniciais do Gammon
 INSERT INTO public.tpcs (id, subject, title, due_date, status, details, teacher, difficulty, tpc_type) VALUES
 ('tpc-mat-elaine-0210', 'Matemática', 'Atividade Suplementar – pág. 50 (para 05/10)', '2026-10-05', 'pending', 'Atividade Suplementar - página 50, para o dia 05/10. Postado por Profª ELAINE APARECIDA LEANDRO DOS SANTOS (Turma 17B • 3º Trimestre).', 'Profª Elaine Aparecida Leandro dos Santos', 'Média', 'TPC Diário'),
