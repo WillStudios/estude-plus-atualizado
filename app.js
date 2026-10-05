@@ -2253,6 +2253,23 @@ class EstudePlusApp {
      SISTEMA OFICIAL DE TRILHAS SAS (APOSTILAS 1, 2 E 3) & PROGRESSÃO DE CAPÍTULOS
      ========================================================================== */
 
+  hasTrilhasAccess() {
+    if (!this.currentUser) return false;
+    // Permissão administrativa própria oficial (não simula assinatura Pro comum)
+    if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
+      return true;
+    }
+    // Assinante PRO ativo (Mensal ou Anual) ou degustação 5 dias
+    return this.isUserPro();
+  }
+
+  promptProForTrilha(customTitle) {
+    const title = customTitle ? ` (${customTitle})` : '';
+    alert(`TRILHAS 🔒 PRO\n\n"Aprenda por caminhos completos organizados por matéria, apostila e capítulo."\n\nAs Trilhas de Aprendizagem SAS${title} são um recurso exclusivo do Plano PRO.\n\n✓ Organização por capítulos (Apostilas 1, 2 e 3)\n✓ Quizzes progressivos calibrados\n✓ Revisão ativa de erros\n✓ Desafios e Domínio do Capítulo 🏆\n✓ Progresso sincronizado no backend entre PC, celular e tablet\n\nPlanos Oficiais:\n• PRO Mensal: R$ 10,00/mês\n• PRO Anual: R$ 120,00/ano\n\nAssine agora para liberar todas as trilhas!`);
+    this.switchTab('plans-pricing');
+    this.showModal('subscriptionModal');
+  }
+
   async initTrilhas() {
     this.currentTrilhaSubject = this.currentTrilhaSubject || 'matematica';
     this.currentTrilhaBookId = this.currentTrilhaBookId || 1;
@@ -2273,6 +2290,12 @@ class EstudePlusApp {
           totalChaptersCompleted: 0,
           totalStagesCompleted: 0,
           avgMastery: 0
+        };
+        this.trilhasAccessData = {
+          hasAccess: data.hasAccess,
+          isPro: data.isPro,
+          isAdmin: data.isAdmin,
+          proRequired: data.proRequired
         };
       } else {
         this.trilhasProgressData = [];
@@ -2347,6 +2370,10 @@ class EstudePlusApp {
     const container = document.getElementById('trilhasSubjectsGrid');
     if (!container) return;
 
+    const hasAccess = this.hasTrilhasAccess();
+    const isAdmin = this.currentUser?.role === 'admin' || this.currentUser?.username === 'freddie';
+    const isExpired = !hasAccess && (this.trilhasProgressData && this.trilhasProgressData.length > 0);
+
     const subjects = [
       { key: 'matematica', name: 'Matemática', icon: '📐', color: '#2563eb', desc: 'Divisibilidade, inteiros, frações, equações, geometria e probabilidade.' },
       { key: 'portugues', name: 'Língua Portuguesa', icon: '✍️', color: '#059669', desc: 'Notícia, crônica, transitividade verbal, concordância e figuras de linguagem.' },
@@ -2356,7 +2383,71 @@ class EstudePlusApp {
       { key: 'ingles', name: 'Língua Inglesa', icon: '🌐', color: '#db2777', desc: 'Simple Present, Routine, Daily activities, Reading comprehension and vocabulary.' }
     ];
 
-    container.innerHTML = subjects.map(s => {
+    let headerBannerHtml = '';
+    if (isAdmin) {
+      headerBannerHtml = `
+        <div style="grid-column: 1 / -1; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 14px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">
+            <span style="font-size: 1.2rem;">⚙️</span>
+            <span><strong>Acesso Administrativo Oficial:</strong> Você possui permissão administrativa total para visualizar, testar e configurar as Trilhas SAS.</span>
+          </div>
+          <span class="badge-accent" style="background: #dbeafe; color: #1e40af; font-weight: 800; font-size: 0.76rem;">ADMINISTRADOR</span>
+        </div>
+      `;
+    } else if (isExpired) {
+      headerBannerHtml = `
+        <div style="grid-column: 1 / -1; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 16px 20px; color: #92400e; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 8px;">
+          <div>
+            <strong style="display: block; font-size: 0.95rem; margin-bottom: 3px;">⚠️ Assinatura Pro Inativa • Seu progresso está preservado com segurança!</strong>
+            <span style="font-size: 0.85rem; color: #78350f;">Todas as suas etapas e capítulos concluídos continuam salvos no servidor. Reative o Plano PRO para continuar avançando.</span>
+          </div>
+          <button class="btn-primary" onclick="app.showSubscriptionModal()" style="background: #d97706; border-color: #d97706; padding: 10px 18px; font-weight: 800; font-size: 0.88rem;">
+            Reativar Pro (R$ 10/mês)
+          </button>
+        </div>
+      `;
+    } else if (!hasAccess) {
+      headerBannerHtml = `
+        <div style="grid-column: 1 / -1; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: 1.5px solid #3b82f6; border-radius: 16px; padding: 22px 26px; color: #ffffff; margin-bottom: 8px; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div style="max-width: 680px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="badge-accent" style="background: #fbbf24; color: #78350f; font-weight: 900; font-size: 0.78rem;">
+                  TRILHAS 🔒 PRO
+                </span>
+                <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700;">
+                  Planos Oficiais: R$ 10,00/mês ou R$ 120,00/ano
+                </span>
+              </div>
+              <h3 style="margin: 0 0 6px; font-size: 1.35rem; font-weight: 900; color: #ffffff;">
+                "Aprenda por caminhos completos organizados por matéria, apostila e capítulo."
+              </h3>
+              <p style="margin: 0 0 14px; font-size: 0.88rem; color: #cbd5e1; line-height: 1.5;">
+                As Trilhas de Aprendizagem SAS são um recurso exclusivo do Plano PRO. Veja a prévia estruturada e assine para desbloquear todas as matérias e etapas.
+              </p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; font-size: 0.82rem; color: #e2e8f0; font-weight: 600;">
+                <div>✓ Organização por capítulos (Apostilas 1, 2 e 3)</div>
+                <div>✓ Quizzes progressivos calibrados</div>
+                <div>✓ Revisão inteligente de erros</div>
+                <div>✓ Desafios práticos e Certificado 🏆</div>
+                <div>✓ Progresso sincronizado no servidor</div>
+                <div>✓ Acesso no PC, celular e tablet</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; min-width: 200px;">
+              <button class="btn-primary" onclick="app.showSubscriptionModal()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; padding: 12px 18px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; justify-content: center; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);">
+                <i data-lucide="sparkles"></i> Conhecer o Pro
+              </button>
+              <span style="text-align: center; font-size: 0.75rem; color: #94a3b8;">
+                Disponível no Pro
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const cardsHtml = subjects.map(s => {
       const subjData = this.sasSubjectsData[s.key];
       // STRICT: Only Apostilas 1, 2, and 3
       const validBooks = (subjData?.livros || []).filter(l => l.id <= 3);
@@ -2366,6 +2457,27 @@ class EstudePlusApp {
       const completedCaps = userProgress.filter(p => p.isCompleted).length;
       const masteryPct = totalCaps > 0 ? Math.round((completedCaps / totalCaps) * 100) : 0;
 
+      const proTagHtml = !hasAccess ? `
+        <span class="badge-accent" style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.72rem; margin-left: auto;">
+          🔒 Recurso PRO
+        </span>
+      ` : '';
+
+      const actionBtnHtml = hasAccess ? `
+        <button class="btn-primary" onclick="app.selectTrilhaSubject('${s.key}')" style="width: 100%; background: ${s.color}; border-color: ${s.color}; padding: 11px; font-weight: 800; font-size: 0.9rem; justify-content: center;">
+          Acessar Apostilas 1, 2 e 3 →
+        </button>
+      ` : `
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-outline" onclick="app.selectTrilhaSubject('${s.key}')" style="flex: 1; padding: 10px; font-weight: 700; font-size: 0.85rem; justify-content: center;" title="Ver prévia dos capítulos">
+            Ver Prévia 🔒
+          </button>
+          <button class="btn-primary" onclick="app.promptProForTrilha('${s.name}')" style="flex: 1; background: ${s.color}; border-color: ${s.color}; padding: 10px; font-weight: 800; font-size: 0.85rem; justify-content: center;">
+            Assinar Pro
+          </button>
+        </div>
+      `;
+
       return `
         <div class="trilhas-subject-card" style="border-top: 4px solid ${s.color};">
           <div>
@@ -2373,8 +2485,11 @@ class EstudePlusApp {
               <div class="trilhas-subject-icon" style="background: ${s.color}15; color: ${s.color};">
                 ${s.icon}
               </div>
-              <div>
-                <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">${s.name}</h4>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                  <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">${s.name}</h4>
+                  ${proTagHtml}
+                </div>
                 <span style="font-size: 0.78rem; font-weight: 700; color: #64748b;">3 Apostilas Oficiais (1, 2 e 3)</span>
               </div>
             </div>
@@ -2394,14 +2509,13 @@ class EstudePlusApp {
               </div>
             </div>
 
-            <button class="btn-primary" onclick="app.selectTrilhaSubject('${s.key}')" style="width: 100%; background: ${s.color}; border-color: ${s.color}; padding: 11px; font-weight: 800; font-size: 0.9rem; justify-content: center;">
-              Acessar Apostilas 1, 2 e 3 →
-            </button>
+            ${actionBtnHtml}
           </div>
         </div>
       `;
     }).join('');
 
+    container.innerHTML = headerBannerHtml + cardsHtml;
     if (window.lucide) window.lucide.createIcons();
   }
 
@@ -2415,6 +2529,7 @@ class EstudePlusApp {
     const headerTag = document.getElementById('trilhasApostilaHeaderTag');
     if (!container) return;
 
+    const hasAccess = this.hasTrilhasAccess();
     const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
     if (headerTag) headerTag.innerText = `Matéria Selecionada: ${subj.name}`;
 
@@ -2431,12 +2546,21 @@ class EstudePlusApp {
       const trimestres = { 1: '1º Trimestre', 2: '2º Trimestre', 3: '3º Trimestre' };
       const trimLabel = trimestres[b.id] || `Trimestre ${b.id}`;
 
+      const proBadgeHtml = !hasAccess ? `
+        <span class="badge-accent" style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.74rem;">
+          🔒 Disponível no PRO
+        </span>
+      ` : '';
+
       return `
         <div class="trilhas-apostila-card" style="border-top: 5px solid ${subj.color || '#2563eb'};">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <span class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.78rem;">
-              ${trimLabel}
-            </span>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.78rem;">
+                ${trimLabel}
+              </span>
+              ${proBadgeHtml}
+            </div>
             <span style="font-size: 0.78rem; font-weight: 700; color: #64748b;">
               ${totalCaps} Capítulos
             </span>
@@ -2460,7 +2584,7 @@ class EstudePlusApp {
           </div>
 
           <button class="btn-primary" onclick="app.selectTrilhaApostila(${b.id})" style="width: 100%; background: ${subj.color || '#2563eb'}; border-color: ${subj.color || '#2563eb'}; padding: 11px; font-weight: 800; justify-content: center;">
-            Ver Capítulos da Apostila ${b.id} →
+            ${hasAccess ? `Ver Capítulos da Apostila ${b.id} →` : `Ver Capítulos (Prévia) →`}
           </button>
         </div>
       `;
@@ -2483,6 +2607,7 @@ class EstudePlusApp {
     const headerTag = document.getElementById('trilhasChapterHeaderTag');
     if (!container) return;
 
+    const hasAccess = this.hasTrilhasAccess();
     const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
     const validBooks = (subj.livros || []).filter(l => l.id <= 3);
     const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
@@ -2504,13 +2629,34 @@ class EstudePlusApp {
       const masteryPct = rec?.masteryPercentage || 0;
 
       let statusBadge = '';
-      if (isCompleted) {
+      if (!hasAccess) {
+        if (completedCount > 0) {
+          statusBadge = `<span class="badge-accent" style="background: #fef3c7; color: #b45309; font-weight: 800;">🔒 Progresso Salvo (${completedCount}/7) • Exige PRO</span>`;
+        } else {
+          statusBadge = `<span class="badge-accent" style="background: #fef3c7; color: #b45309; font-weight: 800;">🔒 Exclusivo do Plano PRO</span>`;
+        }
+      } else if (isCompleted) {
         statusBadge = `<span class="badge-accent" style="background: #dcfce7; color: #15803d; font-weight: 800;">🏆 Domínio Alcançado (100%)</span>`;
       } else if (completedCount > 0) {
         statusBadge = `<span class="badge-accent" style="background: #e0f2fe; color: #0369a1; font-weight: 800;">⏳ Em Progresso (${completedCount}/7 Etapas • ${masteryPct}%)</span>`;
       } else {
         statusBadge = `<span class="badge-accent" style="background: #f1f5f9; color: #64748b; font-weight: 700;">🌱 Não Iniciado (0/7 Etapas)</span>`;
       }
+
+      const actionButtons = hasAccess ? `
+        <button class="btn-primary" onclick="app.selectTrilhaChapter(${c.id})" style="background: ${subj.color || '#2563eb'}; border-color: ${subj.color || '#2563eb'}; padding: 10px 18px; font-weight: 800; font-size: 0.88rem; white-space: nowrap;">
+          ${isCompleted ? 'Revisar Trilha 🏆' : (completedCount > 0 ? 'Continuar Trilha 🚀' : 'Iniciar Trilha →')}
+        </button>
+      ` : `
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-outline" onclick="app.selectTrilhaChapter(${c.id})" style="padding: 9px 14px; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">
+            Ver Trilha (Prévia) 🔒
+          </button>
+          <button class="btn-primary" onclick="app.promptProForTrilha('${c.title}')" style="background: ${subj.color || '#2563eb'}; border-color: ${subj.color || '#2563eb'}; padding: 9px 14px; font-weight: 800; font-size: 0.85rem; white-space: nowrap;">
+            Assinar Pro
+          </button>
+        </div>
+      `;
 
       return `
         <div class="trilhas-chapter-card">
@@ -2530,9 +2676,7 @@ class EstudePlusApp {
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="btn-primary" onclick="app.selectTrilhaChapter(${c.id})" style="background: ${subj.color || '#2563eb'}; border-color: ${subj.color || '#2563eb'}; padding: 10px 18px; font-weight: 800; font-size: 0.88rem; white-space: nowrap;">
-              ${isCompleted ? 'Revisar Trilha 🏆' : (completedCount > 0 ? 'Continuar Trilha 🚀' : 'Iniciar Trilha →')}
-            </button>
+            ${actionButtons}
           </div>
         </div>
       `;
@@ -2556,6 +2700,7 @@ class EstudePlusApp {
 
     if (!container) return;
 
+    const hasAccess = this.hasTrilhasAccess();
     const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
     const validBooks = (subj.livros || []).filter(l => l.id <= 3);
     const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
@@ -2596,7 +2741,24 @@ class EstudePlusApp {
       { id: 'dominio', name: 'Domínio do Capítulo 🏆', icon: '🏆', subtitle: 'Certificado de maestria curricular e nota máxima atingida!' }
     ];
 
-    container.innerHTML = stages.map((stg, idx) => {
+    let paywallBannerHtml = '';
+    if (!hasAccess) {
+      paywallBannerHtml = `
+        <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid #3b82f6; border-radius: 16px; padding: 22px 24px; text-align: center; margin-bottom: 24px; color: #ffffff; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);">
+          <div style="font-size: 2rem; margin-bottom: 6px;">🔒</div>
+          <h3 style="margin: 0 0 6px; font-size: 1.3rem; font-weight: 900; color: #ffffff;">Trilha Exclusiva do ESTUDE+ PRO</h3>
+          <p style="margin: 0 auto 16px; color: #cbd5e1; max-width: 520px; font-size: 0.88rem; line-height: 1.5;">
+            "Aprenda por caminhos completos organizados por matéria, apostila e capítulo."<br>
+            Para realizar os testes conceituais, exercícios e avançar pelas 7 etapas deste capítulo, assine o Plano PRO por R$ 10,00/mês ou R$ 120,00/ano.
+          </p>
+          <button class="btn-primary" onclick="app.showSubscriptionModal()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; padding: 11px 24px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; margin: 0 auto; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">
+            <i data-lucide="sparkles"></i> Conhecer o Pro / Assinar Agora
+          </button>
+        </div>
+      `;
+    }
+
+    const nodesHtml = stages.map((stg, idx) => {
       const isMasteryNode = stg.id === 'dominio';
       let state = 'locked'; // 'completed', 'active', 'locked'
 
@@ -2619,11 +2781,44 @@ class EstudePlusApp {
       const stageResult = rec?.stageResults?.[stg.id];
       const isLastNode = idx === stages.length - 1;
 
+      let actionHtml = '';
+      if (!hasAccess) {
+        actionHtml = `
+          <button class="btn-primary" onclick="app.promptProForTrilha('${chapter.title}')" style="padding: 8px 16px; font-size: 0.84rem; font-weight: 800; background: #2563eb; border-color: #2563eb;">
+            <i data-lucide="lock" style="width: 14px; height: 14px; display: inline-block;"></i> Desbloquear no PRO
+          </button>
+        `;
+      } else if (state === 'completed' && !isMasteryNode) {
+        actionHtml = `
+          <button class="btn-outline" onclick="app.startTrilhaStage('${stg.id}', ${idx})" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 700; color: #059669; border-color: #86efac;">
+            <i data-lucide="rotate-ccw"></i> Refazer Etapa
+          </button>
+        `;
+      } else if (state === 'active' && !isMasteryNode) {
+        actionHtml = `
+          <button class="btn-primary" onclick="app.startTrilhaStage('${stg.id}', ${idx})" style="padding: 9px 18px; font-size: 0.85rem; font-weight: 800; background: #0284c7; border-color: #0284c7;">
+            Iniciar Etapa Agora →
+          </button>
+        `;
+      } else if (state === 'locked' && !isMasteryNode) {
+        actionHtml = `
+          <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+            <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Conclua a etapa anterior para desbloquear
+          </span>
+        `;
+      } else if (isMasteryNode && isChapterCompleted) {
+        actionHtml = `
+          <div style="background: #fef3c7; border: 1.5px solid #fde68a; border-radius: 10px; padding: 10px 14px; color: #92400e; font-weight: 800; font-size: 0.85rem;">
+            🎉 Você dominou com sucesso todos os tópicos deste capítulo!
+          </div>
+        `;
+      }
+
       return `
         <div class="trail-step-item">
           <div class="trail-connector-col">
             <div class="trail-node-circle ${state} ${isMasteryNode ? 'mastery' : ''}">
-              ${state === 'completed' ? (isMasteryNode ? '🏆' : '✔') : (state === 'active' ? stg.icon : '🔒')}
+              ${state === 'completed' ? (isMasteryNode ? '🏆' : '✔') : (state === 'active' ? (hasAccess ? stg.icon : '🔒') : '🔒')}
             </div>
             ${!isLastNode ? `<div class="trail-vertical-line ${state === 'completed' ? 'completed-line' : ''}"></div>` : ''}
           </div>
@@ -2644,43 +2839,43 @@ class EstudePlusApp {
             </p>
 
             <div>
-              ${state === 'completed' && !isMasteryNode ? `
-                <button class="btn-outline" onclick="app.startTrilhaStage('${stg.id}', ${idx})" style="padding: 7px 14px; font-size: 0.82rem; font-weight: 700; color: #059669; border-color: #86efac;">
-                  <i data-lucide="rotate-ccw"></i> Refazer Etapa
-                </button>
-              ` : ''}
-
-              ${state === 'active' && !isMasteryNode ? `
-                <button class="btn-primary" onclick="app.startTrilhaStage('${stg.id}', ${idx})" style="padding: 9px 18px; font-size: 0.85rem; font-weight: 800; background: #0284c7; border-color: #0284c7;">
-                  Iniciar Etapa Agora →
-                </button>
-              ` : ''}
-
-              ${state === 'locked' && !isMasteryNode ? `
-                <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                  <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Conclua a etapa anterior para desbloquear
-                </span>
-              ` : ''}
-
-              ${isMasteryNode && isChapterCompleted ? `
-                <div style="background: #fef3c7; border: 1.5px solid #fde68a; border-radius: 10px; padding: 10px 14px; color: #92400e; font-weight: 800; font-size: 0.85rem;">
-                  🎉 Você dominou com sucesso todos os tópicos deste capítulo!
-                </div>
-              ` : ''}
+              ${actionHtml}
             </div>
           </div>
         </div>
       `;
     }).join('');
 
+    container.innerHTML = paywallBannerHtml + nodesHtml;
     if (window.lucide) window.lucide.createIcons();
   }
 
-  startTrilhaStage(stageId, stageIndex) {
+  async startTrilhaStage(stageId, stageIndex) {
+    if (!this.hasTrilhasAccess()) {
+      this.promptProForTrilha();
+      return;
+    }
+
     const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
     const validBooks = (subj.livros || []).filter(l => l.id <= 3);
     const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
     const chapter = (book.chapters || []).find(c => c.id === this.currentTrilhaChapterId) || book.chapters[0];
+
+    // Validação estrita no BACKEND antes de permitir iniciar qualquer etapa
+    try {
+      const authRes = await fetch(`/api/trilhas/stage-content?subjectKey=${encodeURIComponent(this.currentTrilhaSubject || 'matematica')}&bookId=${book.id}&chapterId=${chapter.id}&stageId=${encodeURIComponent(stageId)}&stageIndex=${stageIndex}`, {
+        headers: this.getApiHeaders()
+      });
+      if (!authRes.ok) {
+        const errJson = await authRes.json().catch(() => ({}));
+        if (authRes.status === 403 || errJson.proRequired) {
+          this.promptProForTrilha(chapter.title);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[Trilha Stage Content Check]', err);
+    }
 
     this.activeTrilhaSession = {
       subjectKey: this.currentTrilhaSubject,
@@ -2793,7 +2988,18 @@ class EstudePlusApp {
       });
 
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (!res.ok) {
+        if (res.status === 403 || data.proRequired) {
+          alert('🔒 Recurso Exclusivo do Plano PRO!\n\nO avanço e conclusão de etapas nas Trilhas SAS é exclusivo para assinantes do Plano PRO (R$ 10,00/mês ou R$ 120,00/ano).');
+          this.closeModal('trilhaStageModal');
+          this.showModal('subscriptionModal');
+          return;
+        }
+        alert(data.error || 'Não foi possível registrar a etapa.');
+        return;
+      }
+
+      if (data.success) {
         if (typeof confetti === 'function') {
           confetti({ particleCount: 80, spread: 90, origin: { y: 0.6 } });
         }
@@ -2801,8 +3007,6 @@ class EstudePlusApp {
         this.closeModal('trilhaStageModal');
         await this.loadTrilhasProgress();
         this.renderTrilhaActiveTrail();
-      } else {
-        alert(data.error || 'Não foi possível registrar a etapa.');
       }
     } catch (e) {
       alert('Erro de comunicação com o servidor: ' + e.message);
@@ -2827,11 +3031,17 @@ class EstudePlusApp {
         })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (!res.ok) {
+        if (res.status === 403 || data.proRequired) {
+          this.promptProForTrilha();
+          return;
+        }
+        alert(data.error || 'Erro ao reiniciar trilha.');
+        return;
+      }
+      if (data.success) {
         await this.loadTrilhasProgress();
         this.renderTrilhaActiveTrail();
-      } else {
-        alert(data.error || 'Erro ao reiniciar trilha.');
       }
     } catch (e) {
       alert('Erro de rede: ' + e.message);
@@ -9395,10 +9605,34 @@ class EstudePlusApp {
             this.saveCurrentUser();
             this.updateUserHeaderUI();
             this.renderPlanStatus();
+            if (this.currentTab === 'trilhas') {
+              this.initTrilhas();
+            }
             if (payload.data.isSubscribed) {
               if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 70 });
               alert('🎉 Seu Plano PRO foi ativado com sucesso!');
             }
+          }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('trilha_progress_updated', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload && payload.data) {
+            this.loadTrilhasProgress().then(() => {
+              if (this.currentTab === 'trilhas') {
+                if (this.currentTrilhaView === 'trail') {
+                  this.renderTrilhaActiveTrail();
+                } else if (this.currentTrilhaView === 'chapters') {
+                  this.renderTrilhasChapters();
+                } else if (this.currentTrilhaView === 'apostilas') {
+                  this.renderTrilhasApostilas();
+                } else {
+                  this.renderTrilhasSubjects();
+                }
+              }
+            });
           }
         } catch (err) {}
       });

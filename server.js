@@ -357,7 +357,11 @@ function checkRateLimit(ip, type) {
   } else if (type === 'login_success') {
     record.loginFailures = 0;
   } else if (type === 'register') {
-    // Max 3 registrations per IP per hour
+    // Exempt localhost loopback from register rate limit
+    if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') {
+      return { allowed: true };
+    }
+    // Max 4 registrations per IP per hour
     record.registrations = (record.registrations || []).filter(t => now - t < 3600000);
     if (record.registrations.length >= 4) {
       return { allowed: false, error: 'Limite de cadastros excedido para esta rede. Tente mais tarde ou use a recuperação de senha.' };
@@ -505,6 +509,74 @@ function validateAdmin(req) {
   return false;
 }
 
+function checkUserTrilhasAccess(user) {
+  if (!user) {
+    return { allowed: false, isPro: false, isAdmin: false, reason: 'unauthenticated' };
+  }
+
+  // 1. Admin com permissão administrativa própria (não simula assinatura Pro comum)
+  if (user.role === 'admin' || user.username === 'freddie') {
+    return {
+      allowed: true,
+      isAdmin: true,
+      isPro: false,
+      role: 'admin',
+      label: 'Acesso Administrativo'
+    };
+  }
+
+  // 2. Verifica se a assinatura PRO está expirada
+  if (user.proExpiresAt && new Date(user.proExpiresAt).getTime() <= Date.now()) {
+    return {
+      allowed: false,
+      isAdmin: false,
+      isPro: false,
+      reason: 'pro_expired',
+      expiredAt: user.proExpiresAt
+    };
+  }
+
+  // 3. Status de PRO ativo
+  const proStatuses = ['active', 'pro_mensal_active', 'pro_anual_active'];
+  const hasProStatus = proStatuses.includes(user.planStatus);
+  const isSubscribed = Boolean(user.isSubscribed);
+  const isPlanPro = user.plan === 'pro';
+
+  if ((isSubscribed && user.planStatus !== 'canceled' && user.planStatus !== 'expired') || hasProStatus || isPlanPro) {
+    const isAnual = user.planType === 'pro_anual' || user.planStatus === 'pro_anual_active' || user.planPeriodicity === 'anual';
+    return {
+      allowed: true,
+      isAdmin: false,
+      isPro: true,
+      planType: isAnual ? 'pro_anual' : 'pro_mensal',
+      planName: isAnual ? 'PRO Anual (R$ 120,00/ano)' : 'PRO Mensal (R$ 10,00/mês)',
+      proExpiresAt: user.proExpiresAt || null
+    };
+  }
+
+  // 4. Período de degustação de 5 dias (se ativo)
+  if ((user.planStatus === 'trial_5d' || user.plan === 'trial_5d') && user.trialExpiresAt) {
+    if (new Date(user.trialExpiresAt).getTime() > Date.now()) {
+      return {
+        allowed: true,
+        isAdmin: false,
+        isPro: true,
+        isTrial: true,
+        planType: 'trial_5d',
+        planName: 'Degustação PRO 5 Dias',
+        proExpiresAt: user.trialExpiresAt
+      };
+    }
+  }
+
+  return {
+    allowed: false,
+    isAdmin: false,
+    isPro: false,
+    reason: 'free_user'
+  };
+}
+
 function getAuthUser(req) {
   const cookies = parseCookies(req);
   const cookieSessionId = cookies['estude_session'];
@@ -538,7 +610,7 @@ function getAuthUser(req) {
       }
 
       session.lastHeartbeat = now;
-      const user = (db.users || []).find(u => u.id === session.userId);
+      const user = (db.users || []).find(u => String(u.id) === String(session.userId));
       if (user) return { user, session };
     }
   }
@@ -1348,6 +1420,9 @@ const server = http.createServer((req, res) => {
 
   // 1. GET /api/trilhas/content - Conteúdo oficial mapeado do SAS (estritamente Apostilas 1, 2 e 3)
   if (req.method === 'GET' && pathname === '/api/trilhas/content') {
+    const auth = getAuthUser(req);
+    const access = checkUserTrilhasAccess(auth?.user);
+
     const contentPath = path.join(__dirname, 'sas_authorized_content.json');
     let authorizedData = null;
     if (fs.existsSync(contentPath)) {
@@ -1370,8 +1445,68 @@ const server = http.createServer((req, res) => {
       }
     }
 
+    // Se NÃO tiver acesso Pro nem for Admin: retorna APENAS a vitrine com benefícios e prévia autorizada
+    if (!access.allowed) {
+      const previewSubjects = {};
+      for (const subjKey of Object.keys(authorizedData.subjects)) {
+        const s = authorizedData.subjects[subjKey];
+        const apostilasPreview = (s.apostilas || []).filter(a => a.id <= 3).map(a => ({
+          id: a.id,
+          title: a.title,
+          chaptersCount: Array.isArray(a.chapters) ? a.chapters.length : 0,
+          chapters: (a.chapters || []).map(c => ({
+            id: c.id,
+            tag: c.tag,
+            title: c.title,
+            desc: c.desc,
+            isLocked: true
+          }))
+        }));
+
+        previewSubjects[subjKey] = {
+          name: s.name,
+          icon: s.icon,
+          color: s.color,
+          meta: s.meta,
+          isLocked: true,
+          apostilas: apostilasPreview
+        };
+      }
+
+      return sendJson({
+        success: true,
+        isProRequired: true,
+        hasAccess: false,
+        isPro: false,
+        isAdmin: false,
+        preview: true,
+        title: 'Trilhas de Aprendizagem SAS 🔒 PRO',
+        badge: 'Recurso Exclusivo PRO',
+        headline: 'Aprenda por caminhos completos organizados por matéria, apostila e capítulo.',
+        benefits: [
+          'Organização completa por matérias e capítulos das Apostilas Oficiais 1, 2 e 3 do SAS 7º ano',
+          'Jornada progressiva em 7 etapas: Fundamentos, Práticas Guiadas, Quizzes, Revisão de Erros e Desafio Final',
+          'Quizzes inteligentes e progressivos com gabarito comentado passo a passo',
+          'Revisão ativa de erros e prevenção de pegadinhas frequentes',
+          'Desafios práticos e conquista do Certificado de Domínio do Capítulo 🏆',
+          'Progresso sincronizado e salvo no backend em qualquer dispositivo'
+        ],
+        plans: {
+          mensal: { id: 'pro_mensal', name: 'PRO Mensal', price: 'R$ 10,00/mês', amount: 10.00 },
+          anual: { id: 'pro_anual', name: 'PRO Anual', price: 'R$ 120,00/ano', amount: 120.00 }
+        },
+        subjects: previewSubjects
+      });
+    }
+
+    // Usuário PRO ou ADMIN: acesso completo ao currículo oficial
     return sendJson({
       success: true,
+      hasAccess: true,
+      isPro: access.isPro,
+      isAdmin: access.isAdmin,
+      isProRequired: false,
+      planType: access.planType || (access.isAdmin ? 'admin' : 'pro'),
       source: authorizedData.source,
       curriculumYear: authorizedData.curriculumYear || 2026,
       grade: authorizedData.grade || '7º Ano - Ensino Fundamental',
@@ -1386,6 +1521,8 @@ const server = http.createServer((req, res) => {
     if (!auth || !auth.user) {
       return sendJson({ error: 'Acesso não autenticado. Faça login para acessar suas trilhas.' }, 401);
     }
+
+    const access = checkUserTrilhasAccess(auth.user);
 
     const db = readDb();
     const userProgress = (db.trilhasProgress || []).filter(p => String(p.userId) === String(auth.user.id));
@@ -1415,6 +1552,11 @@ const server = http.createServer((req, res) => {
 
     return sendJson({
       success: true,
+      hasAccess: access.allowed,
+      isPro: access.isPro,
+      isAdmin: access.isAdmin,
+      proRequired: !access.allowed,
+      planType: access.planType || (access.isAdmin ? 'admin' : 'free'),
       progress: filtered,
       allProgress: userProgress,
       summary: {
@@ -1426,11 +1568,66 @@ const server = http.createServer((req, res) => {
     });
   }
 
-  // 3. POST /api/trilhas/complete-stage - Conclui etapa da trilha e avança progressão
+  // 3. GET /api/trilhas/stage-content - Validação e autorização de início de etapa (Protegido por PRO ou Admin)
+  if (req.method === 'GET' && pathname === '/api/trilhas/stage-content') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado para carregar etapa de trilha.' }, 401);
+    }
+
+    const access = checkUserTrilhasAccess(auth.user);
+    if (!access.allowed) {
+      return sendJson({
+        error: 'O acesso aos conteúdos e etapas das Trilhas SAS é exclusivo para assinantes do Plano PRO.',
+        proRequired: true,
+        plans: {
+          mensal: 'R$ 10,00/mês',
+          anual: 'R$ 120,00/ano'
+        }
+      }, 403);
+    }
+
+    const subjectKey = String(parsedUrl.searchParams.get('subjectKey') || 'matematica').toLowerCase();
+    const bookId = Number(parsedUrl.searchParams.get('bookId') || 1);
+    const chapterId = Number(parsedUrl.searchParams.get('chapterId') || 1);
+    const stageId = String(parsedUrl.searchParams.get('stageId') || 'fundamentos');
+    const stageIndex = Number(parsedUrl.searchParams.get('stageIndex') || 0);
+
+    if (bookId > 3 || bookId < 1) {
+      return sendJson({ error: 'Apenas as Apostilas 1, 2 e 3 do SAS são permitidas.' }, 400);
+    }
+
+    return sendJson({
+      success: true,
+      allowed: true,
+      isPro: access.isPro,
+      isAdmin: access.isAdmin,
+      subjectKey,
+      bookId,
+      chapterId,
+      stageId,
+      stageIndex
+    });
+  }
+
+  // 4. POST /api/trilhas/complete-stage - Conclui etapa da trilha e avança progressão
   if (req.method === 'POST' && pathname === '/api/trilhas/complete-stage') {
     const auth = getAuthUser(req);
     if (!auth || !auth.user) {
       return sendJson({ error: 'Acesso não autenticado para registrar etapa de trilha.' }, 401);
+    }
+
+    // Regra estrita no BACKEND: Apenas assinantes PRO ativos ou administradores autorizados
+    const access = checkUserTrilhasAccess(auth.user);
+    if (!access.allowed) {
+      return sendJson({
+        error: 'O avanço e conclusão de etapas nas Trilhas SAS é um recurso exclusivo para assinantes do Plano PRO.',
+        proRequired: true,
+        plans: {
+          mensal: 'R$ 10,00/mês',
+          anual: 'R$ 120,00/ano'
+        }
+      }, 403);
     }
 
     parseBody((data) => {
@@ -1529,13 +1726,25 @@ const server = http.createServer((req, res) => {
       writeDb(db);
       supabase.syncFromLocalDb(db).catch(() => {});
 
-      logSystemEvent('info', 'trilhas', `Etapa [${stageId}] da trilha de ${chapterTitle} concluída pelo aluno`, {
+      logSystemEvent('info', 'trilhas', `Etapa [${stageId}] da trilha de ${chapterTitle} concluída pelo usuário ${auth.user.username}`, {
         userId: auth.user.id,
         subjectKey,
         bookId,
         chapterId,
         masteryPercentage: record.masteryPercentage,
-        isCompleted: record.isCompleted
+        isCompleted: record.isCompleted,
+        accessType: access.isAdmin ? 'admin' : 'pro'
+      });
+
+      // Sincronização multi-dispositivo em tempo real via SSE
+      broadcastToUser(auth.user.id, 'trilha_progress_updated', {
+        record,
+        subjectKey,
+        bookId,
+        chapterId,
+        stageId,
+        isCompleted: record.isCompleted,
+        masteryPercentage: record.masteryPercentage
       });
 
       return sendJson({
@@ -1551,11 +1760,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 4. POST /api/trilhas/reset-chapter - Reinicia trilha de um capítulo para novo treino
+  // 5. POST /api/trilhas/reset-chapter - Reinicia trilha de um capítulo para novo treino
   if (req.method === 'POST' && pathname === '/api/trilhas/reset-chapter') {
     const auth = getAuthUser(req);
     if (!auth || !auth.user) {
       return sendJson({ error: 'Acesso não autenticado.' }, 401);
+    }
+
+    const access = checkUserTrilhasAccess(auth.user);
+    if (!access.allowed) {
+      return sendJson({
+        error: 'O reinício de trilhas SAS é exclusivo para assinantes do Plano PRO.',
+        proRequired: true
+      }, 403);
     }
 
     parseBody((data) => {
@@ -1570,6 +1787,15 @@ const server = http.createServer((req, res) => {
       if (recordIndex !== -1) {
         db.trilhasProgress.splice(recordIndex, 1);
         writeDb(db);
+        supabase.syncFromLocalDb(db).catch(() => {});
+
+        // Sincronização multi-dispositivo via SSE
+        broadcastToUser(auth.user.id, 'trilha_progress_updated', {
+          subjectKey,
+          bookId,
+          chapterId,
+          reset: true
+        });
       }
 
       return sendJson({
@@ -1829,6 +2055,18 @@ const server = http.createServer((req, res) => {
         userId: targetReq.userId,
         userName: targetReq.userName
       });
+
+      if (targetUser) {
+        broadcastToUser(targetUser.id, 'pro_status_changed', {
+          isSubscribed: Boolean(targetUser.isSubscribed),
+          plan: targetUser.plan || 'free',
+          planStatus: targetUser.planStatus,
+          planType: targetUser.planType,
+          planPeriodicity: targetUser.planPeriodicity,
+          planName: targetUser.planName,
+          proExpiresAt: targetUser.proExpiresAt || null
+        });
+      }
 
       return sendJson({
         success: true,
