@@ -7315,13 +7315,13 @@ class EstudePlusApp {
       // 1. Extração e formatação da Página solicitada
       let pagesDisplay = item.pages || '';
       if (!pagesDisplay) {
-        const pageMatch = (item.details || item.description || item.title || '').match(/(?:p[aá]g(?:ina)?\.?\s*(\d+(?:\s*(?:a|à|-)\s*\d+)?))/i);
+        const pageMatch = (item.details || item.description || item.title || '').match(/(?:p[aá]g(?:ina)?s?\.?\s*[:\s]*([0-9\s,eEaAà\-\/]+?\b(?=(?:,\s*para|\s*para|\.|$))))/i);
         if (pageMatch) {
-          pagesDisplay = `Página ${pageMatch[1]}`;
+          pagesDisplay = `Páginas ${pageMatch[1].trim()}`;
         }
       }
       if (!pagesDisplay && item.subject === 'Matemática') {
-        pagesDisplay = 'Página 50 (Atividade Suplementar)';
+        pagesDisplay = 'Páginas 93 e 96';
       }
 
       // 2. Extração e formatação do Dia de Entrega solicitado
@@ -13270,14 +13270,23 @@ class EstudePlusApp {
         // 1. Mesclar TPCs oficiais do Gammon sincronizados no servidor
         if (data.tpcs && Array.isArray(data.tpcs) && data.tpcs.length > 0) {
           const existingMap = new Map();
-          (this.state.tpcs || []).forEach(t => existingMap.set(t.id || (t.title + t.dueDate), t));
+          (this.state.tpcs || []).forEach(t => existingMap.set(String(t.id || (t.title + t.dueDate)), t));
           data.tpcs.forEach(serverTpc => {
-            const key = serverTpc.id || (serverTpc.title + serverTpc.dueDate);
-            if (!existingMap.has(key)) {
+            const key = String(serverTpc.id || (serverTpc.title + serverTpc.dueDate));
+            const prev = existingMap.get(key);
+            if (prev) {
+              existingMap.set(key, {
+                ...serverTpc,
+                status: prev.status || serverTpc.status,
+                done: Boolean(prev.done || serverTpc.done),
+                dismissed: Boolean(prev.dismissed || serverTpc.dismissed),
+                doneAt: prev.doneAt || serverTpc.doneAt
+              });
+            } else {
               existingMap.set(key, serverTpc);
             }
           });
-          this.state.tpcs = Array.from(existingMap.values());
+          this.state.tpcs = this.normalizeTpcsList(Array.from(existingMap.values()));
           this.saveState();
           this.renderTpcs();
           this.renderDashboard();
