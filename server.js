@@ -50,10 +50,7 @@ function isMockUser(u) {
   if (u.id === 'usr-student' || u.id === 'aluno_lucas' || u.id === 'user_streak_break_test') return true;
   const name = (u.name || '').toLowerCase();
   const username = (u.username || '').toLowerCase();
-  const email = (u.email || '').toLowerCase();
-  if (name.includes('teste') || username.includes('teste') || email.includes('teste')) return true;
-  if (username.includes('aluna_mobile')) return true;
-  if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas' || username === 'pedro') return true;
+  if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas_mock' || username === 'pedro_mock') return true;
   return false;
 }
 
@@ -1867,19 +1864,49 @@ const server = http.createServer((req, res) => {
         return sendJson({ error: 'Sua conta já possui o Plano PRO ativo em todos os seus dispositivos!' }, 400);
       }
 
-      // Evita solicitações duplicadas desnecessárias
-      if (!Array.isArray(db.planRequests)) db.planRequests = [];
-      const existing = db.planRequests.find(r => r.userId === user.id && (r.status === 'pending' || r.status === 'in_review'));
-      if (existing) {
-        return sendJson({
-          error: `Você já possui uma solicitação do Plano PRO em andamento (Status: ${existing.status === 'in_review' ? 'Em análise' : 'Pendente'}). Aguarde a liberação pelo Freddie.`,
-          existingRequest: existing
-        }, 409);
-      }
-
       // Backend é a ÚNICA fonte da verdade para valores - NUNCA confia em valores do navegador
       const requestedPlanId = (data.planId === 'pro_anual') ? 'pro_anual' : 'pro_mensal';
       const planConfig = OFFICIAL_PLANS[requestedPlanId] || OFFICIAL_PLANS.pro_mensal;
+
+      if (!Array.isArray(db.planRequests)) db.planRequests = [];
+      const existing = db.planRequests.find(r => r.userId === user.id && (r.status === 'pending' || r.status === 'in_review'));
+
+      if (existing) {
+        existing.planId = planConfig.id;
+        existing.planName = planConfig.name;
+        existing.planPeriodicity = planConfig.periodicity;
+        existing.durationDays = planConfig.durationDays;
+        existing.amount = planConfig.amount;
+        existing.contactMethod = (data.contactMethod || existing.contactMethod || 'pix').trim();
+        existing.contactInfo = (data.contactInfo || existing.contactInfo || '').trim();
+        existing.note = (data.note || existing.note || 'Aluno informou que efetuou o pagamento do PRO').trim();
+        existing.status = 'pending';
+        existing.updatedAt = new Date().toISOString();
+
+        user.planStatus = 'payment_pending';
+        user.pendingPlanId = planConfig.id;
+        writeDb(db);
+
+        createAdminNotification({
+          type: 'warning',
+          category: 'plan',
+          title: `💎 Pagamento PRO Informado: ${user.name || user.username}`,
+          message: `${user.name || user.username} informou que pagou o ${planConfig.name} (R$ ${planConfig.amount.toFixed(2)} via ${existing.contactMethod === 'pix' ? 'Pix CPF' : 'Dinheiro'}). Clique para ativar!`,
+          meta: { requestId: existing.id, userId: user.id, planId: planConfig.id }
+        });
+
+        broadcastToAdmins('new_plan_request', {
+          request: existing,
+          isUpdate: true,
+          message: `🔔 ${user.name || user.username} informou pagamento do ${planConfig.name}!`
+        });
+
+        return sendJson({
+          success: true,
+          message: `Solicitação do ${planConfig.name} atualizada com sucesso! O Freddie foi notificado instantaneamente no painel dele.`,
+          request: existing
+        });
+      }
 
       const reqId = 'req_' + Date.now() + '_' + crypto.randomBytes(3).toString('hex');
       const newReq = {
@@ -1894,9 +1921,9 @@ const server = http.createServer((req, res) => {
         planPeriodicity: planConfig.periodicity,
         durationDays: planConfig.durationDays,
         amount: planConfig.amount, // Oficial: 10.00 (mensal) ou 120.00 (anual)
-        contactMethod: (data.contactMethod || 'whatsapp').trim(),
+        contactMethod: (data.contactMethod || 'pix').trim(),
         contactInfo: (data.contactInfo || '').trim(),
-        note: (data.note || '').trim(),
+        note: (data.note || 'Aluno informou pagamento do Plano PRO').trim(),
         status: 'pending', // Pagamento pendente de conferência
         statusReason: '',
         createdAt: new Date().toISOString(),
@@ -1911,6 +1938,14 @@ const server = http.createServer((req, res) => {
 
       db.planRequests.unshift(newReq);
       writeDb(db);
+
+      createAdminNotification({
+        type: 'warning',
+        category: 'plan',
+        title: `💎 Novo Pedido PRO: ${newReq.userName}`,
+        message: `${newReq.userName} informou que efetuou o pagamento do ${planConfig.name} (R$ ${planConfig.amount.toFixed(2)} via ${newReq.contactMethod === 'pix' ? 'Pix CPF' : 'Dinheiro'}). Clique para ativar!`,
+        meta: { requestId: newReq.id, userId: user.id, planId: planConfig.id }
+      });
 
       // Notifica administradores conectados em tempo real via SSE
       broadcastToAdmins('new_plan_request', {
@@ -1932,7 +1967,7 @@ const server = http.createServer((req, res) => {
 
       return sendJson({
         success: true,
-        message: `Solicitação do ${planConfig.name} enviada com sucesso! O administrador já foi notificado.`,
+        message: `Solicitação do ${planConfig.name} enviada com sucesso! O Freddie foi notificado instantaneamente no painel dele.`,
         request: newReq
       });
     });
@@ -2158,6 +2193,8 @@ const server = http.createServer((req, res) => {
         }
       }
 
+      const pendingReq = (db.planRequests || []).find(r => r.userId === u.id && (r.status === 'pending' || r.status === 'in_review'));
+
       return {
         id: u.id,
         name: u.name,
@@ -2176,7 +2213,18 @@ const server = http.createServer((req, res) => {
         lastLogin: u.lastLogin,
         createdAt: u.createdAt,
         deviceType: device,
-        presence
+        presence,
+        hasPendingPlanRequest: Boolean(pendingReq),
+        pendingPlanRequest: pendingReq ? {
+          id: pendingReq.id,
+          planId: pendingReq.planId,
+          planName: pendingReq.planName,
+          amount: pendingReq.amount,
+          contactMethod: pendingReq.contactMethod,
+          note: pendingReq.note,
+          status: pendingReq.status,
+          createdAt: pendingReq.createdAt
+        } : null
       };
     });
 
@@ -2803,6 +2851,32 @@ const server = http.createServer((req, res) => {
       db.sessions.unshift(sessionObj);
       if (db.sessions.length > 500) db.sessions = db.sessions.slice(0, 500);
       writeDb(db);
+
+      createAdminNotification({
+        type: 'info',
+        category: 'user',
+        title: `👤 Novo Aluno Cadastrado`,
+        message: `${newUser.name} (@${newUser.username}) acabou de entrar no Estude+ (${deviceLabel}).`,
+        meta: { userId: newUser.id, username: newUser.username }
+      });
+
+      broadcastToAdmins('user_registered', {
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          username: newUser.username,
+          email: newUser.email,
+          grade: newUser.grade,
+          role: newUser.role,
+          isSubscribed: false,
+          plan: 'free',
+          planStatus: 'free',
+          planName: 'Plano Base',
+          deviceType: deviceLabel,
+          presence: 'online',
+          createdAt: newUser.createdAt
+        }
+      });
 
       broadcastToAdmins('user_login', {
         userId: newUser.id,

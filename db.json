@@ -750,6 +750,35 @@
         }
       ],
       "lastActiveDate": "2026-10-05"
+    },
+    {
+      "id": "usr_1791221367891_ayso",
+      "name": "Bernardo Costa",
+      "username": "bernardo_1791221367852",
+      "email": "bernardo_1791221367852@estude.app",
+      "passwordHash": "14a21866da59658464c9119f7426b0bfab2f2e12bfafc7840999261d4695ef11ac7e44b9c6da18b2b8ae89a540dcda20f8cd528a9b898eb4ef7aaa9602bee65e",
+      "passwordSalt": "bd1194182fec64355b90fcb1a9e1efcb",
+      "role": "student",
+      "isSubscribed": true,
+      "plan": "pro",
+      "planStatus": "pro_mensal_active",
+      "planName": "Plano ESTUDE+ PRO Mensal",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T17:29:27.891Z",
+      "lastLogin": "2026-10-05T17:29:27.891Z",
+      "lastDeviceType": "Computador / Desktop",
+      "planType": "pro_mensal",
+      "planPeriodicity": "mensal",
+      "proActivatedAt": "2026-10-05T17:29:27.946Z",
+      "proExpiresAt": "2026-11-04T17:29:27.946Z",
+      "lastBillingDate": "2026-10-05T17:29:27.946Z"
     }
   ],
   "tpcs": [
@@ -856,7 +885,30 @@
     "forceRefreshTimestamp": 1791220808243
   },
   "connectedDevices": [],
-  "planRequests": [],
+  "planRequests": [
+    {
+      "id": "req_1791221367930_48d04e",
+      "userId": "usr_1791221367891_ayso",
+      "userName": "Bernardo Costa",
+      "userEmail": "bernardo_1791221367852@estude.app",
+      "userGrade": "7º Ano",
+      "planId": "pro_mensal",
+      "plan": "pro",
+      "planName": "Plano ESTUDE+ PRO Mensal",
+      "planPeriodicity": "mensal",
+      "durationDays": 30,
+      "amount": 10,
+      "contactMethod": "pix",
+      "contactInfo": "",
+      "note": "Pix de R$ 10,00 feito para o CPF do Freddie!",
+      "status": "approved",
+      "statusReason": "",
+      "createdAt": "2026-10-05T17:29:27.930Z",
+      "updatedAt": "2026-10-05T17:29:27.946Z",
+      "reviewedBy": "Freddie Pimentel Costa",
+      "reviewedAt": "2026-10-05T17:29:27.946Z"
+    }
+  ],
   "supportRequests": [],
   "studyReports": [],
   "agendaSyncLogs": [
@@ -873,7 +925,35 @@
       "message": "119 TPCs sincronizados com sucesso do Portal Gammon!"
     }
   ],
-  "adminNotifications": [],
+  "adminNotifications": [
+    {
+      "id": "notif_1791221367933_u4pi",
+      "type": "warning",
+      "category": "plan",
+      "title": "💎 Novo Pedido PRO: Bernardo Costa",
+      "message": "Bernardo Costa informou que efetuou o pagamento do Plano ESTUDE+ PRO Mensal (R$ 10.00 via Pix CPF). Clique para ativar!",
+      "meta": {
+        "requestId": "req_1791221367930_48d04e",
+        "userId": "usr_1791221367891_ayso",
+        "planId": "pro_mensal"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-05T17:29:27.933Z"
+    },
+    {
+      "id": "notif_1791221367897_pbkn",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Bernardo Costa (@bernardo_1791221367852) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1791221367891_ayso",
+        "username": "bernardo_1791221367852"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-05T17:29:27.897Z"
+    }
+  ],
   "systemEvents": [
     {
       "id": "evt_1791220808251_88wy",
@@ -1425,6 +1505,21 @@
   ],
   "payments": [
     {
+      "id": "PAG_1791221367946",
+      "studentName": "Bernardo Costa",
+      "email": "bernardo_1791221367852@estude.app",
+      "userId": "usr_1791221367891_ayso",
+      "planId": "pro_mensal",
+      "planPeriodicity": "mensal",
+      "method": "pix",
+      "amount": 10,
+      "date": "2026-10-05",
+      "status": "confirmed",
+      "note": "Aprovado pelo administrador Freddie Pimentel Costa. Plano ESTUDE+ PRO Mensal (30 dias). Motivo/Obs: Recebimento validado",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-05T17:29:27.946Z"
+    },
+    {
       "id": "PAG_1791220808243",
       "studentName": "Aluno Pro Mensal",
       "email": "test_pro_m_1791220808095@estude.app",
@@ -1803,6 +1898,21 @@
     }
   ],
   "sessions": [
+    {
+      "sessionId": "sess_1d9204306fe577c24ebbb3271ef77122",
+      "userId": "usr_1791221367891_ayso",
+      "userName": "Bernardo Costa",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-05T17:29:27.891Z",
+      "createdAt": "2026-10-05T17:29:27.891Z",
+      "lastHeartbeat": 1791221367893,
+      "expiresAt": 1793813367893,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
     {
       "sessionId": "sess_eacdc25ed4a1f453dab67fd2ffb6e718",
       "userId": "usr_1791220808205_yn2z",

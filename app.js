@@ -690,15 +690,39 @@ class EstudePlusApp {
     setInterval(() => {
       if (this.currentUser) {
         this.syncUserData('pull');
+        this.sendPresenceHeartbeat();
         if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
           this.loadAdminOverview();
         }
       }
     }, 20000);
 
+    if (this.currentUser) {
+      this.sendPresenceHeartbeat();
+    }
+
     if (window.lucide) {
       window.lucide.createIcons();
     }
+  }
+
+  async sendPresenceHeartbeat() {
+    if (!this.currentUser) return;
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
+
+      await fetch('/api/presence/heartbeat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sessionId: sessId,
+          userId: this.currentUser.id
+        })
+      });
+    } catch (e) {}
   }
 
   trackDailyStreak() {
@@ -10868,7 +10892,7 @@ class EstudePlusApp {
       if (sessId) headers['x-session-id'] = sessId;
       if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
 
-      await fetch('/api/plans/request', {
+      const res = await fetch('/api/plans/request', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -10878,6 +10902,10 @@ class EstudePlusApp {
           note
         })
       });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.request) {
+        this.activePlanRequest = data.request;
+      }
     } catch (e) {
       console.warn('Erro ao notificar backend de pedido Pix:', e);
     }
@@ -10913,7 +10941,7 @@ class EstudePlusApp {
     this.checkPendingAdminBadge();
     this.closeModal('subscriptionModal');
 
-    alert(`⏳ Pedido ${orderId} (${planName}) registrado com sucesso!\n\nO seu pagamento permanecerá como PENDENTE até que o Freddie Pimentel Costa confira o recebimento de R$ ${amountStr} na conta dele e aprove no aplicativo.\n\nAssim que ele confirmar no app dele, seu Plano PRO será ativado por ${planDays} dias!`);
+    alert(`✅ Pagamento Informado ao Administrador!\n\nPedido ${orderId} (${planName}) comunicado instantaneamente para Freddie Pimentel Costa.\n\nAssim que o valor de R$ ${amountStr} for conferido na conta dele, seu Plano PRO será liberado na hora!`);
   }
 
   async requestCashInSchoolPayment() {
@@ -10938,7 +10966,7 @@ class EstudePlusApp {
       if (sessId) headers['x-session-id'] = sessId;
       if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
 
-      await fetch('/api/plans/request', {
+      const res = await fetch('/api/plans/request', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -10948,6 +10976,10 @@ class EstudePlusApp {
           note
         })
       });
+      const data = await res.json().catch(() => ({}));
+      if (data && data.request) {
+        this.activePlanRequest = data.request;
+      }
     } catch (e) {
       console.warn('Erro ao notificar backend de pedido Dinheiro:', e);
     }
@@ -10980,7 +11012,7 @@ class EstudePlusApp {
     this.checkPendingAdminBadge();
     this.closeModal('subscriptionModal');
 
-    alert(`⏳ Solicitação de pagamento registrada com sucesso! (Código: ${orderId} - ${planName})\n\nAgora você deve entregar R$ ${amountStr} em dinheiro vivo para o Freddie Pimentel Costa na escola.\n\nEnquanto você não entregar, seu plano permanecerá como PENDENTE. Assim que o Freddie confirmar no aplicativo dele que recebeu o dinheiro, o seu plano PRO (${planDays} dias) será liberado na hora!`);
+    alert(`✅ Solicitação Comunicada ao Freddie!\n\nPedido ${orderId} (${planName}) enviado com sucesso.\n\nEntregue R$ ${amountStr} em dinheiro vivo para o Freddie Pimentel Costa na escola. Assim que ele confirmar no app dele, seu Plano PRO (${planDays} dias) será liberado imediatamente!`);
   }
 
   /* ==========================================================================
@@ -11269,18 +11301,59 @@ class EstudePlusApp {
     }
   }
 
-  showAdminToast(title, message) {
+  playNotificationSound() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.36);
+    } catch (e) {}
+  }
+
+  showAdminToast(title, message, actionText = null, actionCallback = null) {
     const toast = document.getElementById('adminNotificationToast');
     const titleEl = document.getElementById('toastTitle');
     const msgEl = document.getElementById('toastMessage');
+    const actionContainer = document.getElementById('toastActionContainer');
     if (!toast) return;
     if (titleEl) titleEl.innerText = title;
     if (msgEl) msgEl.innerText = message;
+
+    if (actionContainer) {
+      if (actionText && typeof actionCallback === 'function') {
+        actionContainer.innerHTML = `
+          <button type="button" class="btn-primary" id="btnToastAction" style="background: #059669; font-size: 0.78rem; font-weight: 800; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(5,150,105,0.4); margin-top: 6px;">
+            <i data-lucide="check-check" style="width: 14px; height: 14px;"></i>
+            ${actionText}
+          </button>
+        `;
+        const btn = document.getElementById('btnToastAction');
+        if (btn) {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            toast.style.display = 'none';
+            actionCallback();
+          };
+        }
+      } else {
+        actionContainer.innerHTML = '';
+      }
+    }
+
     toast.style.display = 'block';
     if (window.lucide) window.lucide.createIcons();
-    setTimeout(() => {
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
       toast.style.display = 'none';
-    }, 9000);
+    }, 12000);
   }
 
   initAdminSSE() {
@@ -11299,9 +11372,19 @@ class EstudePlusApp {
         try {
           const payload = JSON.parse(e.data);
           const req = payload.data?.request;
+          this.playNotificationSound();
           this.showAdminToast(
-            '💎 Nova Solicitação de Plano PRO!',
-            `${req?.userName || 'Um aluno'} enviou um pedido de ativação do Plano PRO!`
+            '👑 Pagamento do Plano PRO Informado!',
+            `${req?.userName || 'Um aluno'} informou que comprou o ${req?.planName || 'PRO'}! Clique para conferir e ativar.`,
+            '⚡ Ativar PRO Agora',
+            () => {
+              if (req?.id) {
+                this.adminUpdatePlanRequestStatus(req.id, 'approved');
+              } else {
+                this.showAdminModal();
+                this.switchAdminTab('plan_requests');
+              }
+            }
           );
           this.loadAdminOverview();
         } catch (err) {}
@@ -11316,13 +11399,61 @@ class EstudePlusApp {
         } catch (err) {}
       });
 
+      this.adminEventSource.addEventListener('user_registered', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const u = payload.data?.user;
+          this.playNotificationSound();
+          this.showAdminToast(
+            '👤 Novo Aluno Cadastrado!',
+            `${u?.name || u?.username || 'Novo aluno'} acabou de entrar no Estude+ agora!`,
+            'Ver Alunos',
+            () => {
+              this.showAdminModal();
+              this.switchAdminTab('students');
+            }
+          );
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('user_login', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const d = payload.data;
+          this.showAdminToast(
+            '🟢 Aluno Conectado',
+            `${d?.userName || 'Aluno'} conectou (${d?.deviceType || 'Dispositivo'})`
+          );
+          this.loadAdminOverview();
+        } catch (err) {}
+      });
+
+      this.adminEventSource.addEventListener('user_logout', () => {
+        this.loadAdminOverview();
+      });
+
+      this.adminEventSource.addEventListener('user_updated', () => {
+        this.loadAdminOverview();
+      });
+
+      this.adminEventSource.addEventListener('user_deleted', () => {
+        this.loadAdminOverview();
+      });
+
       this.adminEventSource.addEventListener('new_support_request', (e) => {
         try {
           const payload = JSON.parse(e.data);
           const t = payload.data?.ticket;
+          this.playNotificationSound();
           this.showAdminToast(
             '💬 Nova Solicitação de Suporte / Dúvida',
-            `${t?.userName || 'Aluno'}: ${t?.subject || 'Nova mensagem'}`
+            `${t?.userName || 'Aluno'}: ${t?.subject || 'Nova mensagem'}`,
+            'Ver Mensagem',
+            () => {
+              this.showAdminModal();
+              this.switchAdminTab('support');
+            }
           );
           this.loadAdminOverview();
         } catch (err) {}
@@ -12517,18 +12648,15 @@ class EstudePlusApp {
     const badgeCount = document.getElementById('adminStudentsBadgeCount');
     if (!container) return;
 
+    const term = (searchTerm || '').toLowerCase().trim();
+
     const rawUsers = (this.adminOverviewData && Array.isArray(this.adminOverviewData.users) && this.adminOverviewData.users.length > 0)
       ? this.adminOverviewData.users
       : (this.users || []);
     const allUsers = rawUsers.filter(u => {
       if (!u) return false;
       if (u.id === 'usr-student' || u.id === 'aluno_lucas' || u.id === 'user_streak_break_test') return false;
-      const name = (u.name || '').toLowerCase();
-      const username = (u.username || '').toLowerCase();
-      const email = (u.email || '').toLowerCase();
-      if (name.includes('teste') || username.includes('teste') || email.includes('teste')) return false;
-      if (username.includes('aluna_mobile')) return false;
-      if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas' || username === 'pedro') return false;
+      if (u.name === 'lucas silva' || u.name === 'pedro lucas') return false;
       return true;
     });
     if (!this.adminOverviewData && this.currentUser && (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie')) {
@@ -12607,7 +12735,7 @@ class EstudePlusApp {
       const isProMensal = u.planStatus === 'pro_mensal_active' || u.planPeriodicity === 'mensal';
       const isPro = u.isSubscribed === true || u.planStatus === 'active' || isProAnual || isProMensal;
       const isTrial5d = u.planStatus === 'trial_5d';
-      const isPending = u.planStatus === 'pending_cash' || u.planStatus === 'pending_pix' || u.planStatus === 'payment_pending';
+      const isPending = u.hasPendingPlanRequest || u.planStatus === 'pending_cash' || u.planStatus === 'pending_pix' || u.planStatus === 'payment_pending';
 
       const createdDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : 'Recentemente';
       const lastLoginDate = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Hoje';
@@ -12624,71 +12752,96 @@ class EstudePlusApp {
         : (u.deviceType ? `<span style="font-size: 0.68rem; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 6px;">${u.deviceType}</span>` : '');
 
       return `
-        <div style="background: #ffffff; border: 1.5px solid ${isPro ? '#86efac' : '#e2e8f0'}; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
-          <div style="display: flex; align-items: center; gap: 12px; min-width: 240px;">
-            <div style="width: 44px; height: 44px; border-radius: 50%; background: ${isOwner ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : (isPro ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0284c7, #38bdf8)')}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-              ${initials}
+        <div style="background: #ffffff; border: 1.5px solid ${isPending ? '#f59e0b' : (isPro ? '#86efac' : '#e2e8f0')}; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 240px;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: ${isOwner ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : (isPro ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0284c7, #38bdf8)')}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                ${initials}
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <strong style="color: #0f172a; font-size: 0.98rem;">${u.name || u.username}</strong>
+                  ${isOwner ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f3e8ff; color: #7e22ce;">👑 Admin</span>
+                  ` : `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">🎓 Aluno</span>
+                  `}
+                  ${isProAnual ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">👑 PRO Anual (R$ 120/ano)</span>
+                  ` : isProMensal || isPro ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">💎 PRO Mensal (R$ 10/mês)</span>
+                  ` : isTrial5d ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⚡ Degustação (5 dias)</span>
+                  ` : isPending ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309; border: 1px solid #f59e0b;">⏳ Informou Pagamento PRO</span>
+                  ` : `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
+                  `}
+                  ${presenceBadge}
+                </div>
+                <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span>Usuário: <code style="background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #0f172a;">${u.username || u.email}</code></span>
+                  ${u.email ? `&bull; <span>E-mail: <strong>${u.email}</strong></span>` : ''}
+                  &bull; <span>Cadastrado: ${createdDate}</span>
+                  ${u.proExpiresAt ? `&bull; <span>Expira: <strong>${new Date(u.proExpiresAt).toLocaleDateString('pt-BR')}</strong></span>` : ''}
+                  &bull; <span>Último acesso: ${lastLoginDate}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <strong style="color: #0f172a; font-size: 0.98rem;">${u.name || u.username}</strong>
-                ${isOwner ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f3e8ff; color: #7e22ce;">👑 Admin</span>
-                ` : `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">🎓 Aluno</span>
-                `}
-                ${isProAnual ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">👑 PRO Anual (R$ 120/ano)</span>
-                ` : isProMensal || isPro ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">💎 PRO Mensal (R$ 10/mês)</span>
-                ` : isTrial5d ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⚡ Degustação (5 dias)</span>
-                ` : isPending ? `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⏳ Pgto Pendente</span>
-                ` : `
-                  <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
-                `}
-                ${presenceBadge}
-              </div>
-              <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span>Usuário: <code style="background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #0f172a;">${u.username || u.email}</code></span>
-                ${u.email ? `&bull; <span>E-mail: <strong>${u.email}</strong></span>` : ''}
-                &bull; <span>Cadastrado: ${createdDate}</span>
-                ${u.proExpiresAt ? `&bull; <span>Expira: <strong>${new Date(u.proExpiresAt).toLocaleDateString('pt-BR')}</strong></span>` : ''}
-                &bull; <span>Último acesso: ${lastLoginDate}</span>
-              </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              ${isPro ? `
+                <button type="button" class="btn-outline" onclick="app.adminCancelStudentPlan('${u.id}')" style="color: #b91c1c; border-color: #fca5a5; background: #fff1f2; font-size: 0.8rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Remover plano PRO e retornar aluno ao Plano Base Gratuito">
+                  <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+                  <span>Voltar ao Plano Base</span>
+                </button>
+              ` : `
+                <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_mensal')" style="background: #4f46e5; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 30 dias de Plano PRO Mensal (R$ 10,00)">
+                  <i data-lucide="calendar" style="width: 13px; height: 13px;"></i>
+                  <span>+ Mensal (R$ 10)</span>
+                </button>
+                <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_anual')" style="background: #059669; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 365 dias de Plano PRO Anual (R$ 120,00)">
+                  <i data-lucide="crown" style="width: 13px; height: 13px;"></i>
+                  <span>+ Anual (R$ 120)</span>
+                </button>
+              `}
+
+              <!-- Excluir/Apagar conta definitivamente -->
+              <button type="button" class="btn-outline" onclick="app.adminDeleteStudent('${u.id}')" style="color: #dc2626; border-color: #fca5a5; background: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="${isOwner ? 'Excluir esta conta de Administrador' : 'Excluir definitivamente a conta deste aluno'}">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px; color: #dc2626;"></i>
+                <span>${isOwner ? 'Excluir Admin' : 'Apagar Conta'}</span>
+              </button>
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            ${isPro ? `
-              <button type="button" class="btn-outline" onclick="app.adminCancelStudentPlan('${u.id}')" style="color: #b91c1c; border-color: #fca5a5; background: #fff1f2; font-size: 0.8rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Remover plano PRO e retornar aluno ao Plano Base Gratuito">
-                <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
-                <span>Voltar ao Plano Base</span>
+          ${isPending ? `
+            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">💎</span>
+                <div>
+                  <strong style="color: #92400e; font-size: 0.85rem; display: block;">Aluno informou que comprou o ${u.pendingPlanRequest ? u.pendingPlanRequest.planName : 'Plano PRO'}!</strong>
+                  <span style="font-size: 0.74rem; color: #78350f;">${u.pendingPlanRequest?.contactMethod === 'pix' ? 'Pagamento via Pix (CPF)' : 'Dinheiro vivo na escola'} &bull; ${u.pendingPlanRequest?.note || 'Aguardando sua confirmação'}</span>
+                </div>
+              </div>
+              <button type="button" class="btn-primary" onclick="app.adminDirectApprovePro('${u.id}', '${u.pendingPlanRequest?.id || ''}', '${u.pendingPlanRequest?.planId || 'pro_mensal'}')" style="background: #059669; font-size: 0.78rem; font-weight: 800; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);">
+                <i data-lucide="check-check" style="width: 14px; height: 14px;"></i>
+                ⚡ Confirmar Recebimento e Ativar PRO
               </button>
-            ` : `
-              <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_mensal')" style="background: #4f46e5; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 30 dias de Plano PRO Mensal (R$ 10,00)">
-                <i data-lucide="calendar" style="width: 13px; height: 13px;"></i>
-                <span>+ Mensal (R$ 10)</span>
-              </button>
-              <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_anual')" style="background: #059669; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 365 dias de Plano PRO Anual (R$ 120,00)">
-                <i data-lucide="crown" style="width: 13px; height: 13px;"></i>
-                <span>+ Anual (R$ 120)</span>
-              </button>
-            `}
-
-            <!-- Excluir/Apagar conta definitivamente -->
-            <button type="button" class="btn-outline" onclick="app.adminDeleteStudent('${u.id}')" style="color: #dc2626; border-color: #fca5a5; background: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="${isOwner ? 'Excluir esta conta de Administrador' : 'Excluir definitivamente a conta deste aluno'}">
-              <i data-lucide="trash-2" style="width: 14px; height: 14px; color: #dc2626;"></i>
-              <span>${isOwner ? 'Excluir Admin' : 'Apagar Conta'}</span>
-            </button>
-          </div>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
 
     container.innerHTML = masterHeaderHtml + cardsHtml;
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  async adminDirectApprovePro(userId, requestId, planId = 'pro_mensal') {
+    if (requestId) {
+      return this.adminUpdatePlanRequestStatus(requestId, 'approved');
+    }
+    return this.adminActivateStudentPlan(userId, planId);
   }
 
   async adminCancelStudentPlan(userId) {
