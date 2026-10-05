@@ -658,6 +658,216 @@
         }
       ],
       "lastActiveDate": "2026-10-04"
+    },
+    {
+      "id": "usr_1791192951461_ycmh",
+      "name": "Aluno Teste Quizzes",
+      "username": "aluno_teste_1791192951394",
+      "email": "aluno_teste_1791192951394@estude.app",
+      "passwordHash": "d7acbe517bd5d6e55db09b85be0d3da20f0c50b53015ad8b7238e4d7338e20ad93fbc1faca62162fe37fb11afe5e012aae7a88ad2f30da38c5e1dc73239c5cc4",
+      "passwordSalt": "2958da3fb73aa111917d0c6cb50cf8de",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "free",
+      "planStatus": "free",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 1,
+      "bestStreak": 1,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [
+        "2026-10-05"
+      ],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-05T09:35:51.461Z",
+      "lastLogin": "2026-10-05T09:35:51.542Z",
+      "lastDeviceType": "Computador / Desktop",
+      "loginDays": [
+        "2026-10-05"
+      ],
+      "lastVisitDate": "2026-10-05",
+      "activeQuizSession": null,
+      "quizHistory": [
+        {
+          "id": "quiz_test_2",
+          "date": "2026-10-05T09:35:51.560Z",
+          "completedAt": "2026-10-05T09:35:51.576Z",
+          "quizId": "quiz_matematica_1_1",
+          "subject": "matematica",
+          "bookId": 1,
+          "chapterId": 1,
+          "chapterTitle": "Capítulo SAS",
+          "difficulty": "dificil",
+          "totalQuestions": 4,
+          "score": 3,
+          "percentage": 75,
+          "timeSpentSeconds": 0,
+          "questions": [],
+          "answersRecord": [
+            {
+              "questionId": "q1",
+              "questionText": "Q1",
+              "isCorrect": true,
+              "selectedAnswerText": "A",
+              "correctAnswerText": "A",
+              "explanation": "SAS Exp 1"
+            },
+            {
+              "questionId": "q2",
+              "questionText": "Q2",
+              "isCorrect": true,
+              "selectedAnswerText": "B",
+              "correctAnswerText": "B",
+              "explanation": "SAS Exp 2"
+            },
+            {
+              "questionId": "q3",
+              "questionText": "Q3",
+              "isCorrect": false,
+              "selectedAnswerText": "A",
+              "correctAnswerText": "C",
+              "explanation": "SAS Exp 3"
+            },
+            {
+              "questionId": "q4",
+              "questionText": "Q4",
+              "isCorrect": true,
+              "selectedAnswerText": "D",
+              "correctAnswerText": "D",
+              "explanation": "SAS Exp 4"
+            }
+          ]
+        },
+        {
+          "id": "quiz_test_1791192951560",
+          "date": "2026-10-05T09:35:51.560Z",
+          "completedAt": "2026-10-05T09:35:51.560Z",
+          "quizId": "quiz_matematica_1_1",
+          "subject": "matematica",
+          "bookId": 1,
+          "chapterId": 1,
+          "chapterTitle": "Capítulo SAS",
+          "difficulty": "dificil",
+          "totalQuestions": 4,
+          "score": 3,
+          "percentage": 75,
+          "timeSpentSeconds": 0,
+          "questions": [],
+          "answersRecord": [
+            {
+              "questionId": "q1",
+              "questionText": "Q1",
+              "isCorrect": true,
+              "selectedAnswerText": "A",
+              "correctAnswerText": "A",
+              "explanation": "SAS Exp 1"
+            },
+            {
+              "questionId": "q2",
+              "questionText": "Q2",
+              "isCorrect": true,
+              "selectedAnswerText": "B",
+              "correctAnswerText": "B",
+              "explanation": "SAS Exp 2"
+            },
+            {
+              "questionId": "q3",
+              "questionText": "Q3",
+              "isCorrect": false,
+              "selectedAnswerText": "A",
+              "correctAnswerText": "C",
+              "explanation": "SAS Exp 3"
+            },
+            {
+              "questionId": "q4",
+              "questionText": "Q4",
+              "isCorrect": true,
+              "selectedAnswerText": "D",
+              "correctAnswerText": "D",
+              "explanation": "SAS Exp 4"
+            }
+          ]
+        }
+      ],
+      "activityLog": [
+        {
+          "id": "act_1791192951582_bge5i",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T09:35:51.581Z",
+          "type": "learning_activity",
+          "details": {
+            "tpcId": 101,
+            "title": "Exercícios SAS Cap 1"
+          }
+        },
+        {
+          "id": "act_1791192951576_xvgwd",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T09:35:51.576Z",
+          "type": "quiz_completed",
+          "details": {
+            "attemptId": "quiz_test_2",
+            "subject": "matematica",
+            "chapterTitle": "Capítulo SAS",
+            "score": 3,
+            "total": 4,
+            "pct": 75
+          }
+        },
+        {
+          "id": "act_1791192951562_6d5r3",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T09:35:51.562Z",
+          "type": "quiz_completed",
+          "details": {
+            "attemptId": "quiz_test_1791192951560",
+            "subject": "matematica",
+            "chapterTitle": "Capítulo SAS",
+            "score": 3,
+            "total": 4,
+            "pct": 75
+          }
+        }
+      ],
+      "lastActiveDate": "2026-10-05"
+    },
+    {
+      "id": "user_streak_break_test",
+      "name": "Aluno Teste Pulo",
+      "username": "aluno_pulo",
+      "role": "student",
+      "streak": 1,
+      "bestStreak": 10,
+      "lastActivityDate": "2026-09-10",
+      "studiedDays": [
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-10-05"
+      ],
+      "quizHistory": [],
+      "passwordHash": "2d00427f331dc9cd7c6210ffa4538eb2731c2ad29bcf208a563e4b122256c24d7f012abab92249fd22dd09473272ba72ba3d86c4c792c4f7e9996de1b37de7d0",
+      "passwordSalt": "b928d84d49cdbb4a07ed79cd5ab6ef1c",
+      "loginDays": [
+        "2026-10-05"
+      ],
+      "lastVisitDate": "2026-10-05",
+      "lastLogin": "2026-10-05T09:36:55.326Z",
+      "lastDeviceType": "Computador / Desktop",
+      "activityLog": [
+        {
+          "id": "act_1791193015336_pmx29",
+          "date": "2026-10-05",
+          "timestamp": "2026-10-05T09:36:55.335Z",
+          "type": "mistake_resolved",
+          "details": {
+            "question": "Erro superado"
+          }
+        }
+      ],
+      "lastActiveDate": "2026-10-05"
     }
   ],
   "tpcs": [
