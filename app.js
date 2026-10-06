@@ -2997,286 +2997,401 @@ class EstudePlusApp {
     const validBooks = (subj.livros || []).filter(l => l.id <= 3);
     const book = validBooks.find(b => b.id === bookId) || validBooks[0];
     const chapter = (book.chapters || []).find(c => c.id === chapterId) || book.chapters[0];
-    const cleanCapName = chapter.title.replace(/Capítulo\s*\d+\s*[–-]\s*/i, '');
-    const desc = chapter.desc || 'Tópicos essenciais da apostila SAS.';
+    const title = chapter.title || '';
+    const cleanCapName = title.replace(/Capítulo\s*\d+\s*[–-]\s*/i, '').trim();
 
-    const templatesPerStage = [
-      // Stage 0: Fundamentos (Fácil)
-      [
+    // Banco de questões curriculares reais por disciplina para o 7º Ano
+    const subjectGenerators = {
+      matematica: () => [
         {
-          text: `[FUNDAMENTOS SAS • 7º ANO] No estudo de "${cleanCapName}" (Apostila ${book.id} do SAS), qual afirmação conceitual expressa o princípio basilar ensinado no início do capítulo?`,
-          correct: `O conceito central de "${cleanCapName}" fundamenta-se em: ${desc.slice(0, 115)}.`,
+          text: 'Qual dos números a seguir é divisível simultaneamente por 2, 3 e 5?',
+          correct: '330, pois termina em zero (divisível por 2 e 5) e a soma de seus algarismos é 3 + 3 + 0 = 6 (divisível por 3).',
           distractors: [
-            `Trata-se de um postulado empírico sem fundamentação matemática ou teórica no currículo formal.`,
-            `A matéria estabelece que tais regras são facultativas e não possuem validade em avaliações escolares.`,
-            `O tema é tratado apenas de forma superficial sem relação com as habilidades exigidas no 7º ano.`
+            '325, pois termina em 5 e portanto é divisível apenas por 5.',
+            '312, pois a soma dos algarismos é 6, mas o número não é divisível por 5.',
+            '305, pois é ímpar e a soma de seus algarismos resulta em 8.'
           ],
-          explanation: `Na introdução curricular do SAS Asas 2026 para "${cleanCapName}", o objetivo principal é dominar: ${desc}.`
+          explanation: 'Um número é divisível por 2 quando é par, por 5 quando termina em 0 ou 5, e por 3 quando a soma dos algarismos é múltiplo de 3. 330 satisfaz os três critérios.'
         },
         {
-          text: `[CONCEITO ESSENCIAL SAS] De acordo com a teoria apresentada na apostila para o capítulo "${cleanCapName}", qual é o termo ou definição correta?`,
-          correct: `A correta identificação dos elementos essenciais de "${cleanCapName}", articulando termos e propriedades fundamentais.`,
-          distractors: [
-            `A mistura aleatória de termos sem observar a hierarquia dos conceitos descritos na teoria.`,
-            `A suposição de que definições conceituais não afetam a resolução prática das questões.`,
-            `O emprego indiscriminado de noções de capítulos anteriores sem conexão lógica com o tema.`
-          ],
-          explanation: `A base conceitual da Coleção Asas SAS exige clareza e precisão na identificação dos termos próprios de ${cleanCapName}.`
+          text: 'Qual é o Menor Múltiplo Comum (MMC) entre os números 12, 18 e 24?',
+          correct: '72',
+          distractors: ['36', '144', '48'],
+          explanation: 'Fatorando simultaneamente por números primos: 12, 18, 24 | 2; 6, 9, 12 | 2; 3, 9, 6 | 2; 3, 9, 3 | 3; 1, 3, 1 | 3; 1, 1, 1. Multiplicando: 2³ × 3² = 8 × 9 = 72.'
         },
         {
-          text: `[IDENTIFICAÇÃO DE PROPRIEDADES] Ao analisar os primeiros tópicos de "${cleanCapName}", qual propriedade o estudante deve memorizar e reconhecer de imediato?`,
-          correct: `As propriedades operatórias e definições canônicas estruturadas na Apostila ${book.id} do SAS para "${cleanCapName}".`,
+          text: 'Qual é o resultado numérico da expressão com números inteiros: (-15) + (+8) - (-12) + (-5)?',
+          correct: '0',
+          distractors: ['-20', '+10', '-14'],
+          explanation: 'Aplicando as regras de sinais para eliminar os parênteses: -15 + 8 + 12 - 5 = (-15 - 5) + (8 + 12) = -20 + 20 = 0.'
+        },
+        {
+          text: 'Em uma cidade serrana, os termômetros marcavam -3 °C às 6h da manhã. Ao meio-dia, a temperatura subiu 11 °C e, à noite, caiu 7 °C. Qual temperatura os termômetros registraram à noite?',
+          correct: '+1 °C',
+          distractors: ['-2 °C', '+8 °C', '+3 °C'],
+          explanation: 'Calculando a variação passo a passo: -3 + 11 = +8 °C ao meio-dia; em seguida, +8 - 7 = +1 °C à noite.'
+        },
+        {
+          text: 'Resolva a equação do 1º grau: 4x - 14 = 2x + 10. Qual é o valor da incógnita x?',
+          correct: 'x = 12',
+          distractors: ['x = 6', 'x = 8', 'x = -2'],
+          explanation: 'Agrupando os termos semelhantes: 4x - 2x = 10 + 14 => 2x = 24 => x = 24 / 2 => x = 12.'
+        },
+        {
+          text: 'O triplo de um número somado a 18 é igual a 63. Qual é esse número?',
+          correct: '15',
+          distractors: ['27', '21', '12'],
+          explanation: 'Montando a equação: 3x + 18 = 63 => 3x = 63 - 18 => 3x = 45 => x = 45 / 3 = 15.'
+        },
+        {
+          text: 'Uma corrida de transporte por aplicativo cobra uma taxa fixa de R$ 4,50 mais R$ 2,20 por quilômetro rodado. Se um passageiro pagou R$ 37,50, qual distância foi percorrida?',
+          correct: '15 km',
+          distractors: ['17 km', '14 km', '12 km'],
+          explanation: 'Equação de custo: 2,20x + 4,50 = 37,50 => 2,20x = 33 => x = 33 / 2,20 = 15 km.'
+        },
+        {
+          text: 'Efetue a operação com frações: 3/4 - 1/6 + 2/3. Qual é a fração irredutível resultante?',
+          correct: '5/4',
+          distractors: ['4/7', '7/12', '11/12'],
+          explanation: 'O MMC entre 4, 6 e 3 é 12. Reescrevendo com o mesmo denominador: 9/12 - 2/12 + 8/12 = 15/12. Simplificando por 3 obtém-se 5/4.'
+        },
+        {
+          text: 'Com 5 litros de tinta é possível pintar uma área de 45 m². Mantendo o mesmo rendimento, quantos litros serão necessários para pintar um muro de 117 m²?',
+          correct: '13 litros',
+          distractors: ['11 litros', '15 litros', '18 litros'],
+          explanation: 'Proporcionalidade direta: 5 / 45 = x / 117 => 45x = 5 × 117 => 45x = 585 => x = 585 / 45 = 13 litros.'
+        },
+        {
+          text: 'Em um triângulo qualquer, dois de seus ângulos internos medem 52° e 68°. Qual é a medida do terceiro ângulo?',
+          correct: '60°, pois a soma dos ângulos internos de qualquer triângulo é sempre 180°.',
           distractors: [
-            `Regras informais que dispensam a notação matemática ou conceitual rigorosa.`,
-            `Postulados contraditórios que invertem as regras básicas de interpretação.`,
-            `Apenas opiniões subjetivas desvinculadas das matrizes de habilidades do livro.`
+            '70°, pois a soma deve totalizar 190°.',
+            '50°, pois todo triângulo possui ao menos dois ângulos complementares.',
+            '80°, pois resulta da média aritmética entre os ângulos conhecidos.'
           ],
-          explanation: `O SAS reforça o domínio imediato das definições primárias para construir a base do aprendizado do capítulo.`
+          explanation: 'A soma dos ângulos internos de um triângulo plano é sempre 180°. Logo: 180° - (52° + 68°) = 180° - 120° = 60°.'
+        },
+        {
+          text: 'Um terreno retangular possui 24 metros de comprimento e 15 metros de largura. Qual é a sua área e o seu perímetro, respectivamente?',
+          correct: 'Área = 360 m² e Perímetro = 78 m.',
+          distractors: [
+            'Área = 78 m² e Perímetro = 360 m.',
+            'Área = 360 m² e Perímetro = 39 m.',
+            'Área = 180 m² e Perímetro = 78 m.'
+          ],
+          explanation: 'Área = base × altura = 24 × 15 = 360 m². Perímetro = 2 × (24 + 15) = 2 × 39 = 78 m.'
         }
       ],
-
-      // Stage 1: Prática 1 (Fácil / Moderado)
-      [
+      historia: () => [
         {
-          text: `[FIXAÇÃO GUIADA SAS] Ao resolver um exercício de fixação sobre "${cleanCapName}", qual procedimento metodológico é recomendado pela apostila para evitar erros iniciais?`,
-          correct: `Identificar atentamente os dados enunciados, aplicar a propriedade direta de "${cleanCapName}" e conferir o resultado passo a passo.`,
+          text: 'Na Europa medieval, as relações de suserania e vassalagem entre membros da nobreza eram formalizadas pela cerimônia de homenagem. Qual era o compromisso mútuo estabelecido?',
+          correct: 'O suserano concedia um feudo (terra ou renda) e proteção, enquanto o vassalo jurava auxílio militar e fidelidade ao suserano.',
           distractors: [
-            `Pular o enunciado e tentar adivinhar a resposta baseando-se apenas nos valores numéricos ou termos isolados.`,
-            `Substituir as regras formais por estimativas imprecisas sem validação dos cálculos intermediários.`,
-            `Ignorar as condições iniciais e aplicar fórmulas de matérias distintas sem justificativa.`
+            'O vassalo pagava impostos em dinheiro vivo e o suserano trabalhava na agricultura servil.',
+            'O suserano vendia o título de nobreza ao vassalo sem exigir nenhuma obrigação militar.',
+            'O vassalo entregava todas as suas armas ao Papa em troca de perdão dos pecados.'
           ],
-          explanation: `A fixação guiada do SAS orienta a resolução metódica: leitura cuidadosa, identificação de propriedades e checagem.`
+          explanation: 'A relação feudo-vassálica era um pacto militar e de fidelidade recíproca entre nobres: doação do benefício/feudo em troca de serviço bélico e conselho.'
         },
         {
-          text: `[APLICAÇÃO DIRETA SAS] Em uma aplicação direta das regras de "${cleanCapName}" (${desc.slice(0, 80)}...), qual é a conclusão correta?`,
-          correct: `O resultado obtido confirma a relação direta entre as definições teóricas e a resolução passo a passo do problema.`,
+          text: 'Entre as principais obrigações que os servos deviam ao senhor feudal no manso senhorial, a "corveia" consistia em:',
+          correct: 'Trabalho gratuito e obrigatório nas terras diretas do senhor feudal durante alguns dias da semana.',
           distractors: [
-            `O resultado é nulo em todas as circunstâncias, independentemente dos dados fornecidos no exercício.`,
-            `A regra de "${cleanCapName}" só se aplica quando todos os valores do problema forem pares e positivos.`,
-            `O cálculo prescinde de qualquer conferência, pois erros de sinal não alteram o resultado final.`
+            'Pagamento em moedas de ouro pelo uso de instrumentos como moinho e forno.',
+            'Entrega de uma fração da produção agrícola obtida no manso servil.',
+            'Serviço militar obrigatório em guerras ultramarinas fora da Europa.'
           ],
-          explanation: `Na prática guiada, o alinhamento rigoroso entre a regra e a operação assegura a pontuação total.`
+          explanation: 'A corveia era a prestação compulsória de trabalho no manso senhorial. A entrega de parte da colheita era a talha, e as banalidades eram taxas pelo uso das instalações.'
         },
         {
-          text: `[PASSO A PASSO GUIADO] Qual é a ordem correta das etapas na resolução de uma questão fundamental sobre "${cleanCapName}"?`,
-          correct: `1º Organizar os dados; 2º Estabelecer a relação teórica de "${cleanCapName}"; 3º Efetuar as operações; 4º Validar a resposta.`,
+          text: 'O movimento do Renascimento Cultural, iniciado no século XIV, teve como um de seus fundamentos intelectuais o Humanismo. Essa corrente caracterizava-se por:',
+          correct: 'Valorizar o potencial racional e criativo do ser humano (antropocentrismo), buscando inspiração nos valores da Antiguidade Clássica greco-romana.',
           distractors: [
-            `1º Chutar a resposta; 2º Tentar justificar; 3º Ler o enunciado superficialmente.`,
-            `1º Realizar operações sem organizar os dados; 2º Ignorar as restrições da matéria.`,
-            `1º Inverter os sinais; 2º Desconsiderar as instruções do professor e da apostila.`
+            'Reafirmar o teocentrismo medieval e proibir estudos anatômicos e experimentais.',
+            'Defender o isolamento rural e a rejeição total do comércio e das artes plásticas.',
+            'Submeter todo o conhecimento científico unicamente aos dogmas da escolástica medieval.'
           ],
-          explanation: `O método formativo SAS valoriza o pensamento estruturado e a sequência lógica de resolução.`
+          explanation: 'O Humanismo colocou o ser humano no centro das reflexões (antropocentrismo), promovendo a observação, a razão e a valorização das heranças intelectuais de Grécia e Roma.'
+        },
+        {
+          text: 'Em 1517, o monge alemão Martinho Lutero afixou suas 95 Teses na porta da igreja de Wittenberg. Qual era o alvo principal de suas críticas iniciais?',
+          correct: 'A cobrança e o comércio de indulgências (perdão dos pecados em troca de pagamento financeiro) promovido pelo clero.',
+          distractors: [
+            'A tradução das escrituras sagradas para línguas locais como o alemão e o francês.',
+            'A utilização de imagens de santos nas procissões e festas populares.',
+            'A proibição do casamento dos pastores e o fim de todos os conventos.'
+          ],
+          explanation: 'Lutero revoltou-se contra a venda de indulgências comercializadas por emissários papais para financiar a Basílica de São Pedro, defendendo a justificação pela fé.'
+        },
+        {
+          text: 'O que motivou a convocação do Concílio de Trento (1545-1563) pela Igreja Católica no contexto das transformações religiosas do século XVI?',
+          correct: 'Reafirmar os dogmas católicos tradicionais, condenar as doutrinas protestantes e organizar instrumentos de Contrarreforma, como o Tribunal do Santo Ofício e a Ordem dos Jesuítas.',
+          distractors: [
+            'Aceitar a tese luterana da livre interpretação da Bíblia e extinguir a autoridade papal.',
+            'Abolir o celibato clerical e adotar o calvinismo como doutrina oficial de Roma.',
+            'Transferir a sede do papado em definitivo de Roma para a cidade de Genebra.'
+          ],
+          explanation: 'O Concílio de Trento foi a resposta católica à expansão protestante, reafirmando os sete sacramentos, a autoridade papal e criando o catecismo e o Índex de livros proibidos.'
+        },
+        {
+          text: 'Antes da chegada dos colonizadores europeus, as civilizações asteca e inca desenvolveram engenhosos sistemas de agricultura adaptados a seus ambientes geográficos. Quais eram essas técnicas?',
+          correct: 'Os astecas cultivavam em ilhas artificiais sobre as águas (chinampas), e os incas plantavam em terraços escalonados nas encostas dos Andes.',
+          distractors: [
+            'Ambos utilizavam tratores mecânicos e canais subterrâneos de ferro fundido.',
+            'Os astecas cultivavam em desertos gelados e os incas apenas realizavam pesca costeira.',
+            'Ambas as civilizações dependiam exclusivamente de alimentos importados por rotas marítimas.'
+          ],
+          explanation: 'Os astecas criaram as chinampas no lago de Texcoco para maximizar a área fértil, enquanto os incas desenvolveram terraços agrícolas nas montanhas andinas com irrigação avançada.'
+        },
+        {
+          text: 'Na colonização da América espanhola, as duas principais formas de exploração compulsória da mão de obra indígena foram a mita e a encomienda. A encomienda consistia em:',
+          correct: 'A concessão da Coroa que permitia ao colonizador espanhol exigir tributos e trabalho indígena em troca da obrigação de catequizá-los.',
+          distractors: [
+            'A doação definitiva de títulos de nobreza e terras privadas a líderes indígenas locais.',
+            'A contratação de trabalhadores indígenas assalariados com jornada máxima de 6 horas diárias.',
+            'O recrutamento militar dos povos nativos para lutar contra piratas no Oceano Pacífico.'
+          ],
+          explanation: 'A encomienda transferia a um nobre (encomendero) o direito de explorar o trabalho de uma aldeia, sob o pretexto de prestar proteção e evangelização cristã.'
         }
       ],
-
-      // Stage 2: Quiz 1 (Moderado)
-      [
+      ciencias: () => [
         {
-          text: `[SIMULADO FORMATIVO SAS] Em uma questão padrão de prova SAS sobre "${cleanCapName}", propõe-se avaliar a seguinte afirmativa baseada em: "${desc.slice(0, 95)}...". Qual julgamento está correto?`,
-          correct: `A afirmativa é verdadeira, pois reflete os princípios e critérios estipulados na matriz curricular do 7º ano do SAS.`,
+          text: 'No sistema de classificação dos seres vivos proposto por Robert Whittaker (5 Reinos), qual reino é formado exclusivamente por organismos celulares procariontes?',
+          correct: 'Reino Monera (bactérias e cianobactérias).',
           distractors: [
-            `A afirmativa é falsa, pois os conceitos de "${cleanCapName}" foram reformulados e não possuem mais aplicação prática.`,
-            `A afirmativa só é válida para o Ensino Médio, sendo dispensável para os estudantes do 7º ano do Ensino Fundamental.`,
-            `A afirmativa é contraditória com os postulados científicos adotados pela Coleção Asas 2026.`
+            'Reino Protista (protozoários e algas unicelulares).',
+            'Reino Fungi (leveduras, bolores e cogumelos).',
+            'Reino Plantae (musgos, samambaias e árvores).'
           ],
-          explanation: `No Quiz Formativo do SAS, os conceitos centrais são avaliados exigindo clareza na distinção entre fatos e equívocos.`
+          explanation: 'O Reino Monera é o único composto exclusivamente por seres sem carioteca (núcleo delimitado), com o material genético disperso no citoplasma celular.'
         },
         {
-          text: `[AVALIAÇÃO DE CRITÉRIOS SAS] Ao comparar duas alternativas conceituais sobre "${cleanCapName}", qual critério permite distinguir a opção plenamente válida?`,
-          correct: `A opção válida articula a fundamentação teórica de "${cleanCapName}" com a precisão dos termos técnicos da apostila.`,
+          text: 'Qual das alternativas apresenta uma diferença biológica fundamental entre os vírus e as bactérias?',
+          correct: 'Os vírus são estruturas acelulares e parasitas intracelulares obrigatórios, enquanto as bactérias são seres celulares dotados de metabolismo próprio.',
           distractors: [
-            `A opção válida é sempre a mais curta, sem importar a completude de seu conteúdo.`,
-            `Critérios de generalização excessiva que desconsideram as restrições próprias do tema.`,
-            `Afirmações que ignoram os casos particulares e as propriedades demonstradas em sala.`
+            'As bactérias não possuem material genético, enquanto os vírus possuem núcleo delimitado.',
+            'Os vírus respondem eficientemente ao tratamento com antibióticos comuns.',
+            'As bactérias realizam fotossíntese exclusivamente no vácuo espacial.'
           ],
-          explanation: `A precisão terminológica e conceitual é a marca distintiva do gabarito oficial SAS.`
+          explanation: 'Vírus não possuem células nem metabolismo próprio, dependendo da maquinaria celular hospedeira para se multiplicar. Já as bactérias são organismos unicelulares completos.'
         },
         {
-          text: `[COMPREENSÃO FORMATIVA] Qual das opções abaixo demonstra compreensão adequada das implicações práticas de "${cleanCapName}"?`,
-          correct: `Compreender que as propriedades de "${cleanCapName}" fornecem modelos consistentes para interpretar dados e resolver situações reais.`,
+          text: 'Por que o uso incorreto ou a interrupção precoce de um tratamento com antibióticos pode contribuir para a proliferação de bactérias resistentes?',
+          correct: 'O medicamento elimina primeiro as bactérias mais sensíveis; interromper o ciclo permite que as linhagens mais resistentes sobrevivam e se multipliquem.',
           distractors: [
-            `Achar que a matéria serve apenas para testes teóricos sem nenhuma conexão com o raciocínio lógico ou com a realidade.`,
-            `Julgar que os resultados variam dependendo da opinião do estudante, sem regras universais.`,
-            `Acreditar que detalhes conceituais não interferem na exatidão das conclusões obtidas.`
+            'O antibiótico transforma as bactérias em fungos venenosos para o fígado.',
+            'As bactérias assimilam o antibiótico como fonte de carboidratos e crescem mais rápido.',
+            'O remédio destrói os glóbulos vermelhos do paciente diminuindo sua oxigenação.'
           ],
-          explanation: `A Coleção Asas SAS incentiva a formação integral através da conexão entre teoria formal e interpretação de mundo.`
+          explanation: 'Trata-se de um processo de seleção natural: doses insuficientes eliminam apenas as bactérias vulneráveis, selecionando cepas com mutações de resistência.'
+        },
+        {
+          text: 'Sobre as formas de transferência e propagação de calor, qual processo explica a circulação da água em uma panela aquecida no fogão e a movimentação do ar condicionado?',
+          correct: 'Convecção térmica, decorrente da formação de correntes geradas pela diferença de densidade entre massas quentes (menos densas) e frias (mais densas).',
+          distractors: [
+            'Condução térmica através do vácuo absoluto sem matéria.',
+            'Irradiação eletromagnética de raios gama emitidos pelas paredes.',
+            'Fusão nuclear da matéria orgânica dissolvida na água.'
+          ],
+          explanation: 'A convecção ocorre em fluidos (líquidos e gases) através de correntes de convecção: o fluido quente sobe por ser menos denso e o fluido frio desce.'
+        },
+        {
+          text: 'O calor proveniente do Sol atravessa o vácuo do espaço sideral e chega até a Terra por meio de qual processo físico de transmissão térmica?',
+          correct: 'Irradiação térmica, propagada por ondas eletromagnéticas (principalmente na faixa do infravermelho).',
+          distractors: [
+            'Condução direta por contato físico entre átomos de oxigênio do espaço.',
+            'Convecção de correntes atmosféricas ao longo do vácuo solar.',
+            'Sublimação térmica do hidrogênio atmosférico da estratosfera.'
+          ],
+          explanation: 'A condução e a convecção exigem meio material para ocorrer. Apenas a irradiação se propaga no vácuo por intermédio de ondas eletromagnéticas.'
+        },
+        {
+          text: 'O bioma Cerrado, conhecido como a "savana brasileira", apresenta características botânicas muito marcantes decorrentes de sua adaptação climática. Dentre elas, destacam-se:',
+          correct: 'Árvores de troncos retorcidos, cascas espessas, folhas coriáceas e raízes muito profundas capazes de alcançar o lençol freático.',
+          distractors: [
+            'Vegetação rasteira exclusiva de clima polar com solo permanentemente congelado.',
+            'Floresta densa de árvores gigantescas com copas contínuas e solo úmido o ano todo.',
+            'Plantas exclusivamente aquáticas flutuantes com ausência de raízes terrestres.'
+          ],
+          explanation: 'O Cerrado possui duas estações bem definidas (seca pronunciada e chuvas). As raízes profundas captam água de lençóis subterrâneos durante o período de estiagem.'
+        },
+        {
+          text: 'Ao utilizar uma tesoura para cortar papel, o ponto de apoio situa-se entre o ponto onde aplicamos a força (potência) e o ponto onde a lâmina corta o papel (resistência). Esse instrumento é classificado como uma alavanca:',
+          correct: 'Interfixa.',
+          distractors: ['Inter-resistente.', 'Interpotente.', 'Inclinada.'],
+          explanation: 'Em uma alavanca interfixa, o ponto de apoio (fixo) fica no meio, entre a força potente (mãos) e a força resistente (lâmina cortando o objeto).'
         }
       ],
-
-      // Stage 3: Prática 2 (Moderado / Avançado)
-      [
+      geografia: () => [
         {
-          text: `[SITUAÇÃO-PROBLEMA CONTEXTUALIZADA] Em uma situação prática contextualizada envolvendo o tema de "${cleanCapName}", um aluno precisa analisar um cenário com dados concretos relacionados a: "${desc.slice(0, 90)}...". Qual raciocínio conduz à solução correta?`,
-          correct: `Modelar matematicamente ou conceitualmente a situação com base nas regras de "${cleanCapName}", isolando as variáveis e resolvendo de modo ordenado.`,
+          text: 'O Brasil possui duas divisões regionais consagradas: a divisão oficial do IBGE em 5 macrorregiões e a divisão geoeconômica proposta por Pedro Pinchas Geiger em 1967. Qual é a principal diferença de critérios entre elas?',
+          correct: 'A divisão do IBGE obedece estritamente às fronteiras políticas estaduais, enquanto a divisão geoeconômica agrupa o país em 3 complexos (Amazônia, Nordeste e Centro-Sul) segundo aspectos históricos e econômicos.',
           distractors: [
-            `Interpretar a situação sem vincular aos dados apresentados, formulando uma resposta genérica sem comprovação.`,
-            `Descartar as condições de contorno e supor que as grandezas envolvidas não sofrem influência das restrições do tema.`,
-            `Adotar uma hipótese inicial falsa e recusar-se a corrigi-la mesmo quando os cálculos apontam incoerência.`
+            'A divisão geoeconômica divide o país em 10 regiões de mesmo tamanho territorial.',
+            'O IBGE não reconhece a Região Nordeste como macrorregião oficial.',
+            'A proposta de Geiger utiliza unicamente a altitude das serras como parâmetro.'
           ],
-          explanation: `A aplicação prática do SAS avalia a capacidade de transitar entre o texto descritivo e o modelo analítico formal.`
+          explanation: 'Geiger dividiu o Brasil em Amazônia, Nordeste e Centro-Sul, cortando estados como Minas Gerais, Tocantins e Maranhão de acordo com sua integração socioeconômica real.'
         },
         {
-          text: `[ANÁLISE DE DADOS E CONTEXTO] Diante de uma tabela ou enunciado descritivo sobre "${cleanCapName}", qual atitude investigativa garante o sucesso na resolução?`,
-          correct: `Confrontar cada dado fornecido com os conceitos de "${cleanCapName}", verificando unidades de medida, sinais e relações de causa e efeito.`,
+          text: 'Devido à sua extensa dimensão longitudinal (leste-oeste), o território brasileiro é cortado por quatro fusos horários oficiais. Em relação ao Meridiano de Greenwich (GMT/UTC), todos os fusos brasileiros estão situados a:',
+          correct: 'Oeste, possuindo horários atrasados em relação a Greenwich (UTC-2, UTC-3, UTC-4 e UTC-5).',
           distractors: [
-            `Focar apenas no último parágrafo do problema e desprezar todas as premissas estabelecidas no início.`,
-            `Ignorar a coerência das grandezas e aceitar respostas com dimensões ou sinais incompatíveis com o problema.`,
-            `Concluir a resolução sem realizar o teste da solução no contexto original do enunciado.`
+            'Leste, possuindo horários adiantados em relação ao meridiano zero.',
+            'Norte, alinhados com o fuso padrão do Círculo Polar Ártico.',
+            'Sul, compartilhando exatamente o mesmo minuto com o Japão.'
           ],
-          explanation: `Nas questões contextualizadas do SAS, a conferência de unidades, sinais e consistência é etapa indispensável.`
+          explanation: 'Como o Brasil fica inteiramente no hemisfério ocidental (a oeste de Greenwich), todos os fusos têm horas negativas (-2h em ilhas como Noronha, -3h em Brasília, -4h no Centro-Oeste/Amazonas e -5h no Acre).'
         },
         {
-          text: `[ESTUDO DE CASO PRÁTICO SAS] Em um caso prático abordando "${cleanCapName}", dois estudantes chegam a resultados diferentes. Ao consultar a Apostila ${book.id}, verifica-se que o aluno correto:`,
-          correct: `Respeitou a ordem das propriedades e não violou nenhuma das regras postuladas para "${cleanCapName}".`,
+          text: 'O processo intenso de migração populacional em que milhares de trabalhadores rurais deixaram o campo em direção às cidades brasileiras nas décadas de 1960 a 1980 é denominado:',
+          correct: 'Êxodo rural.',
+          distractors: ['Transumância sazonal.', 'Migração pendular diária.', 'Nomadismo pastoril.'],
+          explanation: 'O êxodo rural foi acelerado pela mecanização da agricultura, concentração fundiária e pela atração de empregos na indústria e serviços urbanos.'
+        },
+        {
+          text: 'Quando duas ou mais cidades vizinhas se expandem territorialmente até que suas manchas urbanas se encontrem e se integrem fisicamente, configurando um espaço contínuo, ocorre o fenômeno da:',
+          correct: 'Conurbação.',
+          distractors: ['Macrocefalia agrária.', 'Gentrificação rural.', 'Metamorfose topográfica.'],
+          explanation: 'Conurbação é o crescimento horizontal das cidades que faz com que seus limites físicos se unam, muito comum em regiões metropolitanas como São Paulo e Rio de Janeiro.'
+        },
+        {
+          text: 'A transição demográfica experimentada pelo Brasil nas últimas décadas é marcada principalmente por:',
+          correct: 'Queda progressiva da taxa de fecundidade e aumento da expectativa de vida, resultando no envelhecimento da população brasileira.',
           distractors: [
-            `Apenas escolheu o número que achou mais esteticamente agradável.`,
-            `Inverteu a relação entre variáveis dependentes e independentes sem justificativa.`,
-            `Desconsiderou os limites de validade indicados explicitamente no material.`
+            'Aumento vertiginoso do número de filhos por mulher ultrapassando 7 filhos.',
+            'Redução da expectativa de vida decorrente da falta de saneamento básico nas capitais.',
+            'Estagnação populacional total com emigração de 50% dos jovens para a África.'
           ],
-          explanation: `A resolução correta no SAS sempre se fundamenta na adesão irrestrita aos postulados teóricos do capítulo.`
+          explanation: 'A taxa de fecundidade caiu para menos de 1,7 filho por mulher, alterando a pirâmide etária com o estreitamento da base de jovens e ampliação da proporção de adultos e idosos.'
+        },
+        {
+          text: 'A Região Nordeste do Brasil é tradicionalmente subdividida em quatro sub-regiões geográficas com características naturais e humanas distintas. Qual sub-região funciona como faixa de transição entre o Sertão semiárido e a Zona da Mata canavieira?',
+          correct: 'O Agreste.',
+          distractors: ['O Meio-Norte.', 'A Chapada Diamantina.', 'O Jalapão.'],
+          explanation: 'O Agreste é a sub-região de transição caracterizada pela policultura, pecuária leiteira e polos comerciais, situada entre a Zona da Mata e o Sertão.'
         }
       ],
-
-      // Stage 4: Quiz 2 (Difícil - Análise Dedutiva)
-      [
+      portugues: () => [
         {
-          text: `[ANÁLISE DEDUTIVA APROFUNDADA SAS] Em uma questão de alta complexidade do SAS sobre "${cleanCapName}", que exige múltiplos passos dedutivos a partir de: "${desc.slice(0, 100)}...", qual dedução expressa a linha de raciocínio mais consistente?`,
-          correct: `A dedução estruturada que encadeia as propriedades de "${cleanCapName}", demonstrando a validade de cada transição lógica até a conclusão definitiva.`,
+          text: 'Analise a oração: "Durante a reunião escolar, os professores e os alunos debateram novas propostas com entusiasmo." O sujeito desta oração classifica-se como:',
+          correct: 'Sujeito composto, pois possui dois núcleos substantivos: "professores" e "alunos".',
           distractors: [
-            `Extrapolar as premissas dadas e introduzir suposições arbitrárias não autorizadas pelo enunciado.`,
-            `Supor que as regras de "${cleanCapName}" sofrem exceções não documentadas diante de cálculos com números fracionários ou negativos.`,
-            `Ignorar o encadeamento dedutivo e deduzir uma resposta por mera semelhança gráfica com outras questões.`
+            'Sujeito simples, cujo único núcleo é o termo "reunião".',
+            'Sujeito indeterminado, pois não se sabe quem fez as propostas.',
+            'Oração sem sujeito, por conter o verbo debater no plural.'
           ],
-          explanation: `Questões analíticas de nível 5 exigem encadeamento dedutivo formal e justificação de cada etapa conforme o SAS.`
+          explanation: 'O verbo concorda com dois núcleos ligados pela conjunção aditiva ("professores" e "alunos"), caracterizando sujeito composto.'
         },
         {
-          text: `[DESAFIO MULTIPASSO SAS] Ao solucionar um problema de múltiplas etapas envolvendo "${cleanCapName}", em qual momento ocorrem os desvios conceituais mais severos?`,
-          correct: `Na transição entre a interpretação do problema e a montagem das expressões ou regras formais de "${cleanCapName}".`,
+          text: 'Em qual das alternativas a oração apresenta um caso legítimo de "ORAÇÃO SEM SUJEITO" (sujeito inexistente)?',
+          correct: '"Havia muitas dúvidas sobre o horário da avaliação de amanhã."',
           distractors: [
-            `No momento da entrega da prova pelo professor aos alunos na sala.`,
-            `Apenas quando o enunciado contém menos de dez palavras no total.`,
-            `Em nenhuma etapa, pois todas as questões difíceis dispensam atenção analítica.`
+            '"Fizeram uma bonita homenagem aos atletas no pátio do colégio."',
+            '"Os atletas chegaram muito cansados após o torneio regional."',
+            '"Naquela manhã ensolarada, todos caminhavam com tranquilidade."'
           ],
-          explanation: `O SAS ressalta que a correta transposição da linguagem natural para a linguagem matemática/científica é o ponto crítico do sucesso.`
+          explanation: 'O verbo "haver" empregado no sentido de existir ou ocorrer é impessoal: não admite sujeito e permanece na 3ª pessoa do singular.'
         },
         {
-          text: `[CRÍTICA DE ARGUMENTOS] Analise as seguintes justificativas teóricas sobre "${cleanCapName}". Qual delas apresenta rigor científico compatível com a nota máxima?`,
-          correct: `A justificativa que explicita a causa, cita a propriedade formal do SAS e demonstra a impossibilidade das alternativas concorrentes.`,
+          text: 'No período: "O arquiteto entregou o projeto aos construtores ontem à tarde", o verbo destacado classifica-se quanto à transitividade como:',
+          correct: 'Verbo transitivo direto e indireto (VTDI), pois exige um objeto direto ("o projeto") e um objeto indireto preposicionado ("aos construtores").',
           distractors: [
-            `A justificativa que apela para a intuição pessoal sem citar nenhuma propriedade do Livro ${book.id}.`,
-            `A que considera que contradições aparentes podem ser ignoradas caso o número final pareça razoável.`,
-            `A que afirma que qualquer método não convencional é correto independentemente das regras formais.`
+            'Verbo transitivo direto exclusivo, pois não possui termos preposicionados.',
+            'Verbo intransitivo, pois seu sentido encerra-se na ação de entregar.',
+            'Verbo de ligação, pois expressa o estado psicológico do arquiteto.'
           ],
-          explanation: `No Quiz 2, o diferencial para atingir a nota 10 é a capacidade de refutar distratores com base em princípios demonstrados.`
+          explanation: 'Quem entrega, entrega algo (objeto direto: "o projeto") a alguém (objeto indireto: "aos construtores").'
         },
         {
-          text: `[SÍNTESE DEDUTIVA SAS] Qual é a implicação lógica direta dos conceitos de "${cleanCapName}" quando aplicados a sistemas complexos?`,
-          correct: `Permite prever com exatidão o comportamento do sistema, contanto que as condições de contorno de "${cleanCapName}" sejam rigorosamente mantidas.`,
+          text: 'Identifique a figura de linguagem presente na seguinte frase poética: "Naquela noite fria, o vento sussurrava segredos antigos através das janelas entreabertas."',
+          correct: 'Personificação (ou prosopopeia), pois atribui uma ação tipicamente humana ("sussurrar segredos") a um elemento inanimado da natureza (o vento).',
           distractors: [
-            `O sistema torna-se imprevisível e nenhuma lei do SAS pode ser aplicada a ele.`,
-            `As variáveis tornam-se todas independentes, dispensando qualquer cálculo correlato.`,
-            `A teoria perde sua validade e precisa ser substituída por regras do ensino primário.`
+            'Hipérbole, por trazer uma contagem numérica de proporções absurdas.',
+            'Antítese, pela aproximação de palavras com sentidos diretamente contraditórios.',
+            'Comparação, devido à presença obrigatória do conectivo explícito "como".'
           ],
-          explanation: `Modelos dedutivos avançados do SAS oferecem poder preditivo confiável quando operados com rigor metodológico.`
+          explanation: 'A personificação consiste em atribuir sentimentos, falas ou comportamentos humanos a seres inanimados, animais ou fenômenos naturais.'
+        },
+        {
+          text: 'Assinale a alternativa em que a oração coordenada destacada expressa uma ideia de OPOSIÇÃO ou CONTRASTE (oração coordenada adversativa):',
+          correct: '"Eles treinaram com afinco ao longo do mês, porém não conseguiram a medalha de ouro."',
+          distractors: [
+            '"Ele não apenas estudou a teoria, mas também realizou todos os simulados práticos."',
+            '"O dia amanheceu ensolarado e nós caminhamos felizes pelo parque municipal."',
+            '"Choveu muito forte à noite; por isso, o gramado do estádio amanheceu alagado."'
+          ],
+          explanation: 'A conjunção "porém" introduz contraste/adversidade. Em "não apenas... mas também" há adição enfática, e em "por isso" há conclusão.'
+        },
+        {
+          text: 'Qual das alternativas apresenta ERRO de concordância verbal de acordo com a norma-padrão da Língua Portuguesa?',
+          correct: '"Fazem três anos que não visitamos nossos parentes no interior."',
+          distractors: [
+            '"Faz três anos que não visitamos nossos parentes no interior."',
+            '"Havia cerca de cinquenta pessoas aguardando a abertura dos portões."',
+            '"Choveu torrencialmente durante toda a madrugada de domingo."'
+          ],
+          explanation: 'O verbo "fazer" indicando tempo transcorrido é impessoal e deve ficar estritamente no singular: "Faz três anos", e nunca "Fazem".'
         }
       ],
-
-      // Stage 5: Revisão (Difícil / Pegadinhas)
-      [
+      ingles: () => [
         {
-          text: `[ATENÇÃO ÀS PEGADINHAS DE PROVA SAS] Durante a revisão para as avaliações formativas do SAS em "${cleanCapName}", os professores alertam contra as "armadilhas de sinal e leitura". Qual é a pegadinha mais frequente neste capítulo?`,
-          correct: `Esquecer de inverter sinais em distributivas com negativos, desconsiderar parênteses ou confundir termos opostos e inversos no estudo de "${cleanCapName}".`,
+          text: 'Choose the sentence that correctly uses the Simple Present tense for the third person singular (he/she/it):',
+          correct: 'She studies English and plays the guitar every afternoon.',
           distractors: [
-            `Escrever o nome do colégio no topo da folha de respostas com letra legível.`,
-            `Utilizar lápis grafite para realizar os rascunhos das contas no verso da prova.`,
-            `Conferir a resposta antes de assinalar o cartão de respostas da avaliação.`
+            'She study English and play the guitar every afternoon.',
+            'She is study English and playing guitar every afternoon.',
+            'She studied English and played guitar tomorrow morning.'
           ],
-          explanation: `A etapa de Revisão visa blindar o estudante contra pegadinhas clássicas do SAS: jogos de sinal, parênteses e leitura atenta de 'não/exceto'.`
+          explanation: 'In the Simple Present, verbs ending in consonant + y change to -ies with he/she/it (study -> studies), and verbs ending in vowel + y simply take -s (play -> plays).'
         },
         {
-          text: `[PREVENÇÃO DE ERROS RECORRENTES] Um erro clássico apontado no material SAS sobre "${cleanCapName}" ocorre quando o estudante assume precipitadamente que:`,
-          correct: `Toda resposta que resulta em número inteiro ou positivo está automaticamente correta, sem testar a solução na equação ou enunciado original.`,
+          text: 'Which sentence correctly uses the Simple Past irregular forms of "go" and "see"?',
+          correct: 'Yesterday, Lucas went to the science museum and saw ancient fossils.',
           distractors: [
-            `A matéria exige leitura rigorosa de todos os itens antes de marcar a resposta.`,
-            `O método do SAS é construído sobre critérios científicos verificáveis.`,
-            `As propriedades do capítulo devem ser aplicadas com disciplina intelectual.`
+            'Yesterday, Lucas goed to the science museum and seed ancient fossils.',
+            'Yesterday, Lucas goes to the science museum and see ancient fossils.',
+            'Yesterday, Lucas did went to the science museum and seen ancient fossils.'
           ],
-          explanation: `Muitos distratores em provas SAS colocam números inteiros atraentes para induzir ao erro quem não confere a resolução.`
+          explanation: 'The past tense of "go" is irregular ("went"), and the past tense of "see" is "saw".'
         },
         {
-          text: `[CHECKPOINT DE REVISÃO SAS] Ao revisar os pontos mais delicados de "${cleanCapName}" (${desc.slice(0, 85)}...), qual verificação final é indispensável antes de finalizar?`,
-          correct: `Validar a solução encontrada substituindo-a nas premissas iniciais do problema para certificar-se de que a igualdade ou sentido conceitual é mantido.`,
+          text: 'Select the correct question in the Simple Past using the auxiliary verb "did":',
+          correct: 'Did you finish your homework before dinner last night?',
           distractors: [
-            `Modificar a resposta no último minuto baseando-se em palpites sem fundamento.`,
-            `Apagar todos os cálculos e entregar a prova sem justificativa escrita.`,
-            `Assumir que conferir o resultado é desnecessário caso o tempo esteja sobrando.`
+            'Did you finished your homework before dinner last night?',
+            'Do you finished your homework before dinner last night?',
+            'Did you was finish your homework before dinner last night?'
           ],
-          explanation: `O hábito da verificação e prova real é a melhor estratégia ensinada pelo Colégio Gammon e SAS para garantir nota 10.`
-        }
-      ],
-
-      // Stage 6: Desafio Final (Nível 7 • 🔥 Desafio Máximo SAS)
-      [
-        {
-          text: `[🔥 DESAFIO MÁXIMO SAS • PROVA DE MAESTRIA] Checkpoint decisivo de excelência da Coleção Asas 2026: em uma questão olímpica / aprofundamento do 7º ano que sintetiza integralmente "${cleanCapName}" (${desc.slice(0, 110)}...), qual formulação resolve o problema em seu mais alto nível de sofisticação?`,
-          correct: `A articulação completa de todos os postulados de "${cleanCapName}", combinando raciocínio algébrico/conceitual avançado, rigor de notação e verificação inequívoca da solução.`,
-          distractors: [
-            `Uma abordagem simplista que ignora a interdependência dos tópicos avançados apresentados no capítulo.`,
-            `A adoção de atalhos incorretos que violam as propriedades fundamentais demonstradas ao longo da trilha.`,
-            `A tentativa de resolver o problema por ensaio e erro rudimentar, sem demonstração formal.`
-          ],
-          explanation: `O Desafio Final atesta o domínio pleno (100% de maestria) da matriz de habilidades e competências do SAS no capítulo.`
+          explanation: 'When forming questions in the Simple Past with the auxiliary "did", the main verb must remain in its base form ("finish", not "finished").'
         },
         {
-          text: `[🔥 DESAFIO OLÍMPICO SAS] Em um desafio de alto rendimento do SAS envolvendo "${cleanCapName}", um aluno nota 10 demonstra que:`,
-          correct: `Consegue generalizar as propriedades de "${cleanCapName}" para resolver cenários inéditos e não triviais com absoluta precisão.`,
-          distractors: [
-            `Apenas reproduz mecanicamente exercícios sem compreender os fundamentos subjacentes.`,
-            `Recorre a soluções aproximadas que falham quando submetidas a testes de estresse numérico ou lógico.`,
-            `Desconhece a relação entre a teoria estudada e suas aplicações interdisciplinares no currículo.`
-          ],
-          explanation: `O nível 7 da trilha premia a capacidade de abstração, síntese e aplicação de alta performance da matriz curricular SAS.`
-        },
-        {
-          text: `[🔥 SÍNTESE INTEGRAL DO CAPÍTULO] Qual é a síntese conceitual definitiva que coroa o aprendizado completo de "${cleanCapName}" na Apostila ${book.id}?`,
-          correct: `O domínio integrado de: ${desc}. O estudante domina a teoria, os cálculos, a interpretação e a prevenção de erros neste capítulo.`,
-          distractors: [
-            `A memorização mecânica de palavras-chave sem compreensão do seu significado ou aplicação.`,
-            `A ideia de que o conteúdo deste capítulo pode ser esquecido para os próximos ciclos de estudo.`,
-            `A presunção de que testes formativos não refletem a real proficiência intelectual do aluno.`
-          ],
-          explanation: `Parabéns! Ao atingir e concluir o Desafio Final, você consolida o status de Domínio do Capítulo 🏆 no ESTUDE+.`
-        },
-        {
-          text: `[🔥 DOMÍNIO DA MATRIZ CURRICULAR] Para garantir nota máxima em qualquer avaliação nacional ou simulado do SAS sobre "${cleanCapName}", o diferencial indiscutível é:`,
-          correct: `A consistência metodológica aliada ao treino deliberado realizado ao longo das 7 etapas da trilha de aprendizagem.`,
-          distractors: [
-            `Depender exclusivamente da sorte no momento de assinalar o gabarito.`,
-            `Estudar apenas nas vésperas sem realizar os exercícios práticos escalonados.`,
-            `Subestimar a complexidade das questões interdisciplinares da Coleção Asas.`
-          ],
-          explanation: `A metodologia progressiva em 7 etapas garante retenção de longo prazo e domínio definitivo do conteúdo.`
+          text: 'Complete the sentence with the correct quantifiers: "We do not have ________ milk left in the fridge, but there are ________ apples on the table."',
+          correct: 'much / many',
+          distractors: ['many / much', 'some / any', 'a lot / much'],
+          explanation: '"Milk" is an uncountable noun (uses "much" in negative sentences), while "apples" is a countable plural noun (uses "many").'
         }
       ]
-    ];
+    };
 
-    const stageTemplates = templatesPerStage[stageIndex] || templatesPerStage[0];
+    const genFn = subjectGenerators[subjectKey] || subjectGenerators['matematica'];
+    const pool = genFn();
+
     const generated = [];
-
     for (let i = 0; i < countNeeded; i++) {
-      const t = stageTemplates[i % stageTemplates.length];
+      const qTemplate = pool[(stageIndex * 2 + i) % pool.length];
       generated.push({
         id: `gen_proc_${subjectKey}_${bookId}_${chapterId}_s${stageIndex}_q${i + 1}`,
-        text: t.text,
+        text: qTemplate.text,
         topic: `${chapter.title} • Etapa ${stageIndex + 1}`,
         options: [
-          { text: t.correct, correct: true },
-          { text: t.distractors[0], correct: false },
-          { text: t.distractors[1], correct: false },
-          { text: t.distractors[2], correct: false }
+          { text: qTemplate.correct, correct: true },
+          { text: qTemplate.distractors[0], correct: false },
+          { text: qTemplate.distractors[1], correct: false },
+          { text: qTemplate.distractors[2], correct: false }
         ],
-        explanation: t.explanation,
-        aiGuidance: `Material SAS Asas 2026 • Apostila ${bookId} • ${chapter.title}`
+        explanation: qTemplate.explanation,
+        aiGuidance: `${subj.name} • ${chapter.title}`
       });
     }
 
@@ -3335,10 +3450,10 @@ class EstudePlusApp {
 
       if (rawOptions.length < 4) {
         rawOptions = [
-          { text: 'Conceito em plena consonância com a apostila SAS.', correct: true },
-          { text: 'Interpretação incorreta que desconsidera as regras do capítulo.', correct: false },
-          { text: 'Afirmação contraditória sem respaldo teórico no material didático.', correct: false },
-          { text: 'Generalização equivocada que ignora as restrições da matéria.', correct: false }
+          { text: 'Proposição plenamente correta e comprovada pelos conceitos da matéria.', correct: true },
+          { text: 'Interpretação incorreta que contraria as propriedades fundamentais da disciplina.', correct: false },
+          { text: 'Conclusão inconsistente que desconsidera as condições e relações do problema.', correct: false },
+          { text: 'Generalização indevida que não se aplica aos dados analisados.', correct: false }
         ];
       }
 
@@ -3354,7 +3469,7 @@ class EstudePlusApp {
         if (i === correctPos) {
           finalOptions.push({ letter: letters[i], text: correctOpt.text, isCorrect: true });
         } else {
-          const inc = incorrectOpts[incIdx++] || { text: `Alternativa ${letters[i]} complementar.` };
+          const inc = incorrectOpts[incIdx++] || { text: `Alternativa ${letters[i]} incorreta segundo as propriedades da disciplina.` };
           finalOptions.push({ letter: letters[i], text: inc.text, isCorrect: false });
         }
       }
@@ -3369,7 +3484,7 @@ class EstudePlusApp {
         badgeColor: stageCfg.badgeColor,
         options: finalOptions,
         correctLetter: letters[correctPos],
-        explanation: q.explanation || `Conforme os postulados e a matriz de habilidades da apostila SAS Asas 2026 para este capítulo.`,
+        explanation: q.explanation || 'Resolução fundamentada nos conceitos essenciais da disciplina para o 7º ano.',
         aiGuidance: q.aiGuidance || stageCfg.tip
       };
     });
@@ -5148,7 +5263,268 @@ class EstudePlusApp {
                         "aiGuidance": "Revolução científica e modelo heliocêntrico no SAS."
                 }
         ]
-},
+      },
+      // HISTÓRIA LIVRO 2 CAP 6: As Grandes Navegações e Mercantilismo
+      'historia_2_6': {
+        facil: [
+          {
+            id: 'h26_f1',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Entre os séculos XV e XVI, Portugal foi o pioneiro europeu na expansão marítima pelo Oceano Atlântico. Qual conjunto de fatores explica esse pioneirismo português?',
+            options: [
+              { text: 'A centralização política precoce com a Dinastia de Avis, a posição geográfica voltada para o Atlântico e a aliança com a burguesia mercantil.', correct: true },
+              { text: 'O isolamento econômico da Europa e a proibição da Igreja Católica em relação ao comércio de especiarias no Oriente.', correct: false },
+              { text: 'A dependência exclusiva de galeões franceses e a inexistência de rotas comerciais terrestres no continente.', correct: false },
+              { text: 'A expulsão dos comerciantes italianos de Lisboa e a recusa em utilizar instrumentos como a bússola e o astrolábio.', correct: false }
+            ],
+            explanation: 'Portugal reunia estabilidade política interna desde a Revolução de Avis (1385), litoral estratégico voltado ao oceano e forte interesse burguês em romper monopólios comerciais.',
+            aiGuidance: 'Pioneirismo português e expansão atlântica.'
+          },
+          {
+            id: 'h26_f2',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'O que caracterizava a prática do "Metalismo" (ou bulionismo), um dos pilares centrais da política econômica mercantilista da Idade Moderna?',
+            options: [
+              { text: 'A concepção de que a riqueza e o poderio de um Estado eram medidos pela quantidade de ouro e prata acumulados dentro de suas fronteiras.', correct: true },
+              { text: 'A substituição de todas as moedas metálicas por títulos de crédito emitidos por bancos privados da Holanda.', correct: false },
+              { text: 'A obrigatoriedade de exportar apenas ferramentas de ferro fundido para reduzir o preço dos alimentos.', correct: false },
+              { text: 'A doação de reservas de prata para as ordens religiosas em troca de isenção de tributos alfandegários.', correct: false }
+            ],
+            explanation: 'No mercantilismo, a posse direta de metais preciosos determinava a capacidade bélica e o prestígio da monarquia, impulsionando a busca por minas nas colônias.',
+            aiGuidance: 'Pilares econômicos do Mercantilismo: Metalismo.'
+          },
+          {
+            id: 'h26_f3',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Em 1453, um acontecimento de grandes proporções no Mediterrâneo Oriental acelerou a busca europeia por novas rotas marítimas para as Índias. Esse fato histórico foi:',
+            options: [
+              { text: 'A tomada de Constantinopla pelo Império Turco-Otomano, que encareceu e bloqueou as rotas tradicionais terrestres de especiarias.', correct: true },
+              { text: 'A destruição total de todos os portos marítimos de Portugal e Espanha por frotas inglesas.', correct: false },
+              { text: 'A assinatura do Tratado de Versalhes que determinou o fim de todas as monarquias absolutistas.', correct: false },
+              { text: 'A descoberta espontânea de minas de diamante no litoral norte da França.', correct: false }
+            ],
+            explanation: 'Com a queda de Constantinopla em 1453, os turcos impuseram altos tributos nas passagens para a Ásia, forçando a busca de um caminho direto pelo mar.',
+            aiGuidance: 'Queda de Constantinopla e rota das especiarias.'
+          },
+          {
+            id: 'h26_f4',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'A expansão marítima europeia foi viabilizada pelo aperfeiçoamento de tecnologias e instrumentos de navegação. Dentre essas inovações, destacam-se:',
+            options: [
+              { text: 'A bússola magnética, o astrolábio para medir a altura dos astros e as caravelas com velas triangulares (latinas).', correct: true },
+              { text: 'O radar por satélite, o motor a vapor em ferro fundido e as câmeras fotográficas subaquáticas.', correct: false },
+              { text: 'A ferrovia transcontinental e o submarino movido a óleo diesel.', correct: false },
+              { text: 'Os balões dirigíveis de ar quente e os telégrafos elétricos sem fio.', correct: false }
+            ],
+            explanation: 'As caravelas eram embarcações leves capazes de bolinar (navegar contra o vento), orientadas pela bússola (direção) e pelo astrolábio (latitude).',
+            aiGuidance: 'Instrumentos náuticos e caravelas.'
+          },
+          {
+            id: 'h26_f5',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'A estratégia adotada por Portugal para atingir as Índias pelo mar ficou conhecida como "Périplo Africano". Esse caminho consistia em:',
+            options: [
+              { text: 'Contornar o continente africano pelo sul, dobrando o Cabo das Tormentas (Boa Esperança) até chegar ao Oceano Índico.', correct: true },
+              { text: 'Atravessar o Polo Norte em trenós e navegar pelo Oceano Ártico congelado.', correct: false },
+              { text: 'Navegar diretamente em linha reta para o Ocidente em direção à Cordilheira dos Andes.', correct: false },
+              { text: 'Cavar um canal artificial ligando o Mar Báltico ao Mar Vermelho.', correct: false }
+            ],
+            explanation: 'O périplo consistiu na exploração gradual da costa africana ao longo de décadas até Bartolomeu Dias dobrar o Cabo da Boa Esperança (1488) e Vasco da Gama alcançar Calicute (1498).',
+            aiGuidance: 'Périplo Africano e rota das Índias.'
+          },
+          {
+            id: 'h26_f6',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Em outubro de 1492, a expedição comandada pelo navegador genovês Cristóvão Colombo, a serviço dos Reis Católicos da Espanha, chegou à América acreditando ter:',
+            options: [
+              { text: 'Alcançado as Índias no Oriente através da circum-navegação ocidental do globo terrestre.', correct: true },
+              { text: 'Descoberto o continente antártico e o polo magnético terrestre.', correct: false },
+              { text: 'Atingido as cidades de ferro fundido da Austrália pré-histórica.', correct: false },
+              { text: 'Navegado em círculos no próprio Mar Mediterrâneo sem sair da costa espanhola.', correct: false }
+            ],
+            explanation: 'Colombo sustentava a esfericidade da Terra e propunha chegar ao Oriente navegando em direção ao Poente, sem ter conhecimento prévio do continente americano.',
+            aiGuidance: 'Viagem de Cristóvão Colombo em 1492.'
+          }
+        ],
+        medio: [
+          {
+            id: 'h26_m1',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Para garantir o enriquecimento da Coroa, os Estados absolutistas europeus buscavam manter uma "Balança Comercial Favorável". Essa diretriz econômica significava:',
+            options: [
+              { text: 'Vender (exportar) maior valor em mercadorias do que comprar (importar), assegurando que o saldo financeiro fosse positivo para o reino.', correct: true },
+              { text: 'Igualar com exatidão o volume financeiro de compras e vendas para evitar atritos diplomáticos.', correct: false },
+              { text: 'Proibir qualquer comércio marítimo para privilegiar unicamente feiras agrícolas locais.', correct: false },
+              { text: 'Importar artigos de luxo em alta quantidade para ostentar prestígio militar perante nações vizinhas.', correct: false }
+            ],
+            explanation: 'A balança favorável garantia superávit monetário: o valor recebido por exportações superava o custo das importações, mantendo moedas nobres dentro do país.',
+            aiGuidance: 'Balança comercial favorável e mercantilismo.'
+          },
+          {
+            id: 'h26_m2',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Em 1494, as coroas de Portugal e Espanha assinaram o Tratado de Tordesilhas com a mediação papal. Qual era o objetivo central desse acordo diplomático?',
+            options: [
+              { text: 'Dividir as terras descobertas e por descobrir fora da Europa por uma linha imaginária a 370 léguas a oeste do arquipélago de Cabo Verde.', correct: true },
+              { text: 'Organizar uma aliança militar contra a colonização francesa e inglesa no continente europeu.', correct: false },
+              { text: 'Permitir a livre navegação de navios holandeses pelas rotas comerciais de especiarias no Oriente.', correct: false },
+              { text: 'Entregar o controle das minas de ouro astecas diretamente ao Sacro Império Romano-Germânico.', correct: false }
+            ],
+            explanation: 'O Tratado de Tordesilhas dividiu o globo atlântico em duas zonas: as terras a oeste do meridiano pertenceriam à Espanha e as a leste a Portugal.',
+            aiGuidance: 'Tratado de Tordesilhas e diplomacia ibérica.'
+          },
+          {
+            id: 'h26_m3',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'O protecionismo alfandegário foi uma prática recorrente dos monarcas mercantilistas. Como essa política funcionava na prática?',
+            options: [
+              { text: 'Cobravam-se tarifas alfandegárias elevadas sobre mercadorias importadas para encarecê-las e estimular a produção manufatureira nacional.', correct: true },
+              { text: 'Zerar totalmente os impostos para que comerciantes estrangeiros pudessem falir as oficinas de manufatura do país.', correct: false },
+              { text: 'Proibir que os súditos trabalhassem em manufaturas para concentrá-los apenas no serviço militar.', correct: false },
+              { text: 'Obrigar os artesãos a entregar suas ferramentas de ferro para a fundição de moedas de ouro.', correct: false }
+            ],
+            explanation: 'Ao sobretaxar itens importados, os Estados protegiam suas indústrias e oficinas internas contra a concorrência externa, evitando a fuga de moeda.',
+            aiGuidance: 'Protecionismo alfandegário mercantilista.'
+          },
+          {
+            id: 'h26_m4',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Em abril de 1500, a esquadra de Pedro Álvares Cabral aportou no litoral do atual estado da Bahia. Qual era a missão oficial primária dessa frota portuguesa?',
+            options: [
+              { text: 'Viajar até Calicute, na Índia, para consolidar o comércio português de especiarias aberto por Vasco da Gama, realizando antes um desvio a oeste no Atlântico.', correct: true },
+              { text: 'Fundar fábricas de manufatura pesada no extremo sul da Patagônia argentina.', correct: false },
+              { text: 'Atacar e saquear a cidade de Londres em represália a tratados comerciais rompidos.', correct: false },
+              { text: 'Descobrir minas de carvão mineral para alimentar locomotivas da Coroa portuguesa.', correct: false }
+            ],
+            explanation: 'A frota cabralina fora armada para estabelecer feitorias comerciais na Índia; o desvio a oeste permitiu oficializar a posse das terras americanas pelo Tratado de Tordesilhas.',
+            aiGuidance: 'Expedição de Cabral e chegada ao Brasil.'
+          },
+          {
+            id: 'h26_m5',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Por que produtos como noz-moscada, pimenta-do-reino, cravo e canela (as chamadas especiarias) possuíam altíssimo valor comercial na Europa do século XVI?',
+            options: [
+              { text: 'Porque serviam para conservar e mascarar o sabor de alimentos e carnes, além de serem utilizadas em remédios, perfumes e rituais sociais de distinção.', correct: true },
+              { text: 'Porque eram usadas exclusivamente como combustível inflamável para os canhões das embarcações de guerra.', correct: false },
+              { text: 'Porque substituíam a prata na fabricação de moedas cunhadas pelos bancos suíços.', correct: false },
+              { text: 'Porque eram cultivadas com facilidade no rigoroso inverno do norte da Europa.', correct: false }
+            ],
+            explanation: 'Sem refrigeração moderna, as especiarias eram cruciais para a conservação e sabor dos alimentos. Seu fornecimento raro gerava lucros astronômicos aos mercadores.',
+            aiGuidance: 'Importância econômica das especiarias.'
+          },
+          {
+            id: 'h26_m6',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'Durante o período pré-colonial brasileiro (1500-1530), a exploração do pau-brasil baseou-se no sistema de feitorias e no escambo. Esse modelo caracterizava-se por:',
+            options: [
+              { text: 'A troca do trabalho indígena de corte e transporte das toras de madeira por objetos europeus (espelhos, machados e tecidos), estocados em feitorias fortificadas.', correct: true },
+              { text: 'A divisão das terras em capitanias com escravização imediata de toda a população indígena nos engenhos de cana.', correct: false },
+              { text: 'A extração em grande escala de pedras preciosas por operários assalariados trazidos de Portugal.', correct: false },
+              { text: 'O cultivo intensivo de trigo e soja em latifúndios mecanizados no interior do país.', correct: false }
+            ],
+            explanation: 'Nas três primeiras décadas, Portugal manteve feitorias litorâneas e recorreu ao escambo (troca direta de trabalho indígena por bugigangas e ferramentas metálicas úteis).',
+            aiGuidance: 'Período pré-colonial e escambo do pau-brasil.'
+          }
+        ],
+        dificil: [
+          {
+            id: 'h26_d1',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'O sistema conhecido como "Pacto Colonial" (ou Exclusivo Comercial Metropolitano) regulava as relações entre os reinos europeus e suas possessões ultramarinas. A respeito desse sistema, assinale a afirmação CORRETA:',
+            options: [
+              { text: 'A colônia era proibida de desenvolver manufaturas concorrentes e obrigada a comerciar matérias-primas exclusivamente com a sua respectiva metrópole.', correct: true },
+              { text: 'As colônias gozavam de autonomia tributária e podiam fixar livremente os preços das mercadorias vendidas a frotas inglesas.', correct: false },
+              { text: 'O pacto garantia aos povos indígenas e africanos a posse hereditária de suas terras comunais e isenção de tributos.', correct: false },
+              { text: 'A metrópole fornecia alimentos gratuitamente para estimular a rápida industrialização das cidades coloniais.', correct: false }
+            ],
+            explanation: 'O pacto colonial subordinava a economia colonial: colônias forneciam gêneros primários a preços reduzidos e compravam manufaturas metropolitanas por valores estipulados pela metrópole.',
+            aiGuidance: 'Pacto colonial e monopólio comercial.'
+          },
+          {
+            id: 'h26_d2',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'A expansão marítima europeia provocou profundas transformações na geopolítica e na economia mundial a partir do século XVI. Uma consequência estrutural imediata foi:',
+            options: [
+              { text: 'O deslocamento do eixo comercial do Mar Mediterrâneo para o Oceano Atlântico e a integração de mercados em escala global.', correct: true },
+              { text: 'O enfraquecimento das monarquias absolutistas europeias em favor da restauração do sistema feudal descentralizado.', correct: false },
+              { text: 'A diminuição drástica do comércio de escravizados africanos em decorrência de leis humanitárias assinadas em Roma.', correct: false },
+              { text: 'A perda da hegemonia espanhola na América em razão do controle exercido pelos povos incas e astecas sobre a rota da prata.', correct: false }
+            ],
+            explanation: 'As Grandes Navegações inauguraram o comércio transoceânico global e transferiram o centro de gravidade econômico das cidades italianas (Gênova e Veneza) para o Atlântico.',
+            aiGuidance: 'Consequências geopolíticas da expansão atlântica.'
+          },
+          {
+            id: 'h26_d3',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'O contato entre europeus e as populações nativas americanas no século XVI provocou uma catástrofe demográfica sem precedentes. O principal fator biológico causador dessa tragédia foi:',
+            options: [
+              { text: 'A disseminação de epidemias de doenças até então inexistentes na América (varíola, gripe e sarampo), para as quais os nativos não possuíam imunidade.', correct: true },
+              { text: 'A seca generalizada provocada pelo cultivo forçado de café em toda a Amazônia.', correct: false },
+              { text: 'A migração voluntária de noventa por cento da população indígena para as capitais europeias.', correct: false },
+              { text: 'O consumo excessivo de sal marinho industrializado importado em frotas holandesas.', correct: false }
+            ],
+            explanation: 'Sem imunidade biológica contra os patógenos trazidos do Velho Mundo, milhões de nativos sucumbiram a ondas epidêmicas de varíola e gripe, facilitando a conquista militar.',
+            aiGuidance: 'Impacto demográfico e doenças nas Américas.'
+          },
+          {
+            id: 'h26_d4',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'A Espanha acumulou imensas quantidades de prata e ouro extraídos de Potosí e das civilizações asteca e inca. Contudo, historiadores apontam a "ilusão dos metais", pois:',
+            options: [
+              { text: 'A Espanha não desenvolveu uma manufatura sólida interna, gastando a prata para comprar manufaturados de Inglaterra, França e Holanda, gerando inflação e dívidas.', correct: true },
+              { text: 'Os metais preciosos da América evaporaram devido à umidade das embarcações durante a travessia atlântica.', correct: false },
+              { text: 'O ouro americano transformou-se espontaneamente em ferro comum ao entrar em contato com o ar europeu.', correct: false },
+              { text: 'Os reis espanhóis doaram voluntariamente todas as minas de prata a mercadores muçulmanos do Mar Vermelho.', correct: false }
+            ],
+            explanation: 'A dependência exclusiva do bulionismo gerou a "Revolução dos Preços" (inflação): a prata apenas transitava pela Espanha rumo a potências manufatureiras do norte europeu.',
+            aiGuidance: 'Bulionismo espanhol e inflação europeia.'
+          },
+          {
+            id: 'h26_d5',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'A Carta de Pero Vaz de Caminha (1500) é considerada a certidão de nascimento do Brasil colonial. Ao analisar o documento sob a ótica histórica, observa-se que o escrivão português:',
+            options: [
+              { text: 'Adotou um olhar eurocêntrico sobre os costumes indígenas e destacou como prioridades imediatas a salvação das almas (cristianização) e a averiguação de metais preciosos.', correct: true },
+              { text: 'Reconheceu a superioridade científica e filosófica dos povos tupis sobre a Europa renascentista.', correct: false },
+              { text: 'Declarou formalmente que as terras não pertenciam a Portugal por já possuírem fábricas instaladas.', correct: false },
+              { text: 'Ordenou a retirada imediata das caravelas por considerar a terra estéril e desprovida de vegetação.', correct: false }
+            ],
+            explanation: 'Caminha registrou o deslumbramento com a natureza, a inocência aparente dos nativos e a intenção da Coroa de "salvar essa gente" e buscar indícios de ouro e prata.',
+            aiGuidance: 'Análise da Carta de Pero Vaz de Caminha.'
+          },
+          {
+            id: 'h26_d6',
+            subject: 'História',
+            topic: 'Grandes Navegações e Mercantilismo',
+            text: 'A consolidação da economia colonial mercantilista nas Américas esteve indissociavelmente articulada a um dos maiores crimes contra a humanidade: o tráfico transatlântico de escravizados africanos. Qual era a lógica econômica desse sistema?',
+            options: [
+              { text: 'O tráfico funcionava como comércio triangular de lucros astronômicos para a metrópole, transformando seres humanos em mercadoria para atender à demanda de mão de obra nos latifúndios coloniais.', correct: true },
+              { text: 'Os reis africanos exigiam que seus súditos fossem enviados para a América para aprender técnicas industriais inglesas.', correct: false },
+              { text: 'O tráfico era uma atividade voluntária em que os trabalhadores recebiam salários adiantados em moedas de ouro.', correct: false },
+              { text: 'A Igreja Católica proibia a escravidão nas colônias e obrigava os colonizadores a empregar apenas nobres europeus.', correct: false }
+            ],
+            explanation: 'O comércio triangular e a escravização compulsória geravam lucros tanto na venda de pessoas no Atlântico quanto na produção de açúcar e minérios com mão de obra cativa nas colônias.',
+            aiGuidance: 'Tráfico transatlântico e escravidão colonial.'
+          }
+        ]
+      },
       'geografia_2_4': {
         "facil": [
                 {

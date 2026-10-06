@@ -1,10 +1,10 @@
 // Service Worker for ESTUDE+ PWA
-const CACHE_NAME = 'estude-plus-cache-v3';
+const CACHE_NAME = 'estude-plus-cache-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=20261006_3',
-  './app.js?v=20261006_3',
+  './style.css?v=20261006_4',
+  './app.js?v=20261006_4',
   './manifest.json'
 ];
 
