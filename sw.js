@@ -1,10 +1,10 @@
 // Service Worker for ESTUDE+ PWA
-const CACHE_NAME = 'estude-plus-cache-v2';
+const CACHE_NAME = 'estude-plus-cache-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './style.css?v=20261006_3',
+  './app.js?v=20261006_3',
   './manifest.json'
 ];
 
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Try network first, then fallback to cache
+  // Network first, then fallback to cache
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );
