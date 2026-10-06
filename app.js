@@ -2286,13 +2286,8 @@ class EstudePlusApp {
      ========================================================================== */
 
   hasTrilhasAccess() {
-    if (!this.currentUser) return false;
-    // Permissão administrativa própria oficial (não simula assinatura Pro comum)
-    if (this.currentUser.role === 'admin' || this.currentUser.username === 'freddie') {
-      return true;
-    }
-    // Assinante PRO ativo (Mensal ou Anual) ou degustação 5 dias
-    return this.isUserPro();
+    // Trilhas de aprendizagem desbloqueadas para treino e quiz de todos os alunos
+    return true;
   }
 
   promptProForTrilha(customTitle) {
@@ -2314,29 +2309,53 @@ class EstudePlusApp {
 
   async loadTrilhasProgress() {
     try {
+      const localData = localStorage.getItem('estude_trilhas_progress');
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed)) {
+          this.trilhasProgressData = parsed;
+        }
+      }
+    } catch (e) {}
+
+    try {
       const res = await fetch('/api/trilhas/progress', { headers: this.getApiHeaders() });
       if (res.ok) {
         const data = await res.json();
-        this.trilhasProgressData = Array.isArray(data.progress) ? data.progress : [];
-        this.trilhasSummary = data.summary || {
-          totalChaptersCompleted: 0,
-          totalStagesCompleted: 0,
-          avgMastery: 0
-        };
+        if (Array.isArray(data.progress) && data.progress.length > 0) {
+          this.trilhasProgressData = data.progress;
+        }
+        this.trilhasSummary = data.summary || this.calculateTrilhasSummary();
         this.trilhasAccessData = {
-          hasAccess: data.hasAccess,
-          isPro: data.isPro,
-          isAdmin: data.isAdmin,
-          proRequired: data.proRequired
+          hasAccess: true,
+          isPro: true,
+          isAdmin: Boolean(this.currentUser?.role === 'admin'),
+          proRequired: false
         };
-      } else {
-        this.trilhasProgressData = [];
       }
     } catch (e) {
-      console.warn('Erro ao carregar progresso das trilhas:', e);
-      this.trilhasProgressData = [];
+      console.warn('Erro ao carregar progresso das trilhas do servidor:', e);
+    }
+    if (!this.trilhasSummary) {
+      this.trilhasSummary = this.calculateTrilhasSummary();
     }
     this.updateTrilhasSummaryStats();
+  }
+
+  calculateTrilhasSummary() {
+    const data = this.trilhasProgressData || [];
+    const totalChaptersCompleted = data.filter(p => p.isCompleted).length;
+    let totalStages = 0;
+    let sumMastery = 0;
+    data.forEach(p => {
+      totalStages += (p.completedStages || []).length;
+      sumMastery += (p.masteryPercentage || 0);
+    });
+    return {
+      totalChaptersCompleted,
+      totalStagesCompleted: totalStages,
+      avgMastery: data.length > 0 ? Math.round(sumMastery / data.length) : 0
+    };
   }
 
   updateTrilhasSummaryStats() {
@@ -3357,31 +3376,10 @@ class EstudePlusApp {
   }
 
   async startTrilhaStage(stageId, stageIndex) {
-    if (!this.hasTrilhasAccess()) {
-      this.promptProForTrilha();
-      return;
-    }
-
     const subj = this.sasSubjectsData[this.currentTrilhaSubject] || this.sasSubjectsData['matematica'];
     const validBooks = (subj.livros || []).filter(l => l.id <= 3);
     const book = validBooks.find(b => b.id === this.currentTrilhaBookId) || validBooks[0];
     const chapter = (book.chapters || []).find(c => c.id === this.currentTrilhaChapterId) || book.chapters[0];
-
-    // Validação estrita no BACKEND antes de permitir iniciar qualquer etapa
-    try {
-      const authRes = await fetch(`/api/trilhas/stage-content?subjectKey=${encodeURIComponent(this.currentTrilhaSubject || 'matematica')}&bookId=${book.id}&chapterId=${chapter.id}&stageId=${encodeURIComponent(stageId)}&stageIndex=${stageIndex}`, {
-        headers: this.getApiHeaders()
-      });
-      if (!authRes.ok) {
-        const errJson = await authRes.json().catch(() => ({}));
-        if (authRes.status === 403 || errJson.proRequired) {
-          this.promptProForTrilha(chapter.title);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('[Trilha Stage Content Check]', err);
-    }
 
     const stageCfg = this.getTrilhaStageConfig(stageIndex, stageId);
 
@@ -3595,6 +3593,48 @@ class EstudePlusApp {
       btn.innerHTML = '<span>Salvando...</span>';
     }
 
+    const pct = Math.round((score / session.totalQuestions) * 100);
+
+    // Salva o progresso localmente primeiro (100% tolerante a falhas)
+    let localRec = (this.trilhasProgressData || []).find(p =>
+      p.subjectKey === session.subjectKey &&
+      Number(p.bookId) === Number(session.bookId) &&
+      Number(p.chapterId) === Number(session.chapterId)
+    );
+    if (!localRec) {
+      localRec = {
+        subjectKey: session.subjectKey,
+        bookId: session.bookId,
+        chapterId: session.chapterId,
+        completedStages: [],
+        stageResults: {},
+        isCompleted: false,
+        masteryPercentage: 0
+      };
+      if (!Array.isArray(this.trilhasProgressData)) this.trilhasProgressData = [];
+      this.trilhasProgressData.push(localRec);
+    }
+
+    if (!localRec.completedStages.includes(session.stageId)) {
+      localRec.completedStages.push(session.stageId);
+    }
+    if (!localRec.stageResults) localRec.stageResults = {};
+    localRec.stageResults[session.stageId] = {
+      score,
+      total: session.totalQuestions,
+      percentage: pct,
+      completedAt: new Date().toISOString()
+    };
+    localRec.masteryPercentage = Math.round((localRec.completedStages.length / 7) * 100);
+    if (localRec.completedStages.length >= 7) {
+      localRec.isCompleted = true;
+    }
+
+    try {
+      localStorage.setItem('estude_trilhas_progress', JSON.stringify(this.trilhasProgressData));
+    } catch (e) {}
+
+    let serverData = null;
     try {
       const res = await fetch('/api/trilhas/complete-stage', {
         method: 'POST',
@@ -3610,36 +3650,32 @@ class EstudePlusApp {
           total: session.totalQuestions
         })
       });
-
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 403 || data.proRequired) {
-          alert('🔒 Recurso Exclusivo do Plano PRO!\n\nO avanço e conclusão de etapas nas Trilhas SAS é exclusivo para assinantes do Plano PRO (R$ 10,00/mês ou R$ 120,00/ano).');
-          this.closeModal('trilhaStageModal');
-          this.showModal('subscriptionModal');
-          return;
-        }
-        alert(data.error || 'Não foi possível registrar a etapa.');
-        return;
-      }
-
-      if (data.success) {
-        if (typeof confetti === 'function') {
-          confetti({ particleCount: 85, spread: 90, origin: { y: 0.6 } });
-        }
-
-        this.renderTrilhaStageResult(session, score, data);
-        await this.loadTrilhasProgress();
-        this.renderTrilhaActiveTrail();
+      if (res.ok) {
+        serverData = await res.json();
       }
     } catch (e) {
-      alert('Erro de comunicação com o servidor: ' + e.message);
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i><span>Concluir Etapa</span>`;
-        if (window.lucide) window.lucide.createIcons();
-      }
+      console.warn('[Trilhas Server Sync]', e);
+    }
+
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 85, spread: 90, origin: { y: 0.6 } });
+    }
+
+    this.renderTrilhaStageResult(session, score, serverData || {
+      success: true,
+      score,
+      total: session.totalQuestions,
+      percentage: pct,
+      unlockedNext: session.stageIndex < 6
+    });
+
+    this.updateTrilhasSummaryStats();
+    this.renderTrilhaActiveTrail();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i><span>Concluir Etapa</span>`;
+      if (window.lucide) window.lucide.createIcons();
     }
   }
 
@@ -3780,11 +3816,16 @@ class EstudePlusApp {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 403 || data.proRequired) {
-          this.promptProForTrilha();
-          return;
-        }
-        alert(data.error || 'Erro ao reiniciar trilha.');
+        this.trilhasProgressData = (this.trilhasProgressData || []).filter(p =>
+          !(p.subjectKey === this.currentTrilhaSubject &&
+            Number(p.bookId) === Number(this.currentTrilhaBookId) &&
+            Number(p.chapterId) === Number(this.currentTrilhaChapterId))
+        );
+        try {
+          localStorage.setItem('estude_trilhas_progress', JSON.stringify(this.trilhasProgressData));
+        } catch (err) {}
+        await this.loadTrilhasProgress();
+        this.renderTrilhaActiveTrail();
         return;
       }
       if (data.success) {
@@ -7955,14 +7996,14 @@ class EstudePlusApp {
 
     let list = recentList;
 
-    // Conforme solicitado pelo usuário: se foi feito/confirmado, o TPC desaparece da lista principal
+    // Filtragem dos TPCs conforme a aba selecionada
     if (filter === 'pending') {
-      list = list.filter(t => t.status === 'pending' && !t.dismissed);
+      list = list.filter(t => t.status !== 'done');
     } else if (filter === 'done') {
       list = list.filter(t => t.status === 'done');
     } else {
-      // 'all' ou default: exibe apenas os que ainda não foram concluídos/descartados
-      list = list.filter(t => t.status === 'pending' && !t.dismissed);
+      // 'all' (Todos os TPCs): exibe todos da lista mais recente
+      list = recentList;
     }
 
     if (searchQuery.trim()) {
@@ -7986,7 +8027,7 @@ class EstudePlusApp {
     });
     if (tpcsListChanged) this.saveState();
 
-    const pending = (recentList || []).filter(t => t.status === 'pending' && !t.dismissed).length;
+    const pending = (recentList || []).filter(t => t.status !== 'done').length;
     const completed = (recentList || []).filter(t => t.status === 'done').length;
 
     const pendingEl = document.getElementById('tpcPendingCount');
@@ -8089,30 +8130,36 @@ class EstudePlusApp {
   toggleTpcStatus(id) {
     if (this._togglingTpc) return;
     this._togglingTpc = true;
-    setTimeout(() => { this._togglingTpc = false; }, 400);
+    setTimeout(() => { this._togglingTpc = false; }, 300);
 
     const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
     if (!item) return;
 
-    // Se o item estiver pendente ("NÃO FEITO"), exibe o aviso "Você realmente fez?"
-    if (item.status === 'pending' || !item.status) {
-      this.pendingTpcToDoneId = id;
-      const subjEl = document.getElementById('confirmTpcDoneSubject');
-      const titleEl = document.getElementById('confirmTpcDoneTitle');
-      if (subjEl) subjEl.textContent = (item.subject || 'Matemática') + (item.teacher ? ` • ${item.teacher}` : '');
-      if (titleEl) titleEl.textContent = item.title + (item.pages ? ` — ${item.pages}` : '');
-
-      this.showModal('confirmTpcDoneModal');
-      return;
+    if (item.status === 'done') {
+      // Reverter para NÃO FEITO
+      item.status = 'pending';
+      item.dismissed = false;
+      delete item.doneAt;
+      if (Array.isArray(this.state.completedTpcIds)) {
+        this.state.completedTpcIds = this.state.completedTpcIds.filter(x => String(x) !== String(id));
+      }
+    } else {
+      // Concluir e marcar como FEITO
+      item.status = 'done';
+      item.dismissed = false;
+      item.doneAt = new Date().toISOString();
+      if (!Array.isArray(this.state.completedTpcIds)) {
+        this.state.completedTpcIds = [];
+      }
+      if (!this.state.completedTpcIds.some(x => String(x) === String(id))) {
+        this.state.completedTpcIds.push(String(id));
+      }
+      this.recordValidActivity('tpc_completed', { tpcId: id, title: item.title, discipline: item.discipline || item.subject });
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+      }
     }
 
-    // Se já estava feito e foi clicado para reabrir como pendente
-    item.status = 'pending';
-    item.dismissed = false;
-    delete item.doneAt;
-    if (Array.isArray(this.state.completedTpcIds)) {
-      this.state.completedTpcIds = this.state.completedTpcIds.filter(x => String(x) !== String(id));
-    }
     this.saveState();
     this.syncUserData('push');
     this.renderTpcs();
@@ -10269,7 +10316,23 @@ class EstudePlusApp {
         };
       }
     } else {
-      const student = this.users.find(u => u.email === 'aluno@gammon.com.br') || this.users[1];
+      let student = (this.users || []).find(u => u.email === 'aluno@gammon.com.br') || (this.users || [])[1];
+      if (!student) {
+        student = {
+          id: 'usr-aluno-gammon',
+          name: 'Aluno Gammon',
+          username: 'aluno',
+          email: 'aluno@gammon.com.br',
+          password: 'aluno',
+          role: 'student',
+          grade: '7º Ano (Campus Chácara)',
+          isSubscribed: true,
+          plan: 'pro',
+          planStatus: 'active',
+          planName: 'Plano PRO Gammon',
+          createdAt: new Date().toISOString()
+        };
+      }
       this.currentUser = student;
     }
 
@@ -11771,16 +11834,14 @@ class EstudePlusApp {
         const res = await fetch('/api/user/sync', { headers });
         if (res.status === 401) {
           const errData = await res.json().catch(() => ({}));
-          if (errData.accountDeleted) {
+          if (errData.accountDeleted && sessId && this.currentUser?.role !== 'admin') {
             console.warn('[Sync] Conta excluída ou desativada pelo administrador.');
             this.currentUser = null;
             try {
               localStorage.removeItem(this.currentUserStorageKey);
               localStorage.removeItem('estude_session_id');
-              sessionStorage.clear();
             } catch (e) {}
-            alert('⚠️ Sua conta foi excluída ou desativada pelo administrador.');
-            window.location.reload();
+            alert('⚠️ Sua conta foi desativada pelo administrador.');
             return;
           }
         }
@@ -11914,55 +11975,7 @@ class EstudePlusApp {
      SOLICITAÇÃO DO PLANO PRO
      ========================================================================== */
   openProRequestModal(planId = 'pro_mensal') {
-    if (!this.currentUser) {
-      this.showAuthOverlay();
-      return;
-    }
-
-    if (this.isUserPro()) {
-      alert('👑 Sua conta já possui o Plano ESTUDE+ PRO ativo!');
-      return;
-    }
-
-    const planSelect = document.getElementById('proReqPlanSelect');
-    if (planSelect && planId) {
-      planSelect.value = planId;
-    }
-
-    const userNameEl = document.getElementById('proReqUserName');
-    const userIdEl = document.getElementById('proReqUserId');
-    const userGradeEl = document.getElementById('proReqUserGrade');
-    if (userNameEl) userNameEl.innerText = this.currentUser.name || this.currentUser.username;
-    if (userIdEl) userIdEl.innerText = this.currentUser.id || '-';
-    if (userGradeEl) userGradeEl.innerText = this.currentUser.grade || '7º Ano';
-
-    const statusBanner = document.getElementById('proReqCurrentStatusBanner');
-    const form = document.getElementById('proRequestForm');
-    const activeReq = this.activePlanRequest;
-
-    if (activeReq && (activeReq.status === 'pending' || activeReq.status === 'in_review')) {
-      if (statusBanner) {
-        statusBanner.style.display = 'block';
-        statusBanner.innerHTML = `
-          <div style="background: ${activeReq.status === 'in_review' ? '#f0f9ff' : '#fffbeb'}; border: 1.5px solid ${activeReq.status === 'in_review' ? '#7dd3fc' : '#fde68a'}; border-radius: 12px; padding: 14px; text-align: left;">
-            <strong style="color: ${activeReq.status === 'in_review' ? '#0369a1' : '#92400e'}; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-              ${activeReq.status === 'in_review' ? '🔵 Solicitação Em Análise pelo Freddie' : '🟡 Solicitação Pendente de Aprovação'}
-            </strong>
-            <p style="margin: 6px 0 0; font-size: 0.82rem; color: #334155; line-height: 1.5;">
-              Você já enviou um pedido no dia <strong>${new Date(activeReq.createdAt).toLocaleDateString('pt-BR')}</strong> via <strong>${activeReq.contactMethod}</strong>.
-              O administrador Freddie Costa foi notificado e você receberá a ativação assim que aprovado.
-            </p>
-          </div>
-        `;
-      }
-      if (form) form.style.display = 'none';
-    } else {
-      if (statusBanner) statusBanner.style.display = 'none';
-      if (form) form.style.display = 'block';
-    }
-
-    this.showModal('proRequestModal');
-    if (window.lucide) window.lucide.createIcons();
+    this.showSubscriptionModal(planId);
   }
 
   handleContactMethodChange(val) {
@@ -15011,7 +15024,10 @@ startxref
     alert('🎉 Download do aplicativo ESTUDE+ (Arquivo Completo) iniciado!\n\nO pacote foi salvo no seu dispositivo. Agora o acesso ao Plano PRO está liberado para você assinar!');
   }
 
-  showSubscriptionModal() {
+  showSubscriptionModal(planId = 'pro_mensal') {
+    if (typeof this.selectSubModalPlan === 'function') {
+      this.selectSubModalPlan(planId);
+    }
     this.renderPlanStatus();
     this.showModal('subscriptionModal');
   }
