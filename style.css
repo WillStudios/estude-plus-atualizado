@@ -6901,3 +6901,221 @@ body.dark-mode .command-palette-item.active {
 }
 
 
+
+/* ==========================================================================
+   ESTUDE+ 3.0: DESIGN SYSTEM MODERNO (QUIZLET & KHAN ACADEMY INSPIRAÇÃO)
+   ========================================================================== */
+
+/* Caixa do Simulado e Treino */
+.exam-session-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  transition: all 0.25s ease;
+}
+
+/* Pager / Navegador de Questões */
+.exam-pager-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.exam-pager-btn:hover {
+  border-color: #4f46e5;
+  color: #4f46e5;
+  background: #f8fafc;
+}
+
+.exam-pager-btn.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.35);
+}
+
+.exam-pager-btn.answered {
+  background: #ecfdf5;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.exam-pager-btn.answered.active {
+  background: #059669;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+/* Cards de Alternativas */
+.exam-opt-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-bottom: 10px;
+  user-select: none;
+}
+
+.exam-opt-card:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.exam-opt-card.selected {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.12);
+}
+
+.exam-opt-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-weight: 800;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.exam-opt-card.selected .exam-opt-letter {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+
+.exam-opt-card.opt-correct {
+  border-color: #10b981 !important;
+  background: #ecfdf5 !important;
+}
+
+.exam-opt-card.opt-correct .exam-opt-letter {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.exam-opt-card.opt-wrong {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+
+.exam-opt-card.opt-wrong .exam-opt-letter {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* Feedback Imediato Modo Treino */
+.exam-feedback-box {
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-top: 18px;
+  line-height: 1.5;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.exam-feedback-box.correct {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1.5px solid #6ee7b7;
+  color: #064e3b;
+}
+
+.exam-feedback-box.wrong {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1.5px solid #fca5a5;
+  color: #7f1d1d;
+}
+
+/* Relatório de Resultados */
+.exam-score-hero {
+  text-align: center;
+  padding: 26px 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1.5px solid #e2e8f0;
+  margin-bottom: 22px;
+}
+
+.exam-score-val {
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1;
+  margin: 10px 0;
+  color: #0f172a;
+}
+
+.exam-score-badge {
+  display: inline-block;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Estados Vazios Padronizados */
+.empty-state {
+  text-align: center;
+  padding: 36px 24px;
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  color: #64748b;
+  margin: 14px 0;
+}
+
+.empty-state i, .empty-state svg {
+  width: 40px;
+  height: 40px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0;
+}
+
+/* Responsividade Mobile & Tablet */
+@media (max-width: 640px) {
+  .exam-session-box {
+    padding: 16px !important;
+  }
+  .exam-opt-card {
+    padding: 12px 14px;
+    font-size: 0.88rem;
+  }
+  .exam-pager-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 0.78rem;
+  }
+}

@@ -183,10 +183,7 @@
           <i data-lucide="calendar"></i>
           <span>Calendário de Provas</span>
         </button>
-        <button class="nav-btn" data-tab="evolution">
-          <i data-lucide="line-chart"></i>
-          <span>Minha Evolução</span>
-        </button>
+
       </nav>
 
       <div class="sidebar-promo" onclick="app.showModal('subscriptionModal')">
@@ -966,68 +963,7 @@
         </div>
       </section>
 
-      <!-- ================= TAB: EVOLUÇÃO ================= -->
-      <section id="tab-evolution" class="tab-pane">
-        <div class="tab-header">
-          <div>
-            <h2>📊 Minha Evolução</h2>
-            <p class="subtitle">Acompanhe seu crescimento diário e perceba quais conteúdos já domina</p>
-          </div>
-        </div>
-
-        <div class="evolution-summary-grid">
-          <div class="metric-card">
-            <div class="metric-head">
-              <span>Tempo Estudado Esta Semana</span>
-              <i data-lucide="clock"></i>
-            </div>
-            <div class="metric-body">
-              <span class="metric-value">1h 45m</span>
-              <span class="metric-sub text-success"><i data-lucide="trending-up"></i> +15m vs semana passada</span>
-            </div>
-            <div class="progress-bar-bg"><div class="progress-fill" style="width: 75%"></div></div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-head">
-              <span>Precisão nos Quizzes</span>
-              <i data-lucide="check-circle"></i>
-            </div>
-            <div class="metric-body">
-              <span class="metric-value">82%</span>
-              <span class="metric-sub text-success"><i data-lucide="arrow-up-right"></i> +9% após reforço de erros</span>
-            </div>
-            <div class="progress-bar-bg"><div class="progress-fill" style="width: 82%"></div></div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-head">
-              <span>Conteúdos Dominados</span>
-              <i data-lucide="award"></i>
-            </div>
-            <div class="metric-body">
-              <span class="metric-value">18 / 24</span>
-              <span class="metric-sub text-accent">75% da matriz curricular</span>
-            </div>
-            <div class="progress-bar-bg"><div class="progress-fill" style="width: 75%"></div></div>
-          </div>
-        </div>
-
-        <div class="subject-mastery-section mt-8">
-          <h3>Domínio por Disciplina</h3>
-          <div class="mastery-grid" id="masteryGrid">
-            <!-- Rendered dynamically -->
-          </div>
-        </div>
-
-        <div class="quote-card mt-8">
-          <i data-lucide="quote" class="quote-icon"></i>
-          <div>
-            <p class="quote-text">"Tecnologia não para estudar por você. Tecnologia para ajudar você a estudar melhor. 15 minutos por dia fazem toda a diferença."</p>
-            <span class="quote-author">— Freddie Pimentel Costa, Desenvolvedor do Estude+</span>
-          </div>
-        </div>
-      </section>
+      <!-- Minha Evolução visual section removed, state data preserved for history and admin -->
 
       <!-- ================= TAB: BIBLIOTECA DE MATERIAIS (ALL-IN-ONE) ================= -->
       <section id="tab-materials" class="tab-pane">
@@ -1418,11 +1354,11 @@
       <form id="registerForm" onsubmit="app.handleRegisterSubmit(event)" style="display: none; margin-top: 18px;">
         <div class="form-group">
           <label>Nome Completo ou Como Quer Ser Chamado</label>
-          <input type="text" id="regFullName" required placeholder="Ex: Pedro Lucas">
+          <input type="text" id="regFullName" required placeholder="Seu nome completo">
         </div>
         <div class="form-group">
           <label>Nome de Usuário (Exclusivo)</label>
-          <input type="text" id="regUsername" required minlength="3" placeholder="Ex: pedro (sem espaços)">
+          <input type="text" id="regUsername" required minlength="3" placeholder="seu_usuario (sem espaços)">
           <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 4px;">Este nome será único e reservado para você no Estude+.</small>
         </div>
         <div class="form-group">
@@ -1554,8 +1490,8 @@
           </p>
         </div>
 
-        <button class="btn-checkout" id="btnSubModalJaFizPagamento" onclick="app.handleStudentPaymentDeclared()" style="margin-top: 16px; font-size: 1rem; padding: 14px;">
-          <i data-lucide="check-circle"></i> <span id="btnSubModalJaFizText">Já fiz o pagamento</span>
+        <button class="btn-checkout" id="btnSubModalJaFizPagamento" onclick="app.confirmPixPayment()" style="margin-top: 16px; font-size: 1rem; padding: 14px; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);">
+          <i data-lucide="check-circle"></i> <span id="btnSubModalJaFizText">Já mandei o Pix</span>
         </button>
       </div>
 
@@ -2203,71 +2139,207 @@
     </div>
   </div>
 
-  <!-- Modal: Preparar para Prova (Simulado do Capítulo / Geral) -->
+  <!-- Modal: Configuração de Simulado / Treino Escolar -->
   <div class="modal-overlay" id="prepararProvaModal">
-    <div class="modal-box" style="max-width: 640px;">
+    <div class="modal-box" style="max-width: 660px; border-radius: 20px; padding: 26px;">
       <button class="modal-close" onclick="app.closeModal('prepararProvaModal')">&times;</button>
+      
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <span class="tpc-badge" style="background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;">
-          🎯 SIMULADO & REVISÃO
+        <span class="tpc-badge" style="background: #e0f2fe; color: #0284c7; font-weight: 800; font-size: 0.75rem; padding: 4px 12px; border-radius: 999px;">
+          🎯 AVALIAÇÃO & TREINAMENTO
         </span>
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800;">Preparação para Prova</h3>
+        <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a;">Simulado & Treino por Matéria</h3>
       </div>
-      <p class="subtitle" style="margin-bottom: 16px; font-size: 0.88rem; color: #64748b;">
-        Gere um simulado adaptativo baseado nas matérias e capítulos das suas apostilas para testar seu domínio real antes da prova.
+      <p class="subtitle" style="margin-bottom: 18px; font-size: 0.88rem; color: #64748b;">
+        Selecione o modo, a disciplina e o conteúdo escolar para praticar com retorno imediato ou simular uma prova real.
       </p>
 
       <form id="prepararProvaForm" onsubmit="app.handleIniciarSimuladoProva(event)">
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Matéria:</label>
-          <select id="simuladoMateriaSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;" onchange="app.handleSimuladoSubjectChange(this.value)" required>
-            <!-- Preenchido dinamicamente -->
-          </select>
-        </div>
+        <!-- Seletor de Modo: Modo Simulado vs Modo Treino -->
+        <div style="margin-bottom: 18px;">
+          <label style="font-weight: 800; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 8px;">
+            Escolha o Modo de Estudo:
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label id="lblModeSimulado" style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 2px solid #4f46e5; background: #eef2ff; border-radius: 12px; cursor: pointer; transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 800; font-size: 0.95rem; color: #312e81;">📝 Modo Simulado</span>
+                <input type="radio" name="simuladoStudyMode" value="simulado" checked onchange="app.handleStudyModeSelect('simulado')" style="accent-color: #4f46e5;">
+              </div>
+              <span style="font-size: 0.76rem; color: #475569; line-height: 1.4;">
+                Ambiente de prova real: 1 questão por vez, cronômetro opcional, navegação livre, sem gabarito prévio e relatório completo ao finalizar.
+              </span>
+            </label>
 
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Apostila / Módulo:</label>
-          <select id="simuladoApostilaSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;" onchange="app.handleSimuladoApostilaChange(this.value)">
-            <option value="todas">Todas as Apostilas do Bimestre</option>
-            <option value="Apostila 1">Apostila 1</option>
-            <option value="Apostila 2">Apostila 2</option>
-            <option value="Apostila 3">Apostila 3</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Capítulo de Foco (Opcional):</label>
-          <select id="simuladoCapituloSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
-            <option value="todos">Todos os Capítulos Selecionados</option>
-          </select>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Quantidade de Questões:</label>
-            <select id="simuladoQtdSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
-              <option value="5">5 questões (Treino Rápido)</option>
-              <option value="10" selected>10 questões (Simulado Padrão)</option>
-              <option value="15">15 questões (Simulado Completo)</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Nível de Desafio:</label>
-            <select id="simuladoDificuldadeSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
-              <option value="misto" selected>Equilibrado (Fácil, Médio, Desafio)</option>
-              <option value="dificil">Alto Desafio (Estilo Prova Difícil)</option>
-            </select>
+            <label id="lblModeTreino" style="display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1.5px solid #cbd5e1; background: #ffffff; border-radius: 12px; cursor: pointer; transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 800; font-size: 0.95rem; color: #0f172a;">⚡ Modo Treino</span>
+                <input type="radio" name="simuladoStudyMode" value="treino" onchange="app.handleStudyModeSelect('treino')" style="accent-color: #4f46e5;">
+              </div>
+              <span style="font-size: 0.76rem; color: #64748b; line-height: 1.4;">
+                Feedback imediato: respondeu a questão, já confere se acertou ou errou com explicação passo a passo adaptada à matéria.
+              </span>
+            </label>
           </div>
         </div>
 
-        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-          <button type="button" class="btn-outline" onclick="app.closeModal('prepararProvaModal')">Cancelar</button>
-          <button type="submit" class="btn-primary" style="background: #0284c7; border-color: #0284c7; font-weight: 700;">
-            <i data-lucide="play" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i>
-            Iniciar Simulado
+        <!-- Matéria -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">
+            Disciplina Escolar:
+          </label>
+          <select id="simuladoMateriaSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 10px 12px; border: 1.5px solid #cbd5e1; font-weight: 700;" onchange="app.handleSimuladoSubjectChange(this.value)" required>
+            <!-- Preenchido dinamicamente com todas as matérias disponíveis -->
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <!-- Apostila / Módulo -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Apostila / Módulo:</label>
+            <select id="simuladoApostilaSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;" onchange="app.handleSimuladoApostilaChange(this.value)">
+              <option value="todas">Todas as Apostilas (Geral)</option>
+              <option value="Apostila 1">Apostila 1</option>
+              <option value="Apostila 2">Apostila 2</option>
+              <option value="Apostila 3">Apostila 3</option>
+            </select>
+          </div>
+
+          <!-- Capítulo de Foco -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Capítulo de Foco:</label>
+            <select id="simuladoCapituloSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
+              <option value="todos">Todos os Capítulos Selecionados</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+          <!-- Quantidade -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.82rem; color: #1e293b; display: block; margin-bottom: 4px;">Questões:</label>
+            <select id="simuladoQtdSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 10px; border: 1.5px solid #cbd5e1;">
+              <option value="5">5 questões</option>
+              <option value="8">8 questões</option>
+              <option value="10" selected>10 questões</option>
+              <option value="15">15 questões</option>
+              <option value="20">20 questões</option>
+            </select>
+          </div>
+
+          <!-- Nível de Dificuldade -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.82rem; color: #1e293b; display: block; margin-bottom: 4px;">Dificuldade:</label>
+            <select id="simuladoDificuldadeSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 10px; border: 1.5px solid #cbd5e1;">
+              <option value="misto" selected>Misto (Equilibrado)</option>
+              <option value="facil">Fácil (Fundamentos)</option>
+              <option value="medio">Médio (Aplicação)</option>
+              <option value="dificil">Difícil (Desafio)</option>
+            </select>
+          </div>
+
+          <!-- Cronômetro Opcional -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.82rem; color: #1e293b; display: block; margin-bottom: 4px;">Cronômetro:</label>
+            <select id="simuladoTimerSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 10px; border: 1.5px solid #cbd5e1;">
+              <option value="0" selected>Sem limite de tempo</option>
+              <option value="10">10 minutos</option>
+              <option value="15">15 minutos</option>
+              <option value="20">20 minutos</option>
+              <option value="30">30 minutos</option>
+              <option value="45">45 minutos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('prepararProvaModal')" style="padding: 10px 18px; border-radius: 10px;">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #4f46e5, #0284c7); border: none; font-weight: 800; padding: 10px 22px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+            <span id="btnStartExamText">Iniciar Atividade</span>
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Ambiente Dedicado de Avaliação (Modo Treino & Modo Simulado) -->
+  <div class="modal-overlay" id="examSessionModal">
+    <div class="modal-box exam-session-box" style="max-width: 820px; width: 95vw; max-height: 92vh; border-radius: 20px; padding: 24px; display: flex; flex-direction: column;">
+      
+      <!-- Top Bar: Mode Badge, Subject, Timer, Exit Button -->
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span id="examSessionModeBadge" style="font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: #e0e7ff; color: #3730a3; text-transform: uppercase;">
+            MODO SIMULADO
+          </span>
+          <span id="examSessionSubjectTag" style="font-size: 0.78rem; font-weight: 800; padding: 4px 10px; border-radius: 8px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+            Matemática
+          </span>
+          <span id="examSessionChapterTag" style="font-size: 0.78rem; color: #64748b; font-weight: 600;">
+            Capítulo 1
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div id="examSessionTimerBox" style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 5px 12px; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.88rem; color: #0f172a;">
+            <i data-lucide="clock" style="width: 15px; height: 15px; color: #4f46e5;"></i>
+            <span id="examSessionTimerDisplay">00:00</span>
+          </div>
+          <button type="button" class="btn-outline" onclick="app.confirmExitExam()" style="padding: 5px 10px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;" title="Encerrar avaliação">
+            Sair
+          </button>
+        </div>
+      </div>
+
+      <!-- Linear Progress Bar -->
+      <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 14px;">
+        <div id="examSessionProgressFill" style="width: 10%; height: 100%; background: linear-gradient(90deg, #4f46e5, #06b6d4); transition: width 0.3s ease;"></div>
+      </div>
+
+      <!-- Interactive Question Pager Bar (1..N) -->
+      <div id="examSessionPagerBar" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px;">
+        <!-- Inserido dinamicamente -->
+      </div>
+
+      <!-- Question View & Scrollable Area -->
+      <div style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 16px;">
+        <div id="examQuestionViewArea">
+          <!-- Renderizado via app.renderCurrentExamQuestion() -->
+        </div>
+
+        <!-- Immediate Feedback Box (Modo Treino) -->
+        <div id="examFeedbackBox" style="display: none; margin-top: 16px;">
+          <!-- Conteúdo gerado pedagogicamente -->
+        </div>
+
+        <!-- Full Results & Exam Report (Shown after submission) -->
+        <div id="examResultsViewArea" style="display: none;">
+          <!-- Relatório completo de notas, erros, acertos e revisão pedagógica -->
+        </div>
+      </div>
+
+      <!-- Footer Navigation Controls -->
+      <div id="examSessionFooter" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; flex-wrap: wrap;">
+        <button type="button" class="btn-outline" id="btnExamPrevQuestion" onclick="app.examNavPrev()" style="padding: 8px 16px; font-weight: 700; border-radius: 10px;">
+          &larr; Questão Anterior
+        </button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="examSessionProgressText" style="font-weight: 700; font-size: 0.85rem; color: #475569;">
+            Questão 1 de 10
+          </span>
+          <span id="examSessionUnansweredBadge" style="font-size: 0.75rem; color: #b45309; background: #fef3c7; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: none;">
+            0 pendentes
+          </span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn-primary" id="btnExamNextQuestion" onclick="app.examNavNext()" style="padding: 8px 18px; font-weight: 800; border-radius: 10px; background: #4f46e5; border-color: #4f46e5;">
+            Próxima &rarr;
+          </button>
+          <button type="button" class="btn-primary" id="btnExamFinishSubmit" onclick="app.requestFinishExam()" style="padding: 8px 18px; font-weight: 800; border-radius: 10px; background: #059669; border-color: #059669; display: none;">
+            <i data-lucide="check-circle" style="width: 15px; height: 15px; display: inline; vertical-align: middle;"></i> Entregar Prova
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

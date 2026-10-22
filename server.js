@@ -50,7 +50,9 @@ function isMockUser(u) {
   if (u.id === 'usr-student' || u.id === 'aluno_lucas' || u.id === 'user_streak_break_test') return true;
   const name = (u.name || '').toLowerCase();
   const username = (u.username || '').toLowerCase();
+  const email = (u.email || '').toLowerCase();
   if (name === 'lucas silva' || name === 'pedro lucas' || username === 'lucas_mock' || username === 'pedro_mock') return true;
+  if (name.includes('mock') || username.includes('mock') || email.includes('mock')) return true;
   return false;
 }
 
@@ -2714,6 +2716,10 @@ const server = http.createServer((req, res) => {
         return sendJson({ error: 'Nome de usuário ou senha incorretos.' }, 401);
       }
 
+      if (user.isSuspended) {
+        return sendJson({ error: 'Esta conta está suspensa pelo administrador. Entre em contato com a coordenação ou suporte para reativação.' }, 403);
+      }
+
       console.log(`[AUTH] Login realizado com sucesso para "${user.username}" (Perfil: ${user.role || 'student'}).`);
 
       // Success! Clear failures
@@ -3373,8 +3379,8 @@ const server = http.createServer((req, res) => {
       }
     }
 
-    // Montar lista de usuários com status de presença preciso
-    const enrichedUsers = (db.users || []).map(u => {
+    // Montar lista de usuários reais com status de presença e métricas consolidadas
+    const enrichedUsers = (db.users || []).filter(u => !isMockUser(u)).map(u => {
       // Procurar sessões ativas deste usuário
       const userSessions = Array.from(activeSessions.values()).filter(s => s.userId === u.id);
       
@@ -3411,10 +3417,14 @@ const server = http.createServer((req, res) => {
         plan: (Boolean(u.isSubscribed) || u.plan === 'pro') ? 'pro' : 'base',
         planStatus: (Boolean(u.isSubscribed) || u.plan === 'pro') ? (u.planStatus || 'pro_mensal_active') : 'base',
         isSubscribed: Boolean(u.isSubscribed) || u.plan === 'pro',
+        isSuspended: Boolean(u.isSuspended),
         emailVerified: u.emailVerified !== false,
         deviceType: currentDevice,
+        createdAt: u.createdAt,
         lastLogin: u.lastLogin,
-        presenceStatus: bestStatus // 'online' (conectado agora), 'recent_login' (login recente), 'offline' (inativo)
+        presenceStatus: bestStatus,
+        simuladosCount: (Array.isArray(u.quizHistory) ? u.quizHistory.length : 0) + (Array.isArray(db.simulados) ? db.simulados.filter(s => s.userId === u.id).length : 0),
+        trilhasCount: (Array.isArray(db.trilhasProgress) ? db.trilhasProgress.filter(t => t.userId === u.id && Array.isArray(t.completedStages) && t.completedStages.length > 0).length : 0)
       };
     });
 
@@ -3641,6 +3651,150 @@ const server = http.createServer((req, res) => {
       });
     });
     return;
+  }
+
+  // 10bb. POST /api/admin/users/toggle-status - Suspende ou reativa conta (Admin)
+  if (req.method === 'POST' && pathname === '/api/admin/users/toggle-status') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado. Apenas o administrador autorizado pode alterar o status de acesso de contas.' }, 403);
+    }
+
+    parseBody((data) => {
+      const targetId = data?.userId;
+      if (!targetId) return sendJson({ error: 'ID do usuário é obrigatório.' }, 400);
+
+      const db = readDb();
+      const user = (db.users || []).find(u => String(u.id) === String(targetId));
+      if (!user) {
+        return sendJson({ error: 'Usuário não encontrado.' }, 404);
+      }
+
+      if (user.role === 'admin' || user.username === 'freddie' || user.email === 'freddie@gammon.com.br') {
+        return sendJson({ error: 'A conta do Administrador Mestre não pode ser suspensa.' }, 400);
+      }
+
+      const action = data?.action;
+      const newStatus = action === 'suspend' ? true : (action === 'reactivate' ? false : !user.isSuspended);
+      user.isSuspended = newStatus;
+      user.suspendedAt = newStatus ? new Date().toISOString() : null;
+      user.suspendedReason = newStatus ? (data?.reason || 'Suspensão aplicada pelo administrador') : null;
+
+      if (newStatus) {
+        if (Array.isArray(db.sessions)) {
+          db.sessions = db.sessions.filter(s => s.userId !== user.id);
+        }
+        for (const [sId, sess] of activeSessions.entries()) {
+          if (sess.userId === user.id) {
+            activeSessions.delete(sId);
+          }
+        }
+      }
+
+      if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+      db.auditLogs.unshift({
+        id: 'log_' + Date.now(),
+        timestamp: new Date().toISOString(),
+        type: newStatus ? 'user_suspended' : 'user_reactivated',
+        ip: clientIp,
+        userId: user.id,
+        details: 'Conta ' + (user.name || user.username) + ' (' + user.id + ') foi ' + (newStatus ? 'suspensa' : 'reativada') + ' pelo administrador.'
+      });
+
+      writeDb(db);
+      broadcastToAdmins('user_updated', { userId: user.id, isSuspended: user.isSuspended });
+
+      return sendJson({
+        success: true,
+        message: 'Conta ' + (user.name || user.username) + ' foi ' + (newStatus ? 'suspensa' : 'reativada') + ' com sucesso.',
+        isSuspended: user.isSuspended,
+        userId: user.id
+      });
+    });
+    return;
+  }
+
+  // POST /api/simulados/finish - Salva resultado de simulado escolar completo
+  if (req.method === 'POST' && pathname === '/api/simulados/finish') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado para registrar simulado.' }, 401);
+    }
+
+    parseBody((data) => {
+      const db = readDb();
+      const user = (db.users || []).find(u => u.id === auth.user.id);
+      if (!user) return sendJson({ error: 'Usuário não encontrado.' }, 404);
+
+      if (!Array.isArray(db.simulados)) db.simulados = [];
+      if (!Array.isArray(user.quizHistory)) user.quizHistory = [];
+
+      const now = new Date();
+      const simId = 'sim_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+
+      const record = {
+        id: simId,
+        userId: user.id,
+        userName: user.name || user.username,
+        mode: data.mode || 'simulado',
+        subject: data.subject || 'Matemática',
+        subjectKey: data.subjectKey || 'matematica',
+        chapterTitle: data.chapterTitle || 'Simulado Geral',
+        bookId: Number(data.bookId) || 1,
+        chapterId: Number(data.chapterId) || 1,
+        difficulty: data.difficulty || 'misto',
+        totalQuestions: Number(data.totalQuestions) || 10,
+        score: Number(data.score) || 0,
+        percentage: Number(data.percentage) || Math.round(((Number(data.score) || 0) / (Number(data.totalQuestions) || 1)) * 100),
+        timeSpentSeconds: Number(data.timeSpentSeconds) || 0,
+        completedAt: now.toISOString(),
+        questions: Array.isArray(data.questions) ? data.questions : [],
+        answersRecord: Array.isArray(data.answersRecord) ? data.answersRecord : []
+      };
+
+      db.simulados.unshift(record);
+      if (db.simulados.length > 200) db.simulados.pop();
+
+      user.quizHistory.unshift(record);
+      if (user.quizHistory.length > 100) user.quizHistory.pop();
+
+      const streakResult = calculateOfensivaAfterActivity(user, 'simulado_completed', {
+        attemptId: simId,
+        subject: record.subject,
+        chapterTitle: record.chapterTitle,
+        score: record.score,
+        total: record.totalQuestions,
+        pct: record.percentage
+      });
+
+      writeDb(db);
+
+      return sendJson({
+        success: true,
+        message: 'Simulado concluído e registrado com sucesso!',
+        simulado: record,
+        streak: user.streak,
+        bestStreak: user.bestStreak,
+        alreadyActiveToday: streakResult.alreadyActiveToday
+      });
+    });
+    return;
+  }
+
+  // GET /api/simulados/history - Histórico de simulados
+  if (req.method === 'GET' && pathname === '/api/simulados/history') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado.' }, 401);
+    }
+
+    const db = readDb();
+    const userSims = (db.simulados || []).filter(s => s.userId === auth.user.id);
+    return sendJson({
+      success: true,
+      history: userSims
+    });
   }
 
   // 10c. POST /api/admin/users/delete ou POST /api/users/delete - Exclusão real e definitiva de conta

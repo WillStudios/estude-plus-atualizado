@@ -287,6 +287,134 @@ class EstudePlusApp {
             ]
           }
         ]
+      },
+      arte: {
+        name: 'Artes',
+        icon: '🎨',
+        color: '#ea580c',
+        meta: 'Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano',
+        livros: [
+          {
+            id: 1,
+            title: 'Livro 1',
+            chapters: [
+              { id: 1, title: 'Capítulo 1 – Elementos da Linguagem Visual: Linha, Ponto e Cores', tag: 'Capítulo 1', desc: 'Cores primárias, secundárias e complementares, contraste cromático, ponto, linha e texturas nas artes plásticas.' },
+              { id: 2, title: 'Capítulo 2 – A Arte Renascentista e a Perspectiva Linear', tag: 'Capítulo 2', desc: 'Técnicas de profundidade, ponto de fuga, proporção áurea, Da Vinci, Michelangelo e o humanismo estético.' }
+            ]
+          },
+          {
+            id: 2,
+            title: 'Livro 2',
+            chapters: [
+              { id: 3, title: 'Capítulo 3 – Barroco Brasileiro e a Arte de Aleijadinho', tag: 'Capítulo 3', desc: 'Barroco mineiro, escultura em pedra-sabão, talha dourada e o patrimônio histórico de Minas Gerais.' },
+              { id: 4, title: 'Capítulo 4 – Linguagens Cênicas e Expressão Teatral', tag: 'Capítulo 4', desc: 'Estrutura do texto dramático, rubricas, encenação, figurino e espaço cênico.' }
+            ]
+          },
+          {
+            id: 3,
+            title: 'Livro 3',
+            chapters: [
+              { id: 5, title: 'Capítulo 5 – Danças Tradicionais e Patrimônio Cultural Brasileiro', tag: 'Capítulo 5', desc: 'Manifestações populares, frevo, maracatu, samba de roda e diversidade cultural regional.' },
+              { id: 6, title: 'Capítulo 6 – Modernismo de 1922 e Vanguardas Estéticas', tag: 'Capítulo 6', desc: 'Semana de Arte Moderna de 1922, Tarsila do Amaral, Antropofagia e rompimento com o academicismo.' }
+            ]
+          }
+        ]
+      },
+      educacaofisica: {
+        name: 'Educação Física',
+        icon: '⚽',
+        color: '#16a34a',
+        meta: 'Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano',
+        livros: [
+          {
+            id: 1,
+            title: 'Livro 1',
+            chapters: [
+              { id: 1, title: 'Capítulo 1 – Esportes de Marca e Precisão', tag: 'Capítulo 1', desc: 'Atletismo, corridas rasas, saltos, arremessos, parâmetros de tempo, distância e precisão.' },
+              { id: 2, title: 'Capítulo 2 – Saúde, Fisiologia do Exercício e Aquecimento', tag: 'Capítulo 2', desc: 'Benefícios biológicos do aquecimento, frequência cardíaca, circulação e prevenção de lesões.' }
+            ]
+          },
+          {
+            id: 2,
+            title: 'Livro 2',
+            chapters: [
+              { id: 3, title: 'Capítulo 3 – Esportes de Invasão: Futsal, Basquete e Handebol', tag: 'Capítulo 3', desc: 'Princípios táticos, transição ataque-defesa, regras oficiais, posse de bola e ocupação do espaço.' },
+              { id: 4, title: 'Capítulo 4 – Ginástica Geral e Consciência Corporal', tag: 'Capítulo 4', desc: 'Flexibilidade, força, equilíbrio estático e dinâmico e práticas corporais inclusivas.' }
+            ]
+          },
+          {
+            id: 3,
+            title: 'Livro 3',
+            chapters: [
+              { id: 5, title: 'Capítulo 5 – Esportes de Rede e Parede: Voleibol e Peteca', tag: 'Capítulo 5', desc: 'Regra dos 3 toques, rotação em quadra, fundamentos técnicos (manchete, toque, saque) e regras.' },
+              { id: 6, title: 'Capítulo 6 – Fair Play, Cooperação e Jogos Populares', tag: 'Capítulo 6', desc: 'Ética esportiva, trabalho em equipe, inclusão, jogos tradicionais e respeito às diferenças.' }
+            ]
+          }
+        ]
+      },
+      filosofia: {
+        name: 'Filosofia',
+        icon: '🧠',
+        color: '#9333ea',
+        meta: 'Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano',
+        livros: [
+          {
+            id: 1,
+            title: 'Livro 1',
+            chapters: [
+              { id: 1, title: 'Capítulo 1 – Origens da Filosofia: Do Mito ao Logos', tag: 'Capítulo 1', desc: 'Pensamento racional grego, cosmologia dos pré-socráticos e superação das narrativas mitológicas.' },
+              { id: 2, title: 'Capítulo 2 – Sócrates e o Parto das Ideias', tag: 'Capítulo 2', desc: 'Método socrático, ironia, maiêutica, autoconhecimento e a busca pela verdade conceitual.' }
+            ]
+          },
+          {
+            id: 2,
+            title: 'Livro 2',
+            chapters: [
+              { id: 3, title: 'Capítulo 3 – Platão: O Mundo das Ideias e a Caverna', tag: 'Capítulo 3', desc: 'Alegoria da Caverna, mundo sensível vs inteligível, ilusão dos sentidos e busca do conhecimento.' },
+              { id: 4, title: 'Capítulo 4 – Aristóteles: Ética, Virtude e a Justa Medida', tag: 'Capítulo 4', desc: 'Ética a Nicômaco, mediania aristotélica, felicidade (eudaimonia) e ação virtuosa na pólis.' }
+            ]
+          },
+          {
+            id: 3,
+            title: 'Livro 3',
+            chapters: [
+              { id: 5, title: 'Capítulo 5 – Senso Comum e Investigação Crítica', tag: 'Capítulo 5', desc: 'Distinção entre opinião (doxa) e saber fundamentado (episteme), questionamento de preconceitos.' },
+              { id: 6, title: 'Capítulo 6 – Cidadania, Direitos Humanos e Democracia', tag: 'Capítulo 6', desc: 'Participação política, responsabilidade social, direitos universais e convivência ética.' }
+            ]
+          }
+        ]
+      },
+      redacao: {
+        name: 'Redação',
+        icon: '📝',
+        color: '#dc2626',
+        meta: 'Asas 2026 • Ensino Fundamental - Anos Finais • 7º Ano',
+        livros: [
+          {
+            id: 1,
+            title: 'Livro 1',
+            chapters: [
+              { id: 1, title: 'Capítulo 1 – A Crônica Narrativa e o Olhar do Cotidiano', tag: 'Capítulo 1', desc: 'Enredo curto, foco narrativo, personagens típicos, reflexão lírica e ironia no dia a dia.' },
+              { id: 2, title: 'Capítulo 2 – Notícia e Relato de Fatos', tag: 'Capítulo 2', desc: 'Objetividade jornalística, estrutura de lide, pirâmide invertida e fidelidade às informações.' }
+            ]
+          },
+          {
+            id: 2,
+            title: 'Livro 2',
+            chapters: [
+              { id: 3, title: 'Capítulo 3 – Estrutura Dissertativa: Tese e Argumentação', tag: 'Capítulo 3', desc: 'Formulação clara de tese, desenvolvimento por causas e consequências e uso de dados concretos.' },
+              { id: 4, title: 'Capítulo 4 – Artigo de Opinião e Carta Argumentativa', tag: 'Capítulo 4', desc: 'Gêneros persuasivos, assinatura do autor, operadores de contra-argumentação e interlocução.' }
+            ]
+          },
+          {
+            id: 3,
+            title: 'Livro 3',
+            chapters: [
+              { id: 5, title: 'Capítulo 5 – Coesão Textual e Operadores Argumentativos', tag: 'Capítulo 5', desc: 'Conectivos conclusivos, adversativos e causais; pronomes anafóricos e coesão lexical.' },
+              { id: 6, title: 'Capítulo 6 – Conclusão, Proposta e Repertório Sociocultural', tag: 'Capítulo 6', desc: 'Fechamento do raciocínio, coerência global e integração produtiva de referências históricas e científicas.' }
+            ]
+          }
+        ]
       }
     };
 
@@ -655,7 +783,7 @@ class EstudePlusApp {
     this.renderQuizIntro();
     this.renderMistakesReview();
     this.renderExams();
-    this.renderMastery();
+    // this.renderMastery(); - Minha Evolução UI section removed
     this.renderTpcs();
     this.renderTimetable();
     this.initNotifications();
@@ -3383,17 +3511,17 @@ class EstudePlusApp {
             'She is study English and playing guitar every afternoon.',
             'She studied English and played guitar tomorrow morning.'
           ],
-          explanation: 'In the Simple Present, verbs ending in consonant + y change to -ies with he/she/it (study -> studies), and verbs ending in vowel + y simply take -s (play -> plays).'
+          explanation: 'No Simple Present, verbos terminados em consoante + y recebem -ies na 3ª pessoa do singular (study -> studies), e terminados em vogal + y recebem apenas -s (play -> plays).'
         },
         {
           text: 'Which sentence correctly uses the Simple Past irregular forms of "go" and "see"?',
-          correct: 'Yesterday, Lucas went to the science museum and saw ancient fossils.',
+          correct: 'Yesterday, Carlos went to the science museum and saw ancient fossils.',
           distractors: [
-            'Yesterday, Lucas goed to the science museum and seed ancient fossils.',
-            'Yesterday, Lucas goes to the science museum and see ancient fossils.',
-            'Yesterday, Lucas did went to the science museum and seen ancient fossils.'
+            'Yesterday, Carlos goed to the science museum and seed ancient fossils.',
+            'Yesterday, Carlos goes to the science museum and see ancient fossils.',
+            'Yesterday, Carlos did went to the science museum and seen ancient fossils.'
           ],
-          explanation: 'The past tense of "go" is irregular ("went"), and the past tense of "see" is "saw".'
+          explanation: 'O passado irregular de "go" é "went", e o passado irregular de "see" é "saw". As formas regulares com terminação -ed não existem para esses verbos.'
         },
         {
           text: 'Select the correct question in the Simple Past using the auxiliary verb "did":',
@@ -3403,13 +3531,173 @@ class EstudePlusApp {
             'Do you finished your homework before dinner last night?',
             'Did you was finish your homework before dinner last night?'
           ],
-          explanation: 'When forming questions in the Simple Past with the auxiliary "did", the main verb must remain in its base form ("finish", not "finished").'
+          explanation: 'Ao formular perguntas no Simple Past com o verbo auxiliar "did", o verbo principal deve obrigatoriamente permanecer na forma infinitiva sem to ("finish", e nunca "finished").'
         },
         {
           text: 'Complete the sentence with the correct quantifiers: "We do not have ________ milk left in the fridge, but there are ________ apples on the table."',
           correct: 'much / many',
           distractors: ['many / much', 'some / any', 'a lot / much'],
-          explanation: '"Milk" is an uncountable noun (uses "much" in negative sentences), while "apples" is a countable plural noun (uses "many").'
+          explanation: '"Milk" é um substantivo incontável (utiliza "much" em frases negativas), enquanto "apples" é substantivo contável no plural (utiliza "many").'
+        }
+      ],
+      arte: () => [
+        {
+          text: 'No estudo das cores e da teoria cromática tradicional, quais são as três cores primárias pigmentares e qual cor secundária resulta da mistura equilibrada de amarelo e azul?',
+          correct: 'Cores primárias: vermelho, amarelo e azul. A mistura de amarelo e azul produz a cor verde.',
+          distractors: [
+            'Cores primárias: verde, laranja e roxo. A mistura de amarelo e azul produz a cor vermelha.',
+            'Cores primárias: preto, branco e cinza. A mistura de amarelo e azul produz a cor marrom.',
+            'Cores primárias: ciano, magenta e amarelo fluorescente sem produzir verde.'
+          ],
+          explanation: 'No círculo cromático tradicional, vermelho, amarelo e azul são cores puras que não se obtêm por mistura. A junção equilibrada de amarelo e azul gera a cor secundária verde.'
+        },
+        {
+          text: 'Durante o Renascimento Cultural italiano, mestres como Leonardo da Vinci e Masaccio revolucionaram a pintura com a perspectiva linear geométrica. Qual era a função dessa técnica?',
+          correct: 'Criar a ilusão de tridimensionalidade e profundidade espacial sobre a superfície bidimensional da tela, utilizando ponto de fuga e linha do horizonte.',
+          distractors: [
+            'Pintar figuras humanas sem proporção corporal obedecendo apenas à hierarquia medieval.',
+            'Eliminar qualquer efeito de luz e sombra (chiaroscuro) para deixar as pinturas completamente planas.',
+            'Substituir o óleo sobre tela pelo uso exclusivo de colagens de jornais.'
+          ],
+          explanation: 'A perspectiva renascentista organizou o espaço da representação visual por meio de linhas convergentes para um ponto de fuga, produzindo a ilusão ótica de profundidade realista.'
+        },
+        {
+          text: 'No Barroco mineiro do século XVIII, o mestre Antônio Francisco Lisboa (Aleijadinho) esculpiu obras memoráveis, como os Doze Profetas de Congonhas. Qual material característico ele utilizou?',
+          correct: 'Pedra-sabão (esteatito), abundante na região de Minas Gerais.',
+          distractors: [
+            'Mármore de Carrara importado da Itália.',
+            'Bronze maciço polido em fundição industrial europeia.',
+            'Resina plástica contemporânea com fixador sintético.'
+          ],
+          explanation: 'Aleijadinho utilizou amplamente a pedra-sabão, rocha típica do relevo de Minas Gerais, cuja textura macia permitiu rica modelagem escultural e grande durabilidade contra intempéries.'
+        },
+        {
+          text: 'A Semana de Arte Moderna de 1922, marco do Modernismo brasileiro realizada em São Paulo, tinha como proposta central:',
+          correct: 'Romper com o tradicionalismo acadêmico parnasiano e buscar uma identidade artística genuinamente brasileira inspirada nas vanguardas.',
+          distractors: [
+            'Copiar fielmente os moldes neoclássicos europeus e banir temas populares.',
+            'Proibir exposições públicas de pintura e permitir apenas recitais em latim.',
+            'Impor que todos os artistas seguissem regras medievais de iluminura.'
+          ],
+          explanation: 'O Modernismo de 1922 propôs liberdade criativa e valorização das raízes culturais do Brasil, incorporando inovações das vanguardas estéticas para renovar a arte e a literatura.'
+        }
+      ],
+      educacaofisica: () => [
+        {
+          text: 'Na classificação dos esportes adotada pela BNCC, modalidades como futsal, basquetebol e handebol são categorizadas como:',
+          correct: 'Esportes de invasão (ou de território), pois as equipes disputam o mesmo espaço buscando invadir o setor adversário para pontuar, enquanto protegem sua meta.',
+          distractors: [
+            'Esportes de marca, pois os competidores disputam exclusivamente contra o cronômetro.',
+            'Esportes de rede/parede, pois há uma barreira física permanente que impede o contato.',
+            'Esportes de precisão, cujo único objetivo é acertar um alvo estático com arco e flecha.'
+          ],
+          explanation: 'Futsal, basquete e handebol são esportes de invasão: os jogadores compartilham a mesma quadra, manobrando a bola para invadir o campo do oponente e finalizar, enquanto defendem seu gol/cesta.'
+        },
+        {
+          text: 'No voleibol, esporte de rede divisória, qual das seguintes regras oficiais é verdadeira?',
+          correct: 'Cada equipe pode dar no máximo três toques na bola (além do toque de bloqueio) para enviá-la para a quadra adversária, e nenhum atleta pode tocar duas vezes consecutivas na bola.',
+          distractors: [
+            'É permitido segurar a bola com as duas mãos por até 4 segundos antes de arremessá-la.',
+            'O jogador que executa o saque pode ultrapassar a linha de fundo antes de golpear a bola.',
+            'Cada time pode dar até cinco toques livres antes de devolver a bola ao lado contrário.'
+          ],
+          explanation: 'A regra oficial do voleibol estabelece o limite de até três toques coletivos por equipe para transpor a rede, sendo vedado o dois-toques sucessivo pelo mesmo jogador (exceto bloqueio).'
+        },
+        {
+          text: 'Antes da realização de treinos e jogos de média ou alta intensidade, o aquecimento corporal é fundamental porque:',
+          correct: 'Eleva a temperatura corporal, aumenta a irrigação sanguínea aos músculos e prepara as articulações, diminuindo o risco de lesões.',
+          distractors: [
+            'Reduz a oxigenação muscular para forçar a queima anaeróbica de glicose.',
+            'Diminui os batimentos cardíacos para valores abaixo do estado de repouso.',
+            'Impede a transpiração para evitar a perda momentânea de peso.'
+          ],
+          explanation: 'O aquecimento prévio eleva gradualmente a frequência cardíaca, lubrifica as articulações com líquido sinovial e aumenta a elasticidade das fibras musculares, prevenindo estiramentos e entorses.'
+        },
+        {
+          text: 'O princípio do Fair Play (Jogo Limpo) no esporte escolar fundamenta-se em:',
+          correct: 'Respeitar as regras, os adversários, os árbitros e os colegas de equipe, valorizando a integridade e a convivência ética acima da vitória.',
+          distractors: [
+            'Simular faltas para ludibriar a arbitragem e obter vantagens indevidas.',
+            'Desrespeitar as decisões dos juízes quando contrárias aos interesses da equipe.',
+            'Festejar zombando e ridicularizando os adversários derrotados.'
+          ],
+          explanation: 'Fair play representa o espírito ético do esporte: lealdade, cumprimento honesto dos regulamentos e respeito pela dignidade de todos os participantes.'
+        }
+      ],
+      filosofia: () => [
+        {
+          text: 'O surgimento da Filosofia na Grécia Antiga (século VI a.C.) é marcado pela passagem do Mito ao Logos. Essa transição significou:',
+          correct: 'A substituição de narrativas mitológicas e sobrenaturais por explicações racionais, lógicas e baseadas na observação da natureza e da causalidade.',
+          distractors: [
+            'A proibição do debate público nas praças e a imposição de crenças mágicas obrigatórias.',
+            'A defesa de que todas as coisas no mundo ocorrem por mero acaso sem causas identificáveis.',
+            'O abandono do raciocínio e a aceitação irrestrita de superstições populares.'
+          ],
+          explanation: 'A passagem do mito ao logos marca o nascimento do pensamento filosófico: a busca por fundamentos racionais (logos) para explicar a origem e o funcionamento do cosmos (cosmologia).'
+        },
+        {
+          text: 'O método socrático de investigação consistia no diálogo dividido em ironia e maiêutica. A maiêutica de Sócrates tinha como objetivo:',
+          correct: 'Fazer o interlocutor "dar à luz" novos conceitos e percepções racionais a partir de suas próprias reflexões e perguntas reflexivas.',
+          distractors: [
+            'Entregar respostas dogmáticas prontas para serem decoradas sem questionamento.',
+            'Cobrar dinheiro para ensinar técnicas de persuasão eleitoreira vazia.',
+            'Impedir que as pessoas reconhecessem a sua própria ignorância sobre os temas.'
+          ],
+          explanation: 'Inspirando-se em sua mãe parteira, Sócrates chamou sua prática de maiêutica (parto das ideias): conduzia o interlocutor a formular a verdade pelo exercício da própria razão.'
+        },
+        {
+          text: 'Na célebre Alegoria da Caverna de Platão (A República), o que simboliza a saída do prisioneiro para a luz solar?',
+          correct: 'A libertação das ilusões e aparências do senso comum (sombras) em direção ao conhecimento verdadeiro e à contemplação das ideias perfeitas.',
+          distractors: [
+            'A demonstração de que a escuridão é sempre mais confiável do que a luz do sol.',
+            'A vitória bélica de uma civilização contra povos vizinhos sem estudo.',
+            'A comprovação de que as sombras refletidas na parede são a realidade absoluta.'
+          ],
+          explanation: 'Platão utilizou a caverna para ilustrar a trajetória do filósofo: superar o mundo sensível das opiniões falsas (doxa) para alcançar o mundo inteligível das essências e verdades (episteme).'
+        },
+        {
+          text: 'Para Aristóteles na obra Ética a Nicômaco, a virtude moral (areté) reside:',
+          correct: 'No justo meio (mediania) equilibrado entre dois extremos viciosos: um por excesso e outro por falta.',
+          distractors: [
+            'Na busca descontrolada por prazeres imediatos sem medir consequências.',
+            'No isolamento ascético total rejeitando a convivência em sociedade.',
+            'Na covardia sistemática diante de qualquer decisão moral importante.'
+          ],
+          explanation: 'A virtude aristotélica é a mediania (justo meio): o equilíbrio da razão frente às paixões humanas (ex: a coragem é a justa medida entre a covardia por falta e a temeridade por excesso).'
+        }
+      ],
+      redacao: () => [
+        {
+          text: 'No texto dissertativo-argumentativo, o elemento fundamental que expressa o ponto de vista central do autor a ser defendido chama-se:',
+          correct: 'Tese.',
+          distractors: ['Epígrafe.', 'Enredo secundário.', 'Refrão poético.'],
+          explanation: 'A tese é a espinha dorsal da dissertação: define o posicionamento crítico do autor em relação ao tema e guia os argumentos que serão desdobrados no desenvolvimento.'
+        },
+        {
+          text: 'Qual conectivo (operador argumentativo) deve ser empregado para introduzir um parágrafo de fechamento com sentido de CONCLUSÃO?',
+          correct: '"Portanto".',
+          distractors: ['"Embora".', '"Todavia".', '"Porquanto".'],
+          explanation: '"Portanto" é uma conjunção conclusiva que encerra uma linha de raciocínio. "Embora" é concessivo, "todavia" é adversativo e "porquanto" é explicativo/causal.'
+        },
+        {
+          text: 'Qual alternativa diferencia corretamente o gênero Crônica do Artigo de Opinião?',
+          correct: 'A crônica costuma partir de fatos cotidianos simples com olhar poético ou reflexivo; o artigo de opinião debate diretamente um tema polêmico da sociedade com tese e forte argumentação.',
+          distractors: [
+            'A crônica não pode ter personagens e deve conter apenas fórmulas matemáticas.',
+            'O artigo de opinião é um texto em versos rimados que proíbe a argumentação lógica.',
+            'Ambos os gêneros são exatamente iguais e não possuem nenhuma diferença de estilo.'
+          ],
+          explanation: 'A crônica registra flagrantes do dia a dia com sensibilidade, humor ou reflexão pessoal. O artigo de opinião é predominantemente dissertativo, defendendo uma posição pública sobre tema controverso.'
+        },
+        {
+          text: 'Em uma redação, o uso de repertório sociocultural produtivo é comprovado quando o estudante:',
+          correct: 'Relaciona com pertinência referências de História, Filosofia, Literatura ou dados científicos para embasar sua argumentação.',
+          distractors: [
+            'Copia trechos inteiros da coletânea de textos motivadores da prova.',
+            'Inventa dados estatísticos fictícios sem nenhuma base real de pesquisa.',
+            'Repete o mesmo período gramatical várias vezes para preencher linhas em branco.'
+          ],
+          explanation: 'O repertório sociocultural produtivo é aquele legitimado pelas áreas do conhecimento humano que se conecta de modo orgânico e justificado aos argumentos desenvolvidos pelo autor.'
         }
       ]
     };
@@ -4486,26 +4774,788 @@ class EstudePlusApp {
   /* ==========================================================================
      SIMULADO & PREPARAÇÃO PARA PROVA (EXAM SIMULATION)
      ========================================================================== */
+  /* ==========================================================================
+     ESTUDE+ 3.0: SISTEMA DE QUIZZES, TREINO E SIMULADOS COMPLETOS
+     ========================================================================== */
+  selectedStudyMode = 'simulado';
+  activeExamSession = null;
+  examTimerInterval = null;
+
+  handleStudyModeSelect(mode) {
+    this.selectedStudyMode = mode === 'treino' ? 'treino' : 'simulado';
+    const isSim = this.selectedStudyMode === 'simulado';
+    
+    const lblSim = document.getElementById('lblModeSimulado');
+    const lblTreino = document.getElementById('lblModeTreino');
+    const btnText = document.getElementById('btnStartExamText');
+
+    if (lblSim && lblTreino) {
+      if (isSim) {
+        lblSim.style.borderColor = '#4f46e5';
+        lblSim.style.background = '#eef2ff';
+        lblTreino.style.borderColor = '#cbd5e1';
+        lblTreino.style.background = '#ffffff';
+      } else {
+        lblTreino.style.borderColor = '#4f46e5';
+        lblTreino.style.background = '#eef2ff';
+        lblSim.style.borderColor = '#cbd5e1';
+        lblSim.style.background = '#ffffff';
+      }
+    }
+
+    if (btnText) {
+      btnText.innerText = isSim ? 'Iniciar Simulado de Prova' : 'Iniciar Treino com Feedback';
+    }
+  }
+
   openPrepararProvaModal() {
     const select = document.getElementById('simuladoMateriaSelect');
     if (select) {
       const subjects = [
-        { key: 'matematica', name: 'Matemática' },
-        { key: 'portugues', name: 'Língua Portuguesa' },
-        { key: 'ciencias', name: 'Ciências da Natureza' },
-        { key: 'historia', name: 'História' },
-        { key: 'geografia', name: 'Geografia' },
-        { key: 'ingles', name: 'Língua Inglesa' },
-        { key: 'filosofia', name: 'Filosofia' },
-        { key: 'arte', name: 'Arte' },
-        { key: 'redacao', name: 'Redação' }
+        { key: 'matematica', name: '📐 Matemática' },
+        { key: 'portugues', name: '✍️ Língua Portuguesa' },
+        { key: 'ciencias', name: '🔬 Ciências da Natureza' },
+        { key: 'historia', name: '🏛️ História' },
+        { key: 'geografia', name: '🌍 Geografia' },
+        { key: 'ingles', name: '🇬🇧 Língua Inglesa' },
+        { key: 'arte', name: '🎨 Artes' },
+        { key: 'educacaofisica', name: '⚽ Educação Física' },
+        { key: 'filosofia', name: '🧠 Filosofia' },
+        { key: 'redacao', name: '📝 Redação' }
       ];
       select.innerHTML = subjects.map(s => `
         <option value="${s.key}" ${s.key === (this.currentTrilhaSubject || 'matematica') ? 'selected' : ''}>${s.name}</option>
       `).join('');
     }
+
+    this.selectedStudyMode = 'simulado';
+    this.handleStudyModeSelect('simulado');
     this.handleSimuladoSubjectChange(this.currentTrilhaSubject || 'matematica');
     this.showModal('prepararProvaModal');
+  }
+
+  handleSimuladoSubjectChange(subjKey) {
+    const bookSelect = document.getElementById('simuladoApostilaSelect');
+    const capSelect = document.getElementById('simuladoCapituloSelect');
+    if (!capSelect) return;
+
+    const subjData = this.sasSubjectsData[subjKey] || this.sasSubjectsData['matematica'];
+    const validBooks = (subjData.livros || []).filter(l => l.id <= 3);
+    const selectedBookId = bookSelect ? bookSelect.value : 'todas';
+
+    let chapters = [];
+    if (selectedBookId === 'todas') {
+      validBooks.forEach(b => {
+        (b.chapters || []).forEach(c => chapters.push({ ...c, bookTitle: b.title }));
+      });
+    } else {
+      const num = parseInt(selectedBookId.replace(/\D/g, ''), 10) || 1;
+      const bk = validBooks.find(b => b.id === num) || validBooks[0];
+      chapters = (bk?.chapters || []).map(c => ({ ...c, bookTitle: bk.title }));
+    }
+
+    capSelect.innerHTML = `<option value="todos">Todos os Capítulos (${chapters.length} tópicos)</option>` +
+      chapters.map(c => `<option value="${c.id}">${c.title} (${c.bookTitle})</option>`).join('');
+  }
+
+  handleSimuladoApostilaChange(bookVal) {
+    const subjSelect = document.getElementById('simuladoMateriaSelect');
+    if (subjSelect) {
+      this.handleSimuladoSubjectChange(subjSelect.value);
+    }
+  }
+
+  handleIniciarSimuladoProva(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const mode = document.querySelector('input[name="simuladoStudyMode"]:checked')?.value || this.selectedStudyMode || 'simulado';
+    const subjKey = document.getElementById('simuladoMateriaSelect')?.value || 'matematica';
+    const bookVal = document.getElementById('simuladoApostilaSelect')?.value || 'todas';
+    const capVal = document.getElementById('simuladoCapituloSelect')?.value || 'todos';
+    const qtd = parseInt(document.getElementById('simuladoQtdSelect')?.value || '10', 10);
+    const diff = document.getElementById('simuladoDificuldadeSelect')?.value || 'misto';
+    const timerMins = parseInt(document.getElementById('simuladoTimerSelect')?.value || '0', 10);
+
+    const subjData = this.sasSubjectsData[subjKey] || this.sasSubjectsData['matematica'];
+    const validBooks = (subjData.livros || []).filter(l => l.id <= 3);
+
+    const targetBook = (bookVal !== 'todas') ? (parseInt(bookVal.replace(/\D/g, ''), 10) || 1) : 1;
+    const targetCap = (capVal !== 'todos') ? (parseInt(capVal, 10) || 1) : 1;
+
+    // Geração dinâmica de questões balanceadas para a matéria e capítulos escolhidos
+    const questions = [];
+    for (let i = 0; i < qtd; i++) {
+      const stageIdx = i % 8;
+      const bId = (bookVal === 'todas') ? (validBooks[i % validBooks.length]?.id || 1) : targetBook;
+      const cId = (capVal === 'todos') ? ((i % 4) + 1) : targetCap;
+      const stgCfg = this.getTrilhaStageConfig(stageIdx);
+      const generated = this.generateTrilhaStageQuestions(subjKey, bId, cId, stageIdx, stgCfg.id);
+      if (generated && generated.length > 0) {
+        // Encontra ou clona a questão com propriedades canônicas
+        const q = generated[0];
+        questions.push({
+          id: q.id || `exam_q_${i + 1}_${Date.now()}`,
+          index: i,
+          type: 'multiple_choice',
+          topic: q.topic || subjData.name,
+          text: q.text,
+          options: q.options || [],
+          correctLetter: q.correctLetter || 'A',
+          explanation: q.explanation || `Resolução fundamentada nos conceitos essenciais de ${subjData.name}.`
+        });
+      }
+    }
+
+    this.closeModal('prepararProvaModal');
+
+    // Inicializa a sessão dedicada de prova / treino
+    this.initExamSession({
+      mode,
+      subjectKey: subjKey,
+      subjectName: subjData.name,
+      bookId: targetBook,
+      chapterId: targetCap,
+      chapterTitle: (capVal === 'todos') ? `Revisão Geral • ${subjData.name}` : `Capítulo ${targetCap} • ${subjData.name}`,
+      difficulty: diff,
+      timerMinutes: timerMins,
+      questions
+    });
+  }
+
+  initExamSession(config) {
+    this.stopExamTimer();
+
+    this.activeExamSession = {
+      mode: config.mode || 'simulado', // 'simulado' | 'treino'
+      subjectKey: config.subjectKey,
+      subjectName: config.subjectName,
+      bookId: config.bookId,
+      chapterId: config.chapterId,
+      chapterTitle: config.chapterTitle,
+      difficulty: config.difficulty,
+      timerMinutes: config.timerMinutes || 0,
+      timeRemainingSeconds: (config.timerMinutes || 0) * 60,
+      elapsedSeconds: 0,
+      questions: config.questions || [],
+      answers: {},
+      treinoFeedback: {},
+      currentIdx: 0,
+      isFinished: false,
+      startTime: Date.now()
+    };
+
+    // Atualiza cabeçalho do modal
+    const modeBadge = document.getElementById('examSessionModeBadge');
+    const subjTag = document.getElementById('examSessionSubjectTag');
+    const capTag = document.getElementById('examSessionChapterTag');
+
+    if (modeBadge) {
+      if (config.mode === 'treino') {
+        modeBadge.innerText = '⚡ MODO TREINO (FEEDBACK IMEDIATO)';
+        modeBadge.style.background = '#dcfce7';
+        modeBadge.style.color = '#15803d';
+      } else {
+        modeBadge.innerText = '📝 MODO SIMULADO (PROVA REAL)';
+        modeBadge.style.background = '#e0e7ff';
+        modeBadge.style.color = '#3730a3';
+      }
+    }
+
+    if (subjTag) subjTag.innerText = config.subjectName;
+    if (capTag) capTag.innerText = config.chapterTitle;
+
+    // Reset views
+    const questionView = document.getElementById('examQuestionViewArea');
+    const feedbackBox = document.getElementById('examFeedbackBox');
+    const resultsView = document.getElementById('examResultsViewArea');
+    const footer = document.getElementById('examSessionFooter');
+
+    if (questionView) questionView.style.display = 'block';
+    if (feedbackBox) feedbackBox.style.display = 'none';
+    if (resultsView) resultsView.style.display = 'none';
+    if (footer) footer.style.display = 'flex';
+
+    this.showModal('examSessionModal');
+    this.renderCurrentExamQuestion();
+
+    // Inicia cronômetro se configurado
+    this.startExamTimer();
+  }
+
+  startExamTimer() {
+    this.stopExamTimer();
+    const timerDisplay = document.getElementById('examSessionTimerDisplay');
+    const timerBox = document.getElementById('examSessionTimerBox');
+
+    const updateDisplay = () => {
+      if (!this.activeExamSession) return;
+
+      if (this.activeExamSession.timerMinutes > 0) {
+        // Modo Regressivo
+        const rem = this.activeExamSession.timeRemainingSeconds;
+        const m = Math.floor(rem / 60);
+        const s = rem % 60;
+        if (timerDisplay) {
+          timerDisplay.innerText = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        if (timerBox) {
+          if (rem <= 120) {
+            timerBox.style.borderColor = '#ef4444';
+            timerBox.style.color = '#b91c1c';
+            timerBox.style.background = '#fef2f2';
+          } else if (rem <= 300) {
+            timerBox.style.borderColor = '#f59e0b';
+            timerBox.style.color = '#b45309';
+            timerBox.style.background = '#fffbeb';
+          } else {
+            timerBox.style.borderColor = '#cbd5e1';
+            timerBox.style.color = '#0f172a';
+            timerBox.style.background = '#f8fafc';
+          }
+        }
+
+        if (rem <= 0) {
+          this.stopExamTimer();
+          alert('⏱️ O tempo limite do simulado terminou! A prova será finalizada automaticamente para entrega.');
+          this.submitExamSession();
+          return;
+        }
+
+        this.activeExamSession.timeRemainingSeconds--;
+        this.activeExamSession.elapsedSeconds++;
+      } else {
+        // Modo Progressivo (Tempo decorrido)
+        this.activeExamSession.elapsedSeconds++;
+        const el = this.activeExamSession.elapsedSeconds;
+        const m = Math.floor(el / 60);
+        const s = el % 60;
+        if (timerDisplay) {
+          timerDisplay.innerText = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+      }
+    };
+
+    updateDisplay();
+    this.examTimerInterval = setInterval(updateDisplay, 1000);
+  }
+
+  stopExamTimer() {
+    if (this.examTimerInterval) {
+      clearInterval(this.examTimerInterval);
+      this.examTimerInterval = null;
+    }
+  }
+
+  renderCurrentExamQuestion() {
+    if (!this.activeExamSession) return;
+
+    const session = this.activeExamSession;
+    const questions = session.questions || [];
+    const total = questions.length;
+    const currentIdx = session.currentIdx;
+    const q = questions[currentIdx];
+
+    if (!q) return;
+
+    // Atualiza Barra de Progresso e Textos
+    const progressFill = document.getElementById('examSessionProgressFill');
+    const progressText = document.getElementById('examSessionProgressText');
+    const unansweredBadge = document.getElementById('examSessionUnansweredBadge');
+
+    const answeredCount = Object.keys(session.answers).length;
+    const unansweredCount = total - answeredCount;
+
+    if (progressFill) {
+      const pct = Math.round(((currentIdx + 1) / total) * 100);
+      progressFill.style.width = `${pct}%`;
+    }
+
+    if (progressText) {
+      progressText.innerText = `Questão ${currentIdx + 1} de ${total}`;
+    }
+
+    if (unansweredBadge) {
+      if (session.mode === 'simulado') {
+        unansweredBadge.style.display = 'inline-block';
+        unansweredBadge.innerText = unansweredCount === 0 ? '✔ Todas respondidas' : `${unansweredCount} pendente(s)`;
+        unansweredBadge.style.background = unansweredCount === 0 ? '#dcfce7' : '#fef3c7';
+        unansweredBadge.style.color = unansweredCount === 0 ? '#15803d' : '#b45309';
+      } else {
+        unansweredBadge.style.display = 'none';
+      }
+    }
+
+    // Renderiza o Pager Bar de Questões (1..N)
+    const pagerBar = document.getElementById('examSessionPagerBar');
+    if (pagerBar) {
+      if (session.mode === 'simulado') {
+        pagerBar.style.display = 'flex';
+        pagerBar.innerHTML = questions.map((item, i) => {
+          const isCurrent = i === currentIdx;
+          const isAnswered = session.answers[i] !== undefined;
+          let cls = 'exam-pager-btn';
+          if (isCurrent) cls += ' active';
+          if (isAnswered) cls += ' answered';
+
+          return `
+            <button type="button" class="${cls}" onclick="app.examJumpTo(${i})" title="Questão ${i + 1}${isAnswered ? ' (Respondida)' : ' (Em branco)'}">
+              ${i + 1}
+            </button>
+          `;
+        }).join('');
+      } else {
+        pagerBar.style.display = 'none';
+      }
+    }
+
+    // Renderiza a Área da Questão Atual
+    const viewArea = document.getElementById('examQuestionViewArea');
+    if (viewArea) {
+      const selectedLetter = session.answers[currentIdx];
+      const isTreino = session.mode === 'treino';
+      const isAnswered = selectedLetter !== undefined;
+
+      viewArea.innerHTML = `
+        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.76rem; font-weight: 800; color: #4f46e5; background: #eef2ff; padding: 3px 10px; border-radius: 6px;">
+              QUESTÃO ${currentIdx + 1}
+            </span>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b;">
+              ${q.topic}
+            </span>
+          </div>
+
+          <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; line-height: 1.6; margin-bottom: 20px;">
+            ${q.text}
+          </div>
+
+          <div class="exam-options-list" style="display: flex; flex-direction: column; gap: 10px;">
+            ${(q.options || []).map(opt => {
+              const letter = opt.letter || 'A';
+              const isSelected = selectedLetter === letter;
+              const isCorrectOpt = letter === q.correctLetter;
+
+              let cardClass = 'exam-opt-card';
+              if (isSelected) cardClass += ' selected';
+
+              // No modo Treino após responder: destaca verde a correta e vermelho se errou
+              if (isTreino && isAnswered) {
+                if (isCorrectOpt) {
+                  cardClass += ' opt-correct';
+                } else if (isSelected && !isCorrectOpt) {
+                  cardClass += ' opt-wrong';
+                }
+              }
+
+              return `
+                <div class="${cardClass}" onclick="app.handleExamOptionSelect(${currentIdx}, '${letter}')" style="cursor: ${(isTreino && isAnswered) ? 'default' : 'pointer'};">
+                  <div class="exam-opt-letter">${letter}</div>
+                  <div style="flex: 1; font-size: 0.92rem; color: #1e293b; line-height: 1.45;">
+                    ${opt.text}
+                    ${(isTreino && isAnswered && isCorrectOpt) ? ' <strong style="color: #059669; margin-left: 6px;">(Gabarito Correto)</strong>' : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Feedback Imediato no Modo Treino
+    const feedbackBox = document.getElementById('examFeedbackBox');
+    if (feedbackBox) {
+      if (session.mode === 'treino' && session.answers[currentIdx] !== undefined) {
+        const chosen = session.answers[currentIdx];
+        const isRight = chosen === q.correctLetter;
+        feedbackBox.style.display = 'block';
+        feedbackBox.innerHTML = `
+          <div class="exam-feedback-box ${isRight ? 'correct' : 'wrong'}">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span style="font-size: 1.3rem;">${isRight ? '🎉' : '⚠️'}</span>
+              <strong style="font-size: 1rem;">${isRight ? 'Parabéns! Você acertou esta questão.' : `Resposta incorreta. Você marcou alternativa ${chosen}, mas a correta é a letra ${q.correctLetter}.`}</strong>
+            </div>
+            <div style="font-size: 0.88rem; line-height: 1.55; margin-top: 6px;">
+              <strong>💡 Explicação Pedagógica:</strong> ${q.explanation}
+            </div>
+          </div>
+        `;
+      } else {
+        feedbackBox.style.display = 'none';
+      }
+    }
+
+    // Controles de Rodapé (Botões Anterior, Próxima, Entregar)
+    const btnPrev = document.getElementById('btnExamPrevQuestion');
+    const btnNext = document.getElementById('btnExamNextQuestion');
+    const btnFinish = document.getElementById('btnExamFinishSubmit');
+
+    if (btnPrev) {
+      btnPrev.disabled = currentIdx === 0;
+      btnPrev.style.opacity = currentIdx === 0 ? '0.45' : '1';
+    }
+
+    if (btnNext && btnFinish) {
+      const isLast = currentIdx === total - 1;
+      if (session.mode === 'simulado') {
+        if (isLast) {
+          btnNext.style.display = 'none';
+          btnFinish.style.display = 'inline-flex';
+        } else {
+          btnNext.style.display = 'inline-flex';
+          btnFinish.style.display = 'none';
+        }
+      } else {
+        // No modo treino
+        if (isLast) {
+          btnNext.style.display = 'none';
+          btnFinish.style.display = 'inline-flex';
+          btnFinish.innerHTML = '<i data-lucide="check-circle"></i> Concluir Treino';
+        } else {
+          btnNext.style.display = 'inline-flex';
+          btnFinish.style.display = 'none';
+        }
+      }
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  handleExamOptionSelect(qIdx, letter) {
+    if (!this.activeExamSession) return;
+    const session = this.activeExamSession;
+
+    // No modo treino: se já respondeu, não altera a avaliação
+    if (session.mode === 'treino' && session.answers[qIdx] !== undefined) {
+      return;
+    }
+
+    session.answers[qIdx] = letter;
+
+    // Se for Modo Treino e o aluno errou, registra no aprendizado de erros
+    if (session.mode === 'treino') {
+      const q = session.questions[qIdx];
+      const isRight = letter === q.correctLetter;
+      if (!isRight) {
+        this.recordMistakeForReview({
+          id: q.id,
+          subject: session.subjectName,
+          topic: q.topic,
+          question: q.text,
+          chosenAnswer: letter,
+          correctAnswer: q.correctLetter,
+          explanation: q.explanation
+        });
+      }
+    }
+
+    this.renderCurrentExamQuestion();
+  }
+
+  examNavNext() {
+    if (!this.activeExamSession) return;
+    const session = this.activeExamSession;
+    if (session.currentIdx < session.questions.length - 1) {
+      session.currentIdx++;
+      this.renderCurrentExamQuestion();
+      const body = document.getElementById('examSessionBody');
+      if (body) body.scrollTop = 0;
+    } else {
+      this.requestFinishExam();
+    }
+  }
+
+  examNavPrev() {
+    if (!this.activeExamSession) return;
+    const session = this.activeExamSession;
+    if (session.currentIdx > 0) {
+      session.currentIdx--;
+      this.renderCurrentExamQuestion();
+      const body = document.getElementById('examSessionBody');
+      if (body) body.scrollTop = 0;
+    }
+  }
+
+  examJumpTo(idx) {
+    if (!this.activeExamSession) return;
+    const total = this.activeExamSession.questions.length;
+    if (idx >= 0 && idx < total) {
+      this.activeExamSession.currentIdx = idx;
+      this.renderCurrentExamQuestion();
+      const body = document.getElementById('examSessionBody');
+      if (body) body.scrollTop = 0;
+    }
+  }
+
+  requestFinishExam() {
+    if (!this.activeExamSession) return;
+    const session = this.activeExamSession;
+    const total = session.questions.length;
+    const answeredCount = Object.keys(session.answers).length;
+    const unansweredCount = total - answeredCount;
+
+    if (session.mode === 'simulado' && unansweredCount > 0) {
+      const proceed = confirm(`Atenção: você ainda possui ${unansweredCount} questão(ões) sem resposta!\n\nDeseja realmente finalizar o simulado agora ou prefere responder todas?`);
+      if (!proceed) {
+        // Encontra a primeira questão não respondida e pula para ela
+        for (let i = 0; i < total; i++) {
+          if (session.answers[i] === undefined) {
+            this.examJumpTo(i);
+            break;
+          }
+        }
+        return;
+      }
+    } else if (session.mode === 'simulado') {
+      if (!confirm('Deseja finalizar e entregar o seu simulado para correção agora?')) {
+        return;
+      }
+    }
+
+    this.submitExamSession();
+  }
+
+  async submitExamSession() {
+    if (!this.activeExamSession) return;
+    this.stopExamTimer();
+
+    const session = this.activeExamSession;
+    session.isFinished = true;
+
+    const questions = session.questions || [];
+    let correctCount = 0;
+    const answersRecord = [];
+
+    questions.forEach((q, i) => {
+      const chosen = session.answers[i] || null;
+      const isCorrect = chosen === q.correctLetter;
+      if (isCorrect) correctCount++;
+      answersRecord.push({
+        questionId: q.id,
+        index: i,
+        chosen,
+        correctLetter: q.correctLetter,
+        isCorrect
+      });
+
+      // Se errou no simulado, salva para revisão
+      if (!isCorrect) {
+        this.recordMistakeForReview({
+          id: q.id,
+          subject: session.subjectName,
+          topic: q.topic,
+          question: q.text,
+          chosenAnswer: chosen || 'Em branco',
+          correctAnswer: q.correctLetter,
+          explanation: q.explanation
+        });
+      }
+    });
+
+    const total = questions.length;
+    const percentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+    const grade = total > 0 ? ((correctCount / total) * 10).toFixed(1) : '0.0';
+
+    const report = {
+      mode: session.mode,
+      subject: session.subjectName,
+      subjectKey: session.subjectKey,
+      chapterTitle: session.chapterTitle,
+      difficulty: session.difficulty,
+      totalQuestions: total,
+      correctCount,
+      wrongCount: total - correctCount,
+      unansweredCount: total - Object.keys(session.answers).length,
+      score: correctCount,
+      percentage,
+      grade,
+      timeSpentSeconds: session.elapsedSeconds,
+      completedAt: new Date().toISOString(),
+      questions,
+      answersRecord
+    };
+
+    // Salva no backend
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser?.id) headers['x-user-id'] = this.currentUser.id;
+
+      await fetch('/api/simulados/finish', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(report)
+      });
+    } catch (err) {
+      console.warn('[Simulado Save Backend Warning]', err);
+    }
+
+    // Salva no estado do usuário
+    if (this.currentUser) {
+      if (!Array.isArray(this.currentUser.quizHistory)) this.currentUser.quizHistory = [];
+      this.currentUser.quizHistory.unshift(report);
+      if (this.currentUser.quizHistory.length > 50) this.currentUser.quizHistory.pop();
+      this.saveCurrentUser();
+    }
+
+    if (typeof confetti === 'function' && percentage >= 60) {
+      confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+    }
+
+    this.renderExamResults(report);
+  }
+
+  recordMistakeForReview(mistake) {
+    if (!this.state.mistakes) this.state.mistakes = [];
+    const exists = this.state.mistakes.some(m => m.id === mistake.id || m.question === mistake.question);
+    if (!exists) {
+      this.state.mistakes.unshift({
+        id: mistake.id || `m_${Date.now()}`,
+        subject: mistake.subject,
+        topic: mistake.topic,
+        question: mistake.question,
+        chosenAnswer: mistake.chosenAnswer,
+        correctAnswer: mistake.correctAnswer,
+        explanation: mistake.explanation,
+        date: new Date().toISOString().slice(0, 10),
+        status: 'pending'
+      });
+      if (this.state.mistakes.length > 40) this.state.mistakes.pop();
+      this.saveState();
+      this.renderMistakesReview();
+      this.refreshBadges();
+    }
+  }
+
+  renderExamResults(report) {
+    const questionView = document.getElementById('examQuestionViewArea');
+    const feedbackBox = document.getElementById('examFeedbackBox');
+    const resultsView = document.getElementById('examResultsViewArea');
+    const footer = document.getElementById('examSessionFooter');
+    const pagerBar = document.getElementById('examSessionPagerBar');
+
+    if (questionView) questionView.style.display = 'none';
+    if (feedbackBox) feedbackBox.style.display = 'none';
+    if (pagerBar) pagerBar.style.display = 'none';
+    if (footer) footer.style.display = 'none';
+
+    if (!resultsView) return;
+    resultsView.style.display = 'block';
+
+    const pct = report.percentage;
+    const isPassed = pct >= 60;
+    const m = Math.floor(report.timeSpentSeconds / 60);
+    const s = report.timeSpentSeconds % 60;
+    const timeFormatted = `${m}m ${s < 10 ? '0' : ''}${s}s`;
+
+    resultsView.innerHTML = `
+      <!-- Hero de Pontuação -->
+      <div class="exam-score-hero" style="background: ${isPassed ? 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)' : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'}; border-color: ${isPassed ? '#86efac' : '#fde68a'};">
+        <span class="exam-score-badge" style="background: ${isPassed ? '#dcfce7' : '#fef3c7'}; color: ${isPassed ? '#15803d' : '#b45309'}; border: 1px solid ${isPassed ? '#86efac' : '#f59e0b'};">
+          ${isPassed ? '🏆 APROVADO • EXCELENTE DOMÍNIO' : '⚠️ ATENÇÃO • RECOMENDA-SE REVISÃO'}
+        </span>
+        <div class="exam-score-val" style="color: ${isPassed ? '#15803d' : '#b45309'};">
+          ${report.grade} <span style="font-size: 1.5rem; font-weight: 700; color: #64748b;">/ 10</span>
+        </div>
+        <p style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #334155;">
+          Aproveitamento de ${pct}% no ${report.mode === 'treino' ? 'Treino' : 'Simulado'} de ${report.subject}
+        </p>
+      </div>
+
+      <!-- Grid de Métricas -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 22px;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; display: block;">🎯 Acertos</span>
+          <strong style="font-size: 1.3rem; color: #10b981;">${report.correctCount} / ${report.totalQuestions}</strong>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; display: block;">❌ Erros</span>
+          <strong style="font-size: 1.3rem; color: #ef4444;">${report.wrongCount}</strong>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; display: block;">⏱️ Tempo Total</span>
+          <strong style="font-size: 1.2rem; color: #0f172a;">${timeFormatted}</strong>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; display: block;">📚 Disciplina</span>
+          <strong style="font-size: 1rem; color: #4f46e5;">${report.subject}</strong>
+        </div>
+      </div>
+
+      <!-- Revisão Completa Questão a Questão -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="margin: 0 0 14px; font-size: 1.1rem; font-weight: 800; color: #0f172a;">
+          📋 Gabarito Oficial e Revisão Pedagógica:
+        </h4>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          ${report.questions.map((q, idx) => {
+            const answerItem = report.answersRecord.find(a => a.index === idx);
+            const chosen = answerItem?.chosen || 'Em branco';
+            const isRight = answerItem?.isCorrect;
+
+            return `
+              <div style="background: #ffffff; border: 1.5px solid ${isRight ? '#bbf7d0' : '#fecdd3'}; border-radius: 14px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #0f172a;">
+                    Questão ${idx + 1} • ${q.topic}
+                  </span>
+                  <span style="font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: ${isRight ? '#ecfdf5' : '#fff1f2'}; color: ${isRight ? '#15803d' : '#b91c1c'}; border: 1px solid ${isRight ? '#86efac' : '#fca5a5'};">
+                    ${isRight ? '✔ Acertou' : '❌ Errou'}
+                  </span>
+                </div>
+
+                <p style="margin: 0 0 10px; font-size: 0.92rem; color: #334155; line-height: 1.5;">
+                  ${q.text}
+                </p>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; margin-bottom: 8px;">
+                  <div>Sua resposta: <strong style="color: ${isRight ? '#15803d' : '#b91c1c'};">${chosen}</strong></div>
+                  <div>Gabarito oficial: <strong style="color: #15803d;">Letra ${q.correctLetter}</strong></div>
+                </div>
+
+                <div style="font-size: 0.82rem; color: #475569; line-height: 1.5; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 8px 12px; border-radius: 8px;">
+                  <strong>💡 Raciocínio pedagógico:</strong> ${q.explanation}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- Ações Finais -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('examSessionModal')" style="padding: 10px 20px; font-weight: 800; border-radius: 10px;">
+          Fechar Relatório
+        </button>
+        <button type="button" class="btn-primary" onclick="app.closeModal('examSessionModal'); app.openPrepararProvaModal();" style="padding: 10px 22px; font-weight: 800; border-radius: 10px; background: #4f46e5;">
+          Fazer Outro Simulado
+        </button>
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  confirmExitExam() {
+    if (!this.activeExamSession) {
+      this.closeModal('examSessionModal');
+      return;
+    }
+
+    if (this.activeExamSession.isFinished) {
+      this.closeModal('examSessionModal');
+      return;
+    }
+
+    if (confirm('Deseja realmente sair da avaliação? O progresso não entregue desta tentativa será cancelado.')) {
+      this.stopExamTimer();
+      this.activeExamSession = null;
+      this.closeModal('examSessionModal');
+    }
   }
 
   handleSimuladoSubjectChange(subjKey) {
@@ -12846,7 +13896,7 @@ class EstudePlusApp {
     this.checkPendingAdminBadge();
     this.closeModal('subscriptionModal');
 
-    alert(`✅ Pagamento Informado ao Administrador!\n\nPedido ${orderId} (${planName}) comunicado instantaneamente para Freddie Pimentel Costa.\n\nAssim que o valor de R$ ${amountStr} for conferido na conta dele, seu Plano PRO será liberado na hora!`);
+    alert('Recebemos sua solicitação. O administrador verificará o pagamento e atualizará o status da sua assinatura.');
   }
 
   async requestCashInSchoolPayment() {
@@ -14599,8 +15649,8 @@ class EstudePlusApp {
       const isProAnual = u.planStatus === 'pro_anual_active' || u.planPeriodicity === 'anual';
       const isProMensal = u.planStatus === 'pro_mensal_active' || u.planPeriodicity === 'mensal';
       const isPro = u.isSubscribed === true || u.planStatus === 'active' || isProAnual || isProMensal;
-      const isTrial5d = u.planStatus === 'trial_5d';
       const isPending = u.hasPendingPlanRequest || u.planStatus === 'pending_cash' || u.planStatus === 'pending_pix' || u.planStatus === 'payment_pending';
+      const isSuspended = Boolean(u.isSuspended);
 
       const createdDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : 'Recentemente';
       const lastLoginDate = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('pt-BR') : 'Hoje';
@@ -14612,15 +15662,15 @@ class EstudePlusApp {
         .map(w => w[0].toUpperCase())
         .join('');
 
-      const presenceBadge = u.presence === 'online'
+      const presenceBadge = u.presenceStatus === 'online'
         ? '<span style="font-size: 0.68rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: #dcfce7; color: #15803d; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e;"></span> Online agora</span>'
         : (u.deviceType ? `<span style="font-size: 0.68rem; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 6px;">${u.deviceType}</span>` : '');
 
       return `
-        <div style="background: #ffffff; border: 1.5px solid ${isPending ? '#f59e0b' : (isPro ? '#86efac' : '#e2e8f0')}; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+        <div style="background: ${isSuspended ? '#fef2f2' : '#ffffff'}; border: 1.5px solid ${isSuspended ? '#fca5a5' : (isPending ? '#f59e0b' : (isPro ? '#86efac' : '#e2e8f0'))}; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 12px; min-width: 240px;">
-              <div style="width: 44px; height: 44px; border-radius: 50%; background: ${isOwner ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : (isPro ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0284c7, #38bdf8)')}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: ${isSuspended ? '#ef4444' : (isOwner ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : (isPro ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0284c7, #38bdf8)'))}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 ${initials}
               </div>
               <div>
@@ -14631,14 +15681,15 @@ class EstudePlusApp {
                   ` : `
                     <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">🎓 Aluno</span>
                   `}
+                  ${isSuspended ? `
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fee2e2; color: #991b1b; border: 1px solid #f87171;">⚠️ Conta Suspensa</span>
+                  ` : ''}
                   ${isProAnual ? `
                     <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">👑 PRO Anual (R$ 120/ano)</span>
                   ` : isProMensal || isPro ? `
                     <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">💎 PRO Mensal (R$ 10/mês)</span>
-                  ` : isTrial5d ? `
-                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309;">⚡ Degustação (5 dias)</span>
                   ` : isPending ? `
-                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309; border: 1px solid #f59e0b;">⏳ Informou Pagamento PRO</span>
+                    <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #fef3c7; color: #b45309; border: 1px solid #f59e0b;">⏳ Aguardando Confirmação</span>
                   ` : `
                     <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;">Plano Base</span>
                   `}
@@ -14648,17 +15699,26 @@ class EstudePlusApp {
                   <span>Usuário: <code style="background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #0f172a;">${u.username || u.email}</code></span>
                   ${u.email ? `&bull; <span>E-mail: <strong>${u.email}</strong></span>` : ''}
                   &bull; <span>Cadastrado: ${createdDate}</span>
-                  ${u.proExpiresAt ? `&bull; <span>Expira: <strong>${new Date(u.proExpiresAt).toLocaleDateString('pt-BR')}</strong></span>` : ''}
                   &bull; <span>Último acesso: ${lastLoginDate}</span>
+                  &bull; <span style="color: #4f46e5; font-weight: 700;">🎯 ${u.simuladosCount || 0} Simulado(s)</span>
+                  &bull; <span style="color: #059669; font-weight: 700;">🧭 ${u.trilhasCount || 0} Trilha(s)</span>
                 </div>
               </div>
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              ${!isOwner ? `
+                <!-- Botão de Suspender / Reativar Conta -->
+                <button type="button" class="btn-outline" onclick="app.adminToggleUserSuspension('${u.id}', '${isSuspended ? 'reactivate' : 'suspend'}')" style="color: ${isSuspended ? '#059669' : '#b91c1c'}; border-color: ${isSuspended ? '#86efac' : '#fca5a5'}; background: ${isSuspended ? '#ecfdf5' : '#fff1f2'}; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                  <i data-lucide="${isSuspended ? 'shield-check' : 'shield-alert'}" style="width: 13px; height: 13px;"></i>
+                  <span>${isSuspended ? 'Reativar Conta' : 'Suspender Conta'}</span>
+                </button>
+              ` : ''}
+
               ${isPro ? `
-                <button type="button" class="btn-outline" onclick="app.adminCancelStudentPlan('${u.id}')" style="color: #b91c1c; border-color: #fca5a5; background: #fff1f2; font-size: 0.8rem; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Remover plano PRO e retornar aluno ao Plano Base Gratuito">
-                  <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
-                  <span>Voltar ao Plano Base</span>
+                <button type="button" class="btn-outline" onclick="app.adminCancelStudentPlan('${u.id}')" style="color: #b91c1c; border-color: #fca5a5; background: #fff1f2; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Remover plano PRO e retornar aluno ao Plano Base Gratuito">
+                  <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+                  <span>Voltar ao Base</span>
                 </button>
               ` : `
                 <button type="button" class="btn-primary" onclick="app.adminActivateStudentPlan('${u.id}', 'pro_mensal')" style="background: #4f46e5; font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Liberar 30 dias de Plano PRO Mensal (R$ 10,00)">
@@ -14671,29 +15731,13 @@ class EstudePlusApp {
                 </button>
               `}
 
-              <!-- Excluir/Apagar conta definitivamente -->
-              <button type="button" class="btn-outline" onclick="app.adminDeleteStudent('${u.id}')" style="color: #dc2626; border-color: #fca5a5; background: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="${isOwner ? 'Excluir esta conta de Administrador' : 'Excluir definitivamente a conta deste aluno'}">
-                <i data-lucide="trash-2" style="width: 14px; height: 14px; color: #dc2626;"></i>
-                <span>${isOwner ? 'Excluir Admin' : 'Apagar Conta'}</span>
+              <!-- Excluir conta definitivamente -->
+              <button type="button" class="btn-outline" onclick="app.adminDeleteStudent('${u.id}')" style="color: #dc2626; border-color: #fca5a5; background: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 7px 10px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="${isOwner ? 'Excluir esta conta de Administrador' : 'Excluir definitivamente a conta deste aluno'}">
+                <i data-lucide="trash-2" style="width: 13px; height: 13px; color: #dc2626;"></i>
+                <span>${isOwner ? 'Excluir Admin' : 'Apagar'}</span>
               </button>
             </div>
           </div>
-
-          ${isPending ? `
-            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.25rem;">💎</span>
-                <div>
-                  <strong style="color: #92400e; font-size: 0.85rem; display: block;">Aluno informou que comprou o ${u.pendingPlanRequest ? u.pendingPlanRequest.planName : 'Plano PRO'}!</strong>
-                  <span style="font-size: 0.74rem; color: #78350f;">${u.pendingPlanRequest?.contactMethod === 'pix' ? 'Pagamento via Pix (CPF)' : 'Dinheiro vivo na escola'} &bull; ${u.pendingPlanRequest?.note || 'Aguardando sua confirmação'}</span>
-                </div>
-              </div>
-              <button type="button" class="btn-primary" onclick="app.adminDirectApprovePro('${u.id}', '${u.pendingPlanRequest?.id || ''}', '${u.pendingPlanRequest?.planId || 'pro_mensal'}')" style="background: #059669; font-size: 0.78rem; font-weight: 800; padding: 7px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);">
-                <i data-lucide="check-check" style="width: 14px; height: 14px;"></i>
-                ⚡ Confirmar Recebimento e Ativar PRO
-              </button>
-            </div>
-          ` : ''}
         </div>
       `;
     }).join('');
@@ -14707,6 +15751,46 @@ class EstudePlusApp {
       return this.adminUpdatePlanRequestStatus(requestId, 'approved');
     }
     return this.adminActivateStudentPlan(userId, planId);
+  }
+
+  async adminToggleUserSuspension(userId, action = 'suspend') {
+    const allUsers = (this.adminOverviewData?.users && this.adminOverviewData.users.length > 0)
+      ? this.adminOverviewData.users
+      : (this.users || []);
+    const student = allUsers.find(u => String(u.id) === String(userId));
+    if (!student) return;
+
+    const actionText = action === 'suspend' ? 'suspender temporariamente' : 'reativar o acesso de';
+    if (!confirm(`Deseja realmente ${actionText} "${student.name || student.username}"?`)) {
+      return;
+    }
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/users/toggle-status', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ userId: student.id, action })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert('❌ Não foi possível alterar o status da conta: ' + (data.error || 'Erro no servidor.'));
+        return;
+      }
+
+      student.isSuspended = Boolean(data.isSuspended);
+      await this.loadAdminOverview();
+      this.renderAdminStudentsList();
+      alert(`✔ Sucesso: Conta ${student.name || student.username} foi ${student.isSuspended ? 'suspensa' : 'reativada'}!`);
+    } catch (err) {
+      console.error('[Admin Toggle Suspension Error]', err);
+      alert('❌ Erro de conexão ao alterar status da conta no servidor.');
+    }
   }
 
   async adminCancelStudentPlan(userId) {
@@ -16747,7 +17831,7 @@ startxref
 
       this.onFirebaseUserPaymentsUpdated({ status: 'pendente' });
 
-      alert(`✅ Pagamento Comunicado ao Administrador!\n\nSeu aviso para o ${planName} foi enviado com status "PENDENTE".\n\nAssim que o administrador Freddie confirmar o recebimento, seus recursos PRO serão liberados automaticamente em tempo real!`);
+      alert('Recebemos sua solicitação. O administrador verificará o pagamento e atualizará o status da sua assinatura.');
     } catch (err) {
       console.error('[Payment Declaration Error]', err);
       alert(err.message || 'Erro ao registrar aviso de pagamento. Verifique o console.');
