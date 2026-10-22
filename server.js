@@ -1657,10 +1657,25 @@ const server = http.createServer((req, res) => {
         return sendJson({ error: 'Apenas as Apostilas 1, 2 e 3 do SAS são permitidas. Apostila inválida.' }, 400);
       }
 
-      const validStages = ['fundamentos', 'pratica_1', 'quiz_1', 'pratica_2', 'quiz_2', 'revisao', 'desafio_final'];
+      // Lista de etapas válidas (8 etapas canônicas + aliases legados)
+      const validStages = [
+        'licao_guiada', 'pratica_guiada', 'quiz_multiformato', 'verdadeiro_falso',
+        'revisao_erros', 'lacunas_associacao', 'desafio_aplicado', 'simulado_capitulo',
+        'fundamentos', 'pratica_1', 'quiz_1', 'pratica_2', 'quiz_2', 'revisao', 'desafio_final'
+      ];
       if (!validStages.includes(stageId)) {
         return sendJson({ error: 'Etapa inválida para a trilha do capítulo.' }, 400);
       }
+
+      // REGRA ESTRITA DE APROVAÇÃO (MÍNIMO 60% DE ACERTOS)
+      // Cada fase possui exatamente 8 questões. Mínimo necessário: 5 de 8 = 62.5% -> PASSOU.
+      // 4 de 8 = 50.0% -> NÃO PASSOU. Proibido arredondar 50% para aprovar.
+      const qTotal = total > 0 ? total : 8;
+      const minRequired = Math.ceil(qTotal * 0.6); // Para 8 questões, Math.ceil(4.8) = 5
+      const passed = score >= minRequired;
+      const rawPercentage = qTotal > 0 ? (score / qTotal) * 100 : 0;
+      const percentage = (rawPercentage % 1 === 0) ? rawPercentage : Number(rawPercentage.toFixed(1));
+      const neededMore = Math.max(0, minRequired - score);
 
       const db = readDb();
       if (!Array.isArray(db.trilhasProgress)) db.trilhasProgress = [];
@@ -1692,28 +1707,57 @@ const server = http.createServer((req, res) => {
       if (!Array.isArray(record.completedStages)) record.completedStages = [];
       if (!record.stageResults) record.stageResults = {};
 
-      // Adiciona etapa sem duplicação
+      // Registra o resultado da tentativa
+      record.stageResults[stageId] = {
+        completedAt: now,
+        score,
+        total: qTotal,
+        percentage,
+        passed
+      };
+
+      // SE NÃO ATINGIU O MÍNIMO DE 60%: NÃO desbloqueia, NÃO salva como completedStages
+      if (!passed) {
+        writeDb(db);
+        logSystemEvent('info', 'trilhas', `Usuário ${auth.user.username} não atingiu o mínimo de 60% na etapa [${stageId}] (${score}/${qTotal} = ${percentage}%). Precisa de mais ${neededMore} acerto(s).`);
+        return sendJson({
+          success: true,
+          passed: false,
+          score,
+          total: qTotal,
+          percentage,
+          minRequired,
+          neededMore,
+          unlockedNext: false,
+          message: `Você acertou ${score} de ${qTotal} (${percentage}%). São necessários no mínimo ${minRequired} acertos (60%) para avançar. Você precisa de mais ${neededMore} acerto(s).`,
+          masteryPercentage: record.masteryPercentage
+        });
+      }
+
+      // SE PASSOU: Adiciona etapa aos concluídos sem duplicação
       if (!record.completedStages.includes(stageId)) {
         record.completedStages.push(stageId);
       }
 
-      // Registra resultado da etapa
-      record.stageResults[stageId] = {
-        completedAt: now,
-        score,
-        total,
-        percentage: total > 0 ? Math.round((score / total) * 100) : 100
-      };
-
       // Atualiza índice da etapa atual desbloqueada
-      const foundIdx = validStages.indexOf(stageId);
+      const canonicalStages = [
+        'licao_guiada', 'pratica_guiada', 'quiz_multiformato', 'verdadeiro_falso',
+        'revisao_erros', 'lacunas_associacao', 'desafio_aplicado', 'simulado_capitulo'
+      ];
+      const foundIdx = canonicalStages.indexOf(stageId);
       if (foundIdx >= 0) {
         record.currentStageIndex = Math.max(record.currentStageIndex || 0, foundIdx + 1);
+      } else {
+        const legacyIdx = ['fundamentos', 'pratica_1', 'quiz_1', 'pratica_2', 'quiz_2', 'revisao', 'desafio_final'].indexOf(stageId);
+        if (legacyIdx >= 0) {
+          record.currentStageIndex = Math.max(record.currentStageIndex || 0, legacyIdx + 1);
+        }
       }
 
-      // Calcula maestria percentual do capítulo (7 etapas = 100%)
-      record.masteryPercentage = Math.round((record.completedStages.length / validStages.length) * 100);
-      if (record.completedStages.length >= validStages.length) {
+      // Calcula maestria percentual do capítulo (8 etapas canônicas = 100%)
+      const totalStagesCount = 8;
+      record.masteryPercentage = Math.min(100, Math.round((record.completedStages.length / totalStagesCount) * 100));
+      if (record.completedStages.length >= totalStagesCount) {
         record.isCompleted = true;
         record.completedAt = now;
       }
@@ -1728,17 +1772,21 @@ const server = http.createServer((req, res) => {
         chapterTitle,
         stageId,
         score,
-        total
+        total: qTotal
       });
 
       writeDb(db);
       supabase.syncFromLocalDb(db).catch(() => {});
 
-      logSystemEvent('info', 'trilhas', `Etapa [${stageId}] da trilha de ${chapterTitle} concluída pelo usuário ${auth.user.username}`, {
+      logSystemEvent('info', 'trilhas', `Etapa [${stageId}] da trilha de ${chapterTitle} concluída pelo usuário ${auth.user.username} (${score}/${qTotal} = ${percentage}%)`, {
         userId: auth.user.id,
         subjectKey,
         bookId,
         chapterId,
+        score,
+        total: qTotal,
+        percentage,
+        passed: true,
         masteryPercentage: record.masteryPercentage,
         isCompleted: record.isCompleted,
         accessType: access.isAdmin ? 'admin' : 'pro'
@@ -1757,7 +1805,12 @@ const server = http.createServer((req, res) => {
 
       return sendJson({
         success: true,
-        message: record.isCompleted ? 'Parabéns! Você alcançou o Domínio Total deste capítulo! 🏆' : 'Etapa da trilha concluída com sucesso!',
+        passed: true,
+        score,
+        total: qTotal,
+        percentage,
+        unlockedNext: record.currentStageIndex < totalStagesCount,
+        message: record.isCompleted ? 'Parabéns! Você alcançou o Domínio Total deste capítulo! 🏆' : 'Etapa da trilha concluída com sucesso (mínimo de 60% atingido)!',
         progress: record,
         isCompleted: record.isCompleted,
         streak: user.streak,

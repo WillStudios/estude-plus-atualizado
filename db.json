@@ -12,22 +12,24 @@
       "planName": "Plano Administrador PRO",
       "grade": "7º Ano (Campus Chácara)",
       "emailVerified": true,
-      "streak": 2,
-      "bestStreak": 0,
+      "streak": 3,
+      "bestStreak": 3,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-05T17:20:08.075Z",
+      "lastLogin": "2026-10-06T09:48:49.640Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
-      "lastDeviceType": "Computador / Desktop",
+      "lastDeviceType": "Computador / PC",
       "loginDays": [
         "2026-10-04",
-        "2026-10-05"
+        "2026-10-05",
+        "2026-10-06"
       ],
       "studiedDays": [
         "2026-10-04",
-        "2026-10-05"
+        "2026-10-05",
+        "2026-10-06"
       ],
-      "lastVisitDate": "2026-10-05",
+      "lastVisitDate": "2026-10-06",
       "studentSettings": {},
       "preferences": {
         "themeMode": "light",
@@ -244,13 +246,161 @@
         }
       ],
       "tasks": {
-        "completedTpcIds": [],
+        "completedTpcIds": [
+          "gammon_109863",
+          "gammon_108850",
+          "gammon_109112",
+          "gammon_109136",
+          "gammon_110651"
+        ],
         "userTpcs": []
       },
-      "completedTpcIds": [],
+      "completedTpcIds": [
+        "gammon_109863",
+        "gammon_108850",
+        "gammon_109112",
+        "gammon_109136",
+        "gammon_110651"
+      ],
       "userTpcs": [],
-      "lastSync": "2026-10-05T15:45:32.980Z",
+      "lastSync": "2026-10-06T10:06:55.115Z",
       "activityLog": [
+        {
+          "id": "act_1791281085014_od5t9",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T10:04:45.014Z",
+          "type": "trilha_stage_completed",
+          "details": {
+            "subjectKey": "historia",
+            "bookId": 2,
+            "chapterId": 6,
+            "chapterTitle": "Capítulo 6 – As Grandes Navegações e Mercantilismo",
+            "stageId": "fundamentos",
+            "score": 0,
+            "total": 3
+          }
+        },
+        {
+          "id": "act_1791280261963_vmdf6",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:51:01.962Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109136",
+            "title": "TPC Diário - História",
+            "discipline": "História"
+          }
+        },
+        {
+          "id": "act_1791280261230_8gxwa",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:51:01.230Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109112",
+            "title": "TPC Diário - História",
+            "discipline": "História"
+          }
+        },
+        {
+          "id": "act_1791280259871_89b19",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:50:59.870Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_108850",
+            "title": "TPC Diário - Ciências",
+            "discipline": "Ciências"
+          }
+        },
+        {
+          "id": "act_1791280259188_pm3bo",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:50:59.188Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109863",
+            "title": "TPC Diário - Matemática",
+            "discipline": "Matemática"
+          }
+        },
+        {
+          "id": "act_1791280258412_yemor",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:50:58.412Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_110651",
+            "title": "TPC Diário - Matemática",
+            "discipline": "Matemática"
+          }
+        },
+        {
+          "id": "act_1791280157219_gnohl",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:49:17.219Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_110651",
+            "title": "TPC Diário - Matemática",
+            "discipline": "Matemática"
+          }
+        },
+        {
+          "id": "act_1791280151956_lx3e3",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:49:11.955Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109136",
+            "title": "TPC Diário - História",
+            "discipline": "História"
+          }
+        },
+        {
+          "id": "act_1791280150949_zt0rw",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:49:10.948Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109136",
+            "title": "TPC Diário - História",
+            "discipline": "História"
+          }
+        },
+        {
+          "id": "act_1791280149222_8ouwl",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:49:09.221Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109112",
+            "title": "TPC Diário - História",
+            "discipline": "História"
+          }
+        },
+        {
+          "id": "act_1791280147972_9afuw",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:49:07.972Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_108850",
+            "title": "TPC Diário - Ciências",
+            "discipline": "Ciências"
+          }
+        },
+        {
+          "id": "act_1791280143995_2317b",
+          "date": "2026-10-06",
+          "timestamp": "2026-10-06T09:49:03.995Z",
+          "type": "tpc_completed",
+          "details": {
+            "tpcId": "gammon_109863",
+            "title": "TPC Diário - Matemática",
+            "discipline": "Matemática"
+          }
+        },
         {
           "id": "act_1791220808090_3ea0j",
           "date": "2026-10-05",
@@ -362,144 +512,7 @@
           }
         }
       ],
-      "lastActiveDate": "2026-10-05"
-    },
-    {
-      "id": "usr_1791220286210_19fk",
-      "name": "Aluno Pro Mensal",
-      "username": "test_pro_m_1791220286169",
-      "email": "test_pro_m_1791220286169@estude.app",
-      "passwordHash": "f3008c4034cfb1e99d86600e0395b652ec0da892b35cb5d75b91523d72bcac28c9ebbddfc6c43fbedf07a149287c3050840dd7fe630e5fdb8a6e7a3d820de5d2",
-      "passwordSalt": "d1397bd9f02db5e337cf3206c190daf1",
-      "role": "student",
-      "isSubscribed": false,
-      "plan": "base",
-      "planStatus": "base",
-      "planName": "Plano Base",
-      "emailVerified": true,
-      "streak": 0,
-      "bestStreak": 0,
-      "dailyGoalMinutes": 15,
-      "studiedDays": [],
-      "todayMinutes": 0,
-      "achievements": [],
-      "createdIp": "127.0.0.1",
-      "createdAt": "2026-10-05T17:11:26.210Z",
-      "lastLogin": "2026-10-05T17:11:26.210Z",
-      "lastDeviceType": "Computador / Desktop"
-    },
-    {
-      "id": "usr_1791220436050_hi17",
-      "name": "Aluno Pro Mensal",
-      "username": "test_pro_m_1791220436023",
-      "email": "test_pro_m_1791220436023@estude.app",
-      "passwordHash": "1d93c14d20631c0b4ae180dd61365ef6fc4e819d56885c520b433030661851aff4a2b7545cd9bfe11fa28ec6d05f44dc85345abb484badacb02a356947fb9cf5",
-      "passwordSalt": "e5a2a075d7d0fa352ca9a6ac3eb63074",
-      "role": "student",
-      "isSubscribed": true,
-      "plan": "pro",
-      "planStatus": "pro_mensal_active",
-      "planName": "Plano ESTUDE+ PRO Mensal",
-      "emailVerified": true,
-      "streak": 1,
-      "bestStreak": 1,
-      "dailyGoalMinutes": 15,
-      "studiedDays": [
-        "2026-10-05"
-      ],
-      "todayMinutes": 0,
-      "achievements": [],
-      "createdIp": "127.0.0.1",
-      "createdAt": "2026-10-05T17:13:56.050Z",
-      "lastLogin": "2026-10-05T17:13:56.050Z",
-      "lastDeviceType": "Computador / Desktop",
-      "planType": "pro_mensal",
-      "planPeriodicity": "mensal",
-      "lastBillingDate": "2026-10-05T17:13:56.149Z",
-      "activityLog": [
-        {
-          "id": "act_1791220436154_n0irt",
-          "date": "2026-10-05",
-          "timestamp": "2026-10-05T17:13:56.154Z",
-          "type": "trilha_stage_completed",
-          "details": {
-            "subjectKey": "matematica",
-            "bookId": 1,
-            "chapterId": 1,
-            "chapterTitle": "Capítulo 1",
-            "stageId": "pratica_1",
-            "score": 3,
-            "total": 3
-          }
-        },
-        {
-          "id": "act_1791220436069_xj6mp",
-          "date": "2026-10-05",
-          "timestamp": "2026-10-05T17:13:56.068Z",
-          "type": "trilha_stage_completed",
-          "details": {
-            "subjectKey": "matematica",
-            "bookId": 1,
-            "chapterId": 1,
-            "chapterTitle": "Capítulo 1",
-            "stageId": "fundamentos",
-            "score": 2,
-            "total": 2
-          }
-        }
-      ],
-      "lastActiveDate": "2026-10-05",
-      "proActivatedAt": "2026-10-05T17:13:56.149Z",
-      "proExpiresAt": "2026-11-04T17:13:56.149Z"
-    },
-    {
-      "id": "usr_1791220436115_e2yo",
-      "name": "Aluno Pro Anual",
-      "username": "test_pro_a_1791220436087",
-      "email": "test_pro_a_1791220436087@estude.app",
-      "passwordHash": "37acbf5bbf2b615b19dddd40b43c4faf018cf3a035c14ab821c284f22025c2d2f141f7703a4fe2df37aaf89e8f113024b40aaa34f7c82d3a9e5bd39ef4bac767",
-      "passwordSalt": "fa06c98ba5b1aac1a47d97e7a68563cb",
-      "role": "student",
-      "isSubscribed": true,
-      "plan": "pro",
-      "planStatus": "pro_anual_active",
-      "planName": "Plano ESTUDE+ PRO Anual",
-      "emailVerified": true,
-      "streak": 1,
-      "bestStreak": 1,
-      "dailyGoalMinutes": 15,
-      "studiedDays": [
-        "2026-10-05"
-      ],
-      "todayMinutes": 0,
-      "achievements": [],
-      "createdIp": "127.0.0.1",
-      "createdAt": "2026-10-05T17:13:56.115Z",
-      "lastLogin": "2026-10-05T17:13:56.115Z",
-      "lastDeviceType": "Computador / Desktop",
-      "planType": "pro_anual",
-      "planPeriodicity": "anual",
-      "proActivatedAt": "2026-10-05T17:13:56.121Z",
-      "proExpiresAt": "2027-10-05T17:13:56.121Z",
-      "lastBillingDate": "2026-10-05T17:13:56.121Z",
-      "activityLog": [
-        {
-          "id": "act_1791220436130_q0rgo",
-          "date": "2026-10-05",
-          "timestamp": "2026-10-05T17:13:56.130Z",
-          "type": "trilha_stage_completed",
-          "details": {
-            "subjectKey": "portugues",
-            "bookId": 1,
-            "chapterId": 1,
-            "chapterTitle": "Capítulo 1",
-            "stageId": "fundamentos",
-            "score": 2,
-            "total": 2
-          }
-        }
-      ],
-      "lastActiveDate": "2026-10-05"
+      "lastActiveDate": "2026-10-06"
     },
     {
       "id": "usr_1791220624942_32dw",
@@ -981,7 +994,7 @@
   "masterCommands": {
     "broadcastNotice": "",
     "lockdownActive": false,
-    "forceRefreshTimestamp": 1791222334368
+    "forceRefreshTimestamp": 1791280209797
   },
   "connectedDevices": [],
   "planRequests": [
@@ -1035,7 +1048,7 @@
         "userId": "usr_1791222334299_uga3",
         "username": "aluno_planos_1791222334234"
       },
-      "status": "unread",
+      "status": "read",
       "createdAt": "2026-10-05T17:45:34.305Z"
     },
     {
@@ -1049,7 +1062,7 @@
         "userId": "usr_1791221367891_ayso",
         "planId": "pro_mensal"
       },
-      "status": "unread",
+      "status": "read",
       "createdAt": "2026-10-05T17:29:27.933Z"
     },
     {
@@ -1062,11 +1075,27 @@
         "userId": "usr_1791221367891_ayso",
         "username": "bernardo_1791221367852"
       },
-      "status": "unread",
+      "status": "read",
       "createdAt": "2026-10-05T17:29:27.897Z"
     }
   ],
   "systemEvents": [
+    {
+      "id": "evt_1791281085019_aa8n",
+      "level": "info",
+      "source": "trilhas",
+      "message": "Etapa [fundamentos] da trilha de Capítulo 6 – As Grandes Navegações e Mercantilismo concluída pelo usuário freddie",
+      "details": {
+        "userId": "admin_freddie",
+        "subjectKey": "historia",
+        "bookId": 2,
+        "chapterId": 6,
+        "masteryPercentage": 14,
+        "isCompleted": false,
+        "accessType": "admin"
+      },
+      "timestamp": "2026-10-06T10:04:45.019Z"
+    },
     {
       "id": "evt_1791220808251_88wy",
       "level": "info",
@@ -1326,6 +1355,30 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "log_1791280209797",
+      "timestamp": "2026-10-06T09:50:09.797Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791220436115_e2yo",
+      "details": "Conta \"Aluno Pro Anual\" (usr_1791220436115_e2yo) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
+    {
+      "id": "log_1791280205493",
+      "timestamp": "2026-10-06T09:50:05.493Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791220436050_hi17",
+      "details": "Conta \"Aluno Pro Mensal\" (usr_1791220436050_hi17) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
+    {
+      "id": "log_1791280201387",
+      "timestamp": "2026-10-06T09:50:01.387Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1791220286210_19fk",
+      "details": "Conta \"Aluno Pro Mensal\" (usr_1791220286210_19fk) excluída definitivamente do sistema por Freddie Pimentel Costa."
+    },
     {
       "id": "log_1791222334368",
       "timestamp": "2026-10-05T17:45:34.368Z",
@@ -2038,9 +2091,48 @@
       "isCompleted": false,
       "startedAt": "2026-10-05T17:20:08.221Z",
       "lastCompletedAt": "2026-10-05T17:20:08.221Z"
+    },
+    {
+      "id": "trilha_admin_freddie_historia_2_6",
+      "userId": "admin_freddie",
+      "subjectKey": "historia",
+      "bookId": 2,
+      "chapterId": 6,
+      "chapterTitle": "Capítulo 6 – As Grandes Navegações e Mercantilismo",
+      "currentStageIndex": 1,
+      "completedStages": [
+        "fundamentos"
+      ],
+      "stageResults": {
+        "fundamentos": {
+          "completedAt": "2026-10-06T10:04:45.014Z",
+          "score": 0,
+          "total": 3,
+          "percentage": 0
+        }
+      },
+      "masteryPercentage": 14,
+      "isCompleted": false,
+      "startedAt": "2026-10-06T10:04:45.014Z",
+      "lastCompletedAt": "2026-10-06T10:04:45.014Z"
     }
   ],
   "sessions": [
+    {
+      "sessionId": "sess_641ffcbf900fae423d08a5e40a41f47e",
+      "userId": "admin_freddie",
+      "userName": "Freddie Pimentel Costa",
+      "userRole": "admin",
+      "deviceType": "Windows / PC",
+      "deviceLabel": "Computador Windows • Google Chrome",
+      "loginTime": "2026-10-06T09:48:49.640Z",
+      "createdAt": "2026-10-06T09:48:49.640Z",
+      "lastHeartbeat": 1791280129640,
+      "expiresAt": 1793872129639,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36"
+    },
     {
       "sessionId": "sess_2def3567d32bcf10072429d89501e615",
       "userId": "usr_1791222334299_uga3",
@@ -2297,36 +2389,6 @@
       "userAgent": ""
     },
     {
-      "sessionId": "sess_92cbe1a85dfb9f7b3c551b52f57a7a24",
-      "userId": "usr_1791220436115_e2yo",
-      "userName": "Aluno Pro Anual",
-      "userRole": "student",
-      "deviceType": "Computador / Desktop",
-      "deviceLabel": "Computador • Navegador Web",
-      "loginTime": "2026-10-05T17:13:56.115Z",
-      "createdAt": "2026-10-05T17:13:56.115Z",
-      "lastHeartbeat": 1791220436116,
-      "expiresAt": 1793812436116,
-      "rememberMe": true,
-      "ip": "127.0.0.1",
-      "userAgent": ""
-    },
-    {
-      "sessionId": "sess_5a173f70bae0b686e6cf2145fccd93d7",
-      "userId": "usr_1791220436050_hi17",
-      "userName": "Aluno Pro Mensal",
-      "userRole": "student",
-      "deviceType": "Computador / Desktop",
-      "deviceLabel": "Computador • Navegador Web",
-      "loginTime": "2026-10-05T17:13:56.050Z",
-      "createdAt": "2026-10-05T17:13:56.050Z",
-      "lastHeartbeat": 1791220436051,
-      "expiresAt": 1793812436051,
-      "rememberMe": true,
-      "ip": "127.0.0.1",
-      "userAgent": ""
-    },
-    {
       "sessionId": "sess_eae670fc79c936b1b7035d3982b25f77",
       "userId": "admin_freddie",
       "userName": "Freddie Pimentel Costa",
@@ -2382,21 +2444,6 @@
       "createdAt": "2026-10-05T17:12:00.974Z",
       "lastHeartbeat": 1791220320975,
       "expiresAt": 1793812320975,
-      "rememberMe": true,
-      "ip": "127.0.0.1",
-      "userAgent": ""
-    },
-    {
-      "sessionId": "sess_decfb4ff4fef9ace7b9fb7c809dd27e3",
-      "userId": "usr_1791220286210_19fk",
-      "userName": "Aluno Pro Mensal",
-      "userRole": "student",
-      "deviceType": "Computador / Desktop",
-      "deviceLabel": "Computador • Navegador Web",
-      "loginTime": "2026-10-05T17:11:26.210Z",
-      "createdAt": "2026-10-05T17:11:26.210Z",
-      "lastHeartbeat": 1791220286211,
-      "expiresAt": 1793812286210,
       "rememberMe": true,
       "ip": "127.0.0.1",
       "userAgent": ""

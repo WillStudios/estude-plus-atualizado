@@ -1201,6 +1201,10 @@
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="app.openPrepararProvaModal()" style="display: flex; align-items: center; gap: 8px; font-weight: 800; background: linear-gradient(135deg, #4f46e5, #0284c7); border: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+              <i data-lucide="target"></i>
+              <span>Preparar para Prova</span>
+            </button>
             <button class="btn-outline" onclick="app.syncTrilhasWithSas()" title="Sincronizar com o Portal SAS sem armazenar senhas" style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
               <i data-lucide="refresh-cw"></i>
               <span>Sincronizar SAS</span>
@@ -2195,6 +2199,84 @@
           <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
           <span>Concluir Etapa & Salvar Progresso</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Preparar para Prova (Simulado do Capítulo / Geral) -->
+  <div class="modal-overlay" id="prepararProvaModal">
+    <div class="modal-box" style="max-width: 640px;">
+      <button class="modal-close" onclick="app.closeModal('prepararProvaModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="tpc-badge" style="background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;">
+          🎯 SIMULADO & REVISÃO
+        </span>
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800;">Preparação para Prova</h3>
+      </div>
+      <p class="subtitle" style="margin-bottom: 16px; font-size: 0.88rem; color: #64748b;">
+        Gere um simulado adaptativo baseado nas matérias e capítulos das suas apostilas para testar seu domínio real antes da prova.
+      </p>
+
+      <form id="prepararProvaForm" onsubmit="app.handleIniciarSimuladoProva(event)">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Matéria:</label>
+          <select id="simuladoMateriaSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;" onchange="app.handleSimuladoSubjectChange(this.value)" required>
+            <!-- Preenchido dinamicamente -->
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Apostila / Módulo:</label>
+          <select id="simuladoApostilaSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;" onchange="app.handleSimuladoApostilaChange(this.value)">
+            <option value="todas">Todas as Apostilas do Bimestre</option>
+            <option value="Apostila 1">Apostila 1</option>
+            <option value="Apostila 2">Apostila 2</option>
+            <option value="Apostila 3">Apostila 3</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Capítulo de Foco (Opcional):</label>
+          <select id="simuladoCapituloSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
+            <option value="todos">Todos os Capítulos Selecionados</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Quantidade de Questões:</label>
+            <select id="simuladoQtdSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
+              <option value="5">5 questões (Treino Rápido)</option>
+              <option value="10" selected>10 questões (Simulado Padrão)</option>
+              <option value="15">15 questões (Simulado Completo)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #1e293b; display: block; margin-bottom: 4px;">Nível de Desafio:</label>
+            <select id="simuladoDificuldadeSelect" class="form-control" style="width: 100%; border-radius: 10px; padding: 9px 12px; border: 1.5px solid #cbd5e1;">
+              <option value="misto" selected>Equilibrado (Fácil, Médio, Desafio)</option>
+              <option value="dificil">Alto Desafio (Estilo Prova Difícil)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('prepararProvaModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: #0284c7; border-color: #0284c7; font-weight: 700;">
+            <i data-lucide="play" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i>
+            Iniciar Simulado
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Reforço Adaptativo ("O Que Aconteceu?") -->
+  <div class="modal-overlay" id="adaptiveReinforceModal">
+    <div class="modal-box" style="max-width: 680px;">
+      <button class="modal-close" onclick="app.closeModal('adaptiveReinforceModal')">&times;</button>
+      <div id="adaptiveReinforceContent">
+        <!-- Preenchido via app.renderAdaptiveReinforceContent -->
       </div>
     </div>
   </div>

@@ -2774,23 +2774,31 @@ class EstudePlusApp {
     );
 
     const completedStages = rec?.completedStages || [];
-    const isChapterCompleted = rec?.isCompleted || false;
-    const masteryPct = rec?.masteryPercentage || 0;
+
+    // 8 Etapas Pedagógicas Canônicas da Trilha Progressiva do Capítulo (Ciclo Completo Astra AI)
+    const stages = [
+      { id: 'licao_guiada', alias: 'fundamentos', name: 'Etapa 1 • Lição Guiada', icon: '🌱', subtitle: 'Conceito essencial em micro-doses com verificação rápida', type: 'lesson' },
+      { id: 'pratica_guiada', alias: 'pratica_1', name: 'Etapa 2 • Prática de Fixação', icon: '✏️', subtitle: 'Exercícios conceituais de aplicação direta', type: 'multiple_choice' },
+      { id: 'quiz_multiformato', alias: 'quiz_1', name: 'Etapa 3 • Quiz Adaptativo', icon: '📝', subtitle: 'Múltipla escolha formativa com justificativa detalhada', type: 'multiple_choice' },
+      { id: 'verdadeiro_falso', alias: 'pratica_2', name: 'Etapa 4 • Verdadeiro ou Falso', icon: '⚖️', subtitle: 'Avalie afirmativas conceituais e identifique distratores', type: 'true_false' },
+      { id: 'revisao_erros', alias: 'revisao', name: 'Etapa 5 • Revisão de Pontos Críticos', icon: '🔄', subtitle: 'Síntese ativa, prevenção de pegadinhas e regras de ouro', type: 'short_answer' },
+      { id: 'lacunas_associacao', alias: 'quiz_2', name: 'Etapa 6 • Lacunas & Associação', icon: '🧩', subtitle: 'Complete conceitos-chave e associe termos às definições', type: 'cloze' },
+      { id: 'desafio_aplicado', alias: 'desafio_final', name: 'Etapa 7 • Desafio de Maestria', icon: '⚡', subtitle: 'Problemas complexos e raciocínio aprofundado', type: 'multiple_choice' },
+      { id: 'simulado_capitulo', alias: 'desafio_final', name: 'Etapa 8 • Simulado do Capítulo', icon: '🎯', subtitle: 'Simulação de prova para validar domínio e retenção real', type: 'simulado' },
+      { id: 'dominio', alias: 'dominio', name: 'Domínio do Capítulo 🏆', icon: '🏆', subtitle: 'Certificado de maestria curricular e nota máxima atingida!' }
+    ];
+
+    const isStageDone = (stg) => {
+      return completedStages.includes(stg.id) || (stg.alias && completedStages.includes(stg.alias));
+    };
+
+    const playableStages = stages.filter(s => s.id !== 'dominio');
+    const completedCount = playableStages.filter(s => isStageDone(s)).length;
+    const isChapterCompleted = completedCount >= playableStages.length || rec?.isCompleted || false;
+    const masteryPct = isChapterCompleted ? 100 : Math.round((completedCount / playableStages.length) * 100);
 
     if (progressPctEl) progressPctEl.innerText = `${masteryPct}% Dominado`;
     if (progressBarEl) progressBarEl.style.width = `${masteryPct}%`;
-
-    // 8 Etapas Canônicas da Trilha Progressiva do Capítulo
-    const stages = [
-      { id: 'fundamentos', name: 'Comece Aqui • Fundamentos', icon: '🌱', subtitle: 'Conceito Essencial & Teoria Resumida' },
-      { id: 'pratica_1', name: 'Prática 1 • Fixação Guiada', icon: '✏️', subtitle: 'Exercícios conceituais de fixação dos fundamentos' },
-      { id: 'quiz_1', name: 'Quiz 1 • Avaliação Conceitual SAS', icon: '📝', subtitle: '3 Questões de múltipla escolha com gabarito comentado' },
-      { id: 'pratica_2', name: 'Prática 2 • Aplicação Prática', icon: '🔍', subtitle: 'Contextualização em problemas reais e dados' },
-      { id: 'quiz_2', name: 'Quiz 2 • Análise & Interpretação', icon: '⚡', subtitle: 'Desafios intermediários com foco na matriz do SAS' },
-      { id: 'revisao', name: 'Revisão • Pontos de Atenção', icon: '🔄', subtitle: 'Síntese ativa, macetes e prevenção de pegadinhas' },
-      { id: 'desafio_final', name: 'Desafio Final • Prova de Maestria', icon: '🎯', subtitle: 'Checkpoint decisivo para garantir o domínio total' },
-      { id: 'dominio', name: 'Domínio do Capítulo 🏆', icon: '🏆', subtitle: 'Certificado de maestria curricular e nota máxima atingida!' }
-    ];
 
     let paywallBannerHtml = '';
     if (!hasAccess) {
@@ -2800,7 +2808,7 @@ class EstudePlusApp {
           <h3 style="margin: 0 0 6px; font-size: 1.3rem; font-weight: 900; color: #ffffff;">Trilha Exclusiva do ESTUDE+ PRO</h3>
           <p style="margin: 0 auto 16px; color: #cbd5e1; max-width: 520px; font-size: 0.88rem; line-height: 1.5;">
             "Aprenda por caminhos completos organizados por matéria, apostila e capítulo."<br>
-            Para realizar os testes conceituais, exercícios e avançar pelas 7 etapas deste capítulo, assine o Plano PRO por R$ 10,00/mês ou R$ 120,00/ano.
+            Para realizar os testes conceituais, exercícios e avançar pelas 8 etapas deste capítulo, assine o Plano PRO por R$ 10,00/mês ou R$ 120,00/ano.
           </p>
           <button class="btn-primary" onclick="app.showSubscriptionModal()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; padding: 11px 24px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; margin: 0 auto; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">
             <i data-lucide="sparkles"></i> Conhecer o Pro / Assinar Agora
@@ -2816,12 +2824,12 @@ class EstudePlusApp {
       if (isMasteryNode) {
         state = isChapterCompleted ? 'completed' : 'locked';
       } else {
-        if (completedStages.includes(stg.id)) {
+        if (isStageDone(stg)) {
           state = 'completed';
         } else {
           // Desbloqueia se for a primeira etapa OU se a etapa anterior foi concluída
           const prevStage = stages[idx - 1];
-          if (idx === 0 || (prevStage && completedStages.includes(prevStage.id))) {
+          if (idx === 0 || (prevStage && isStageDone(prevStage))) {
             state = 'active';
           } else {
             state = 'locked';
@@ -2829,7 +2837,7 @@ class EstudePlusApp {
         }
       }
 
-      const stageResult = rec?.stageResults?.[stg.id];
+      const stageResult = rec?.stageResults?.[stg.id] || (stg.alias ? rec?.stageResults?.[stg.alias] : null);
       const isLastNode = idx === stages.length - 1;
 
       let actionHtml = '';
@@ -2877,7 +2885,7 @@ class EstudePlusApp {
           <div class="trail-step-card ${state}-card">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
               <span class="badge-accent" style="background: ${state === 'completed' ? '#dcfce7' : (state === 'active' ? '#e0f2fe' : '#f1f5f9')}; color: ${state === 'completed' ? '#15803d' : (state === 'active' ? '#0369a1' : '#64748b')}; font-weight: 800; font-size: 0.76rem;">
-                ${isMasteryNode ? 'CERTIFICADO FINAL' : `ETAPA ${idx + 1} DE 7`}
+                ${isMasteryNode ? 'CERTIFICADO FINAL' : `ETAPA ${idx + 1} DE ${playableStages.length}`}
               </span>
               ${stageResult ? `<span style="font-size: 0.78rem; font-weight: 800; color: #10b981;">Aproveitamento: ${stageResult.percentage}%</span>` : ''}
             </div>
@@ -2905,91 +2913,123 @@ class EstudePlusApp {
     const configs = [
       {
         index: 0,
-        id: 'fundamentos',
-        name: 'Comece Aqui • Fundamentos',
-        levelLabel: 'Nível 1 • Fácil',
+        id: 'licao_guiada',
+        alias: 'fundamentos',
+        name: 'Etapa 1 • Lição Guiada',
+        type: 'lesson',
+        levelLabel: 'Nível 1 • Compreensão Essencial',
         diffKey: 'facil',
-        count: 3,
+        count: 8,
         badgeBg: '#dcfce7',
         badgeColor: '#15803d',
-        desc: 'Conceito Essencial & Teoria Resumida da apostila SAS',
-        tip: '💡 Dica: Foque nas definições básicas e nos conceitos primários apresentados na apostila.'
+        desc: 'Conceito essencial em micro-doses com exemplos e verificação imediata',
+        tip: '💡 Dica da Lição: Leia a explicação com atenção e responda às 8 atividades (mínimo 5 acertos para avançar).'
       },
       {
         index: 1,
-        id: 'pratica_1',
-        name: 'Prática 1 • Fixação Guiada',
-        levelLabel: 'Nível 2 • Fácil a Moderado',
+        id: 'pratica_guiada',
+        alias: 'pratica_1',
+        name: 'Etapa 2 • Prática de Fixação',
+        type: 'multiple_choice',
+        levelLabel: 'Nível 2 • Fixação Direta',
         diffKey: 'facil',
-        count: 3,
+        count: 8,
         badgeBg: '#e0f2fe',
         badgeColor: '#0369a1',
-        desc: 'Exercícios conceituais de fixação direta das regras e postulados',
-        tip: '✏️ Dica: Aplique as regras fundamentais de resolução passo a passo.'
+        desc: 'Exercícios conceituais diretos aplicando as regras e postulados',
+        tip: '✏️ Dica da Prática: Aplique a regra passo a passo nas 8 questões (mínimo 5 de 8 = 62,5%).'
       },
       {
         index: 2,
-        id: 'quiz_1',
-        name: 'Quiz 1 • Avaliação Conceitual SAS',
-        levelLabel: 'Nível 3 • Moderado',
+        id: 'quiz_multiformato',
+        alias: 'quiz_1',
+        name: 'Etapa 3 • Quiz Adaptativo',
+        type: 'multiple_choice',
+        levelLabel: 'Nível 3 • Moderado SAS',
         diffKey: 'medio',
-        count: 3,
+        count: 8,
         badgeBg: '#dbeafe',
         badgeColor: '#1d4ed8',
-        desc: 'Avaliação de múltipla escolha no padrão formativo SAS',
-        tip: '📝 Dica: Avalie cada alternativa com cuidado para descartar os distratores comuns.'
+        desc: 'Múltipla escolha formativa calibrada no padrão da matriz SAS',
+        tip: '📝 Dica: Avalie cada alternativa e descarte distratores (mínimo 5 acertos de 8 para passar).'
       },
       {
         index: 3,
-        id: 'pratica_2',
-        name: 'Prática 2 • Aplicação Prática',
-        levelLabel: 'Nível 4 • Moderado / Avançado',
+        id: 'verdadeiro_falso',
+        alias: 'pratica_2',
+        name: 'Etapa 4 • Verdadeiro ou Falso',
+        type: 'true_false',
+        levelLabel: 'Nível 4 • Discernimento Conceitual',
         diffKey: 'medio',
-        count: 3,
+        count: 8,
         badgeBg: '#fef3c7',
         badgeColor: '#b45309',
-        desc: 'Contextualização em problemas do cotidiano e raciocínio prático',
-        tip: '🔍 Dica: Interprete o enunciado e monte a relação matemática/conceitual da situação-problema.'
+        desc: 'Avalie 8 afirmativas conceituais rigorosamente e identifique pegadinhas teóricas',
+        tip: '⚖️ Dica V/F: Se houver uma única parte incorreta na frase, a afirmação inteira é FALSA.'
       },
       {
         index: 4,
-        id: 'quiz_2',
-        name: 'Quiz 2 • Análise & Interpretação',
-        levelLabel: 'Nível 5 • Difícil',
-        diffKey: 'dificil',
-        count: 4,
+        id: 'revisao_erros',
+        alias: 'revisao',
+        name: 'Etapa 5 • Revisão de Pontos Críticos',
+        type: 'short_answer',
+        levelLabel: 'Nível 5 • Resposta Rápida',
+        diffKey: 'medio',
+        count: 8,
         badgeBg: '#ffedd5',
         badgeColor: '#c2410c',
-        desc: 'Questões analíticas aprofundadas baseadas na matriz de habilidades do SAS',
-        tip: '⚡ Dica: Atenção às etapas encadeadas de dedução lógica e precisão nos cálculos.'
+        desc: 'Responda diretamente com o termo ou valor exato para fixar a memória de longo prazo',
+        tip: '🔄 Dica: Digite a resposta de forma direta e concisa (mínimo de 5/8 acertos para aprovação).'
       },
       {
         index: 5,
-        id: 'revisao',
-        name: 'Revisão • Pontos de Atenção',
-        levelLabel: 'Nível 6 • Difícil / Pegadinhas',
+        id: 'lacunas_associacao',
+        alias: 'quiz_2',
+        name: 'Etapa 6 • Lacunas & Associação',
+        type: 'cloze',
+        levelLabel: 'Nível 6 • Integração de Conceitos',
         diffKey: 'dificil',
-        count: 3,
+        count: 8,
         badgeBg: '#fee2e2',
         badgeColor: '#b91c1c',
-        desc: 'Atenção redobrada a sinais, exceções e prevenção de erros comuns de prova',
-        tip: '🔄 Dica: Pegadinhas frequentes envolvem inversão de sinais, parênteses e unidades de medida.'
+        desc: 'Complete sentenças com termos técnicos e associe causas aos seus efeitos',
+        tip: '🧩 Dica: Clique na palavra correta para preencher a lacuna no contexto certo.'
       },
       {
         index: 6,
-        id: 'desafio_final',
-        name: 'Desafio Final • Prova de Maestria',
-        levelLabel: 'Nível 7 • 🔥 Desafio Máximo SAS',
+        id: 'desafio_aplicado',
+        alias: 'desafio_final',
+        name: 'Etapa 7 • Desafio de Maestria',
+        type: 'multiple_choice',
+        levelLabel: 'Nível 7 • Alto Raciocínio SAS',
         diffKey: 'dificil',
-        count: 4,
+        count: 8,
         badgeBg: '#ede9fe',
         badgeColor: '#6d28d9',
-        desc: 'Desafio decisivo de alto rendimento para demonstrar domínio absoluto do capítulo',
-        tip: '🎯 Dica: Nível olímpico e aprofundamento máximo da Coleção Asas SAS. Pense estrategicamente!'
+        desc: 'Problemas contextualizados de alta complexidade analítica da Coleção Asas',
+        tip: '⚡ Dica: Conecte múltiplos conceitos e garanta 5 acertos ou mais de 8.'
+      },
+      {
+        index: 7,
+        id: 'simulado_capitulo',
+        alias: 'desafio_final',
+        name: 'Etapa 8 • Simulado do Capítulo',
+        type: 'simulado',
+        levelLabel: 'Nível 8 • 🎯 Simulação de Prova',
+        diffKey: 'dificil',
+        count: 8,
+        badgeBg: '#fce7f3',
+        badgeColor: '#be185d',
+        desc: 'Validação final cronometrada simulando uma prova real do Colégio Gammon',
+        tip: '🎯 Dica: Teste decisivo! 8 questões completas. Acerte no mínimo 5/8 para conquistar o Domínio!'
       }
     ];
 
-    return configs[stageIndex] || configs.find(c => c.id === stageId) || configs[0];
+    if (stageIndex !== undefined && stageIndex !== null && configs[stageIndex]) {
+      return configs[stageIndex];
+    }
+    const found = configs.find(c => c.id === stageId || c.alias === stageId);
+    return found || configs[0];
   }
 
   generateProceduralSasQuestions(subjectKey, bookId, chapterId, stageIndex, stageId, countNeeded) {
@@ -3402,6 +3442,7 @@ class EstudePlusApp {
     const key = `${subjectKey}_${bookId}_${chapterId}`;
     const stageCfg = this.getTrilhaStageConfig(stageIndex, stageId);
     const targetCount = stageCfg.count || 3;
+    const stageType = stageCfg.type || 'multiple_choice';
 
     const bank = this.getSasQuestionBank();
     const chapterCurated = bank[key];
@@ -3419,15 +3460,15 @@ class EstudePlusApp {
       } else if (stageIndex === 2) {
         rawQuestions = (chapterCurated.medio || []).slice(0, targetCount);
       } else if (stageIndex === 3) {
-        const medioRemaining = (chapterCurated.medio || []).slice(1);
-        rawQuestions = [...medioRemaining].slice(0, targetCount);
+        rawQuestions = (chapterCurated.medio || []).slice(0, targetCount);
       } else if (stageIndex === 4) {
-        rawQuestions = (chapterCurated.dificil || []).slice(0, targetCount);
+        rawQuestions = (chapterCurated.medio || chapterCurated.dificil || []).slice(0, targetCount);
       } else if (stageIndex === 5) {
-        const dificilRev = (chapterCurated.dificil || []).slice(1);
-        rawQuestions = [...dificilRev].slice(0, targetCount);
+        rawQuestions = (chapterCurated.dificil || chapterCurated.medio || []).slice(0, targetCount);
       } else if (stageIndex === 6) {
-        rawQuestions = [...(chapterCurated.dificil || [])].slice(0, targetCount);
+        rawQuestions = (chapterCurated.dificil || []).slice(0, targetCount);
+      } else {
+        rawQuestions = [...(chapterCurated.dificil || []), ...(chapterCurated.medio || [])].slice(0, targetCount);
       }
     }
 
@@ -3437,8 +3478,12 @@ class EstudePlusApp {
       rawQuestions = [...rawQuestions, ...proceduralQs];
     }
 
-    // Normaliza cada questão com opções A, B, C, D e gabarito determinístico
     const letters = ['A', 'B', 'C', 'D'];
+    const subjData = this.sasSubjectsData[subjectKey] || this.sasSubjectsData['matematica'];
+    const currentBook = (subjData.livros || []).find(b => b.id === bookId) || subjData.livros[0];
+    const currentCap = (currentBook.chapters || []).find(c => c.id === chapterId) || currentBook.chapters[0];
+    const cleanCapName = (currentCap.title || '').replace(/Capítulo\s*\d+\s*[–-]\s*/i, '').trim();
+
     return rawQuestions.slice(0, targetCount).map((q, idx) => {
       let rawOptions = [];
       if (Array.isArray(q.options)) {
@@ -3474,18 +3519,103 @@ class EstudePlusApp {
         }
       }
 
-      return {
+      const baseQ = {
         index: idx,
         id: q.id || `q_${stageId}_${idx}_${Date.now()}`,
-        text: q.text,
         topic: q.topic || `${stageCfg.name}`,
         difficultyLabel: stageCfg.levelLabel,
         badgeBg: stageCfg.badgeBg,
         badgeColor: stageCfg.badgeColor,
+        explanation: q.explanation || `Resolução fundamentada nos conceitos essenciais de ${cleanCapName}.`,
+        aiGuidance: q.aiGuidance || stageCfg.tip,
+        diagnosticWrong: 'Atenção aos distratores comuns da matéria: revise a regra conceitual e as evidências apresentadas.'
+      };
+
+      // 1. LIÇÃO GUIADA COM CHECKPOINT
+      if (stageType === 'lesson') {
+        return {
+          ...baseQ,
+          type: 'lesson',
+          formatLabel: 'Lição Guiada + Checkpoint',
+          lesson: {
+            topic: cleanCapName,
+            concept: `${currentCap.desc || 'Conceitos fundamentais de ' + cleanCapName}. O objetivo desta etapa é compreender os pilares teóricos antes de aplicar fórmulas ou cálculos complexos.`,
+            example: `Na prática pedagógica do SAS: identifique sempre os elementos conhecidos e a relação direta com os princípios de ${cleanCapName}.`,
+            rule: `Regra de ouro: nunca suponha dados não declarados na questão.`
+          },
+          text: `Mini-Exercício de Verificação: A respeito de "${cleanCapName}", qual alternativa expressa a afirmação correta?`,
+          options: finalOptions,
+          correctLetter: letters[correctPos]
+        };
+      }
+
+      // 2. VERDADEIRO OU FALSO
+      if (stageType === 'true_false') {
+        const isTrue = (idx % 2 === 0);
+        const statementText = isTrue
+          ? `No contexto de "${cleanCapName}": ${correctOpt.text}`
+          : `No contexto de "${cleanCapName}": ${incorrectOpts[0]?.text || 'Os conceitos deste tópico não possuem validação na matriz curricular oficial.'}`;
+
+        return {
+          ...baseQ,
+          type: 'true_false',
+          formatLabel: 'Verdadeiro ou Falso',
+          text: statementText,
+          correctBool: isTrue,
+          explanation: isTrue
+            ? `Afirmação CORRETA. ${q.explanation || 'Conforme demonstrado nos postulados da apostila SAS.'}`
+            : `Afirmação FALSA. A formulação correta estabelece: ${correctOpt.text}`,
+          diagnosticWrong: isTrue
+            ? 'Você marcou FALSO, mas a afirmação é pedagogicamente verdadeira e descreve o conceito com precisão.'
+            : 'Você marcou VERDADEIRO, mas a proposição inclui uma premissa incorreta que invalida o raciocínio.'
+        };
+      }
+
+      // 3. RESPOSTA CURTA & FIXAÇÃO
+      if (stageType === 'short_answer') {
+        const words = correctOpt.text.split(' ');
+        let candidate = words.find(w => w.length >= 3 && !['para', 'com', 'que', 'dos', 'das', 'uma', 'seu'].includes(w.toLowerCase())) || words[0] || 'exato';
+        const cleanAnswer = candidate.replace(/[^a-zA-Z0-9À-ÿ]/g, '').trim();
+
+        return {
+          ...baseQ,
+          type: 'short_answer',
+          formatLabel: 'Resposta Curta & Fixação',
+          text: q.text,
+          placeholder: 'Digite sua resposta curta aqui (ex: valor numérico, termo chave)...',
+          correctAnswer: cleanAnswer,
+          acceptableAnswers: [cleanAnswer.toLowerCase(), correctOpt.text.slice(0, 35).trim()],
+          explanation: q.explanation || `Conforme o SAS, a resposta esperada é "${cleanAnswer}".`,
+          diagnosticWrong: `A resposta requer o termo exato "${cleanAnswer}". Revise as definições imediatas da apostila.`
+        };
+      }
+
+      // 4. COMPLETAR LACUNAS (CLOZE)
+      if (stageType === 'cloze') {
+        const keyWord = cleanCapName.split(' ')[0] || 'conceito';
+        const distractorWords = ['hipótese', 'exceção', 'inversão', 'aproximação', 'generalização'];
+
+        return {
+          ...baseQ,
+          type: 'cloze',
+          formatLabel: 'Completar Lacuna',
+          textBefore: `No estudo aprofundado de ${cleanCapName}, o conceito de`,
+          textAfter: `é indispensável para garantir a precisão dos cálculos e a interpretação correta dos dados.`,
+          correctWord: keyWord,
+          wordBank: [keyWord, distractorWords[idx % distractorWords.length], distractorWords[(idx + 1) % distractorWords.length], distractorWords[(idx + 2) % distractorWords.length]].sort(() => Math.random() - 0.5),
+          explanation: q.explanation || `O termo técnico "${keyWord}" é o conceito central desta seção curricular.`,
+          diagnosticWrong: `O termo técnico que preenche a sentença adequadamente é "${keyWord}".`
+        };
+      }
+
+      // 5. MÚLTIPLA ESCOLHA & SIMULADO DEFAULT
+      return {
+        ...baseQ,
+        type: 'multiple_choice',
+        formatLabel: 'Múltipla Escolha Adaptativa',
+        text: q.text,
         options: finalOptions,
-        correctLetter: letters[correctPos],
-        explanation: q.explanation || 'Resolução fundamentada nos conceitos essenciais da disciplina para o 7º ano.',
-        aiGuidance: q.aiGuidance || stageCfg.tip
+        correctLetter: letters[correctPos]
       };
     });
   }
@@ -3530,7 +3660,7 @@ class EstudePlusApp {
     const actionsArea = document.getElementById('trilhaStageActions');
 
     if (modalBadge) {
-      modalBadge.innerText = `ETAPA ${stageIndex + 1} DE 7`;
+      modalBadge.innerText = `ETAPA ${stageIndex + 1} DE 8`;
       modalBadge.style.background = '#fef3c7';
       modalBadge.style.color = '#b45309';
       modalBadge.style.display = 'inline-block';
@@ -3599,42 +3729,141 @@ class EstudePlusApp {
         </div>
       </div>
 
-      <!-- Lista de Questões -->
+      <!-- Lista de Questões Multiformato -->
       <div class="trilha-questions-list" style="display: flex; flex-direction: column; gap: 16px;">
-        ${questions.map((q, qIdx) => `
-          <div class="trilha-q-block" id="trilha_q_block_${qIdx}" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
-              <span style="font-size: 0.8rem; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 6px;">
-                Questão ${qIdx + 1} de ${questions.length}
-              </span>
-              <span style="font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: ${q.badgeBg}; color: ${q.badgeColor};">
-                ${q.difficultyLabel || stageCfg.levelLabel}
-              </span>
-            </div>
+        ${questions.map((q, qIdx) => this.renderTrilhaQuestionItemHtml(q, qIdx, questions.length, stageCfg)).join('')}
+      </div>
+    `;
+  }
 
-            <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; line-height: 1.5; margin-bottom: 14px;">
-              ${q.text}
-            </div>
+  renderTrilhaQuestionItemHtml(q, qIdx, totalCount, stageCfg) {
+    const qNum = qIdx + 1;
+    const type = q.type || 'multiple_choice';
 
-            <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px;">
-              ${q.options.map(opt => `
-                <label id="trilha_opt_lbl_${qIdx}_${opt.letter}" 
-                       onclick="app.handleTrilhaOptionSelect(${qIdx}, '${opt.letter}')"
-                       style="display: flex; align-items: center; gap: 12px; font-size: 0.86rem; color: #334155; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; cursor: pointer; transition: all 0.15s ease; background: #ffffff;">
-                  <input type="radio" 
-                         name="trilha_question_${qIdx}" 
-                         value="${opt.letter}" 
-                         id="trilha_opt_radio_${qIdx}_${opt.letter}"
-                         style="margin: 0; width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb;">
-                  <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: #f1f5f9; font-weight: 800; font-size: 0.8rem; color: #475569; flex-shrink: 0;">
-                    ${opt.letter}
-                  </span>
-                  <span style="line-height: 1.4; flex: 1;">${opt.text}</span>
-                </label>
-              `).join('')}
-            </div>
+    let bodyHtml = '';
+
+    if (type === 'lesson') {
+      bodyHtml = `
+        <div class="trilha-lesson-card">
+          <div class="trilha-lesson-header">
+            <span>🌱</span>
+            <span>Lição Rápida: ${q.lesson?.topic || 'Conceito Essencial'}</span>
           </div>
-        `).join('')}
+          <div class="trilha-lesson-body">
+            <p><strong>📌 Conceito:</strong> ${q.lesson?.concept || ''}</p>
+            <p><strong>💡 Exemplo:</strong> ${q.lesson?.example || ''}</p>
+            <p style="margin-bottom: 0;"><strong>🎯 Regra de Ouro:</strong> ${q.lesson?.rule || ''}</p>
+          </div>
+        </div>
+
+        <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; line-height: 1.5; margin-bottom: 12px;">
+          ❓ ${q.text}
+        </div>
+
+        <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px;">
+          ${(q.options || []).map(opt => `
+            <label id="trilha_opt_lbl_${qIdx}_${opt.letter}" 
+                   onclick="app.handleTrilhaOptionSelect(${qIdx}, '${opt.letter}')"
+                   style="display: flex; align-items: center; gap: 12px; font-size: 0.86rem; color: #334155; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; cursor: pointer; transition: all 0.15s ease; background: #ffffff;">
+              <input type="radio" name="trilha_question_${qIdx}" value="${opt.letter}" id="trilha_opt_radio_${qIdx}_${opt.letter}" style="margin: 0; width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: #f1f5f9; font-weight: 800; font-size: 0.8rem; color: #475569; flex-shrink: 0;">
+                ${opt.letter}
+              </span>
+              <span style="line-height: 1.4; flex: 1;">${opt.text}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+    } else if (type === 'true_false') {
+      bodyHtml = `
+        <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a; line-height: 1.55; margin-bottom: 14px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 10px;">
+          ⚖️ "${q.text}"
+        </div>
+        <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 12px;">
+          Avalie a afirmação acima e assinale se ela é pedagogicamente <strong>Verdadeira</strong> ou <strong>Falsa</strong>:
+        </p>
+        <div class="trilha-tf-grid">
+          <button type="button" class="trilha-tf-btn" id="trilha_tf_btn_${qIdx}_true" onclick="app.handleTrilhaTrueFalseSelect(${qIdx}, true)">
+            <span style="font-size: 1.4rem;">✔️</span>
+            <span>Verdadeiro</span>
+          </button>
+          <button type="button" class="trilha-tf-btn" id="trilha_tf_btn_${qIdx}_false" onclick="app.handleTrilhaTrueFalseSelect(${qIdx}, false)">
+            <span style="font-size: 1.4rem;">❌</span>
+            <span>Falso</span>
+          </button>
+        </div>
+      `;
+    } else if (type === 'short_answer') {
+      bodyHtml = `
+        <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a; line-height: 1.5; margin-bottom: 12px;">
+          ✏️ ${q.text}
+        </div>
+        <div class="trilha-short-container">
+          <input type="text" class="trilha-short-input" id="trilha_short_${qIdx}" 
+                 placeholder="${q.placeholder || 'Digite sua resposta curta...'}" 
+                 autocomplete="off"
+                 oninput="app.handleTrilhaShortAnswerInput(${qIdx}, this.value)">
+          <span style="font-size: 0.78rem; color: #64748b;">
+            💡 Digite o termo exato ou resultado (o sistema não diferencia maiúsculas de minúsculas).
+          </span>
+        </div>
+      `;
+    } else if (type === 'cloze') {
+      bodyHtml = `
+        <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 10px;">
+          🧩 Complete a sentença selecionando a palavra correta do banco abaixo:
+        </div>
+        <div class="trilha-cloze-box">
+          <span>${q.textBefore || ''}</span>
+          <span class="trilha-cloze-blank" id="trilha_cloze_blank_${qIdx}">[ Clique no banco abaixo ]</span>
+          <span>${q.textAfter || ''}</span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+          ${(q.wordBank || []).map(w => `
+            <button type="button" class="trilha-word-chip trilha-chip-${qIdx}" data-word="${w}" onclick="app.handleTrilhaClozeSelect(${qIdx}, '${w}')">
+              ${w}
+            </button>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      // multiple_choice / simulado default
+      bodyHtml = `
+        <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; line-height: 1.5; margin-bottom: 14px;">
+          ${q.text}
+        </div>
+
+        <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px;">
+          ${(q.options || []).map(opt => `
+            <label id="trilha_opt_lbl_${qIdx}_${opt.letter}" 
+                   onclick="app.handleTrilhaOptionSelect(${qIdx}, '${opt.letter}')"
+                   style="display: flex; align-items: center; gap: 12px; font-size: 0.86rem; color: #334155; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; cursor: pointer; transition: all 0.15s ease; background: #ffffff;">
+              <input type="radio" 
+                     name="trilha_question_${qIdx}" 
+                     value="${opt.letter}" 
+                     id="trilha_opt_radio_${qIdx}_${opt.letter}"
+                     style="margin: 0; width: 16px; height: 16px; cursor: pointer; accent-color: #2563eb;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: #f1f5f9; font-weight: 800; font-size: 0.8rem; color: #475569; flex-shrink: 0;">
+                ${opt.letter}
+              </span>
+              <span style="line-height: 1.4; flex: 1;">${opt.text}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="trilha-q-block" id="trilha_q_block_${qIdx}" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+          <span style="font-size: 0.8rem; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 6px;">
+            Questão ${qNum} de ${totalCount} &bull; ${q.formatLabel || 'Atividade'}
+          </span>
+          <span style="font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: ${q.badgeBg || stageCfg.badgeBg}; color: ${q.badgeColor || stageCfg.badgeColor};">
+            ${q.difficultyLabel || stageCfg.levelLabel}
+          </span>
+        </div>
+        ${bodyHtml}
       </div>
     `;
   }
@@ -3644,11 +3873,9 @@ class EstudePlusApp {
     if (!this.activeTrilhaSession.answers) this.activeTrilhaSession.answers = {};
     this.activeTrilhaSession.answers[qIdx] = letter;
 
-    // Marca o input de rádio
     const radio = document.getElementById(`trilha_opt_radio_${qIdx}_${letter}`);
     if (radio) radio.checked = true;
 
-    // Atualiza visual de todas as alternativas daquela questão
     ['A', 'B', 'C', 'D'].forEach(l => {
       const lbl = document.getElementById(`trilha_opt_lbl_${qIdx}_${l}`);
       if (lbl) {
@@ -3667,19 +3894,118 @@ class EstudePlusApp {
     });
 
     const block = document.getElementById(`trilha_q_block_${qIdx}`);
-    if (block) {
-      block.style.borderColor = '#93c5fd';
+    if (block) block.style.borderColor = '#93c5fd';
+
+    this.updateTrilhaSessionCounter();
+  }
+
+  handleTrilhaTrueFalseSelect(qIdx, boolVal) {
+    if (!this.activeTrilhaSession) return;
+    if (!this.activeTrilhaSession.answers) this.activeTrilhaSession.answers = {};
+    this.activeTrilhaSession.answers[qIdx] = boolVal;
+
+    const btnTrue = document.getElementById(`trilha_tf_btn_${qIdx}_true`);
+    const btnFalse = document.getElementById(`trilha_tf_btn_${qIdx}_false`);
+    if (btnTrue) btnTrue.classList.toggle('selected-true', boolVal === true);
+    if (btnFalse) btnFalse.classList.toggle('selected-false', boolVal === false);
+
+    const block = document.getElementById(`trilha_q_block_${qIdx}`);
+    if (block) block.style.borderColor = '#93c5fd';
+
+    this.updateTrilhaSessionCounter();
+  }
+
+  handleTrilhaShortAnswerInput(qIdx, textVal) {
+    if (!this.activeTrilhaSession) return;
+    if (!this.activeTrilhaSession.answers) this.activeTrilhaSession.answers = {};
+    const trimmed = String(textVal || '').trim();
+    if (trimmed) {
+      this.activeTrilhaSession.answers[qIdx] = trimmed;
+    } else {
+      delete this.activeTrilhaSession.answers[qIdx];
     }
 
-    const answeredCount = Object.keys(this.activeTrilhaSession.answers).length;
+    const block = document.getElementById(`trilha_q_block_${qIdx}`);
+    if (block) block.style.borderColor = trimmed ? '#93c5fd' : '#e2e8f0';
+
+    this.updateTrilhaSessionCounter();
+  }
+
+  handleTrilhaClozeSelect(qIdx, word) {
+    if (!this.activeTrilhaSession) return;
+    if (!this.activeTrilhaSession.answers) this.activeTrilhaSession.answers = {};
+    this.activeTrilhaSession.answers[qIdx] = word;
+
+    const blankEl = document.getElementById(`trilha_cloze_blank_${qIdx}`);
+    if (blankEl) {
+      blankEl.innerText = word;
+      blankEl.classList.add('filled');
+    }
+
+    const chips = document.querySelectorAll(`.trilha-chip-${qIdx}`);
+    chips.forEach(chip => {
+      chip.classList.toggle('selected', chip.dataset.word === word);
+    });
+
+    const block = document.getElementById(`trilha_q_block_${qIdx}`);
+    if (block) block.style.borderColor = '#93c5fd';
+
+    this.updateTrilhaSessionCounter();
+  }
+
+  updateTrilhaSessionCounter() {
+    if (!this.activeTrilhaSession) return;
+    const answeredCount = Object.keys(this.activeTrilhaSession.answers || {}).length;
     const totalCount = this.activeTrilhaSession.totalQuestions;
     const counterEl = document.getElementById('trilhaStageAnswerCount');
     if (counterEl) {
       counterEl.innerText = `${answeredCount} de ${totalCount} respondidas`;
-      if (answeredCount === totalCount) {
-        counterEl.style.color = '#10b981';
-      }
+      counterEl.style.color = (answeredCount === totalCount) ? '#10b981' : '#64748b';
     }
+  }
+
+  isTrilhaAnswerCorrect(q, userAns) {
+    if (userAns === undefined || userAns === null || userAns === '') return false;
+
+    if (q.type === 'true_false') {
+      return Boolean(userAns) === Boolean(q.correctBool);
+    }
+
+    if (q.type === 'short_answer') {
+      const norm = (s) => String(s || '').trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+        .replace(/\s+/g, ' ');
+      const u = norm(userAns);
+      const c = norm(q.correctAnswer);
+      const acceptable = (q.acceptableAnswers || []).map(norm);
+      return u === c || acceptable.includes(u);
+    }
+
+    if (q.type === 'cloze') {
+      const norm = (s) => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return norm(userAns) === norm(q.correctWord);
+    }
+
+    // Default: multiple_choice, lesson, simulado
+    return String(userAns).toUpperCase() === String(q.correctLetter).toUpperCase();
+  }
+
+  formatTrilhaUserAnswer(q, userAns) {
+    if (userAns === undefined || userAns === null || userAns === '') return 'Não respondida';
+    if (q.type === 'true_false') return userAns === true ? 'Verdadeiro' : 'Falso';
+    if (q.type === 'short_answer') return `"${userAns}"`;
+    if (q.type === 'cloze') return `[ ${userAns} ]`;
+    const opt = (q.options || []).find(o => o.letter === userAns);
+    return opt ? `[${userAns}] ${opt.text}` : `[${userAns}]`;
+  }
+
+  formatTrilhaCorrectAnswer(q) {
+    if (q.type === 'true_false') return q.correctBool === true ? 'Verdadeiro' : 'Falso';
+    if (q.type === 'short_answer') return q.correctAnswer;
+    if (q.type === 'cloze') return `[ ${q.correctWord} ]`;
+    const opt = (q.options || []).find(o => o.letter === q.correctLetter);
+    return opt ? `[${q.correctLetter}] ${opt.text}` : `[${q.correctLetter}]`;
   }
 
   async submitCurrentTrilhaStage() {
@@ -3693,11 +4019,11 @@ class EstudePlusApp {
       }
     }
 
-    // Calcula acertos com gabarito exato
+    // Calcula acertos com validador universal
     let score = 0;
     (session.questions || []).forEach((q, idx) => {
       const userAns = session.answers[idx];
-      if (userAns && String(userAns).toUpperCase() === String(q.correctLetter).toUpperCase()) {
+      if (this.isTrilhaAnswerCorrect(q, userAns)) {
         score++;
       }
     });
@@ -3708,7 +4034,12 @@ class EstudePlusApp {
       btn.innerHTML = '<span>Salvando...</span>';
     }
 
-    const pct = Math.round((score / session.totalQuestions) * 100);
+    const total = session.totalQuestions || 8;
+    const minRequired = Math.ceil(total * 0.6); // 5 de 8 = 62.5%
+    const passed = score >= minRequired;
+    const rawPct = total > 0 ? (score / total) * 100 : 0;
+    const pct = (rawPct % 1 === 0) ? rawPct : Number(rawPct.toFixed(1));
+    const neededMore = Math.max(0, minRequired - score);
 
     // Salva o progresso localmente primeiro (100% tolerante a falhas)
     let localRec = (this.trilhasProgressData || []).find(p =>
@@ -3730,19 +4061,24 @@ class EstudePlusApp {
       this.trilhasProgressData.push(localRec);
     }
 
-    if (!localRec.completedStages.includes(session.stageId)) {
-      localRec.completedStages.push(session.stageId);
-    }
     if (!localRec.stageResults) localRec.stageResults = {};
     localRec.stageResults[session.stageId] = {
       score,
-      total: session.totalQuestions,
+      total,
       percentage: pct,
+      passed,
       completedAt: new Date().toISOString()
     };
-    localRec.masteryPercentage = Math.round((localRec.completedStages.length / 7) * 100);
-    if (localRec.completedStages.length >= 7) {
-      localRec.isCompleted = true;
+
+    // REGRA ESTRITA: Só adiciona em completedStages se atingir o mínimo de 60% (5 de 8)
+    if (passed) {
+      if (!localRec.completedStages.includes(session.stageId)) {
+        localRec.completedStages.push(session.stageId);
+      }
+      localRec.masteryPercentage = Math.round((localRec.completedStages.length / 8) * 100);
+      if (localRec.completedStages.length >= 8) {
+        localRec.isCompleted = true;
+      }
     }
 
     try {
@@ -3762,7 +4098,7 @@ class EstudePlusApp {
           stageId: session.stageId,
           stageIndex: session.stageIndex,
           score,
-          total: session.totalQuestions
+          total
         })
       });
       if (res.ok) {
@@ -3772,17 +4108,21 @@ class EstudePlusApp {
       console.warn('[Trilhas Server Sync]', e);
     }
 
-    if (typeof confetti === 'function') {
+    if (passed && typeof confetti === 'function') {
       confetti({ particleCount: 85, spread: 90, origin: { y: 0.6 } });
     }
 
     this.renderTrilhaStageResult(session, score, serverData || {
       success: true,
+      passed,
       score,
-      total: session.totalQuestions,
+      total,
       percentage: pct,
-      unlockedNext: session.stageIndex < 6
-    });
+      minRequired,
+      neededMore,
+      unlockedNext: passed && session.stageIndex < 7,
+      masteryPercentage: localRec.masteryPercentage
+    }, passed, neededMore);
 
     this.updateTrilhasSummaryStats();
     this.renderTrilhaActiveTrail();
@@ -3794,57 +4134,65 @@ class EstudePlusApp {
     }
   }
 
-  renderTrilhaStageResult(session, score, data) {
+  renderTrilhaStageResult(session, score, data, passedParam, neededMoreParam) {
     const contentArea = document.getElementById('trilhaStageContentArea');
     const actionsArea = document.getElementById('trilhaStageActions');
     const modalTitle = document.getElementById('trilhaStageTitle');
     const modalDesc = document.getElementById('trilhaStageDesc');
 
-    const total = session.totalQuestions;
-    const pct = Math.round((score / total) * 100);
-    const isMastery = score === total;
+    const total = session.totalQuestions || 8;
+    const minRequired = Math.ceil(total * 0.6); // 5 de 8 = 62.5%
+    const passed = (data && typeof data.passed === 'boolean') ? data.passed : (passedParam !== undefined ? passedParam : (score >= minRequired));
+    const neededMore = (data && data.neededMore !== undefined) ? data.neededMore : (neededMoreParam !== undefined ? neededMoreParam : Math.max(0, minRequired - score));
+    const rawPct = total > 0 ? (score / total) * 100 : 0;
+    const pct = (rawPct % 1 === 0) ? rawPct : Number(rawPct.toFixed(1));
     const nextIndex = session.stageIndex + 1;
-    const hasNextStage = nextIndex < 7;
+    const hasNextStage = nextIndex < 8;
 
     if (modalTitle) modalTitle.innerText = `Resultado da Etapa ${session.stageIndex + 1} • ${session.chapterTitle}`;
-    if (modalDesc) modalDesc.innerText = `Confira seu gabarito comentado oficial do SAS e os pontos de melhoria para a próxima etapa.`;
+    if (modalDesc) modalDesc.innerText = passed
+      ? `Parabéns! Você atingiu o critério de aprovação (mínimo de 60%) e liberou a próxima etapa.`
+      : `Pontuação insuficiente para avançar. Revise os pontos onde errou e tente novamente para conquistar os 60%.`;
 
     if (contentArea) {
       contentArea.innerHTML = `
         <!-- Card de Resumo do Desempenho -->
-        <div style="background: linear-gradient(135deg, ${pct >= 70 ? '#059669' : '#0284c7'}, #1e293b); color: #ffffff; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+        <div style="background: linear-gradient(135deg, ${passed ? '#059669, #064e3b' : '#b91c1c, #450a0a'}); color: #ffffff; border-radius: 14px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
-              <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;">
-                ${pct >= 70 ? '🎉 Excelente Aproveitamento!' : '💪 Bom Esforço! Continue Praticando!'}
+              <span style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.95; background: ${passed ? '#dcfce7' : '#fee2e2'}; color: ${passed ? '#166534' : '#991b1b'}; padding: 3px 10px; border-radius: 6px; display: inline-block;">
+                ${passed ? '🎉 PASSOU DE FASE! (MÍNIMO 60% ATINGIDO)' : '⚠️ NÃO PASSOU DE FASE (MÍNIMO 60% NÃO ATINGIDO)'}
               </span>
-              <h3 style="margin: 4px 0 2px; font-size: 1.45rem; font-weight: 900; color: #ffffff;">
-                Você acertou ${score} de ${total} questões (${pct}%)
+              <h3 style="margin: 6px 0 3px; font-size: 1.45rem; font-weight: 900; color: #ffffff;">
+                Você acertou ${score} de ${total} atividades (${pct}%)
               </h3>
-              <p style="margin: 0; font-size: 0.86rem; color: #e2e8f0;">
-                Progresso no capítulo: <strong>${data.masteryPercentage || 0}% Dominado</strong> • Etapa ${session.stageIndex + 1} registrada no servidor.
+              <p style="margin: 0; font-size: 0.88rem; color: ${passed ? '#d1fae5' : '#fecaca'}; line-height: 1.45;">
+                ${passed 
+                  ? `Progresso no capítulo: <strong>${data?.masteryPercentage || 0}% Dominado</strong> • Etapa ${session.stageIndex + 1} concluída e próxima liberada!` 
+                  : `Para passar de fase é necessário no mínimo <strong>60% de acertos (${minRequired} de ${total})</strong>.<br>Você precisa de <strong>mais ${neededMore} acerto${neededMore > 1 ? 's' : ''}</strong> para desbloquear a próxima etapa.`}
               </p>
             </div>
             <div style="font-size: 2.5rem;">
-              ${pct >= 70 ? '🏆' : '📚'}
+              ${passed ? '✅' : '❌'}
             </div>
           </div>
         </div>
 
         <h4 style="margin: 0 0 12px; font-size: 1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-          <span>📝 Gabarito Comentado SAS</span>
+          <span>📝 Gabarito Comentado & Diagnóstico Inteligente SAS</span>
         </h4>
 
-        <!-- Lista de Gabarito Comentado -->
+        <!-- Lista de Gabarito & Diagnóstico "O Que Aconteceu?" -->
         <div style="display: flex; flex-direction: column; gap: 14px;">
           ${(session.questions || []).map((q, idx) => {
             const userAns = session.answers[idx];
-            const isCorrect = userAns && String(userAns).toUpperCase() === String(q.correctLetter).toUpperCase();
+            const isCorrect = this.isTrilhaAnswerCorrect(q, userAns);
+
             return `
               <div style="background: #ffffff; border: 1.5px solid ${isCorrect ? '#86efac' : '#fca5a5'}; border-radius: 12px; padding: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                   <span style="font-size: 0.82rem; font-weight: 800; color: #475569;">
-                    Questão ${idx + 1}
+                    Questão ${idx + 1} &bull; ${q.formatLabel || 'Atividade'}
                   </span>
                   <span style="font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: ${isCorrect ? '#dcfce7' : '#fee2e2'}; color: ${isCorrect ? '#15803d' : '#b91c1c'};">
                     ${isCorrect ? '✅ Resposta Correta' : '❌ Resposta Incorreta'}
@@ -3856,13 +4204,34 @@ class EstudePlusApp {
                 </div>
 
                 <div style="font-size: 0.83rem; color: #334155; margin-bottom: 8px; background: #f8fafc; padding: 8px 12px; border-radius: 8px;">
-                  <div>Sua resposta: <strong>[${userAns || 'Não respondida'}]</strong></div>
-                  <div>Gabarito Oficial SAS: <strong>[${q.correctLetter}]</strong></div>
+                  <div>Sua resposta: <strong>${this.formatTrilhaUserAnswer(q, userAns)}</strong></div>
+                  <div>Gabarito Oficial SAS: <strong style="color: #15803d;">${this.formatTrilhaCorrectAnswer(q)}</strong></div>
                 </div>
 
-                <div style="font-size: 0.82rem; color: #475569; line-height: 1.45; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
-                  <strong style="color: #0369a1;">💡 Explicação SAS:</strong> ${q.explanation}
-                </div>
+                ${!isCorrect ? `
+                  <!-- Diagnóstico "O Que Aconteceu?" (Inspirado no Astra AI) -->
+                  <div class="mistake-analysis-card">
+                    <div class="mistake-analysis-title">
+                      <span>🧐 O que aconteceu?</span>
+                    </div>
+                    <div class="mistake-diagnostic">
+                      <strong>💡 Diagnóstico:</strong> ${q.diagnosticWrong || 'Atenção aos distratores comuns da matéria e à leitura atenta dos postulados.'}
+                    </div>
+                    <div style="font-size: 0.82rem; color: #475569; margin-top: 8px; line-height: 1.45;">
+                      <strong>📖 Por que a correta é a certa:</strong> ${q.explanation}
+                    </div>
+                    <div style="margin-top: 12px;">
+                      <button type="button" class="btn-primary btn-reinforce" onclick="app.launchAdaptiveReinforcement(${idx})">
+                        <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+                        <span>Reforçar Este Conceito Agora</span>
+                      </button>
+                    </div>
+                  </div>
+                ` : `
+                  <div style="font-size: 0.82rem; color: #475569; line-height: 1.45; border-top: 1px dashed #e2e8f0; padding-top: 8px;">
+                    <strong style="color: #0369a1;">💡 Justificativa SAS:</strong> ${q.explanation}
+                  </div>
+                `}
               </div>
             `;
           }).join('')}
@@ -3871,39 +4240,56 @@ class EstudePlusApp {
     }
 
     if (actionsArea) {
-      actionsArea.innerHTML = `
-        <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700; border-radius: 10px;">
-          Fechar & Ver Trilha
-        </button>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <button type="button" class="btn-outline" onclick="app.startTrilhaStage('${session.stageId}', ${session.stageIndex})" style="padding: 10px 16px; font-weight: 700; border-radius: 10px;">
-            Refazer Etapa
+      if (!passed) {
+        // NÃO PASSOU: Somente fechar ou tentar novamente. NÃO liberar a próxima fase!
+        actionsArea.innerHTML = `
+          <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700; border-radius: 10px;">
+            Fechar & Ver Trilha
           </button>
-          ${hasNextStage ? `
-            <button type="button" class="btn-primary" onclick="app.advanceToNextTrilhaStage(${nextIndex})" style="padding: 10px 22px; font-weight: 800; background: #0284c7; border-color: #0284c7; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>Avançar para Etapa ${nextIndex + 1}</span>
-              <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="btn-primary" onclick="app.startTrilhaStage('${session.stageId}', ${session.stageIndex})" style="padding: 10px 22px; font-weight: 800; background: #e11d48; border-color: #e11d48; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+              <span>Tentar Novamente (Precisa de ${minRequired}/${total})</span>
             </button>
-          ` : `
-            <button type="button" class="btn-primary" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 22px; font-weight: 800; background: #10b981; border-color: #10b981; border-radius: 10px;">
-              🏆 Capítulo 100% Dominado!
+          </div>
+        `;
+      } else {
+        // PASSOU: Libera avanço
+        actionsArea.innerHTML = `
+          <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700; border-radius: 10px;">
+            Fechar & Ver Trilha
+          </button>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button type="button" class="btn-outline" onclick="app.startTrilhaStage('${session.stageId}', ${session.stageIndex})" style="padding: 10px 16px; font-weight: 700; border-radius: 10px;">
+              Refazer Etapa
             </button>
-          `}
-        </div>
-      `;
+            ${hasNextStage ? `
+              <button type="button" class="btn-primary" onclick="app.advanceToNextTrilhaStage(${nextIndex})" style="padding: 10px 22px; font-weight: 800; background: #0284c7; border-color: #0284c7; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>Avançar para Etapa ${nextIndex + 1}</span>
+                <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+              </button>
+            ` : `
+              <button type="button" class="btn-primary" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 22px; font-weight: 800; background: #10b981; border-color: #10b981; border-radius: 10px;">
+                🏆 Capítulo 100% Dominado!
+              </button>
+            `}
+          </div>
+        `;
+      }
       if (window.lucide) window.lucide.createIcons();
     }
   }
 
   advanceToNextTrilhaStage(nextStageIndex) {
     const stages = [
-      { id: 'fundamentos' },
-      { id: 'pratica_1' },
-      { id: 'quiz_1' },
-      { id: 'pratica_2' },
-      { id: 'quiz_2' },
-      { id: 'revisao' },
-      { id: 'desafio_final' }
+      { id: 'licao_guiada' },
+      { id: 'pratica_guiada' },
+      { id: 'quiz_multiformato' },
+      { id: 'verdadeiro_falso' },
+      { id: 'revisao_erros' },
+      { id: 'lacunas_associacao' },
+      { id: 'desafio_aplicado' },
+      { id: 'simulado_capitulo' }
     ];
     const nextStage = stages[nextStageIndex];
     if (nextStage) {
@@ -3912,6 +4298,346 @@ class EstudePlusApp {
       this.closeModal('trilhaStageModal');
       this.renderTrilhaActiveTrail();
     }
+  }
+
+  /* ==========================================================================
+     REFORÇO ADAPTATIVO ("O QUE ACONTECEU?" & COMPANION QUESTION)
+     ========================================================================== */
+  launchAdaptiveReinforcement(qIdx) {
+    const session = this.activeTrilhaSession;
+    if (!session || !session.questions || !session.questions[qIdx]) return;
+    const targetQ = session.questions[qIdx];
+
+    const companion = {
+      conceptTitle: `Reforço Adaptativo: ${targetQ.topic || session.chapterTitle}`,
+      conceptRecap: targetQ.explanation || 'Reveja a regra conceitual e aplique-a nesta questão de reforço imediato.',
+      diagnosticWhy: targetQ.diagnosticWrong || 'Erros neste tipo de exercício costumam ocorrer pela pressa na leitura ou troca de conceitos.',
+      questionText: `[EXERCÍCIO DE REFORÇO] Para fixar definitivamente: ${targetQ.text}`,
+      type: targetQ.type || 'multiple_choice',
+      correctBool: targetQ.correctBool,
+      correctLetter: targetQ.correctLetter,
+      correctAnswer: targetQ.correctAnswer,
+      acceptableAnswers: targetQ.acceptableAnswers,
+      correctWord: targetQ.correctWord,
+      wordBank: targetQ.wordBank,
+      options: targetQ.options,
+      explanation: targetQ.explanation
+    };
+
+    this.currentAdaptiveExercise = companion;
+    this.currentAdaptiveAnswer = null;
+    this.renderAdaptiveReinforceContent(companion);
+    this.showModal('adaptiveReinforceModal');
+  }
+
+  renderAdaptiveReinforceContent(companion) {
+    const container = document.getElementById('adaptiveReinforceContent');
+    if (!container) return;
+
+    let exerciseInputHtml = '';
+    if (companion.type === 'true_false') {
+      exerciseInputHtml = `
+        <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a; margin-bottom: 12px;">
+          ${companion.questionText}
+        </div>
+        <div class="trilha-tf-grid" style="margin-bottom: 16px;">
+          <button type="button" class="trilha-tf-btn" id="btnAdaptiveTrue" onclick="app.handleSelectAdaptiveBool(true)">
+            <span style="font-size: 1.4rem;">✔️</span>
+            <span>Verdadeiro</span>
+          </button>
+          <button type="button" class="trilha-tf-btn" id="btnAdaptiveFalse" onclick="app.handleSelectAdaptiveBool(false)">
+            <span style="font-size: 1.4rem;">❌</span>
+            <span>Falso</span>
+          </button>
+        </div>
+      `;
+    } else if (companion.type === 'short_answer') {
+      exerciseInputHtml = `
+        <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a; margin-bottom: 12px;">
+          ${companion.questionText}
+        </div>
+        <div class="trilha-short-container" style="margin-bottom: 16px;">
+          <input type="text" class="trilha-short-input" id="inputAdaptiveShort" placeholder="Digite sua resposta de reforço..." oninput="app.currentAdaptiveAnswer = this.value">
+        </div>
+      `;
+    } else {
+      // multiple_choice or default
+      exerciseInputHtml = `
+        <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a; margin-bottom: 12px;">
+          ${companion.questionText}
+        </div>
+        <div class="trilha-options" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+          ${(companion.options || []).map(opt => `
+            <label id="adaptive_lbl_${opt.letter}" onclick="app.handleSelectAdaptiveLetter('${opt.letter}')" style="display: flex; align-items: center; gap: 12px; font-size: 0.86rem; color: #334155; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; cursor: pointer; background: #ffffff;">
+              <input type="radio" name="adaptiveRadio" value="${opt.letter}" id="adaptive_radio_${opt.letter}" style="margin: 0; accent-color: #2563eb;">
+              <span style="font-weight: 800; width: 22px; height: 22px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">${opt.letter}</span>
+              <span style="flex: 1;">${opt.text}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span class="badge-accent" style="background: #e0f2fe; color: #0284c7; font-weight: 800; font-size: 0.75rem;">
+          ⚡ REFORÇO ADAPTATIVO
+        </span>
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800;">${companion.conceptTitle}</h3>
+      </div>
+      <p style="margin-bottom: 16px; font-size: 0.86rem; color: #64748b;">
+        Treino complementar para superar o erro anterior e fixar o raciocínio correto.
+      </p>
+
+      <div style="background: #f8fafc; border-left: 4px solid #0284c7; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px;">
+        <strong style="color: #0369a1; font-size: 0.85rem; display: block; margin-bottom: 4px;">📖 Revisão Rápida da Teoria:</strong>
+        <p style="margin: 0; font-size: 0.84rem; color: #334155; line-height: 1.45;">
+          ${companion.conceptRecap}
+        </p>
+      </div>
+
+      <div id="adaptiveExerciseContainer" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        ${exerciseInputHtml}
+      </div>
+
+      <div id="adaptiveFeedbackArea"></div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+        <button type="button" class="btn-outline" onclick="app.closeModal('adaptiveReinforceModal')">Fechar</button>
+        <button type="button" class="btn-primary" id="btnVerifyAdaptive" onclick="app.handleVerifyAdaptiveCompanion()" style="background: #0284c7; border-color: #0284c7; font-weight: 700;">
+          Validar Meu Reforço →
+        </button>
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  handleSelectAdaptiveLetter(letter) {
+    this.currentAdaptiveAnswer = letter;
+    const radio = document.getElementById(`adaptive_radio_${letter}`);
+    if (radio) radio.checked = true;
+    ['A', 'B', 'C', 'D'].forEach(l => {
+      const lbl = document.getElementById(`adaptive_lbl_${l}`);
+      if (lbl) {
+        lbl.style.background = (l === letter) ? '#eff6ff' : '#ffffff';
+        lbl.style.borderColor = (l === letter) ? '#2563eb' : '#cbd5e1';
+      }
+    });
+  }
+
+  handleSelectAdaptiveBool(boolVal) {
+    this.currentAdaptiveAnswer = boolVal;
+    const btnTrue = document.getElementById('btnAdaptiveTrue');
+    const btnFalse = document.getElementById('btnAdaptiveFalse');
+    if (btnTrue) btnTrue.classList.toggle('selected-true', boolVal === true);
+    if (btnFalse) btnFalse.classList.toggle('selected-false', boolVal === false);
+  }
+
+  handleVerifyAdaptiveCompanion() {
+    const companion = this.currentAdaptiveExercise;
+    if (!companion) return;
+
+    let isCorrect = false;
+    if (companion.type === 'true_false') {
+      isCorrect = Boolean(this.currentAdaptiveAnswer) === Boolean(companion.correctBool);
+    } else if (companion.type === 'short_answer') {
+      const norm = (s) => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const u = norm(this.currentAdaptiveAnswer);
+      const c = norm(companion.correctAnswer);
+      isCorrect = (u === c);
+    } else {
+      isCorrect = String(this.currentAdaptiveAnswer).toUpperCase() === String(companion.correctLetter).toUpperCase();
+    }
+
+    const fb = document.getElementById('adaptiveFeedbackArea');
+    const btn = document.getElementById('btnVerifyAdaptive');
+
+    if (isCorrect) {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+      }
+      if (fb) {
+        fb.innerHTML = `
+          <div style="background: #ecfdf5; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px; color: #15803d; font-size: 0.86rem; margin-top: 10px;">
+            <strong style="font-size: 0.95rem; display: block; margin-bottom: 4px;">🎉 Sensacional! Conceito Superado com Sucesso!</strong>
+            Você aplicou a regra corretamente e demonstrou domínio real sobre este ponto crítico. Parabéns pela persistência!
+          </div>
+        `;
+      }
+      if (btn) {
+        btn.innerText = '✔️ Concluído! Fechar';
+        btn.style.background = '#10b981';
+        btn.style.borderColor = '#10b981';
+        btn.onclick = () => this.closeModal('adaptiveReinforceModal');
+      }
+    } else {
+      if (fb) {
+        fb.innerHTML = `
+          <div style="background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 10px; padding: 14px; color: #991b1b; font-size: 0.86rem; margin-top: 10px;">
+            <strong style="font-size: 0.95rem; display: block; margin-bottom: 4px;">Quase lá! Vamos analisar:</strong>
+            Releia o quadro azul de teoria acima. A resposta correta é <strong>${this.formatTrilhaCorrectAnswer(companion)}</strong>.
+          </div>
+        `;
+      }
+    }
+  }
+
+  /* ==========================================================================
+     SIMULADO & PREPARAÇÃO PARA PROVA (EXAM SIMULATION)
+     ========================================================================== */
+  openPrepararProvaModal() {
+    const select = document.getElementById('simuladoMateriaSelect');
+    if (select) {
+      const subjects = [
+        { key: 'matematica', name: 'Matemática' },
+        { key: 'portugues', name: 'Língua Portuguesa' },
+        { key: 'ciencias', name: 'Ciências da Natureza' },
+        { key: 'historia', name: 'História' },
+        { key: 'geografia', name: 'Geografia' },
+        { key: 'ingles', name: 'Língua Inglesa' },
+        { key: 'filosofia', name: 'Filosofia' },
+        { key: 'arte', name: 'Arte' },
+        { key: 'redacao', name: 'Redação' }
+      ];
+      select.innerHTML = subjects.map(s => `
+        <option value="${s.key}" ${s.key === (this.currentTrilhaSubject || 'matematica') ? 'selected' : ''}>${s.name}</option>
+      `).join('');
+    }
+    this.handleSimuladoSubjectChange(this.currentTrilhaSubject || 'matematica');
+    this.showModal('prepararProvaModal');
+  }
+
+  handleSimuladoSubjectChange(subjKey) {
+    const bookSelect = document.getElementById('simuladoApostilaSelect');
+    const capSelect = document.getElementById('simuladoCapituloSelect');
+    if (!capSelect) return;
+
+    const subjData = this.sasSubjectsData[subjKey] || this.sasSubjectsData['matematica'];
+    const validBooks = (subjData.livros || []).filter(l => l.id <= 3);
+    const selectedBookId = bookSelect ? bookSelect.value : 'todas';
+
+    let chapters = [];
+    if (selectedBookId === 'todas') {
+      validBooks.forEach(b => {
+        (b.chapters || []).forEach(c => chapters.push({ ...c, bookTitle: b.title }));
+      });
+    } else {
+      const num = parseInt(selectedBookId.replace(/\D/g, ''), 10) || 1;
+      const bk = validBooks.find(b => b.id === num) || validBooks[0];
+      chapters = (bk?.chapters || []).map(c => ({ ...c, bookTitle: bk.title }));
+    }
+
+    capSelect.innerHTML = `<option value="todos">Todos os Capítulos Selecionados (${chapters.length} capítulos)</option>` +
+      chapters.map(c => `<option value="${c.id}">${c.title} (${c.bookTitle})</option>`).join('');
+  }
+
+  handleSimuladoApostilaChange(bookVal) {
+    const subjSelect = document.getElementById('simuladoMateriaSelect');
+    if (subjSelect) {
+      this.handleSimuladoSubjectChange(subjSelect.value);
+    }
+  }
+
+  handleIniciarSimuladoProva(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const subjKey = document.getElementById('simuladoMateriaSelect')?.value || 'matematica';
+    const bookVal = document.getElementById('simuladoApostilaSelect')?.value || 'todas';
+    const capVal = document.getElementById('simuladoCapituloSelect')?.value || 'todos';
+    const qtd = parseInt(document.getElementById('simuladoQtdSelect')?.value || '10', 10);
+    const diff = document.getElementById('simuladoDificuldadeSelect')?.value || 'misto';
+
+    const subjData = this.sasSubjectsData[subjKey] || this.sasSubjectsData['matematica'];
+    const validBooks = (subjData.livros || []).filter(l => l.id <= 3);
+
+    // Geração dinâmica de questões variadas para o simulado
+    const questions = [];
+    const targetBook = (bookVal !== 'todas') ? (parseInt(bookVal.replace(/\D/g, ''), 10) || 1) : 1;
+    const targetCap = (capVal !== 'todos') ? (parseInt(capVal, 10) || 1) : 1;
+
+    // Distribui questões entre os capítulos
+    for (let i = 0; i < qtd; i++) {
+      const stageIdx = i % 8;
+      const bId = (bookVal === 'todas') ? (validBooks[i % validBooks.length]?.id || 1) : targetBook;
+      const cId = (capVal === 'todos') ? ((i % 4) + 1) : targetCap;
+      const stgCfg = this.getTrilhaStageConfig(stageIdx);
+      const generated = this.generateTrilhaStageQuestions(subjKey, bId, cId, stageIdx, stgCfg.id);
+      if (generated && generated.length > 0) {
+        questions.push(generated[0]);
+      }
+    }
+
+    this.activeTrilhaSession = {
+      isSimulado: true,
+      subjectKey: subjKey,
+      bookId: targetBook,
+      chapterId: targetCap,
+      chapterTitle: `Simulado Geral de Prova • ${subjData.name}`,
+      stageId: 'simulado_completo',
+      stageIndex: 7,
+      stageCfg: {
+        name: `Simulado de ${subjData.name}`,
+        desc: `Avaliação com ${questions.length} questões multiformato calibradas no nível de prova do Colégio Gammon`,
+        levelLabel: `Simulado ${diff.toUpperCase()}`,
+        badgeBg: '#fce7f3',
+        badgeColor: '#be185d',
+        tip: '⏱️ Tempo sugerido: 2 minutos por questão. Atenção máxima aos enunciados!'
+      },
+      questions: questions,
+      answers: {},
+      totalQuestions: questions.length
+    };
+
+    this.closeModal('prepararProvaModal');
+
+    const modalBadge = document.getElementById('trilhaStageBadge');
+    const modalChapterTag = document.getElementById('trilhaStageChapterTag');
+    const modalSubjectTag = document.getElementById('trilhaStageSubjectTag');
+    const modalDiffBadge = document.getElementById('trilhaStageDiffBadge');
+    const modalTitle = document.getElementById('trilhaStageTitle');
+    const modalDesc = document.getElementById('trilhaStageDesc');
+    const contentArea = document.getElementById('trilhaStageContentArea');
+    const actionsArea = document.getElementById('trilhaStageActions');
+
+    if (modalBadge) {
+      modalBadge.innerText = `🎯 SIMULADO DE PROVA`;
+      modalBadge.style.background = '#fce7f3';
+      modalBadge.style.color = '#be185d';
+    }
+    if (modalChapterTag) modalChapterTag.innerText = `Simulação AV1 • 7º Ano`;
+    if (modalSubjectTag) modalSubjectTag.innerText = subjData.name;
+    if (modalDiffBadge) {
+      modalDiffBadge.innerText = `Nível: ${diff.toUpperCase()}`;
+      modalDiffBadge.style.background = '#e0e7ff';
+      modalDiffBadge.style.color = '#4338ca';
+    }
+    if (modalTitle) modalTitle.innerText = `Simulado Geral de Prova: ${subjData.name}`;
+    if (modalDesc) modalDesc.innerText = `Resolva as ${questions.length} questões com foco para avaliar sua retenção antes da avaliação oficial.`;
+
+    if (contentArea) {
+      contentArea.innerHTML = this.renderTrilhaQuestionsHtml({ desc: `Simulado geral de avaliação cobrindo ${subjData.name}.` }, this.activeTrilhaSession.stageCfg, questions);
+    }
+
+    if (actionsArea) {
+      actionsArea.innerHTML = `
+        <button type="button" class="btn-outline" onclick="app.closeModal('trilhaStageModal')" style="padding: 10px 18px; font-weight: 700; border-radius: 10px;">
+          Cancelar Simulado
+        </button>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span id="trilhaStageAnswerCount" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">
+            0 de ${questions.length} respondidas
+          </span>
+          <button type="button" class="btn-primary" id="btnSubmitTrilhaStage" onclick="app.submitCurrentTrilhaStage()" style="padding: 10px 22px; font-weight: 800; background: #be185d; border-color: #be185d; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+            <span>Finalizar Simulado</span>
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    this.showModal('trilhaStageModal');
   }
 
   async resetCurrentTrilhaChapter() {

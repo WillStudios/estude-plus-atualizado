@@ -6608,3 +6608,296 @@ body.dark-mode .command-palette-item.active {
   background: #f8fafc;
 }
 
+/* ==========================================================================
+   ESTUDE+ MULTI-FORMAT QUIZ ENGINE (INSPIRADO EM APRENDIZAGEM MODERNA)
+   ========================================================================== */
+.trilha-q-block {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trilha-q-block:hover {
+  border-color: #cbd5e1;
+}
+
+.trilha-q-num {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.trilha-q-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Verdadeiro ou Falso */
+.trilha-tf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.trilha-tf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.trilha-tf-btn:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.trilha-tf-btn.selected-true {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.trilha-tf-btn.selected-false {
+  background: #fff1f2;
+  border-color: #e11d48;
+  color: #9f1239;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+}
+
+/* Resposta Curta */
+.trilha-short-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.trilha-short-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.trilha-short-input:focus {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Completar Lacunas (Cloze) */
+.trilha-cloze-box {
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.trilha-cloze-blank {
+  display: inline-block;
+  min-width: 110px;
+  padding: 2px 12px;
+  margin: 0 4px;
+  border-bottom: 2px solid #2563eb;
+  font-weight: 800;
+  color: #2563eb;
+  text-align: center;
+  background: #eff6ff;
+  border-radius: 6px;
+}
+
+.trilha-cloze-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.trilha-word-chip {
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trilha-word-chip:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.trilha-word-chip.selected {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+/* Associação de Colunas */
+.trilha-assoc-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.trilha-assoc-term {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.trilha-assoc-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #1e293b;
+  background: #ffffff;
+  outline: none;
+}
+
+/* Lição Guiada (Micro-learning) */
+.trilha-lesson-card {
+  background: linear-gradient(135deg, #f0fdf4, #f8fafc);
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+
+.trilha-lesson-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.trilha-lesson-text {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #1e293b;
+  margin: 0 0 12px;
+}
+
+.trilha-lesson-example {
+  background: #ffffff;
+  border-left: 3.5px solid #10b981;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+  color: #334155;
+  margin-bottom: 14px;
+}
+
+/* Card "O que aconteceu?" no resultado dos erros */
+.mistake-analysis-card {
+  background: #ffffff;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 10px;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.05);
+}
+
+.mistake-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mistake-badge {
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.mistake-explanation {
+  font-size: 0.86rem;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.mistake-solution {
+  background: #f8fafc;
+  border-left: 3px solid #0284c7;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #1e293b;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.btn-reinforce {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  color: #15803d;
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-reinforce:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+}
+
+
