@@ -1278,6 +1278,9 @@ class EstudePlusApp {
       }
     }
 
+    if (tabName === 'gammon-tpc') {
+      tabName = 'dashboard';
+    }
     this.currentTab = tabName;
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabName);
@@ -1298,7 +1301,6 @@ class EstudePlusApp {
       'gemini-chat': 'centerNavChat',
       'sas-eureka': 'centerNavLivros',
       'sas-books': 'centerNavLivros',
-      'gammon-tpc': 'centerNavAtividades',
       'plans-pricing': 'centerNavPlanos'
     };
     document.querySelectorAll('.sas-center-nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -1313,7 +1315,7 @@ class EstudePlusApp {
       'gemini-chat': 'mobNavChat',
       'sas-eureka': 'mobNavApostilas',
       'sas-books': 'mobNavApostilas',
-      'gammon-tpc': 'mobNavTpc',
+      'trilhas': 'mobNavTrilhas',
       'plans-pricing': 'mobNavPlanos'
     };
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -1606,7 +1608,6 @@ class EstudePlusApp {
     const navMap = {
       'dashboard': 'centerNavInicio',
       'timetable': 'centerNavSala',
-      'gammon-tpc': 'centerNavAtividades',
       'review': 'centerNavRelatorios'
     };
 
@@ -3165,565 +3166,16 @@ class EstudePlusApp {
     const validBooks = (subj.livros || []).filter(l => l.id <= 3);
     const book = validBooks.find(b => b.id === bookId) || validBooks[0];
     const chapter = (book.chapters || []).find(c => c.id === chapterId) || book.chapters[0];
-    const title = chapter.title || '';
-    const cleanCapName = title.replace(/Capítulo\s*\d+\s*[–-]\s*/i, '').trim();
 
-    // Banco de questões curriculares reais por disciplina para o 7º Ano
-    const subjectGenerators = {
-      matematica: () => [
-        {
-          text: 'Qual dos números a seguir é divisível simultaneamente por 2, 3 e 5?',
-          correct: '330, pois termina em zero (divisível por 2 e 5) e a soma de seus algarismos é 3 + 3 + 0 = 6 (divisível por 3).',
-          distractors: [
-            '325, pois termina em 5 e portanto é divisível apenas por 5.',
-            '312, pois a soma dos algarismos é 6, mas o número não é divisível por 5.',
-            '305, pois é ímpar e a soma de seus algarismos resulta em 8.'
-          ],
-          explanation: 'Um número é divisível por 2 quando é par, por 5 quando termina em 0 ou 5, e por 3 quando a soma dos algarismos é múltiplo de 3. 330 satisfaz os três critérios.'
-        },
-        {
-          text: 'Qual é o Menor Múltiplo Comum (MMC) entre os números 12, 18 e 24?',
-          correct: '72',
-          distractors: ['36', '144', '48'],
-          explanation: 'Fatorando simultaneamente por números primos: 12, 18, 24 | 2; 6, 9, 12 | 2; 3, 9, 6 | 2; 3, 9, 3 | 3; 1, 3, 1 | 3; 1, 1, 1. Multiplicando: 2³ × 3² = 8 × 9 = 72.'
-        },
-        {
-          text: 'Qual é o resultado numérico da expressão com números inteiros: (-15) + (+8) - (-12) + (-5)?',
-          correct: '0',
-          distractors: ['-20', '+10', '-14'],
-          explanation: 'Aplicando as regras de sinais para eliminar os parênteses: -15 + 8 + 12 - 5 = (-15 - 5) + (8 + 12) = -20 + 20 = 0.'
-        },
-        {
-          text: 'Em uma cidade serrana, os termômetros marcavam -3 °C às 6h da manhã. Ao meio-dia, a temperatura subiu 11 °C e, à noite, caiu 7 °C. Qual temperatura os termômetros registraram à noite?',
-          correct: '+1 °C',
-          distractors: ['-2 °C', '+8 °C', '+3 °C'],
-          explanation: 'Calculando a variação passo a passo: -3 + 11 = +8 °C ao meio-dia; em seguida, +8 - 7 = +1 °C à noite.'
-        },
-        {
-          text: 'Resolva a equação do 1º grau: 4x - 14 = 2x + 10. Qual é o valor da incógnita x?',
-          correct: 'x = 12',
-          distractors: ['x = 6', 'x = 8', 'x = -2'],
-          explanation: 'Agrupando os termos semelhantes: 4x - 2x = 10 + 14 => 2x = 24 => x = 24 / 2 => x = 12.'
-        },
-        {
-          text: 'O triplo de um número somado a 18 é igual a 63. Qual é esse número?',
-          correct: '15',
-          distractors: ['27', '21', '12'],
-          explanation: 'Montando a equação: 3x + 18 = 63 => 3x = 63 - 18 => 3x = 45 => x = 45 / 3 = 15.'
-        },
-        {
-          text: 'Uma corrida de transporte por aplicativo cobra uma taxa fixa de R$ 4,50 mais R$ 2,20 por quilômetro rodado. Se um passageiro pagou R$ 37,50, qual distância foi percorrida?',
-          correct: '15 km',
-          distractors: ['17 km', '14 km', '12 km'],
-          explanation: 'Equação de custo: 2,20x + 4,50 = 37,50 => 2,20x = 33 => x = 33 / 2,20 = 15 km.'
-        },
-        {
-          text: 'Efetue a operação com frações: 3/4 - 1/6 + 2/3. Qual é a fração irredutível resultante?',
-          correct: '5/4',
-          distractors: ['4/7', '7/12', '11/12'],
-          explanation: 'O MMC entre 4, 6 e 3 é 12. Reescrevendo com o mesmo denominador: 9/12 - 2/12 + 8/12 = 15/12. Simplificando por 3 obtém-se 5/4.'
-        },
-        {
-          text: 'Com 5 litros de tinta é possível pintar uma área de 45 m². Mantendo o mesmo rendimento, quantos litros serão necessários para pintar um muro de 117 m²?',
-          correct: '13 litros',
-          distractors: ['11 litros', '15 litros', '18 litros'],
-          explanation: 'Proporcionalidade direta: 5 / 45 = x / 117 => 45x = 5 × 117 => 45x = 585 => x = 585 / 45 = 13 litros.'
-        },
-        {
-          text: 'Em um triângulo qualquer, dois de seus ângulos internos medem 52° e 68°. Qual é a medida do terceiro ângulo?',
-          correct: '60°, pois a soma dos ângulos internos de qualquer triângulo é sempre 180°.',
-          distractors: [
-            '70°, pois a soma deve totalizar 190°.',
-            '50°, pois todo triângulo possui ao menos dois ângulos complementares.',
-            '80°, pois resulta da média aritmética entre os ângulos conhecidos.'
-          ],
-          explanation: 'A soma dos ângulos internos de um triângulo plano é sempre 180°. Logo: 180° - (52° + 68°) = 180° - 120° = 60°.'
-        },
-        {
-          text: 'Um terreno retangular possui 24 metros de comprimento e 15 metros de largura. Qual é a sua área e o seu perímetro, respectivamente?',
-          correct: 'Área = 360 m² e Perímetro = 78 m.',
-          distractors: [
-            'Área = 78 m² e Perímetro = 360 m.',
-            'Área = 360 m² e Perímetro = 39 m.',
-            'Área = 180 m² e Perímetro = 78 m.'
-          ],
-          explanation: 'Área = base × altura = 24 × 15 = 360 m². Perímetro = 2 × (24 + 15) = 2 × 39 = 78 m.'
-        }
-      ],
-      historia: () => [
-        {
-          text: 'Na Europa medieval, as relações de suserania e vassalagem entre membros da nobreza eram formalizadas pela cerimônia de homenagem. Qual era o compromisso mútuo estabelecido?',
-          correct: 'O suserano concedia um feudo (terra ou renda) e proteção, enquanto o vassalo jurava auxílio militar e fidelidade ao suserano.',
-          distractors: [
-            'O vassalo pagava impostos em dinheiro vivo e o suserano trabalhava na agricultura servil.',
-            'O suserano vendia o título de nobreza ao vassalo sem exigir nenhuma obrigação militar.',
-            'O vassalo entregava todas as suas armas ao Papa em troca de perdão dos pecados.'
-          ],
-          explanation: 'A relação feudo-vassálica era um pacto militar e de fidelidade recíproca entre nobres: doação do benefício/feudo em troca de serviço bélico e conselho.'
-        },
-        {
-          text: 'Entre as principais obrigações que os servos deviam ao senhor feudal no manso senhorial, a "corveia" consistia em:',
-          correct: 'Trabalho gratuito e obrigatório nas terras diretas do senhor feudal durante alguns dias da semana.',
-          distractors: [
-            'Pagamento em moedas de ouro pelo uso de instrumentos como moinho e forno.',
-            'Entrega de uma fração da produção agrícola obtida no manso servil.',
-            'Serviço militar obrigatório em guerras ultramarinas fora da Europa.'
-          ],
-          explanation: 'A corveia era a prestação compulsória de trabalho no manso senhorial. A entrega de parte da colheita era a talha, e as banalidades eram taxas pelo uso das instalações.'
-        },
-        {
-          text: 'O movimento do Renascimento Cultural, iniciado no século XIV, teve como um de seus fundamentos intelectuais o Humanismo. Essa corrente caracterizava-se por:',
-          correct: 'Valorizar o potencial racional e criativo do ser humano (antropocentrismo), buscando inspiração nos valores da Antiguidade Clássica greco-romana.',
-          distractors: [
-            'Reafirmar o teocentrismo medieval e proibir estudos anatômicos e experimentais.',
-            'Defender o isolamento rural e a rejeição total do comércio e das artes plásticas.',
-            'Submeter todo o conhecimento científico unicamente aos dogmas da escolástica medieval.'
-          ],
-          explanation: 'O Humanismo colocou o ser humano no centro das reflexões (antropocentrismo), promovendo a observação, a razão e a valorização das heranças intelectuais de Grécia e Roma.'
-        },
-        {
-          text: 'Em 1517, o monge alemão Martinho Lutero afixou suas 95 Teses na porta da igreja de Wittenberg. Qual era o alvo principal de suas críticas iniciais?',
-          correct: 'A cobrança e o comércio de indulgências (perdão dos pecados em troca de pagamento financeiro) promovido pelo clero.',
-          distractors: [
-            'A tradução das escrituras sagradas para línguas locais como o alemão e o francês.',
-            'A utilização de imagens de santos nas procissões e festas populares.',
-            'A proibição do casamento dos pastores e o fim de todos os conventos.'
-          ],
-          explanation: 'Lutero revoltou-se contra a venda de indulgências comercializadas por emissários papais para financiar a Basílica de São Pedro, defendendo a justificação pela fé.'
-        },
-        {
-          text: 'O que motivou a convocação do Concílio de Trento (1545-1563) pela Igreja Católica no contexto das transformações religiosas do século XVI?',
-          correct: 'Reafirmar os dogmas católicos tradicionais, condenar as doutrinas protestantes e organizar instrumentos de Contrarreforma, como o Tribunal do Santo Ofício e a Ordem dos Jesuítas.',
-          distractors: [
-            'Aceitar a tese luterana da livre interpretação da Bíblia e extinguir a autoridade papal.',
-            'Abolir o celibato clerical e adotar o calvinismo como doutrina oficial de Roma.',
-            'Transferir a sede do papado em definitivo de Roma para a cidade de Genebra.'
-          ],
-          explanation: 'O Concílio de Trento foi a resposta católica à expansão protestante, reafirmando os sete sacramentos, a autoridade papal e criando o catecismo e o Índex de livros proibidos.'
-        },
-        {
-          text: 'Antes da chegada dos colonizadores europeus, as civilizações asteca e inca desenvolveram engenhosos sistemas de agricultura adaptados a seus ambientes geográficos. Quais eram essas técnicas?',
-          correct: 'Os astecas cultivavam em ilhas artificiais sobre as águas (chinampas), e os incas plantavam em terraços escalonados nas encostas dos Andes.',
-          distractors: [
-            'Ambos utilizavam tratores mecânicos e canais subterrâneos de ferro fundido.',
-            'Os astecas cultivavam em desertos gelados e os incas apenas realizavam pesca costeira.',
-            'Ambas as civilizações dependiam exclusivamente de alimentos importados por rotas marítimas.'
-          ],
-          explanation: 'Os astecas criaram as chinampas no lago de Texcoco para maximizar a área fértil, enquanto os incas desenvolveram terraços agrícolas nas montanhas andinas com irrigação avançada.'
-        },
-        {
-          text: 'Na colonização da América espanhola, as duas principais formas de exploração compulsória da mão de obra indígena foram a mita e a encomienda. A encomienda consistia em:',
-          correct: 'A concessão da Coroa que permitia ao colonizador espanhol exigir tributos e trabalho indígena em troca da obrigação de catequizá-los.',
-          distractors: [
-            'A doação definitiva de títulos de nobreza e terras privadas a líderes indígenas locais.',
-            'A contratação de trabalhadores indígenas assalariados com jornada máxima de 6 horas diárias.',
-            'O recrutamento militar dos povos nativos para lutar contra piratas no Oceano Pacífico.'
-          ],
-          explanation: 'A encomienda transferia a um nobre (encomendero) o direito de explorar o trabalho de uma aldeia, sob o pretexto de prestar proteção e evangelização cristã.'
-        }
-      ],
-      ciencias: () => [
-        {
-          text: 'No sistema de classificação dos seres vivos proposto por Robert Whittaker (5 Reinos), qual reino é formado exclusivamente por organismos celulares procariontes?',
-          correct: 'Reino Monera (bactérias e cianobactérias).',
-          distractors: [
-            'Reino Protista (protozoários e algas unicelulares).',
-            'Reino Fungi (leveduras, bolores e cogumelos).',
-            'Reino Plantae (musgos, samambaias e árvores).'
-          ],
-          explanation: 'O Reino Monera é o único composto exclusivamente por seres sem carioteca (núcleo delimitado), com o material genético disperso no citoplasma celular.'
-        },
-        {
-          text: 'Qual das alternativas apresenta uma diferença biológica fundamental entre os vírus e as bactérias?',
-          correct: 'Os vírus são estruturas acelulares e parasitas intracelulares obrigatórios, enquanto as bactérias são seres celulares dotados de metabolismo próprio.',
-          distractors: [
-            'As bactérias não possuem material genético, enquanto os vírus possuem núcleo delimitado.',
-            'Os vírus respondem eficientemente ao tratamento com antibióticos comuns.',
-            'As bactérias realizam fotossíntese exclusivamente no vácuo espacial.'
-          ],
-          explanation: 'Vírus não possuem células nem metabolismo próprio, dependendo da maquinaria celular hospedeira para se multiplicar. Já as bactérias são organismos unicelulares completos.'
-        },
-        {
-          text: 'Por que o uso incorreto ou a interrupção precoce de um tratamento com antibióticos pode contribuir para a proliferação de bactérias resistentes?',
-          correct: 'O medicamento elimina primeiro as bactérias mais sensíveis; interromper o ciclo permite que as linhagens mais resistentes sobrevivam e se multipliquem.',
-          distractors: [
-            'O antibiótico transforma as bactérias em fungos venenosos para o fígado.',
-            'As bactérias assimilam o antibiótico como fonte de carboidratos e crescem mais rápido.',
-            'O remédio destrói os glóbulos vermelhos do paciente diminuindo sua oxigenação.'
-          ],
-          explanation: 'Trata-se de um processo de seleção natural: doses insuficientes eliminam apenas as bactérias vulneráveis, selecionando cepas com mutações de resistência.'
-        },
-        {
-          text: 'Sobre as formas de transferência e propagação de calor, qual processo explica a circulação da água em uma panela aquecida no fogão e a movimentação do ar condicionado?',
-          correct: 'Convecção térmica, decorrente da formação de correntes geradas pela diferença de densidade entre massas quentes (menos densas) e frias (mais densas).',
-          distractors: [
-            'Condução térmica através do vácuo absoluto sem matéria.',
-            'Irradiação eletromagnética de raios gama emitidos pelas paredes.',
-            'Fusão nuclear da matéria orgânica dissolvida na água.'
-          ],
-          explanation: 'A convecção ocorre em fluidos (líquidos e gases) através de correntes de convecção: o fluido quente sobe por ser menos denso e o fluido frio desce.'
-        },
-        {
-          text: 'O calor proveniente do Sol atravessa o vácuo do espaço sideral e chega até a Terra por meio de qual processo físico de transmissão térmica?',
-          correct: 'Irradiação térmica, propagada por ondas eletromagnéticas (principalmente na faixa do infravermelho).',
-          distractors: [
-            'Condução direta por contato físico entre átomos de oxigênio do espaço.',
-            'Convecção de correntes atmosféricas ao longo do vácuo solar.',
-            'Sublimação térmica do hidrogênio atmosférico da estratosfera.'
-          ],
-          explanation: 'A condução e a convecção exigem meio material para ocorrer. Apenas a irradiação se propaga no vácuo por intermédio de ondas eletromagnéticas.'
-        },
-        {
-          text: 'O bioma Cerrado, conhecido como a "savana brasileira", apresenta características botânicas muito marcantes decorrentes de sua adaptação climática. Dentre elas, destacam-se:',
-          correct: 'Árvores de troncos retorcidos, cascas espessas, folhas coriáceas e raízes muito profundas capazes de alcançar o lençol freático.',
-          distractors: [
-            'Vegetação rasteira exclusiva de clima polar com solo permanentemente congelado.',
-            'Floresta densa de árvores gigantescas com copas contínuas e solo úmido o ano todo.',
-            'Plantas exclusivamente aquáticas flutuantes com ausência de raízes terrestres.'
-          ],
-          explanation: 'O Cerrado possui duas estações bem definidas (seca pronunciada e chuvas). As raízes profundas captam água de lençóis subterrâneos durante o período de estiagem.'
-        },
-        {
-          text: 'Ao utilizar uma tesoura para cortar papel, o ponto de apoio situa-se entre o ponto onde aplicamos a força (potência) e o ponto onde a lâmina corta o papel (resistência). Esse instrumento é classificado como uma alavanca:',
-          correct: 'Interfixa.',
-          distractors: ['Inter-resistente.', 'Interpotente.', 'Inclinada.'],
-          explanation: 'Em uma alavanca interfixa, o ponto de apoio (fixo) fica no meio, entre a força potente (mãos) e a força resistente (lâmina cortando o objeto).'
-        }
-      ],
-      geografia: () => [
-        {
-          text: 'O Brasil possui duas divisões regionais consagradas: a divisão oficial do IBGE em 5 macrorregiões e a divisão geoeconômica proposta por Pedro Pinchas Geiger em 1967. Qual é a principal diferença de critérios entre elas?',
-          correct: 'A divisão do IBGE obedece estritamente às fronteiras políticas estaduais, enquanto a divisão geoeconômica agrupa o país em 3 complexos (Amazônia, Nordeste e Centro-Sul) segundo aspectos históricos e econômicos.',
-          distractors: [
-            'A divisão geoeconômica divide o país em 10 regiões de mesmo tamanho territorial.',
-            'O IBGE não reconhece a Região Nordeste como macrorregião oficial.',
-            'A proposta de Geiger utiliza unicamente a altitude das serras como parâmetro.'
-          ],
-          explanation: 'Geiger dividiu o Brasil em Amazônia, Nordeste e Centro-Sul, cortando estados como Minas Gerais, Tocantins e Maranhão de acordo com sua integração socioeconômica real.'
-        },
-        {
-          text: 'Devido à sua extensa dimensão longitudinal (leste-oeste), o território brasileiro é cortado por quatro fusos horários oficiais. Em relação ao Meridiano de Greenwich (GMT/UTC), todos os fusos brasileiros estão situados a:',
-          correct: 'Oeste, possuindo horários atrasados em relação a Greenwich (UTC-2, UTC-3, UTC-4 e UTC-5).',
-          distractors: [
-            'Leste, possuindo horários adiantados em relação ao meridiano zero.',
-            'Norte, alinhados com o fuso padrão do Círculo Polar Ártico.',
-            'Sul, compartilhando exatamente o mesmo minuto com o Japão.'
-          ],
-          explanation: 'Como o Brasil fica inteiramente no hemisfério ocidental (a oeste de Greenwich), todos os fusos têm horas negativas (-2h em ilhas como Noronha, -3h em Brasília, -4h no Centro-Oeste/Amazonas e -5h no Acre).'
-        },
-        {
-          text: 'O processo intenso de migração populacional em que milhares de trabalhadores rurais deixaram o campo em direção às cidades brasileiras nas décadas de 1960 a 1980 é denominado:',
-          correct: 'Êxodo rural.',
-          distractors: ['Transumância sazonal.', 'Migração pendular diária.', 'Nomadismo pastoril.'],
-          explanation: 'O êxodo rural foi acelerado pela mecanização da agricultura, concentração fundiária e pela atração de empregos na indústria e serviços urbanos.'
-        },
-        {
-          text: 'Quando duas ou mais cidades vizinhas se expandem territorialmente até que suas manchas urbanas se encontrem e se integrem fisicamente, configurando um espaço contínuo, ocorre o fenômeno da:',
-          correct: 'Conurbação.',
-          distractors: ['Macrocefalia agrária.', 'Gentrificação rural.', 'Metamorfose topográfica.'],
-          explanation: 'Conurbação é o crescimento horizontal das cidades que faz com que seus limites físicos se unam, muito comum em regiões metropolitanas como São Paulo e Rio de Janeiro.'
-        },
-        {
-          text: 'A transição demográfica experimentada pelo Brasil nas últimas décadas é marcada principalmente por:',
-          correct: 'Queda progressiva da taxa de fecundidade e aumento da expectativa de vida, resultando no envelhecimento da população brasileira.',
-          distractors: [
-            'Aumento vertiginoso do número de filhos por mulher ultrapassando 7 filhos.',
-            'Redução da expectativa de vida decorrente da falta de saneamento básico nas capitais.',
-            'Estagnação populacional total com emigração de 50% dos jovens para a África.'
-          ],
-          explanation: 'A taxa de fecundidade caiu para menos de 1,7 filho por mulher, alterando a pirâmide etária com o estreitamento da base de jovens e ampliação da proporção de adultos e idosos.'
-        },
-        {
-          text: 'A Região Nordeste do Brasil é tradicionalmente subdividida em quatro sub-regiões geográficas com características naturais e humanas distintas. Qual sub-região funciona como faixa de transição entre o Sertão semiárido e a Zona da Mata canavieira?',
-          correct: 'O Agreste.',
-          distractors: ['O Meio-Norte.', 'A Chapada Diamantina.', 'O Jalapão.'],
-          explanation: 'O Agreste é a sub-região de transição caracterizada pela policultura, pecuária leiteira e polos comerciais, situada entre a Zona da Mata e o Sertão.'
-        }
-      ],
-      portugues: () => [
-        {
-          text: 'Analise a oração: "Durante a reunião escolar, os professores e os alunos debateram novas propostas com entusiasmo." O sujeito desta oração classifica-se como:',
-          correct: 'Sujeito composto, pois possui dois núcleos substantivos: "professores" e "alunos".',
-          distractors: [
-            'Sujeito simples, cujo único núcleo é o termo "reunião".',
-            'Sujeito indeterminado, pois não se sabe quem fez as propostas.',
-            'Oração sem sujeito, por conter o verbo debater no plural.'
-          ],
-          explanation: 'O verbo concorda com dois núcleos ligados pela conjunção aditiva ("professores" e "alunos"), caracterizando sujeito composto.'
-        },
-        {
-          text: 'Em qual das alternativas a oração apresenta um caso legítimo de "ORAÇÃO SEM SUJEITO" (sujeito inexistente)?',
-          correct: '"Havia muitas dúvidas sobre o horário da avaliação de amanhã."',
-          distractors: [
-            '"Fizeram uma bonita homenagem aos atletas no pátio do colégio."',
-            '"Os atletas chegaram muito cansados após o torneio regional."',
-            '"Naquela manhã ensolarada, todos caminhavam com tranquilidade."'
-          ],
-          explanation: 'O verbo "haver" empregado no sentido de existir ou ocorrer é impessoal: não admite sujeito e permanece na 3ª pessoa do singular.'
-        },
-        {
-          text: 'No período: "O arquiteto entregou o projeto aos construtores ontem à tarde", o verbo destacado classifica-se quanto à transitividade como:',
-          correct: 'Verbo transitivo direto e indireto (VTDI), pois exige um objeto direto ("o projeto") e um objeto indireto preposicionado ("aos construtores").',
-          distractors: [
-            'Verbo transitivo direto exclusivo, pois não possui termos preposicionados.',
-            'Verbo intransitivo, pois seu sentido encerra-se na ação de entregar.',
-            'Verbo de ligação, pois expressa o estado psicológico do arquiteto.'
-          ],
-          explanation: 'Quem entrega, entrega algo (objeto direto: "o projeto") a alguém (objeto indireto: "aos construtores").'
-        },
-        {
-          text: 'Identifique a figura de linguagem presente na seguinte frase poética: "Naquela noite fria, o vento sussurrava segredos antigos através das janelas entreabertas."',
-          correct: 'Personificação (ou prosopopeia), pois atribui uma ação tipicamente humana ("sussurrar segredos") a um elemento inanimado da natureza (o vento).',
-          distractors: [
-            'Hipérbole, por trazer uma contagem numérica de proporções absurdas.',
-            'Antítese, pela aproximação de palavras com sentidos diretamente contraditórios.',
-            'Comparação, devido à presença obrigatória do conectivo explícito "como".'
-          ],
-          explanation: 'A personificação consiste em atribuir sentimentos, falas ou comportamentos humanos a seres inanimados, animais ou fenômenos naturais.'
-        },
-        {
-          text: 'Assinale a alternativa em que a oração coordenada destacada expressa uma ideia de OPOSIÇÃO ou CONTRASTE (oração coordenada adversativa):',
-          correct: '"Eles treinaram com afinco ao longo do mês, porém não conseguiram a medalha de ouro."',
-          distractors: [
-            '"Ele não apenas estudou a teoria, mas também realizou todos os simulados práticos."',
-            '"O dia amanheceu ensolarado e nós caminhamos felizes pelo parque municipal."',
-            '"Choveu muito forte à noite; por isso, o gramado do estádio amanheceu alagado."'
-          ],
-          explanation: 'A conjunção "porém" introduz contraste/adversidade. Em "não apenas... mas também" há adição enfática, e em "por isso" há conclusão.'
-        },
-        {
-          text: 'Qual das alternativas apresenta ERRO de concordância verbal de acordo com a norma-padrão da Língua Portuguesa?',
-          correct: '"Fazem três anos que não visitamos nossos parentes no interior."',
-          distractors: [
-            '"Faz três anos que não visitamos nossos parentes no interior."',
-            '"Havia cerca de cinquenta pessoas aguardando a abertura dos portões."',
-            '"Choveu torrencialmente durante toda a madrugada de domingo."'
-          ],
-          explanation: 'O verbo "fazer" indicando tempo transcorrido é impessoal e deve ficar estritamente no singular: "Faz três anos", e nunca "Fazem".'
-        }
-      ],
-      ingles: () => [
-        {
-          text: 'Choose the sentence that correctly uses the Simple Present tense for the third person singular (he/she/it):',
-          correct: 'She studies English and plays the guitar every afternoon.',
-          distractors: [
-            'She study English and play the guitar every afternoon.',
-            'She is study English and playing guitar every afternoon.',
-            'She studied English and played guitar tomorrow morning.'
-          ],
-          explanation: 'No Simple Present, verbos terminados em consoante + y recebem -ies na 3ª pessoa do singular (study -> studies), e terminados em vogal + y recebem apenas -s (play -> plays).'
-        },
-        {
-          text: 'Which sentence correctly uses the Simple Past irregular forms of "go" and "see"?',
-          correct: 'Yesterday, Carlos went to the science museum and saw ancient fossils.',
-          distractors: [
-            'Yesterday, Carlos goed to the science museum and seed ancient fossils.',
-            'Yesterday, Carlos goes to the science museum and see ancient fossils.',
-            'Yesterday, Carlos did went to the science museum and seen ancient fossils.'
-          ],
-          explanation: 'O passado irregular de "go" é "went", e o passado irregular de "see" é "saw". As formas regulares com terminação -ed não existem para esses verbos.'
-        },
-        {
-          text: 'Select the correct question in the Simple Past using the auxiliary verb "did":',
-          correct: 'Did you finish your homework before dinner last night?',
-          distractors: [
-            'Did you finished your homework before dinner last night?',
-            'Do you finished your homework before dinner last night?',
-            'Did you was finish your homework before dinner last night?'
-          ],
-          explanation: 'Ao formular perguntas no Simple Past com o verbo auxiliar "did", o verbo principal deve obrigatoriamente permanecer na forma infinitiva sem to ("finish", e nunca "finished").'
-        },
-        {
-          text: 'Complete the sentence with the correct quantifiers: "We do not have ________ milk left in the fridge, but there are ________ apples on the table."',
-          correct: 'much / many',
-          distractors: ['many / much', 'some / any', 'a lot / much'],
-          explanation: '"Milk" é um substantivo incontável (utiliza "much" em frases negativas), enquanto "apples" é substantivo contável no plural (utiliza "many").'
-        }
-      ],
-      arte: () => [
-        {
-          text: 'No estudo das cores e da teoria cromática tradicional, quais são as três cores primárias pigmentares e qual cor secundária resulta da mistura equilibrada de amarelo e azul?',
-          correct: 'Cores primárias: vermelho, amarelo e azul. A mistura de amarelo e azul produz a cor verde.',
-          distractors: [
-            'Cores primárias: verde, laranja e roxo. A mistura de amarelo e azul produz a cor vermelha.',
-            'Cores primárias: preto, branco e cinza. A mistura de amarelo e azul produz a cor marrom.',
-            'Cores primárias: ciano, magenta e amarelo fluorescente sem produzir verde.'
-          ],
-          explanation: 'No círculo cromático tradicional, vermelho, amarelo e azul são cores puras que não se obtêm por mistura. A junção equilibrada de amarelo e azul gera a cor secundária verde.'
-        },
-        {
-          text: 'Durante o Renascimento Cultural italiano, mestres como Leonardo da Vinci e Masaccio revolucionaram a pintura com a perspectiva linear geométrica. Qual era a função dessa técnica?',
-          correct: 'Criar a ilusão de tridimensionalidade e profundidade espacial sobre a superfície bidimensional da tela, utilizando ponto de fuga e linha do horizonte.',
-          distractors: [
-            'Pintar figuras humanas sem proporção corporal obedecendo apenas à hierarquia medieval.',
-            'Eliminar qualquer efeito de luz e sombra (chiaroscuro) para deixar as pinturas completamente planas.',
-            'Substituir o óleo sobre tela pelo uso exclusivo de colagens de jornais.'
-          ],
-          explanation: 'A perspectiva renascentista organizou o espaço da representação visual por meio de linhas convergentes para um ponto de fuga, produzindo a ilusão ótica de profundidade realista.'
-        },
-        {
-          text: 'No Barroco mineiro do século XVIII, o mestre Antônio Francisco Lisboa (Aleijadinho) esculpiu obras memoráveis, como os Doze Profetas de Congonhas. Qual material característico ele utilizou?',
-          correct: 'Pedra-sabão (esteatito), abundante na região de Minas Gerais.',
-          distractors: [
-            'Mármore de Carrara importado da Itália.',
-            'Bronze maciço polido em fundição industrial europeia.',
-            'Resina plástica contemporânea com fixador sintético.'
-          ],
-          explanation: 'Aleijadinho utilizou amplamente a pedra-sabão, rocha típica do relevo de Minas Gerais, cuja textura macia permitiu rica modelagem escultural e grande durabilidade contra intempéries.'
-        },
-        {
-          text: 'A Semana de Arte Moderna de 1922, marco do Modernismo brasileiro realizada em São Paulo, tinha como proposta central:',
-          correct: 'Romper com o tradicionalismo acadêmico parnasiano e buscar uma identidade artística genuinamente brasileira inspirada nas vanguardas.',
-          distractors: [
-            'Copiar fielmente os moldes neoclássicos europeus e banir temas populares.',
-            'Proibir exposições públicas de pintura e permitir apenas recitais em latim.',
-            'Impor que todos os artistas seguissem regras medievais de iluminura.'
-          ],
-          explanation: 'O Modernismo de 1922 propôs liberdade criativa e valorização das raízes culturais do Brasil, incorporando inovações das vanguardas estéticas para renovar a arte e a literatura.'
-        }
-      ],
-      educacaofisica: () => [
-        {
-          text: 'Na classificação dos esportes adotada pela BNCC, modalidades como futsal, basquetebol e handebol são categorizadas como:',
-          correct: 'Esportes de invasão (ou de território), pois as equipes disputam o mesmo espaço buscando invadir o setor adversário para pontuar, enquanto protegem sua meta.',
-          distractors: [
-            'Esportes de marca, pois os competidores disputam exclusivamente contra o cronômetro.',
-            'Esportes de rede/parede, pois há uma barreira física permanente que impede o contato.',
-            'Esportes de precisão, cujo único objetivo é acertar um alvo estático com arco e flecha.'
-          ],
-          explanation: 'Futsal, basquete e handebol são esportes de invasão: os jogadores compartilham a mesma quadra, manobrando a bola para invadir o campo do oponente e finalizar, enquanto defendem seu gol/cesta.'
-        },
-        {
-          text: 'No voleibol, esporte de rede divisória, qual das seguintes regras oficiais é verdadeira?',
-          correct: 'Cada equipe pode dar no máximo três toques na bola (além do toque de bloqueio) para enviá-la para a quadra adversária, e nenhum atleta pode tocar duas vezes consecutivas na bola.',
-          distractors: [
-            'É permitido segurar a bola com as duas mãos por até 4 segundos antes de arremessá-la.',
-            'O jogador que executa o saque pode ultrapassar a linha de fundo antes de golpear a bola.',
-            'Cada time pode dar até cinco toques livres antes de devolver a bola ao lado contrário.'
-          ],
-          explanation: 'A regra oficial do voleibol estabelece o limite de até três toques coletivos por equipe para transpor a rede, sendo vedado o dois-toques sucessivo pelo mesmo jogador (exceto bloqueio).'
-        },
-        {
-          text: 'Antes da realização de treinos e jogos de média ou alta intensidade, o aquecimento corporal é fundamental porque:',
-          correct: 'Eleva a temperatura corporal, aumenta a irrigação sanguínea aos músculos e prepara as articulações, diminuindo o risco de lesões.',
-          distractors: [
-            'Reduz a oxigenação muscular para forçar a queima anaeróbica de glicose.',
-            'Diminui os batimentos cardíacos para valores abaixo do estado de repouso.',
-            'Impede a transpiração para evitar a perda momentânea de peso.'
-          ],
-          explanation: 'O aquecimento prévio eleva gradualmente a frequência cardíaca, lubrifica as articulações com líquido sinovial e aumenta a elasticidade das fibras musculares, prevenindo estiramentos e entorses.'
-        },
-        {
-          text: 'O princípio do Fair Play (Jogo Limpo) no esporte escolar fundamenta-se em:',
-          correct: 'Respeitar as regras, os adversários, os árbitros e os colegas de equipe, valorizando a integridade e a convivência ética acima da vitória.',
-          distractors: [
-            'Simular faltas para ludibriar a arbitragem e obter vantagens indevidas.',
-            'Desrespeitar as decisões dos juízes quando contrárias aos interesses da equipe.',
-            'Festejar zombando e ridicularizando os adversários derrotados.'
-          ],
-          explanation: 'Fair play representa o espírito ético do esporte: lealdade, cumprimento honesto dos regulamentos e respeito pela dignidade de todos os participantes.'
-        }
-      ],
-      filosofia: () => [
-        {
-          text: 'O surgimento da Filosofia na Grécia Antiga (século VI a.C.) é marcado pela passagem do Mito ao Logos. Essa transição significou:',
-          correct: 'A substituição de narrativas mitológicas e sobrenaturais por explicações racionais, lógicas e baseadas na observação da natureza e da causalidade.',
-          distractors: [
-            'A proibição do debate público nas praças e a imposição de crenças mágicas obrigatórias.',
-            'A defesa de que todas as coisas no mundo ocorrem por mero acaso sem causas identificáveis.',
-            'O abandono do raciocínio e a aceitação irrestrita de superstições populares.'
-          ],
-          explanation: 'A passagem do mito ao logos marca o nascimento do pensamento filosófico: a busca por fundamentos racionais (logos) para explicar a origem e o funcionamento do cosmos (cosmologia).'
-        },
-        {
-          text: 'O método socrático de investigação consistia no diálogo dividido em ironia e maiêutica. A maiêutica de Sócrates tinha como objetivo:',
-          correct: 'Fazer o interlocutor "dar à luz" novos conceitos e percepções racionais a partir de suas próprias reflexões e perguntas reflexivas.',
-          distractors: [
-            'Entregar respostas dogmáticas prontas para serem decoradas sem questionamento.',
-            'Cobrar dinheiro para ensinar técnicas de persuasão eleitoreira vazia.',
-            'Impedir que as pessoas reconhecessem a sua própria ignorância sobre os temas.'
-          ],
-          explanation: 'Inspirando-se em sua mãe parteira, Sócrates chamou sua prática de maiêutica (parto das ideias): conduzia o interlocutor a formular a verdade pelo exercício da própria razão.'
-        },
-        {
-          text: 'Na célebre Alegoria da Caverna de Platão (A República), o que simboliza a saída do prisioneiro para a luz solar?',
-          correct: 'A libertação das ilusões e aparências do senso comum (sombras) em direção ao conhecimento verdadeiro e à contemplação das ideias perfeitas.',
-          distractors: [
-            'A demonstração de que a escuridão é sempre mais confiável do que a luz do sol.',
-            'A vitória bélica de uma civilização contra povos vizinhos sem estudo.',
-            'A comprovação de que as sombras refletidas na parede são a realidade absoluta.'
-          ],
-          explanation: 'Platão utilizou a caverna para ilustrar a trajetória do filósofo: superar o mundo sensível das opiniões falsas (doxa) para alcançar o mundo inteligível das essências e verdades (episteme).'
-        },
-        {
-          text: 'Para Aristóteles na obra Ética a Nicômaco, a virtude moral (areté) reside:',
-          correct: 'No justo meio (mediania) equilibrado entre dois extremos viciosos: um por excesso e outro por falta.',
-          distractors: [
-            'Na busca descontrolada por prazeres imediatos sem medir consequências.',
-            'No isolamento ascético total rejeitando a convivência em sociedade.',
-            'Na covardia sistemática diante de qualquer decisão moral importante.'
-          ],
-          explanation: 'A virtude aristotélica é a mediania (justo meio): o equilíbrio da razão frente às paixões humanas (ex: a coragem é a justa medida entre a covardia por falta e a temeridade por excesso).'
-        }
-      ],
-      redacao: () => [
-        {
-          text: 'No texto dissertativo-argumentativo, o elemento fundamental que expressa o ponto de vista central do autor a ser defendido chama-se:',
-          correct: 'Tese.',
-          distractors: ['Epígrafe.', 'Enredo secundário.', 'Refrão poético.'],
-          explanation: 'A tese é a espinha dorsal da dissertação: define o posicionamento crítico do autor em relação ao tema e guia os argumentos que serão desdobrados no desenvolvimento.'
-        },
-        {
-          text: 'Qual conectivo (operador argumentativo) deve ser empregado para introduzir um parágrafo de fechamento com sentido de CONCLUSÃO?',
-          correct: '"Portanto".',
-          distractors: ['"Embora".', '"Todavia".', '"Porquanto".'],
-          explanation: '"Portanto" é uma conjunção conclusiva que encerra uma linha de raciocínio. "Embora" é concessivo, "todavia" é adversativo e "porquanto" é explicativo/causal.'
-        },
-        {
-          text: 'Qual alternativa diferencia corretamente o gênero Crônica do Artigo de Opinião?',
-          correct: 'A crônica costuma partir de fatos cotidianos simples com olhar poético ou reflexivo; o artigo de opinião debate diretamente um tema polêmico da sociedade com tese e forte argumentação.',
-          distractors: [
-            'A crônica não pode ter personagens e deve conter apenas fórmulas matemáticas.',
-            'O artigo de opinião é um texto em versos rimados que proíbe a argumentação lógica.',
-            'Ambos os gêneros são exatamente iguais e não possuem nenhuma diferença de estilo.'
-          ],
-          explanation: 'A crônica registra flagrantes do dia a dia com sensibilidade, humor ou reflexão pessoal. O artigo de opinião é predominantemente dissertativo, defendendo uma posição pública sobre tema controverso.'
-        },
-        {
-          text: 'Em uma redação, o uso de repertório sociocultural produtivo é comprovado quando o estudante:',
-          correct: 'Relaciona com pertinência referências de História, Filosofia, Literatura ou dados científicos para embasar sua argumentação.',
-          distractors: [
-            'Copia trechos inteiros da coletânea de textos motivadores da prova.',
-            'Inventa dados estatísticos fictícios sem nenhuma base real de pesquisa.',
-            'Repete o mesmo período gramatical várias vezes para preencher linhas em branco.'
-          ],
-          explanation: 'O repertório sociocultural produtivo é aquele legitimado pelas áreas do conhecimento humano que se conecta de modo orgânico e justificado aos argumentos desenvolvidos pelo autor.'
-        }
-      ]
-    };
-
-    const genFn = subjectGenerators[subjectKey] || subjectGenerators['matematica'];
-    const pool = genFn();
-
-    const generated = [];
-    for (let i = 0; i < countNeeded; i++) {
-      const qTemplate = pool[(stageIndex * 2 + i) % pool.length];
-      generated.push({
-        id: `gen_proc_${subjectKey}_${bookId}_${chapterId}_s${stageIndex}_q${i + 1}`,
-        text: qTemplate.text,
-        topic: `${chapter.title} • Etapa ${stageIndex + 1}`,
-        options: [
-          { text: qTemplate.correct, correct: true },
-          { text: qTemplate.distractors[0], correct: false },
-          { text: qTemplate.distractors[1], correct: false },
-          { text: qTemplate.distractors[2], correct: false }
-        ],
-        explanation: qTemplate.explanation,
-        aiGuidance: `${subj.name} • ${chapter.title}`
-      });
-    }
-
-    return generated;
+    const curriculumQs = this.getCurriculumQuestionsForSubjectAndChapter(subjectKey, bookId, chapterId, 'medio', countNeeded);
+    return curriculumQs.map((q, idx) => ({
+      id: `gen_proc_${subjectKey}_${bookId}_${chapterId}_s${stageIndex}_q${idx + 1}`,
+      text: q.text,
+      topic: `${chapter.title} • Etapa ${stageIndex + 1}`,
+      options: q.options,
+      explanation: q.explanation,
+      aiGuidance: `${subj.name} • ${chapter.title}`
+    }));
   }
 
   generateTrilhaStageQuestions(subjectKey, bookId, chapterId, stageIndex, stageId) {
@@ -3782,12 +3234,10 @@ class EstudePlusApp {
       }
 
       if (rawOptions.length < 4) {
-        rawOptions = [
-          { text: 'Proposição plenamente correta e comprovada pelos conceitos da matéria.', correct: true },
-          { text: 'Interpretação incorreta que contraria as propriedades fundamentais da disciplina.', correct: false },
-          { text: 'Conclusão inconsistente que desconsidera as condições e relações do problema.', correct: false },
-          { text: 'Generalização indevida que não se aplica aos dados analisados.', correct: false }
-        ];
+        const fallbackCurriculum = this.getCurriculumQuestionsForSubjectAndChapter(subjectKey, bookId, chapterId, 'medio', 1);
+        if (fallbackCurriculum && fallbackCurriculum[0] && Array.isArray(fallbackCurriculum[0].options)) {
+          rawOptions = fallbackCurriculum[0].options.map(o => ({ text: o.text, correct: !!o.correct }));
+        }
       }
 
       const correctOpt = rawOptions.find(o => o.correct) || rawOptions[0];
@@ -3802,7 +3252,7 @@ class EstudePlusApp {
         if (i === correctPos) {
           finalOptions.push({ letter: letters[i], text: correctOpt.text, isCorrect: true });
         } else {
-          const inc = incorrectOpts[incIdx++] || { text: `Alternativa ${letters[i]} incorreta segundo as propriedades da disciplina.` };
+          const inc = incorrectOpts[incIdx++] || { text: `Alternativa incorreta correspondente à letra ${letters[i]}.` };
           finalOptions.push({ letter: letters[i], text: inc.text, isCorrect: false });
         }
       }
@@ -3831,7 +3281,7 @@ class EstudePlusApp {
             example: `Na prática pedagógica do SAS: identifique sempre os elementos conhecidos e a relação direta com os princípios de ${cleanCapName}.`,
             rule: `Regra de ouro: nunca suponha dados não declarados na questão.`
           },
-          text: `Mini-Exercício de Verificação: A respeito de "${cleanCapName}", qual alternativa expressa a afirmação correta?`,
+          text: q.text,
           options: finalOptions,
           correctLetter: letters[correctPos]
         };
@@ -3840,9 +3290,9 @@ class EstudePlusApp {
       // 2. VERDADEIRO OU FALSO
       if (stageType === 'true_false') {
         const isTrue = (idx % 2 === 0);
-        const statementText = isTrue
-          ? `No contexto de "${cleanCapName}": ${correctOpt.text}`
-          : `No contexto de "${cleanCapName}": ${incorrectOpts[0]?.text || 'Os conceitos deste tópico não possuem validação na matriz curricular oficial.'}`;
+        const chosenAnswer = isTrue ? correctOpt.text : (incorrectOpts[0]?.text || 'incorreto');
+        const cleanPrompt = (q.text || '').replace(/\?$/, '').trim();
+        const statementText = `Considerando a questão "${cleanPrompt}", a resposta correta é "${chosenAnswer}".`;
 
         return {
           ...baseQ,
@@ -3880,19 +3330,22 @@ class EstudePlusApp {
 
       // 4. COMPLETAR LACUNAS (CLOZE)
       if (stageType === 'cloze') {
-        const keyWord = cleanCapName.split(' ')[0] || 'conceito';
-        const distractorWords = ['hipótese', 'exceção', 'inversão', 'aproximação', 'generalização'];
+        const correctText = correctOpt.text || '';
+        const words = correctText.split(/\s+/).filter(w => w.length >= 3 && !['para', 'com', 'que', 'dos', 'das', 'uma', 'seu', 'este', 'esta', 'pois'].includes(w.toLowerCase()));
+        const keyWord = words[0] || correctText.slice(0, 15) || 'resultado';
+        const distractorWords = ['coeficiente', 'incógnita', 'membro', 'igualdade', 'fator', 'constante'];
+        const cleanPrompt = (q.text || '').replace(/\?$/, '').trim();
 
         return {
           ...baseQ,
           type: 'cloze',
           formatLabel: 'Completar Lacuna',
-          textBefore: `No estudo aprofundado de ${cleanCapName}, o conceito de`,
-          textAfter: `é indispensável para garantir a precisão dos cálculos e a interpretação correta dos dados.`,
+          textBefore: `Na resolução de "${cleanPrompt}", o termo ou valor que completa corretamente o raciocínio é`,
+          textAfter: `.`,
           correctWord: keyWord,
           wordBank: [keyWord, distractorWords[idx % distractorWords.length], distractorWords[(idx + 1) % distractorWords.length], distractorWords[(idx + 2) % distractorWords.length]].sort(() => Math.random() - 0.5),
-          explanation: q.explanation || `O termo técnico "${keyWord}" é o conceito central desta seção curricular.`,
-          diagnosticWrong: `O termo técnico que preenche a sentença adequadamente é "${keyWord}".`
+          explanation: q.explanation || `O termo ou valor "${keyWord}" completa corretamente a resolução.`,
+          diagnosticWrong: `O termo que preenche a lacuna adequadamente é "${keyWord}".`
         };
       }
 
@@ -6526,90 +5979,636 @@ class EstudePlusApp {
 },
       'ciencias_3_8': {
         "facil": [
-                {
-                        "id": "c38_f1",
-                        "subject": "Ciências (Livro 3 SAS)",
-                        "topic": "Cap. 8: O Reino Vegetal",
-                        "text": "Os musgos são exemplos clássicos de briófitas. Por que essas plantas apresentam porte tão reduzido (apenas alguns centímetros de altura)?",
-                        "options": [
-                                {
-                                        "text": "Porque são avasculares (não possuem vasos condutores de seiva - xilema e floema), transportando água por difusão célula a célula.",
+          {
+            "id": "c38_f1",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Os musgos são exemplos clássicos de briófitas. Por que essas plantas apresentam porte tão reduzido (apenas alguns centímetros de altura)?",
+            "options": [
+              {
+                "text": "Porque são avasculares (não possuem vasos condutores de seiva - xilema e floema), transportando água por difusão célula a célula.",
+                "correct": true
+              },
+              {
+                "text": "Porque não realizam fotossíntese e precisam de pouca luz.",
+                "correct": false
+              },
+              {
+                "text": "Porque suas flores são pesadas demais para caules finos.",
+                "correct": false
+              },
+              {
+                "text": "Porque só se reproduzem em desertos arenosos sem solo fértil.",
+                "correct": false
+              }
+            ],
+            "explanation": "A ausência de vasos condutores impede o transporte eficiente de água a grandes alturas, limitando o crescimento das briófitas a ambientes úmidos e de pequeno porte.",
+            "aiGuidance": "Briófitas e avascularidade no SAS."
+          },
+          {
+            "id": "c38_f2",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Nas samambaias e avencas (pteridófitas), pequenas estruturas circulares escuras observadas na parte inferior das folhas maduras são responsáveis pela reprodução. Essas estruturas são denominadas:",
+            "options": [
+              {
+                "text": "Soros, que abrigam os esporângios produtores de esporos.",
+                "correct": true
+              },
+              {
+                "text": "Estômatos, que realizam a absorção direta de luz solar.",
+                "correct": false
+              },
+              {
+                "text": "Frutos carnosos, originados da fecundação de flores.",
+                "correct": false
+              },
+              {
+                "text": "Sementes aladas, transportadas pelo vento.",
+                "correct": false
+              }
+            ],
+            "explanation": "Os soros são agrupamentos de esporângios na face inferior das folhas das pteridófitas, responsáveis pela produção e liberação de esporos.",
+            "aiGuidance": "Reprodução das pteridófitas por esporos."
+          },
+          {
+            "id": "c38_f3",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Os pinheiros, como a Araucária (pinheiro-do-paraná), pertencem ao grupo vegetal das Gimnospermas. O termo 'gimnosperma' significa:",
+            "options": [
+              {
+                "text": "'Semente nua', pois suas sementes (pinhões) não ficam contidas no interior de um fruto verdadeiro.",
+                "correct": true
+              },
+              {
+                "text": "'Planta sem raiz', por absorver água exclusivamente pelas folhas.",
+                "correct": false
+              },
+              {
+                "text": "'Fruto suculento', por atrair pássaros com polpa doce.",
+                "correct": false
+              },
+              {
+                "text": "'Flor colorida', por possuir pétalas chamativas e nectários.",
+                "correct": false
+              }
+            ],
+            "explanation": "As gimnospermas não possuem ovário desenvolvido em fruto. Suas sementes se desenvolvem expostas nas escamas dos estróbilos (pinhas).",
+            "aiGuidance": "Conceito de semente nua nas gimnospermas."
+          },
+          {
+            "id": "c38_f4",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Qual grupo de plantas é o único que produz flores verdadeiras e frutos contendo sementes?",
+            "options": [
+              {
+                "text": "Angiospermas (como mangueiras, feijoeiros e ipês).",
+                "correct": true
+              },
+              {
+                "text": "Gimnospermas (como pinheiros e sequoias).",
+                "correct": false
+              },
+              {
+                "text": "Pteridófitas (como samambaias e avencas).",
+                "correct": false
+              },
+              {
+                "text": "Briófitas (como musgos e hepáticas).",
+                "correct": false
+              }
+            ],
+            "explanation": "As angiospermas formam o grupo vegetal mais diverso do planeta e caracterizam-se pela presença de flores e frutos protegendo as sementes.",
+            "aiGuidance": "Características exclusivas das angiospermas."
+          },
+{
+                    "id": "c38_f5",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Nas briófitas (como os musgos), não existem raízes, caules ou folhas verdadeiras. Quais são as estruturas correspondentes que desempenham as funções de fixação e absorção?",
+                    "options": [
+                              {
+                                        "text": "Rizoides (fixação), cauloides (sustentação) e filoides (lâminas fotossintéticas).",
                                         "correct": true
-                                },
-                                {
-                                        "text": "Porque não realizam fotossíntese e precisam de pouca luz.",
+                              },
+                              {
+                                        "text": "Soros, estômatos e pétalas coloridas.",
                                         "correct": false
-                                },
-                                {
-                                        "text": "Porque suas flores são pesadas demais para caules finos.",
+                              },
+                              {
+                                        "text": "Tubérculos, gavinhas e bulbos subterrâneos.",
                                         "correct": false
-                                },
-                                {
-                                        "text": "Porque só se reproduzem em desertos arenosos sem solo fértil.",
+                              },
+                              {
+                                        "text": "Xilema, floema e estróbilos lenhosos.",
                                         "correct": false
-                                }
-                        ],
-                        "explanation": "A ausência de vasos condutores impede o transporte eficiente de água a grandes alturas, limitando o crescimento das briófitas a ambientes úmidos e de pequeno porte.",
-                        "aiGuidance": "Briófitas e avascularidade no SAS."
-                }
+                              }
+                    ],
+                    "explanation": "Por serem plantas avasculares muito simples, as briófitas possuem rizoides, cauloides e filoides em vez de órgãos vegetais verdadeiros.",
+                    "aiGuidance": "Morfologia básica das briófitas no SAS."
+          },
+          {
+                    "id": "c38_f6",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Qual é o principal pigmento presente nos cloroplastos das células vegetais responsável por absorver a luz solar para a realização da fotossíntese?",
+                    "options": [
+                              {
+                                        "text": "Clorofila, que confere a coloração verde característica das folhas.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "Hemoglobina, responsável pelo transporte de oxigênio.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Melanina, que protege as folhas contra a radiação solar.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Glicose pura acumulada no citoplasma foliar.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "A clorofila é o pigmento fotossintetizante que absorve principalmente os comprimentos de onda azul e vermelho da luz solar, refletindo o verde.",
+                    "aiGuidance": "Pigmentos fotossintetizantes nas folhas."
+          },
+          {
+                    "id": "c38_f7",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "O processo biológico em que o grão de pólen é transferido da parte masculina da flor (estame) para a parte feminina (estigma) é denominado:",
+                    "options": [
+                              {
+                                        "text": "Polinização.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "Germinação seminal.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Transpiração estomática.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Dormência celular.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "Polinização é o transporte do grão de pólen da antera até o estigma da flor, podendo ser mediada pelo vento, água ou animais polinizadores.",
+                    "aiGuidance": "Conceito e agentes da polinização."
+          },
+          {
+                    "id": "c38_f8",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Qual é a função primordial da semente para as plantas dos grupos Gimnospermas e Angiospermas?",
+                    "options": [
+                              {
+                                        "text": "Proteger o embrião vegetal e fornecer substâncias nutritivas para seu desenvolvimento durante a germinação.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "Absorver água e sais minerais do ar para os galhos superiores.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Produzir gás oxigênio por meio de contração mecânica das cascas.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Impedir que a planta cresça acima de um metro de altura.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "A semente é uma estrutura reprodutiva protegida por tegumento que abriga o embrião e reservas de nutrientes (como amido e lipídios).",
+                    "aiGuidance": "Importância evolutiva e função da semente."
+          }
         ],
         "medio": [
-                {
-                        "id": "c38_m1",
-                        "subject": "Ciências (Livro 3 SAS)",
-                        "topic": "Cap. 8: O Reino Vegetal",
-                        "text": "Qual dos seguintes grupos vegetais foi o primeiro a desenvolver vasos condutores de seiva, mas AINDA depende da água líquida para a fecundação e não produz sementes?",
-                        "options": [
-                                {
-                                        "text": "Pteridófitas (como samambaias e avencas).",
+          {
+            "id": "c38_m1",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Qual dos seguintes grupos vegetais foi o primeiro a desenvolver vasos condutores de seiva, mas AINDA depende da água líquida para a fecundação e não produz sementes?",
+            "options": [
+              {
+                "text": "Pteridófitas (como samambaias e avencas).",
+                "correct": true
+              },
+              {
+                "text": "Angiospermas (como macieiras e mangueiras).",
+                "correct": false
+              },
+              {
+                "text": "Gimnospermas (como pinheiros e araucárias).",
+                "correct": false
+              },
+              {
+                "text": "Briófitas (como os musgos).",
+                "correct": false
+              }
+            ],
+            "explanation": "Pteridófitas são traqueófitas (vasculares) sem sementes. Os anterozoides flagelados precisam nadar até a oosfera para ocorrer a fertilização.",
+            "aiGuidance": "Evolução dos grandes grupos vegetais."
+          },
+          {
+            "id": "c38_m2",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "No corpo das plantas vasculares, como atuam os vasos de xilema e de floema na condução de seiva?",
+            "options": [
+              {
+                "text": "O xilema conduz seiva bruta (água e sais minerais das raízes às folhas) e o floema conduz seiva elaborada (açúcares da fotossíntese para toda a planta).",
+                "correct": true
+              },
+              {
+                "text": "O floema transporta apenas oxigênio gasoso e o xilema transporta gás carbônico.",
+                "correct": false
+              },
+              {
+                "text": "O xilema retira matéria orgânica do ar e o floema armazena amido no solo.",
+                "correct": false
+              },
+              {
+                "text": "Ambos os vasos conduzem água exclusivamente no sentido descendente das folhas para as raízes.",
+                "correct": false
+              }
+            ],
+            "explanation": "O xilema (lenho) é responsável pela corrente de transpiração ascendente de água e sais minerais. O floema (líber) distribui a seiva orgânica produzida na fotossíntese.",
+            "aiGuidance": "Fisiologia vegetal: xilema vs floema."
+          },
+          {
+            "id": "c38_m3",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Nas folhas dos vegetais, estruturas formadas por células-guarda que controlam as trocas gasosas da fotossíntese e a transpiração de vapor de água são denominadas:",
+            "options": [
+              {
+                "text": "Estômatos.",
+                "correct": true
+              },
+              {
+                "text": "Soros.",
+                "correct": false
+              },
+              {
+                "text": "Tricomas de reserva.",
+                "correct": false
+              },
+              {
+                "text": "Nervuras axiais.",
+                "correct": false
+              }
+            ],
+            "explanation": "Os estômatos abrem e fecham permitindo a absorção de CO2 para fotossíntese e controlando a perda de água na transpiração foliar.",
+            "aiGuidance": "Trocas gasosas e estômatos nas folhas."
+          },
+          {
+            "id": "c38_m4",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "O pinhão, alimento tradicional consumido no Sul do Brasil, corresponde a qual estrutura botânica da Araucária?",
+            "options": [
+              {
+                "text": "À semente da planta, rica em reservas nutritivas para o embrião.",
+                "correct": true
+              },
+              {
+                "text": "Ao fruto verdadeiro formado pelo ovário da flor.",
+                "correct": false
+              },
+              {
+                "text": "À folha modificada com função fotossintética.",
+                "correct": false
+              },
+              {
+                "text": "À raiz tuberosa subterrânea de sustentação.",
+                "correct": false
+              }
+            ],
+            "explanation": "Como a Araucária é uma gimnosperma, não produz frutos; o pinhão é a sua semente, desenvolvida no estróbilo feminino (pinha).",
+            "aiGuidance": "Morfologia do pinhão na Araucária."
+          },
+{
+                    "id": "c38_m5",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Por que briófitas e pteridófitas dependem obrigatoriamente da presença de água líquida no ambiente para que ocorra a fecundação sexuada?",
+                    "options": [
+                              {
+                                        "text": "Porque seus gametas masculinos (anterozoides) são flagelados e precisam nadar através da água líquida até a oosfera.",
                                         "correct": true
-                                },
-                                {
-                                        "text": "Angiospermas (como macieiras e mangueiras).",
+                              },
+                              {
+                                        "text": "Porque suas raízes não conseguem absorver minerais secos sem inundação.",
                                         "correct": false
-                                },
-                                {
-                                        "text": "Gimnospermas (como pinheiros e araucárias).",
+                              },
+                              {
+                                        "text": "Porque a luz solar destrói as sementes na ausência de água corrente.",
                                         "correct": false
-                                },
-                                {
-                                        "text": "Briófitas (como os musgos).",
+                              },
+                              {
+                                        "text": "Porque realizam fotossíntese exclusivamente quando submersas.",
                                         "correct": false
-                                }
-                        ],
-                        "explanation": "Pteridófitas são traqueófitas (vasculares) sem sementes. Os anterozoides flagelados precisam nadar até a oosfera para ocorrer a fertilização.",
-                        "aiGuidance": "Evolução dos grandes grupos vegetais."
-                }
+                              }
+                    ],
+                    "explanation": "Nas briófitas e pteridófitas, o anterozoide flagelado necessita de gotas de chuva ou orvalho para nadar e fertilizar o gameta feminino (oosfera).",
+                    "aiGuidance": "Dependência da água na reprodução de briófitas e pteridófitas."
+          },
+          {
+                    "id": "c38_m6",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Em uma flor de angiosperma, qual estrutura floral se desenvolve e se transforma no fruto após a fecundação do óvulo?",
+                    "options": [
+                              {
+                                        "text": "O ovário da flor se desenvolve e forma o fruto que abriga e protege as sementes.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "As pétalas coloridas se fundem e criam a polpa carnosa do fruto.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Os estames masculinos caem no solo e formam o caroço do fruto.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "O cálice de sépalas verdes incha e vira a casca externa do fruto.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "O fruto é o ovário desenvolvido da flor após a fecundação. O óvulo fecundado dá origem à semente, e a parede do ovário origina o pericarpo do fruto.",
+                    "aiGuidance": "Origem botânica do fruto a partir do ovário."
+          },
+          {
+                    "id": "c38_m7",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "A transpiração vegetal é o processo de perda de vapor de água pelas folhas através dos estômatos. Esse fenômeno é biologicamente essencial porque:",
+                    "options": [
+                              {
+                                        "text": "Cria uma força de sucção (tensão) que impulsiona a subida contínua da seiva bruta da raiz até as folhas e auxilia no resfriamento da planta.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "Elimina todo o gás oxigênio foliar para impedir que as folhas apodreçam.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Faz com que o caule fique oco para facilitar a circulação de insetos benéficos.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Substitui a necessidade de realização da fotossíntese nos períodos de seca.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "A teoria de coesão-tensão explica que a transpiração estomática gera a pressão negativa necessária para puxar a coluna contínua de água pelo xilema.",
+                    "aiGuidance": "Fisiologia da transpiração e ascensão da seiva bruta."
+          },
+          {
+                    "id": "c38_m8",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Qual é a principal função do sistema radicular (raízes) para a nutrição e sobrevivência das plantas terrestres?",
+                    "options": [
+                              {
+                                        "text": "Fixar a planta ao solo e absorver água e sais minerais indispensáveis para a elaboração da seiva.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "Captar luz solar subterrânea para sintetizar açúcares no escuro.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Produzir grãos de pólen para a dispersão aérea pelo vento.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Eliminar a glicose em excesso para evitar a fermentação foliar.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "As raízes fixam o vegetal no substrato e possuem pelos absorventes que captam água e nutrientes minerais, conduzidos pelo xilema.",
+                    "aiGuidance": "Funções e zonas morfológicas da raiz."
+          }
         ],
         "dificil": [
-                {
-                        "id": "c38_d1",
-                        "subject": "Ciências (Livro 3 SAS)",
-                        "topic": "Cap. 8: O Reino Vegetal",
-                        "text": "O que diferencia evolutivamente as Angiospermas de todos os demais grupos vegetais e garantiu seu sucesso ecológico dominante no planeta?",
-                        "options": [
-                                {
-                                        "text": "A presença de flores verdadeiras e frutos que protegem a semente e atraem animais polinizadores e dispersores.",
+          {
+            "id": "c38_d1",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "O que diferencia evolutivamente as Angiospermas de todos os demais grupos vegetais e garantiu seu sucesso ecológico dominante no planeta?",
+            "options": [
+              {
+                "text": "A presença de flores verdadeiras e frutos que protegem a semente e atraem animais polinizadores e dispersores.",
+                "correct": true
+              },
+              {
+                "text": "A capacidade de viver sem fazer fotossíntese em cavernas escuras.",
+                "correct": false
+              },
+              {
+                "text": "A ausência total de raízes e folhas para economizar seiva.",
+                "correct": false
+              },
+              {
+                "text": "A produção de sementes nuas expostas em pinhas lenhosas.",
+                "correct": false
+              }
+            ],
+            "explanation": "Flores atraem polinizadores com néctar e cores, e os frutos (ovários desenvolvidos) protegem as sementes e garantem dispersão por animais.",
+            "aiGuidance": "Aquisições evolutivas das Angiospermas no SAAS."
+          },
+          {
+            "id": "c38_d2",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Na evolução das plantas terrestres, qual novidade das Gimnospermas permitiu a colonização de ambientes secos ao tornar a fecundação independente da água líquida?",
+            "options": [
+              {
+                "text": "O grão de pólen transportado pelo ar e o crescimento do tubo polínico para conduzir o gameta masculino até o óvulo.",
+                "correct": true
+              },
+              {
+                "text": "A produção de frutos carnosos que absorvem água diretamente da neblina.",
+                "correct": false
+              },
+              {
+                "text": "A perda das folhas para realizar fotossíntese exclusivamente pela raiz.",
+                "correct": false
+              },
+              {
+                "text": "A eliminação definitiva da fase de reprodução sexuada.",
+                "correct": false
+              }
+            ],
+            "explanation": "O grão de pólen é disperso pelo vento e germina desenvolvendo o tubo polínico, permitindo que a fecundação ocorra sem a presença de gotas de água externa.",
+            "aiGuidance": "Adaptação reprodutiva das gimnospermas ao meio terrestre seco."
+          },
+          {
+            "id": "c38_d3",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Considere a ordem evolutiva de surgimento dos grupos vegetais: Briófitas, Pteridófitas, Gimnospermas e Angiospermas. A sequência correta de aparecimento das novidades evolutivas é:",
+            "options": [
+              {
+                "text": "Vasos condutores de seiva -> Sementes e grão de pólen -> Flores verdadeiras e Frutos.",
+                "correct": true
+              },
+              {
+                "text": "Flores e Frutos -> Vasos condutores -> Sementes.",
+                "correct": false
+              },
+              {
+                "text": "Sementes -> Flores e Frutos -> Vasos condutores.",
+                "correct": false
+              },
+              {
+                "text": "Vasos condutores -> Flores e Frutos -> Sementes.",
+                "correct": false
+              }
+            ],
+            "explanation": "Pteridófitas desenvolveram vasos condutores; Gimnospermas desenvolveram sementes e pólen; Angiospermas desenvolveram flores e frutos protegendo as sementes.",
+            "aiGuidance": "Sequência evolutiva das plantas terrestres."
+          },
+          {
+            "id": "c38_d4",
+            "subject": "Ciências (Livro 3 SAS)",
+            "topic": "Cap. 8: O Reino Vegetal",
+            "text": "Na fotossíntese vegetal que ocorre nos cloroplastos, qual equação química representa corretamente as substâncias reagentes e os produtos formados?",
+            "options": [
+              {
+                "text": "6 CO₂ + 6 H₂O + Luz Solar -> C₆H₁₂O₆ (glicose) + 6 O₂ (oxigênio)",
+                "correct": true
+              },
+              {
+                "text": "C₆H₁₂O₆ + 6 O₂ -> 6 CO₂ + 6 H₂O + Energia Térmica",
+                "correct": false
+              },
+              {
+                "text": "2 H₂O + 2 O₂ -> 2 H₂O₂ + Glicose vegetal",
+                "correct": false
+              },
+              {
+                "text": "6 CO₂ + 6 O₂ + Luz -> C₆H₁₂O₆ + 6 H₂O",
+                "correct": false
+              }
+            ],
+            "explanation": "A fotossíntese consome dióxido de carbono e água sob energia solar para sintetizar glicose e liberar gás oxigênio na atmosfera.",
+            "aiGuidance": "Bioquímica da fotossíntese vegetal."
+          },
+{
+                    "id": "c38_d5",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "No ciclo de vida das plantas com alternância de gerações (metagênese), qual é a geração duradoura e fotossintetizante dominante nas Briófitas e nas Angiospermas, respectivamente?",
+                    "options": [
+                              {
+                                        "text": "Nas Briófitas a fase dominante é o Gametófito (n), enquanto nas Angiospermas a fase dominante é o Esporófito (2n).",
                                         "correct": true
-                                },
-                                {
-                                        "text": "A capacidade de viver sem fazer fotossíntese em cavernas escuras.",
+                              },
+                              {
+                                        "text": "Nas Briófitas é o Esporófito e nas Angiospermas é o Gametófito.",
                                         "correct": false
-                                },
-                                {
-                                        "text": "A ausência total de raízes e folhas para economizar seiva.",
+                              },
+                              {
+                                        "text": "Em ambos os grupos a fase dominante é exclusivamente o Gametófito haploide.",
                                         "correct": false
-                                },
-                                {
-                                        "text": "A produção de sementes nuas expostas em pinhas lenhosas.",
+                              },
+                              {
+                                        "text": "Em ambos os grupos a fase dominante é o esporo diploide dormente.",
                                         "correct": false
-                                }
-                        ],
-                        "explanation": "Flores atraem polinizadores com néctar e cores, e os frutos (ovários desenvolvidos) protegem as sementes e garantem dispersão por animais.",
-                        "aiGuidance": "Aquisições evolutivas das Angiospermas no SAAS."
-                }
+                              }
+                    ],
+                    "explanation": "As briófitas são as únicas plantas cujo gametófito (n) é a fase duradoura; em todas as demais plantas vasculares (pteridófitas, gimnospermas e angiospermas), o esporófito (2n) é dominante.",
+                    "aiGuidance": "Alternância de gerações nos grupos vegetais."
+          },
+          {
+                    "id": "c38_d6",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Em um experimento de botânica, um anel da casca externa de uma árvore foi retirado (anel de Malpighi), seccionando os vasos do floema e mantendo o xilema intacto. Qual é a consequência direta para a árvore?",
+                    "options": [
+                              {
+                                        "text": "A árvore morrerá após semanas porque a seiva elaborada (açúcares) não chegará mais às raízes, que morrerão de inanição.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "A planta crescerá com maior rapidez, pois as raízes começarão a produzir folhas subterrâneas.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "As folhas secarão em minutos por interrupção imediata do suprimento de água mineral.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Nenhuma consequência ocorrerá, pois o floema não conduz nutrientes vitais.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "O floema localiza-se na casca mais externa. Seu corte interrompe a descida de seiva elaborada; as raízes, sem glicose para respiração celular, morrem e a planta perece.",
+                    "aiGuidance": "Experimento do anelamento de Malpighi e floema."
+          },
+          {
+                    "id": "c38_d7",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Plantas adaptadas a climas áridos e semiáridos (xerófitas), como os cactos do bioma Caatinga, apresentam como características anatômicas marcantes:",
+                    "options": [
+                              {
+                                        "text": "Folhas reduzidas ou modificadas em espinhos (reduzindo a área de transpiração) e caule carnoso adaptado ao armazenamento de água.",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "Folhas largas e finas sem cutícula para evaporar água continuamente.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Ausência total de estômatos e raízes curtas flutuantes.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "Estômatos que permanecem abertos dia e noite sob calor extremo.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "Folhas transformadas em espinhos minimizam a perda d'água por transpiração estomática, enquanto o parênquima aquífero no caule retém água durante secas prolongadas.",
+                    "aiGuidance": "Adaptações xeromórficas da flora da Caatinga."
+          },
+          {
+                    "id": "c38_d8",
+                    "subject": "Ciências (Livro 3 SAS)",
+                    "topic": "Cap. 8: O Reino Vegetal",
+                    "text": "Nas sementes das angiospermas, qual estrutura de reserva nutritiva alimenta o embrião vegetal até que ele desenvolva raízes e folhas verdes capazes de realizar fotossíntese?",
+                    "options": [
+                              {
+                                        "text": "O endosperma (tecido nutritivo rico em amido, proteínas e lipídios).",
+                                        "correct": true
+                              },
+                              {
+                                        "text": "O tegumento externo duro que realiza fotossíntese no escuro.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "O cálice floral seco que absorve oxigênio do solo.",
+                                        "correct": false
+                              },
+                              {
+                                        "text": "O estame residual que atrai fungos simbióticos.",
+                                        "correct": false
+                              }
+                    ],
+                    "explanation": "O endosperma (3n nas angiospermas, resultante da dupla fecundação) armazena nutrientes fundamentais para sustentar o embrião durante a germinação.",
+                    "aiGuidance": "Nutrição embrionária e endosperma na semente."
+          }
         ]
-},
+      },
       'ciencias_4_10': {
         "facil": [
                 {
@@ -8107,15 +8106,15 @@ class EstudePlusApp {
             id: 'm28_f1',
             subject: 'Matemática (Livro 2 SAS)',
             topic: 'Cap. 8: Equações do 1º Grau',
-            text: 'Resolva a equação de 1º grau: 2x = 14. O valor de x é:',
+            text: 'Resolva a equação de 1º grau: 2x = 14. O valor da incógnita x é:',
             options: [
-              { text: '7', correct: true },
-              { text: '12', correct: false },
-              { text: '28', correct: false },
-              { text: '16', correct: false }
+              { text: 'x = 7', correct: true },
+              { text: 'x = 12', correct: false },
+              { text: 'x = 28', correct: false },
+              { text: 'x = 16', correct: false }
             ],
-            explanation: 'x = 14 ÷ 2 = 7.',
-            aiGuidance: 'Princípio multiplicativo.'
+            explanation: 'Isolando a incógnita pelo princípio multiplicativo: 2x = 14 => x = 14 ÷ 2 => x = 7.',
+            aiGuidance: 'Princípio multiplicativo das equações.'
           },
           {
             id: 'm28_f2',
@@ -8123,13 +8122,13 @@ class EstudePlusApp {
             topic: 'Cap. 8: Equações do 1º Grau',
             text: 'Resolva a equação: x + 9 = 25. O valor de x é:',
             options: [
-              { text: '16', correct: true },
-              { text: '34', correct: false },
-              { text: '14', correct: false },
-              { text: '9', correct: false }
+              { text: 'x = 16', correct: true },
+              { text: 'x = 34', correct: false },
+              { text: 'x = 14', correct: false },
+              { text: 'x = 9', correct: false }
             ],
-            explanation: 'x = 25 - 9 = 16.',
-            aiGuidance: 'Princípio aditivo.'
+            explanation: 'Pelo princípio aditivo: subtraindo 9 de ambos os membros: x = 25 - 9 => x = 16.',
+            aiGuidance: 'Princípio aditivo das igualdades.'
           },
           {
             id: 'm28_f3',
@@ -8142,8 +8141,8 @@ class EstudePlusApp {
               { text: '33', correct: false },
               { text: '18', correct: false }
             ],
-            explanation: '3x = 36 => x = 36 ÷ 3 = 12.',
-            aiGuidance: 'Tradução da linguagem verbal para álgebra.'
+            explanation: 'Equacionando o problema: 3x = 36 => x = 36 ÷ 3 => x = 12.',
+            aiGuidance: 'Tradução da linguagem verbal para sentença algébrica.'
           },
           {
             id: 'm28_f4',
@@ -8151,13 +8150,69 @@ class EstudePlusApp {
             topic: 'Cap. 8: Equações do 1º Grau',
             text: 'Na equação 4x - 8 = 16, o valor da raiz x é:',
             options: [
-              { text: '6', correct: true },
-              { text: '4', correct: false },
-              { text: '8', correct: false },
-              { text: '2', correct: false }
+              { text: 'x = 6', correct: true },
+              { text: 'x = 4', correct: false },
+              { text: 'x = 8', correct: false },
+              { text: 'x = 2', correct: false }
             ],
-            explanation: '4x = 16 + 8 => 4x = 24 => x = 24 / 4 = 6.',
-            aiGuidance: 'Resolução passo a passo.'
+            explanation: 'Passo a passo: 4x = 16 + 8 => 4x = 24 => x = 24 ÷ 4 => x = 6.',
+            aiGuidance: 'Resolução passo a passo de equações do 1º grau.'
+          },
+          {
+            id: 'm28_f5',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'Resolva a equação de 1º grau: 3x - 5 = 10. Qual é o valor de x?',
+            options: [
+              { text: 'x = 5', correct: true },
+              { text: 'x = 3', correct: false },
+              { text: 'x = 15', correct: false },
+              { text: 'x = 8', correct: false }
+            ],
+            explanation: 'Somando 5 a ambos os membros: 3x = 10 + 5 => 3x = 15 => x = 15 ÷ 3 => x = 5.',
+            aiGuidance: 'Isolamento da incógnita em duas etapas.'
+          },
+          {
+            id: 'm28_f6',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'Na equação x - 12 = 30, o valor da raiz x que torna a igualdade verdadeira é:',
+            options: [
+              { text: 'x = 42', correct: true },
+              { text: 'x = 18', correct: false },
+              { text: 'x = 36', correct: false },
+              { text: 'x = 24', correct: false }
+            ],
+            explanation: 'Adicionando 12 a ambos os lados: x = 30 + 12 => x = 42.',
+            aiGuidance: 'Operação inversa da subtração.'
+          },
+          {
+            id: 'm28_f7',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'O dobro de um número somado a 7 é igual a 19. Qual é esse número?',
+            options: [
+              { text: '6', correct: true },
+              { text: '12', correct: false },
+              { text: '8', correct: false },
+              { text: '5', correct: false }
+            ],
+            explanation: 'Montando a equação: 2x + 7 = 19 => 2x = 19 - 7 => 2x = 12 => x = 12 ÷ 2 => x = 6.',
+            aiGuidance: 'Problemas de adivinhação numérica com equações.'
+          },
+          {
+            id: 'm28_f8',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'Em uma balança de dois pratos em equilíbrio, o prato da esquerda contém 3 caixas de mesmo peso x e um peso de 4 kg. O prato da direita contém 1 caixa de peso x e um peso de 16 kg (3x + 4 = x + 16). Qual é o peso de cada caixa x?',
+            options: [
+              { text: '6 kg', correct: true },
+              { text: '8 kg', correct: false },
+              { text: '10 kg', correct: false },
+              { text: '4 kg', correct: false }
+            ],
+            explanation: 'Equação de equilíbrio: 3x + 4 = x + 16 => 3x - x = 16 - 4 => 2x = 12 => x = 6 kg.',
+            aiGuidance: 'Modelo da balança de pratos para equações.'
           }
         ],
         medio: [
@@ -8179,43 +8234,99 @@ class EstudePlusApp {
             id: 'm28_m2',
             subject: 'Matemática (Livro 2 SAS)',
             topic: 'Cap. 8: Equações do 1º Grau',
-            text: 'Na equação com distributiva 2(x + 3) = 18, o valor da incógnita x é:',
+            text: 'Na equação com propriedade distributiva 2(x + 3) = 18, o valor da incógnita x é:',
             options: [
-              { text: '6', correct: true },
-              { text: '3', correct: false },
-              { text: '9', correct: false },
-              { text: '12', correct: false }
+              { text: 'x = 6', correct: true },
+              { text: 'x = 3', correct: false },
+              { text: 'x = 9', correct: false },
+              { text: 'x = 12', correct: false }
             ],
-            explanation: '2x + 6 = 18 => 2x = 12 => x = 6.',
-            aiGuidance: 'Propriedade distributiva.'
+            explanation: 'Distribuindo o 2: 2x + 6 = 18 => 2x = 18 - 6 => 2x = 12 => x = 6.',
+            aiGuidance: 'Propriedade distributiva da multiplicação.'
           },
           {
             id: 'm28_m3',
             subject: 'Matemática (Livro 2 SAS)',
             topic: 'Cap. 8: Equações do 1º Grau',
-            text: 'Resolva a equação: 5x - 7 = 2x + 11. O valor de x é:',
+            text: 'Resolva a equação com incógnita em ambos os membros: 5x - 7 = 2x + 11. O valor de x é:',
             options: [
-              { text: '6', correct: true },
-              { text: '4', correct: false },
-              { text: '18', correct: false },
-              { text: '-6', correct: false }
+              { text: 'x = 6', correct: true },
+              { text: 'x = 4', correct: false },
+              { text: 'x = 18', correct: false },
+              { text: 'x = -6', correct: false }
             ],
-            explanation: '5x - 2x = 11 + 7 => 3x = 18 => x = 6.',
-            aiGuidance: 'Termos com incógnita de ambos os lados.'
+            explanation: 'Agrupando os termos semelhantes: 5x - 2x = 11 + 7 => 3x = 18 => x = 18 ÷ 3 => x = 6.',
+            aiGuidance: 'Termos com incógnita nos dois lados da igualdade.'
           },
           {
             id: 'm28_m4',
             subject: 'Matemática (Livro 2 SAS)',
             topic: 'Cap. 8: Equações do 1º Grau',
-            text: 'Duas equações são chamadas de equivalentes quando:',
+            text: 'Duas equações são chamadas de equivalentes em um mesmo conjunto universo quando:',
             options: [
               { text: 'Possuem exatamente o mesmo conjunto solução.', correct: true },
-              { text: 'Possuem os mesmos coeficientes.', correct: false },
-              { text: 'Têm a mesma quantidade de termos.', correct: false },
-              { text: 'São de graus diferentes.', correct: false }
+              { text: 'Possuem os mesmos coeficientes numéricos.', correct: false },
+              { text: 'Têm a mesma quantidade de termos algébricos.', correct: false },
+              { text: 'São de graus matemáticos diferentes.', correct: false }
             ],
-            explanation: 'Equações equivalentes em um mesmo conjunto universo têm exatamente as mesmas raízes.',
-            aiGuidance: 'Conceito de equivalência.'
+            explanation: 'Equações equivalentes em um mesmo conjunto universo têm exatamente as mesmas raízes ou conjunto solução.',
+            aiGuidance: 'Conceito de equivalência de equações.'
+          },
+          {
+            id: 'm28_m5',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'Resolva a equação com parênteses: 3(x - 2) = 2x + 5. Qual é o valor da incógnita x?',
+            options: [
+              { text: 'x = 11', correct: true },
+              { text: 'x = 7', correct: false },
+              { text: 'x = 9', correct: false },
+              { text: 'x = 1', correct: false }
+            ],
+            explanation: 'Distribuindo: 3x - 6 = 2x + 5 => 3x - 2x = 5 + 6 => x = 11.',
+            aiGuidance: 'Distributiva combinada com agrupamento de termos.'
+          },
+          {
+            id: 'm28_m6',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'Uma corrida de transporte por aplicativo cobra uma taxa fixa de R$ 4,50 mais R$ 2,20 por quilômetro rodado. Se um passageiro pagou R$ 37,50, qual distância foi percorrida?',
+            options: [
+              { text: '15 km', correct: true },
+              { text: '17 km', correct: false },
+              { text: '14 km', correct: false },
+              { text: '12 km', correct: false }
+            ],
+            explanation: 'Equação de custo: 2,20x + 4,50 = 37,50 => 2,20x = 33,00 => x = 33 ÷ 2,20 = 15 km.',
+            aiGuidance: 'Problemas financeiros modelados por equações do 1º grau.'
+          },
+          {
+            id: 'm28_m7',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'A soma de dois números inteiros consecutivos é igual a 51. Quais são esses dois números?',
+            options: [
+              { text: '25 e 26', correct: true },
+              { text: '24 e 25', correct: false },
+              { text: '26 e 27', correct: false },
+              { text: '20 e 31', correct: false }
+            ],
+            explanation: 'Representando os números por x e x + 1: x + (x + 1) = 51 => 2x + 1 = 51 => 2x = 50 => x = 25. Os números são 25 e 26.',
+            aiGuidance: 'Problemas de números consecutivos.'
+          },
+          {
+            id: 'm28_m8',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações do 1º Grau',
+            text: 'Resolva a equação aplicando a propriedade distributiva: 4(x + 1) - 2(x - 3) = 18. O valor de x é:',
+            options: [
+              { text: 'x = 4', correct: true },
+              { text: 'x = 6', correct: false },
+              { text: 'x = 2', correct: false },
+              { text: 'x = 8', correct: false }
+            ],
+            explanation: 'Eliminando os parênteses: 4x + 4 - 2x + 6 = 18 => 2x + 10 = 18 => 2x = 8 => x = 4.',
+            aiGuidance: 'Cuidado com o sinal na distributiva: -2 × (-3) = +6.'
           }
         ],
         dificil: [
@@ -8253,10 +8364,10 @@ class EstudePlusApp {
             topic: 'Cap. 8: Equações Fracionárias (Desafio SAAS)',
             text: 'Resolva a equação com parênteses e sinais negativos: 5 - 2(3x - 4) = 4(1 - x) + 3. O valor de x é:',
             options: [
-              { text: '3', correct: true },
-              { text: '-3', correct: false },
-              { text: '1', correct: false },
-              { text: '5', correct: false }
+              { text: 'x = 3', correct: true },
+              { text: 'x = -3', correct: false },
+              { text: 'x = 1', correct: false },
+              { text: 'x = 5', correct: false }
             ],
             explanation: '5 - 6x + 8 = 4 - 4x + 3 => 13 - 6x = 7 - 4x => 13 - 7 = 6x - 4x => 6 = 2x => x = 3.',
             aiGuidance: 'Cuidado com a distributiva do sinal negativo -2(3x - 4).'
@@ -8274,6 +8385,62 @@ class EstudePlusApp {
             ],
             explanation: '2x - 6 + 4 = 2x - 2 => 2x - 2 = 2x - 2 => 0x = 0. Qualquer número inteiro satisfaz a igualdade.',
             aiGuidance: 'Identidades matemáticas vs equações sem solução.'
+          },
+          {
+            id: 'm28_d5',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações Fracionárias (Desafio SAAS)',
+            text: 'Resolva no conjunto dos números racionais a equação fracionária: (x + 3)/2 - (x - 1)/3 = 4. Qual é o valor de x?',
+            options: [
+              { text: 'x = 13', correct: true },
+              { text: 'x = 11', correct: false },
+              { text: 'x = 15', correct: false },
+              { text: 'x = 9', correct: false }
+            ],
+            explanation: 'MMC(2, 3) = 6. Multiplicando todos os termos por 6: 3(x + 3) - 2(x - 1) = 24 => 3x + 9 - 2x + 2 = 24 => x + 11 = 24 => x = 13.',
+            aiGuidance: 'Eliminação de denominadores com MMC.'
+          },
+          {
+            id: 'm28_d6',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações Fracionárias (Desafio SAAS)',
+            text: 'A idade de Pedro hoje é o quádruplo da idade de seu irmão Lucas. Daqui a 6 anos, a idade de Pedro será o dobro da idade de Lucas. Quantos anos Pedro tem hoje?',
+            options: [
+              { text: '12 anos', correct: true },
+              { text: '16 anos', correct: false },
+              { text: '8 anos', correct: false },
+              { text: '20 anos', correct: false }
+            ],
+            explanation: 'Seja L a idade de Lucas; Pedro tem 4L. Daqui a 6 anos: 4L + 6 = 2(L + 6) => 4L + 6 = 2L + 12 => 2L = 6 => L = 3 anos. Logo Pedro tem 4 × 3 = 12 anos.',
+            aiGuidance: 'Sistema de idades com equação do 1º grau.'
+          },
+          {
+            id: 'm28_d7',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações Fracionárias (Desafio SAAS)',
+            text: 'Em um simulado escolar com 30 questões, um aluno ganha 4 pontos por acerto e perde 1 ponto por erro. Sabendo que ele respondeu a todas as questões e obteve 85 pontos, quantas questões ele acertou?',
+            options: [
+              { text: '23 questões', correct: true },
+              { text: '25 questões', correct: false },
+              { text: '20 questões', correct: false },
+              { text: '21 questões', correct: false }
+            ],
+            explanation: 'Seja x o número de acertos; o número de erros é 30 - x. Equação: 4x - 1(30 - x) = 85 => 4x - 30 + x = 85 => 5x = 115 => x = 23 questões.',
+            aiGuidance: 'Problema de pontuação de provas com equações.'
+          },
+          {
+            id: 'm28_d8',
+            subject: 'Matemática (Livro 2 SAS)',
+            topic: 'Cap. 8: Equações Fracionárias (Desafio SAAS)',
+            text: 'Resolva no conjunto Q a equação fracionária: (2x - 1)/5 + (x + 3)/2 = (3x + 7)/10. O valor de x é:',
+            options: [
+              { text: 'x = -1', correct: true },
+              { text: 'x = 1', correct: false },
+              { text: 'x = -2', correct: false },
+              { text: 'x = 0', correct: false }
+            ],
+            explanation: 'MMC(5, 2, 10) = 10. Multiplicando por 10: 2(2x - 1) + 5(x + 3) = 3x + 7 => 4x - 2 + 5x + 15 = 3x + 7 => 9x + 13 = 3x + 7 => 6x = -6 => x = -1.',
+            aiGuidance: 'Equação racional com múltiplos denominadores.'
           }
         ]
       },
@@ -8919,6 +9086,3784 @@ class EstudePlusApp {
     return this._sasQuestionBank;
   }
 
+  validateQuestionQuality(q) {
+    if (!q || typeof q !== 'object') return false;
+    if (!q.text || typeof q.text !== 'string' || q.text.trim().length < 15) return false;
+    if (!Array.isArray(q.options) || q.options.length < 4) return false;
+
+    const forbiddenRegex = /(qual dedução expressa|raciocínio mais consistente|extrapolar.*premissas|premissas estabelecidas|restrições conceituais|afirmação conceitualmente correta|proposição plenamente correta|interpretação incorreta que contraria|conclusão inconsistente que desconsidera|generalização indevida que não se aplica|procedimento cognitivo|regras de .* se anulam|descartar conceitos centrais|alta complexidade analítica|abordagem analítica é mais coerente|conceitos de .* explicam os fenômenos estudados na prática|tratando-se exclusivamente de conjecturas|contrariam as leis naturais e foram descartados|dependem de opiniões individuais desprovidas|qual procedimento cognitivo|como extrapolar os conceitos|supor que as regras de)/i;
+
+    if (forbiddenRegex.test(q.text)) return false;
+    if (q.explanation && forbiddenRegex.test(q.explanation)) return false;
+
+    let correctCount = 0;
+    for (const opt of q.options) {
+      const txt = typeof opt === 'string' ? opt : (opt.text || '');
+      if (!txt || txt.trim().length === 0) return false;
+      if (forbiddenRegex.test(txt)) return false;
+      if (opt && opt.correct) correctCount++;
+    }
+
+    return correctCount === 1;
+  }
+
+  getCurriculumQuestionsForSubjectAndChapter(subjectKey, bookId, chapterId, difficulty = 'medio', countNeeded = 8) {
+    const curriculumData = {
+  "matematica": {
+    "1": [
+      {
+        "text": "Qual dos números a seguir é divisível simultaneamente por 2, 3 e 5?",
+        "correct": "330, pois termina em 0 (divisível por 2 e 5) e a soma dos algarismos 3+3+0=6 é múltiplo de 3.",
+        "distractors": [
+          "325, pois termina em 5 e é ímpar.",
+          "312, pois a soma dos algarismos é 6, mas não é divisível por 5.",
+          "305, pois a soma dos seus algarismos resulta em 8."
+        ],
+        "explanation": "Para ser divisível por 2 deve ser par; por 5 deve terminar em 0 ou 5; por 3 a soma dos algarismos deve ser divisível por 3. Apenas 330 atende aos três critérios simultaneamente."
+      },
+      {
+        "text": "Qual é o Menor Múltiplo Comum (MMC) entre os números 12, 18 e 24?",
+        "correct": "72",
+        "distractors": [
+          "36",
+          "144",
+          "48"
+        ],
+        "explanation": "Fatorando simultaneamente por números primos: 12, 18, 24 | 2; 6, 9, 12 | 2; 3, 9, 6 | 2; 3, 9, 3 | 3; 1, 3, 1 | 3; 1, 1, 1. Multiplicando: 2³ × 3² = 8 × 9 = 72."
+      },
+      {
+        "text": "Qual é o Maior Divisor Comum (MDC) entre os números 36 e 60?",
+        "correct": "12",
+        "distractors": [
+          "6",
+          "18",
+          "24"
+        ],
+        "explanation": "Divisores de 36: 1, 2, 3, 4, 6, 9, 12, 18, 36. Divisores de 60: 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60. O maior divisor comum a ambos é 12."
+      },
+      {
+        "text": "Qual dos seguintes números é um número primo?",
+        "correct": "29, pois possui apenas dois divisores positivos: o número 1 e ele mesmo.",
+        "distractors": [
+          "27, pois é divisível por 1, 3, 9 e 27.",
+          "35, pois é divisível por 1, 5, 7 e 35.",
+          "39, pois é divisível por 1, 3, 13 e 39."
+        ],
+        "explanation": "Números primos são aqueles maiores que 1 divisíveis apenas por 1 e por si mesmos. 29 é primo."
+      }
+    ],
+    "2": [
+      {
+        "text": "Qual é o oposto (ou simétrico) e o módulo (ou valor absoluto) do número inteiro -18, respectivamente?",
+        "correct": "Oposto = +18 e Módulo = 18.",
+        "distractors": [
+          "Oposto = -18 e Módulo = -18.",
+          "Oposto = 0 e Módulo = +18.",
+          "Oposto = +18 e Módulo = -18."
+        ],
+        "explanation": "O oposto ou simétrico de um número tem o sinal invertido (+18). O módulo é a distância até a origem na reta numérica, sendo sempre não negativo (| -18 | = 18)."
+      },
+      {
+        "text": "Na reta numérica dos números inteiros, qual das seguintes comparações está CORRETA?",
+        "correct": "-15 < -4, pois -15 está situado mais à esquerda da origem do que -4.",
+        "distractors": [
+          "-12 > -3, pois 12 é maior do que 3 em valor absoluto.",
+          "-8 > 0, pois qualquer número negativo é maior que zero.",
+          "-20 > -10, pois -20 está mais distante do zero."
+        ],
+        "explanation": "Na reta numérica, quanto mais à direita um número estiver, maior ele é. Entre dois negativos, o mais próximo do zero é o maior (-4 > -15, logo -15 < -4)."
+      },
+      {
+        "text": "Uma câmara frigorífica operava a -8 °C. O sistema de resfriamento foi ajustado para diminuir a temperatura em mais 5 °C. Qual passou a ser a nova temperatura?",
+        "correct": "-13 °C",
+        "distractors": [
+          "-3 °C",
+          "+3 °C",
+          "-15 °C"
+        ],
+        "explanation": "Diminuir 5 °C de uma temperatura de -8 °C corresponde a: -8 - 5 = -13 °C."
+      },
+      {
+        "text": "Qual conjunto numérico representa os números inteiros estritamente compreendidos entre -4 e +2 na reta numérica?",
+        "correct": "{-3, -2, -1, 0, 1}",
+        "distractors": [
+          "{-4, -3, -2, -1, 0, 1, 2}",
+          "{-3, -2, -1, 1}",
+          "{-2, -1, 0, 1, 2}"
+        ],
+        "explanation": "Os inteiros estritamente entre -4 e +2 excluem as extremidades: -3, -2, -1, 0 e 1."
+      }
+    ],
+    "3": [
+      {
+        "text": "Qual é o resultado numérico da expressão com números inteiros: (-15) + (+8) - (-12) + (-5)?",
+        "correct": "0",
+        "distractors": [
+          "-20",
+          "+10",
+          "-14"
+        ],
+        "explanation": "Eliminando os parênteses: -15 + 8 + 12 - 5 = (-15 - 5) + (8 + 12) = -20 + 20 = 0."
+      },
+      {
+        "text": "Efetue a operação de multiplicação e divisão com números inteiros: [(-36) ÷ (+4)] × (-3). Qual é o resultado?",
+        "correct": "+27",
+        "distractors": [
+          "-27",
+          "+12",
+          "-12"
+        ],
+        "explanation": "Primeiro resolvemos a divisão: (-36) ÷ (+4) = -9. Em seguida multiplicamos: (-9) × (-3) = +27 (produto de dois negativos é positivo)."
+      },
+      {
+        "text": "Em um jogo de tabuleiro com pontuação positiva e negativa, Lucas obteve as seguintes pontuações em quatro rodadas: +25, -40, +15 e -10. Qual foi seu saldo final de pontos?",
+        "correct": "-10 pontos",
+        "distractors": [
+          "+10 pontos",
+          "-20 pontos",
+          "0 pontos"
+        ],
+        "explanation": "Somando os pontos: (+25 + 15) + (-40 - 10) = 40 - 50 = -10 pontos."
+      },
+      {
+        "text": "Calcule o valor da expressão: (-2)³ - (-3)² + (-1)⁴.",
+        "correct": "-16",
+        "distractors": [
+          "-14",
+          "+2",
+          "-8"
+        ],
+        "explanation": "(-2)³ = -8; (-3)² = +9, logo -(-3)² = -9; (-1)⁴ = +1. Somando: -8 - 9 + 1 = -16."
+      }
+    ],
+    "4": [
+      {
+        "text": "Uma praça circular possui raio medindo 15 metros. Adotando π = 3,14, qual é o comprimento da pista de caminhada que contorna toda a praça?",
+        "correct": "94,2 metros",
+        "distractors": [
+          "47,1 metros",
+          "188,4 metros",
+          "70,65 metros"
+        ],
+        "explanation": "O comprimento da circunferência é dado por C = 2 × π × r = 2 × 3,14 × 15 = 94,2 metros."
+      },
+      {
+        "text": "Se uma circunferência tem diâmetro igual a 20 cm, qual é a medida do seu raio?",
+        "correct": "10 cm, pois o raio é a metade do diâmetro.",
+        "distractors": [
+          "40 cm",
+          "20 cm",
+          "5 cm"
+        ],
+        "explanation": "O raio é a distância do centro a qualquer ponto da borda, correspondendo à metade do diâmetro (r = D / 2 = 20 / 2 = 10 cm)."
+      },
+      {
+        "text": "Qual segmento de reta une o centro de uma circunferência a qualquer um de seus pontos periféricos?",
+        "correct": "Raio.",
+        "distractors": [
+          "Diâmetro.",
+          "Corda.",
+          "Arco."
+        ],
+        "explanation": "O raio conecta o centro a um ponto da borda. A corda une dois pontos quaisquer da circunferência sem necessariamente passar pelo centro."
+      },
+      {
+        "text": "A maior corda que pode ser traçada no interior de uma circunferência é denominada:",
+        "correct": "Diâmetro, pois passa exatamente pelo centro da circunferência.",
+        "distractors": [
+          "Raio tangente.",
+          "Arco secante.",
+          "Setor circular."
+        ],
+        "explanation": "O diâmetro é a maior corda possível de uma circunferência e seu comprimento equivale a dois raios (D = 2r)."
+      }
+    ],
+    "5": [
+      {
+        "text": "No plano cartesiano ortogonal, o ponto P(-3, 5) está localizado em qual quadrante?",
+        "correct": "2º Quadrante (abscissa negativa e ordenada positiva).",
+        "distractors": [
+          "1º Quadrante (ambas positivas).",
+          "3º Quadrante (ambas negativas).",
+          "4º Quadrante (abscissa positiva e ordenada negativa)."
+        ],
+        "explanation": "No 1º Q (x>0, y>0); no 2º Q (x<0, y>0); no 3º Q (x<0, y<0); no 4º Q (x>0, y<0). Logo, (-3, 5) pertence ao 2º quadrante."
+      },
+      {
+        "text": "Se refletirmos o ponto A(4, 2) em relação ao eixo das abscissas (eixo X), quais serão as coordenadas do ponto refletido A'?",
+        "correct": "A'(4, -2)",
+        "distractors": [
+          "A'(-4, 2)",
+          "A'(-4, -2)",
+          "A'(2, 4)"
+        ],
+        "explanation": "A reflexão sobre o eixo X mantém a coordenada x inalterada e inverte o sinal da coordenada y: (x, y) -> (x, -y). Portanto, (4, 2) torna-se (4, -2)."
+      },
+      {
+        "text": "Se transladarmos o ponto B(1, -2) em 3 unidades para a direita (sentido positivo de X) e 4 unidades para cima (sentido positivo de Y), qual será a nova posição B'?",
+        "correct": "B'(4, 2)",
+        "distractors": [
+          "B'(4, -6)",
+          "B'(-2, 2)",
+          "B'(3, 4)"
+        ],
+        "explanation": "Somando os deslocamentos: x = 1 + 3 = 4; y = -2 + 4 = 2. Logo, B'(4, 2)."
+      },
+      {
+        "text": "Qual é o nome dado ao ponto de intersecção entre o eixo das abscissas (X) e o eixo das ordenadas (Y), com coordenadas (0, 0)?",
+        "correct": "Origem do plano cartesiano.",
+        "distractors": [
+          "Ponto de inflexão.",
+          "Vértice oblíquo.",
+          "Foco axial."
+        ],
+        "explanation": "O ponto (0, 0) onde os dois eixos perpendiculares se cruzam é a origem do sistema de coordenadas cartesianas."
+      }
+    ],
+    "6": [
+      {
+        "text": "Qual das seguintes frações é equivalente à fração 18/24 e está na sua forma irredutível?",
+        "correct": "3/4, dividindo numerador e denominador pelo MDC que é 6.",
+        "distractors": [
+          "2/3",
+          "4/5",
+          "9/12"
+        ],
+        "explanation": "Dividindo 18 por 6 obtemos 3; dividindo 24 por 6 obtemos 4. A fração simplificada e irredutível é 3/4."
+      },
+      {
+        "text": "Como se converte a fração imprópria 11/4 na forma de número misto?",
+        "correct": "2 inteiros e 3/4 (2 3/4).",
+        "distractors": [
+          "3 inteiros e 1/4",
+          "1 inteiro e 7/4",
+          "2 inteiros e 1/2"
+        ],
+        "explanation": "Dividindo 11 por 4 obtemos quociente 2 (parte inteira) e resto 3 (novo numerador). Portanto, 11/4 = 2 3/4."
+      },
+      {
+        "text": "Qual número decimal representa exatamente a fração 7/20?",
+        "correct": "0,35",
+        "distractors": [
+          "0,72",
+          "0,28",
+          "0,355"
+        ],
+        "explanation": "Multiplicando numerador e denominador por 5: 7×5 / 20×5 = 35/100 = 0,35."
+      },
+      {
+        "text": "A dízima periódica simples 0,777... corresponde a qual fração geratriz?",
+        "correct": "7/9",
+        "distractors": [
+          "7/10",
+          "77/100",
+          "7/99"
+        ],
+        "explanation": "Para dízimas periódicas simples de período composto por um único algarismo, a fração geratriz é o período dividido por 9: 7/9."
+      }
+    ],
+    "7": [
+      {
+        "text": "Efetue a adição e subtração de frações: 3/4 - 1/6 + 2/3. Qual é a fração irredutível resultante?",
+        "correct": "5/4",
+        "distractors": [
+          "4/7",
+          "7/12",
+          "11/12"
+        ],
+        "explanation": "O MMC de 4, 6 e 3 é 12. Frações equivalentes: 9/12 - 2/12 + 8/12 = 15/12. Simplificando por 3: 5/4."
+      },
+      {
+        "text": "Calcule a multiplicação de frações: (4/9) × (15/8). Qual é a resposta simplificada?",
+        "correct": "5/6",
+        "distractors": [
+          "60/72",
+          "10/18",
+          "3/4"
+        ],
+        "explanation": "Multiplicando e simplificando: (4 × 15) / (9 × 8) = 60 / 72. Dividindo numerador e denominador por 12: 5/6."
+      },
+      {
+        "text": "Para efetuar a divisão de frações (3/5) ÷ (2/7), qual é o procedimento algébrico correto?",
+        "correct": "Manter a primeira fração e multiplicar pelo inverso da segunda: (3/5) × (7/2) = 21/10.",
+        "distractors": [
+          "Dividir numerador por numerador e denominador por denominador: (3÷2)/(5÷7).",
+          "Somar os denominadores e subtrair os numeradores: 1/12.",
+          "Multiplicar os numeradores e manter os denominadores inalterados: 6/5."
+        ],
+        "explanation": "A divisão de frações equivale à multiplicação da primeira fração pelo inverso da segunda: (3/5) × (7/2) = 21/10."
+      },
+      {
+        "text": "Qual é o valor numérico da expressão: (-1/2)² + (3/4)?",
+        "correct": "1",
+        "distractors": [
+          "1/2",
+          "5/4",
+          "-1/4"
+        ],
+        "explanation": "(-1/2)² = +1/4. Somando: 1/4 + 3/4 = 4/4 = 1."
+      }
+    ],
+    "8": [
+      {
+        "text": "Resolva a equação do 1º grau: 4x - 14 = 2x + 10. Qual é o valor da incógnita x?",
+        "correct": "x = 12",
+        "distractors": [
+          "x = 6",
+          "x = 8",
+          "x = -2"
+        ],
+        "explanation": "Agrupando termos com x no 1º membro: 4x - 2x = 10 + 14 => 2x = 24 => x = 24 / 2 = 12."
+      },
+      {
+        "text": "O triplo de um número somado a 18 é igual a 63. Qual é esse número?",
+        "correct": "15",
+        "distractors": [
+          "27",
+          "21",
+          "12"
+        ],
+        "explanation": "Montando a equação: 3x + 18 = 63 => 3x = 63 - 18 => 3x = 45 => x = 45 / 3 = 15."
+      },
+      {
+        "text": "Uma corrida de táxi cobra taxa fixa de R$ 5,00 mais R$ 2,50 por quilômetro rodado. Se um passageiro pagou R$ 42,50, quantos quilômetros foram percorridos?",
+        "correct": "15 km",
+        "distractors": [
+          "17 km",
+          "14 km",
+          "12 km"
+        ],
+        "explanation": "Equação: 2,50x + 5,00 = 42,50 => 2,50x = 37,50 => x = 37,50 / 2,50 = 15 km."
+      },
+      {
+        "text": "Resolva a equação com parênteses: 3(x - 2) + 5 = 2(x + 4). Qual é a raiz da equação?",
+        "correct": "x = 9",
+        "distractors": [
+          "x = 7",
+          "x = 11",
+          "x = 5"
+        ],
+        "explanation": "Aplicando a distributiva: 3x - 6 + 5 = 2x + 8 => 3x - 1 = 2x + 8 => 3x - 2x = 8 + 1 => x = 9."
+      }
+    ],
+    "9": [
+      {
+        "text": "Com 5 litros de tinta é possível pintar uma parede de 45 m². Mantendo o mesmo rendimento, quantos litros de tinta serão necessários para pintar um muro de 117 m²?",
+        "correct": "13 litros",
+        "distractors": [
+          "11 litros",
+          "15 litros",
+          "18 litros"
+        ],
+        "explanation": "Proporcionalidade direta: 5 / 45 = x / 117 => 45x = 5 × 117 => 45x = 585 => x = 585 / 45 = 13 litros."
+      },
+      {
+        "text": "Um automóvel viajando a 80 km/h realiza um trajeto em 3 horas. Se ele aumentar sua velocidade para 120 km/h, em quanto tempo fará esse mesmo percurso?",
+        "correct": "2 horas",
+        "distractors": [
+          "2,5 horas",
+          "1,5 hora",
+          "4 horas"
+        ],
+        "explanation": "Velocidade e tempo são grandezas inversamente proporcionais: 80 × 3 = 120 × t => 240 = 120t => t = 240 / 120 = 2 horas."
+      },
+      {
+        "text": "Qual das seguintes relações representa um exemplo de grandezas DIRETAMENTE proporcionais?",
+        "correct": "A quantidade de cadernos comprados de um mesmo modelo e o valor total a ser pago.",
+        "distractors": [
+          "A velocidade média de um veículo e o tempo gasto para percorrer uma distância fixa.",
+          "O número de operários trabalhando no mesmo ritmo e os dias para concluir uma obra.",
+          "A vazão constante de uma torneira e o tempo para encher uma caixa d'água."
+        ],
+        "explanation": "Grandezas diretamente proporcionais aumentam ou diminuem na mesma razão. Mais cadernos comprados resultam proporcionalmente em maior valor total a pagar."
+      },
+      {
+        "text": "Em uma receita de bolo, são necessários 250 g de farinha para cada 2 ovos. Quantos gramas de farinha serão necessários para uma receita ampliada que utilizará 6 ovos?",
+        "correct": "750 g",
+        "distractors": [
+          "500 g",
+          "650 g",
+          "1000 g"
+        ],
+        "explanation": "A quantidade de ovos triplicou (2 para 6). Logo, a farinha também deve triplicar: 250 g × 3 = 750 g."
+      }
+    ],
+    "10": [
+      {
+        "text": "Dois ângulos são chamados de SUPLEMENTARES quando a soma de suas medidas é igual a:",
+        "correct": "180°",
+        "distractors": [
+          "90°",
+          "360°",
+          "100°"
+        ],
+        "explanation": "Ângulos complementares somam 90°, ângulos suplementares somam 180° e ângulos replementares somam 360°."
+      },
+      {
+        "text": "Se um ângulo mede 38°, qual é a medida do seu ângulo COMPLEMENTAR?",
+        "correct": "52°",
+        "distractors": [
+          "142°",
+          "62°",
+          "42°"
+        ],
+        "explanation": "O complementar de um ângulo x é 90° - x. Logo: 90° - 38° = 52°."
+      },
+      {
+        "text": "Quantas diagonais partem de um único vértice de um hexágono (polígono de 6 lados)?",
+        "correct": "3 diagonais, calculadas por d = n - 3 = 6 - 3 = 3.",
+        "distractors": [
+          "4 diagonais",
+          "2 diagonais",
+          "6 diagonais"
+        ],
+        "explanation": "De cada vértice de um polígono de n lados partem (n - 3) diagonais: 6 - 3 = 3."
+      },
+      {
+        "text": "Um ângulo cuja medida está estritamente entre 90° e 180° é classificado como:",
+        "correct": "Ângulo obtuso.",
+        "distractors": [
+          "Ângulo agudo.",
+          "Ângulo raso.",
+          "Ângulo reto."
+        ],
+        "explanation": "Menor que 90° é agudo; exatamente 90° é reto; entre 90° e 180° é obtuso; exatamente 180° é raso."
+      }
+    ],
+    "11": [
+      {
+        "text": "Em um triângulo qualquer, dois de seus ângulos internos medem 55° e 65°. Qual é a medida do terceiro ângulo?",
+        "correct": "60°, pois a soma dos ângulos internos de qualquer triângulo é sempre 180°.",
+        "distractors": [
+          "70°, pois os triângulos devem somar 190°.",
+          "50°, pois todo triângulo possui ângulos complementares.",
+          "80°, resultante da média aritmética dos ângulos."
+        ],
+        "explanation": "A soma dos ângulos internos de um triângulo é 180°: 180° - (55° + 65°) = 180° - 120° = 60°."
+      },
+      {
+        "text": "Qual das seguintes trincas de medidas PODE formar um triângulo segundo a condição de existência geométrica?",
+        "correct": "6 cm, 8 cm e 10 cm, pois a soma de quaisquer dois lados é sempre maior que o terceiro lado.",
+        "distractors": [
+          "3 cm, 4 cm e 8 cm, pois 3 + 4 = 7 que é menor que 8.",
+          "2 cm, 5 cm e 7 cm, pois 2 + 5 = 7 que é igual ao maior lado.",
+          "1 cm, 2 cm e 5 cm, pois 1 + 2 = 3 que é menor que 5."
+        ],
+        "explanation": "A soma das medidas de dois lados deve ser sempre estritamente maior que o terceiro lado. Apenas 6, 8 e 10 satisfaz a regra."
+      },
+      {
+        "text": "Como se classifica um triângulo que possui todos os três lados com medidas rigorosamente iguais?",
+        "correct": "Triângulo equilátero.",
+        "distractors": [
+          "Triângulo isósceles.",
+          "Triângulo escaleno.",
+          "Triângulo retângulo."
+        ],
+        "explanation": "Equilátero tem 3 lados iguais (e 3 ângulos de 60°); isósceles tem 2 lados iguais; escaleno tem todos os lados com medidas diferentes."
+      },
+      {
+        "text": "Qual quadrilátero notável possui quatro lados congruentes (iguais), diagonais perpendiculares entre si, mas não possui necessariamente ângulos retos?",
+        "correct": "Losango.",
+        "distractors": [
+          "Trapézio retângulo.",
+          "Retângulo comum.",
+          "Deltoide assimétrico."
+        ],
+        "explanation": "O losango é o paralelogramo equilátero (4 lados iguais cujas diagonais se cruzam formando ângulo de 90°)."
+      }
+    ],
+    "12": [
+      {
+        "text": "Um terreno retangular possui 24 metros de comprimento e 15 metros de largura. Qual é a sua área e o seu perímetro, respectivamente?",
+        "correct": "Área = 360 m² e Perímetro = 78 m.",
+        "distractors": [
+          "Área = 78 m² e Perímetro = 360 m.",
+          "Área = 360 m² e Perímetro = 39 m.",
+          "Área = 180 m² e Perímetro = 78 m."
+        ],
+        "explanation": "Área = base × altura = 24 × 15 = 360 m². Perímetro = 2 × (24 + 15) = 2 × 39 = 78 metros."
+      },
+      {
+        "text": "Qual é a área de um triângulo que possui base medindo 12 cm e altura correspondente medindo 7 cm?",
+        "correct": "42 cm²",
+        "distractors": [
+          "84 cm²",
+          "38 cm²",
+          "19 cm²"
+        ],
+        "explanation": "Área do triângulo: (base × altura) / 2 = (12 × 7) / 2 = 84 / 2 = 42 cm²."
+      },
+      {
+        "text": "Um trapézio tem base maior medindo 14 cm, base menor medindo 8 cm e altura de 6 cm. Qual é a área dessa figura plana?",
+        "correct": "66 cm²",
+        "distractors": [
+          "132 cm²",
+          "54 cm²",
+          "84 cm²"
+        ],
+        "explanation": "Área do trapézio: A = [(14 + 8) × 6] / 2 = [22 × 6] / 2 = 132 / 2 = 66 cm²."
+      },
+      {
+        "text": "Se um quadrado possui perímetro de 36 cm, qual é a medida de sua área?",
+        "correct": "81 cm²",
+        "distractors": [
+          "36 cm²",
+          "72 cm²",
+          "144 cm²"
+        ],
+        "explanation": "Lado = 36 / 4 = 9 cm. Área = 9 × 9 = 81 cm²."
+      }
+    ],
+    "13": [
+      {
+        "text": "Ao lançar um dado comum de 6 faces numeradas de 1 a 6, qual é a probabilidade de se obter um número par?",
+        "correct": "1/2 (ou 50%), pois há 3 números pares (2, 4 e 6) em 6 possíveis.",
+        "distractors": [
+          "1/3 (ou 33,3%)",
+          "1/6 (ou 16,6%)",
+          "2/3 (ou 66,6%)"
+        ],
+        "explanation": "Casos favoráveis: {2, 4, 6} = 3. Casos totais: 6. Probabilidade = 3/6 = 1/2 = 50%."
+      },
+      {
+        "text": "Em uma urna há 8 bolas vermelhas, 5 bolas azuis e 7 bolas amarelas. Retirando-se uma bola ao acaso, qual é a probabilidade de que ela seja azul?",
+        "correct": "5/20 = 1/4 (ou 25%).",
+        "distractors": [
+          "5/15 = 1/3",
+          "7/20 = 35%",
+          "8/20 = 40%"
+        ],
+        "explanation": "Total: 8 + 5 + 7 = 20 bolas. Azuis: 5. P = 5/20 = 1/4 = 25%."
+      },
+      {
+        "text": "Em estatística, o tipo de gráfico circular dividido em setores angulares proporcionais às porcentagens observadas é conhecido como:",
+        "correct": "Gráfico de setores (ou gráfico de pizza).",
+        "distractors": [
+          "Histograma de frequência.",
+          "Gráfico de dispersão linear.",
+          "Cartograma topográfico."
+        ],
+        "explanation": "O gráfico de setores divide 360° em fatias proporcionais à frequência de cada categoria."
+      },
+      {
+        "text": "Se a probabilidade de um evento acontecer é de 65%, qual é a probabilidade do seu evento complementar (não acontecer)?",
+        "correct": "35%, pois a soma das probabilidades de um evento e seu complementar é sempre 100%.",
+        "distractors": [
+          "65%",
+          "45%",
+          "0%"
+        ],
+        "explanation": "P(complementar) = 100% - 65% = 35%."
+      }
+    ],
+    "14": [
+      {
+        "text": "Um estudante obteve as seguintes notas nas quatro etapas do ano letivo em Matemática: 7,0; 8,5; 6,0 e 8,5. Qual é a média aritmética simples das notas?",
+        "correct": "7,5",
+        "distractors": [
+          "8,0",
+          "7,25",
+          "7,75"
+        ],
+        "explanation": "Média simples = (7,0 + 8,5 + 6,0 + 8,5) / 4 = 30,0 / 4 = 7,5."
+      },
+      {
+        "text": "No conjunto de dados numéricos {4, 7, 7, 8, 9, 10, 12}, quais são, respectivamente, a MODA e a MEDIANA?",
+        "correct": "Moda = 7 e Mediana = 8.",
+        "distractors": [
+          "Moda = 8 e Mediana = 7.",
+          "Moda = 9 e Mediana = 8.",
+          "Moda = 7 e Mediana = 9."
+        ],
+        "explanation": "Moda é o valor mais frequente (7). Mediana é o valor central na lista ordenada de 7 números (8)."
+      },
+      {
+        "text": "Em uma avaliação com pesos, um aluno tirou 8,0 na prova teórica (peso 3) e 6,0 no trabalho prático (peso 2). Qual é a sua média ponderada?",
+        "correct": "7,2",
+        "distractors": [
+          "7,0",
+          "7,5",
+          "6,8"
+        ],
+        "explanation": "Média ponderada = (8,0 × 3 + 6,0 × 2) / (3 + 2) = (24 + 12) / 5 = 36 / 5 = 7,2."
+      },
+      {
+        "text": "Se a média aritmética de cinco números inteiros é igual a 14, qual é a soma total desses cinco números?",
+        "correct": "70",
+        "distractors": [
+          "56",
+          "60",
+          "84"
+        ],
+        "explanation": "Média = Soma / 5 => 14 = Soma / 5 => Soma = 14 × 5 = 70."
+      }
+    ],
+    "15": [
+      {
+        "text": "Uma caixa d'água em formato de paralelepípedo retângulo possui dimensões internas de 2 metros de comprimento, 1,5 metro de largura e 1 metro de altura. Qual é a capacidade máxima dessa caixa em litros?",
+        "correct": "3 000 litros",
+        "distractors": [
+          "300 litros",
+          "1 500 litros",
+          "4 500 litros"
+        ],
+        "explanation": "Volume = 2 m × 1,5 m × 1 m = 3 m³ = 3 000 litros (pois 1 m³ = 1 000 L)."
+      },
+      {
+        "text": "Quantos centímetros cúbicos (cm³) correspondem a 1 litro de líquido?",
+        "correct": "1 000 cm³, pois 1 litro = 1 dm³ = 1 000 cm³.",
+        "distractors": [
+          "100 cm³",
+          "10 000 cm³",
+          "10 cm³"
+        ],
+        "explanation": "1 dm³ equivale a 1 litro. Convertendo: 1 dm³ = (10 cm)³ = 1 000 cm³."
+      },
+      {
+        "text": "Qual é o volume de um cubo cujas arestas medem 4 cm cada uma?",
+        "correct": "64 cm³",
+        "distractors": [
+          "16 cm³",
+          "48 cm³",
+          "96 cm³"
+        ],
+        "explanation": "Volume do cubo = aresta³ = 4 × 4 × 4 = 64 cm³."
+      },
+      {
+        "text": "Um aquário com formato de bloco retangular tem base de 50 cm por 30 cm. Quantos litros de água são necessários para elevar o nível da água em 20 cm?",
+        "correct": "30 litros",
+        "distractors": [
+          "3 litros",
+          "300 litros",
+          "15 litros"
+        ],
+        "explanation": "Volume adicional = 50 × 30 × 20 = 30 000 cm³ = 30 dm³ = 30 litros."
+      }
+    ],
+    "16": [
+      {
+        "text": "Uma pessoa possui 4 camisas de cores diferentes e 3 calças distintas. De quantas maneiras diferentes ela pode se vestir escolhendo uma camisa e uma calça?",
+        "correct": "12 maneiras, pelo princípio fundamental da contagem (4 × 3 = 12).",
+        "distractors": [
+          "7 maneiras",
+          "14 maneiras",
+          "24 maneiras"
+        ],
+        "explanation": "Pelo princípio multiplicativo da contagem: opções da 1ª escolha × opções da 2ª escolha = 4 × 3 = 12 combinações."
+      },
+      {
+        "text": "Quantas senhas de 3 algarismos distintos (sem repetição) podem ser formadas utilizando apenas os algarismos 1, 2, 3, 4 e 5?",
+        "correct": "60 senhas",
+        "distractors": [
+          "125 senhas",
+          "15 senhas",
+          "20 senhas"
+        ],
+        "explanation": "5 × 4 × 3 = 60 senhas distintas."
+      },
+      {
+        "text": "Uma lanchonete oferece 3 opções de sanduíche, 4 tipos de suco e 2 sobremesas no combo promocional. Quantas opções de refeição completa um cliente pode montar?",
+        "correct": "24 opções",
+        "distractors": [
+          "9 opções",
+          "14 opções",
+          "18 opções"
+        ],
+        "explanation": "3 × 4 × 2 = 24 combos distintos."
+      },
+      {
+        "text": "Ao lançar uma moeda e um dado de 6 faces simultaneamente, quantos resultados possíveis e distintos podem ser obtidos?",
+        "correct": "12 resultados",
+        "distractors": [
+          "8 resultados",
+          "14 resultados",
+          "36 resultados"
+        ],
+        "explanation": "Resultados da moeda = 2; resultados do dado = 6. Total = 2 × 6 = 12 pares."
+      }
+    ],
+    "17": [
+      {
+        "text": "Resolva a expressão combinada de frações e equações: se (2/3)x + 5 = 17, qual é o valor da incógnita x?",
+        "correct": "x = 18",
+        "distractors": [
+          "x = 12",
+          "x = 24",
+          "x = 15"
+        ],
+        "explanation": "(2/3)x = 17 - 5 => (2/3)x = 12 => 2x = 36 => x = 18."
+      },
+      {
+        "text": "Um produto que custava R$ 240,00 recebeu um desconto de 15% em uma liquidação escolar. Qual passou a ser o seu novo preço?",
+        "correct": "R$ 204,00",
+        "distractors": [
+          "R$ 210,00",
+          "R$ 196,00",
+          "R$ 225,00"
+        ],
+        "explanation": "15% de 240 = 36 de desconto. Novo preço: 240 - 36 = R$ 204,00."
+      },
+      {
+        "text": "Qual é a área total de uma figura formada por dois quadrados justapostos, um com lado de 6 cm e outro com lado de 4 cm?",
+        "correct": "52 cm²",
+        "distractors": [
+          "100 cm²",
+          "40 cm²",
+          "48 cm²"
+        ],
+        "explanation": "Área 1 = 6 × 6 = 36 cm². Área 2 = 4 × 4 = 16 cm². Soma total = 36 + 16 = 52 cm²."
+      },
+      {
+        "text": "Em um mapa na escala 1 : 50 000, a distância medida entre duas escolas é de 6 cm. Qual é a distância real em linha reta entre essas duas escolas?",
+        "correct": "3 km",
+        "distractors": [
+          "30 km",
+          "300 metros",
+          "1,2 km"
+        ],
+        "explanation": "6 cm × 50 000 = 300 000 cm = 3 000 metros = 3 quilômetros."
+      }
+    ]
+  },
+  "ciencias": {
+    "1": [
+      {
+        "text": "Ao utilizar uma tesoura para cortar papel, o ponto de apoio situa-se entre o ponto onde aplicamos a força (potência) e a lâmina (resistência). Esse instrumento é classificado como uma alavanca:",
+        "correct": "Interfixa.",
+        "distractors": [
+          "Inter-resistente.",
+          "Interpotente.",
+          "Inclinada."
+        ],
+        "explanation": "Em uma alavanca interfixa, o ponto de apoio fica entre a força potente e a força resistente."
+      },
+      {
+        "text": "O carrinho de mão e o quebra-nozes são exemplos clássicos de qual tipo de máquina simples?",
+        "correct": "Alavanca inter-resistente, pois a carga resistente localiza-se entre o ponto de apoio e a força aplicada.",
+        "distractors": [
+          "Alavanca interfixa.",
+          "Alavanca interpotente.",
+          "Roldana axial."
+        ],
+        "explanation": "Nas alavancas inter-resistentes, a força resistente situa-se entre o ponto de apoio e a força potente."
+      },
+      {
+        "text": "Uma roldana móvel conectada a um sistema de elevação de cargas proporciona qual vantagem mecânica teórica?",
+        "correct": "Reduz a força necessária para erguer o objeto pela metade (F = P / 2).",
+        "distractors": [
+          "Apenas altera o sentido da força aplicada sem reduzir o esforço.",
+          "Dobra o peso do objeto tornando-o mais difícil de erguer.",
+          "Elimina a necessidade de cordas no levantamento."
+        ],
+        "explanation": "A roldana fixa apenas inverte a direção da força; a roldana móvel divide a força resistente pela metade a cada roldana móvel utilizada."
+      },
+      {
+        "text": "Rampas de acesso para cadeirantes são exemplos da máquina simples denominada:",
+        "correct": "Plano inclinado, que diminui a força necessária para elevar uma carga aumentando a distância percorrida.",
+        "distractors": [
+          "Alavanca interpotente.",
+          "Roldana combinada.",
+          "Cunha circular."
+        ],
+        "explanation": "O plano inclinado permite erguer um corpo aplicando menor força motriz ao longo de uma distância maior."
+      }
+    ],
+    "2": [
+      {
+        "text": "Qual das seguintes afirmações diferencia corretamente os conceitos físicos de CALOR e TEMPERATURA?",
+        "correct": "Calor é energia térmica em trânsito entre corpos com diferentes temperaturas, enquanto temperatura mede a agitação média das partículas.",
+        "distractors": [
+          "Calor e temperatura são sinônimos perfeitos que expressam a mesma grandeza em unidades diferentes.",
+          "Temperatura é a quantidade total de calor que um corpo armazena em seu núcleo.",
+          "Calor é a substância fluida que penetra na matéria tornando-a mais pesada."
+        ],
+        "explanation": "Temperatura mede o grau de agitação térmica molecular. Calor é o fluxo espontâneo de energia do corpo mais quente para o mais frio."
+      },
+      {
+        "text": "Quando dois corpos com temperaturas diferentes são colocados em contato térmico isolado, o que acontece após certo intervalo de tempo?",
+        "correct": "Ocorrem trocas de calor até que ambos atinjam a mesma temperatura final (equilíbrio térmico).",
+        "distractors": [
+          "O corpo mais frio cede temperatura ao mais quente até que este evapore.",
+          "Ambos diminuem suas temperaturas indefinidamente até o zero absoluto.",
+          "O corpo mais quente absorve todo o frio do ambiente circundante."
+        ],
+        "explanation": "O equilíbrio térmico é o estado no qual os corpos em contato atingem a mesma temperatura, cessando a transferência líquida de calor."
+      },
+      {
+        "text": "Na escala termométrica Celsius (°C), quais são os pontos fixos de fusão do gelo e de ebulição da água ao nível do mar?",
+        "correct": "0 °C para a fusão do gelo e 100 °C para a ebulição da água.",
+        "distractors": [
+          "32 °C para fusão e 212 °C para ebulição.",
+          "0 °C para fusão e 273 °C para ebulição.",
+          "-10 °C para fusão e 110 °C para ebulição."
+        ],
+        "explanation": "A escala Celsius adota 0 °C para o ponto de gelo fundente e 100 °C para o vapor de água em ebulição sob pressão de 1 atmosfera."
+      },
+      {
+        "text": "Por que sentimos uma sensação de frio mais intensa ao pisar descalços em um piso de cerâmica do que em um tapete à mesma temperatura?",
+        "correct": "Porque a cerâmica é melhor condutora térmica que o tecido, roubando calor dos nossos pés com maior rapidez.",
+        "distractors": [
+          "Porque o piso de cerâmica está em temperatura muito inferior à do tapete.",
+          "Porque o tapete produz calor ativamente por combustão microscópica.",
+          "Porque a cerâmica absorve água da pele por sucção térmica."
+        ],
+        "explanation": "A sensação térmica depende da taxa de transferência de calor: materiais com alta condutividade térmica (cerâmica) transferem calor mais rápido que isolantes (tapete)."
+      }
+    ],
+    "3": [
+      {
+        "text": "Qual processo de propagação de calor explica a formação de correntes de circulação em uma panela com água no fogo ou no ar de uma sala com ar-condicionado?",
+        "correct": "Convecção térmica, gerada pela diferença de densidade entre o fluido aquecido (menos denso, que sobe) e o frio (mais denso, que desce).",
+        "distractors": [
+          "Condução térmica através do vácuo sideral.",
+          "Irradiação de ondas gama pelas paredes do recipiente.",
+          "Fusão nuclear molecular das partículas da água."
+        ],
+        "explanation": "A convecção ocorre em líquidos e gases através de correntes ascendentes de matéria quente e descendentes de matéria fria."
+      },
+      {
+        "text": "A energia térmica do Sol viaja através do vácuo do espaço sideral e aquece o planeta Terra por meio de qual mecanismo de transferência?",
+        "correct": "Irradiação térmica, propagada por ondas eletromagnéticas (principalmente radiação infravermelha).",
+        "distractors": [
+          "Condução por contato direto entre moléculas espaciais.",
+          "Convecção de correntes de ar na estratosfera solar.",
+          "Sublimação do hidrogênio interestelar."
+        ],
+        "explanation": "Condução e convecção necessitam de meio material para se propagar. Apenas a irradiação se propaga no vácuo via ondas eletromagnéticas."
+      },
+      {
+        "text": "Uma colher de metal deixada dentro de uma xícara de sopa quente tem seu cabo aquecido rapidamente devido ao processo de:",
+        "correct": "Condução térmica, caracterizada pela transmissão de energia cinética de partícula a partícula no sólido.",
+        "distractors": [
+          "Convecção gravitacional.",
+          "Irradiação luminosa.",
+          "Eletrólise térmica."
+        ],
+        "explanation": "Nos sólidos, o calor se propaga por condução: as partículas aquecidas vibram com mais intensidade e transmitem energia às vizinhas."
+      },
+      {
+        "text": "Materiais como isopor, madeira, lã e ar seco são amplamente utilizados em garrafas térmicas e agasalhos porque atuam como:",
+        "correct": "Bons isolantes térmicos, dificultando a transferência de calor por condução.",
+        "distractors": [
+          "Excelentes condutores térmicos que aceleram o resfriamento.",
+          "Emissores radioativos de calor constante.",
+          "Catalisadores de fusão química acelerada."
+        ],
+        "explanation": "Isolantes térmicos possuem baixa condutividade térmica, reduzindo significativamente a perda ou o ganho de calor do sistema."
+      }
+    ],
+    "4": [
+      {
+        "text": "O bioma Cerrado, conhecido como a savana brasileira, apresenta vegetação adaptada ao clima com duas estações bem definidas. Entre suas características destacam-se:",
+        "correct": "Árvores de caules tortuosos, cascas espessas, folhas coriáceas e raízes profundas capazes de alcançar o lençol freático.",
+        "distractors": [
+          "Vegetação rasteira polar com solo permanentemente congelado.",
+          "Floresta densa de árvores gigantescas com solo úmido o ano todo sem seca.",
+          "Plantas exclusivamente aquáticas sem nenhuma raiz terrestre."
+        ],
+        "explanation": "O Cerrado enfrenta período de seca prolongado. As cascas grossas protegem contra queimadas naturais e as raízes profundas buscam água subterrânea."
+      },
+      {
+        "text": "Qual bioma exclusivamente brasileiro é caracterizado por clima semiárido, chuvas escassas e irregulares e vegetação xerófita com folhas modificadas em espinhos?",
+        "correct": "Caatinga.",
+        "distractors": [
+          "Pampa gaúcho.",
+          "Pantanal mato-grossense.",
+          "Mata Atlântica litorânea."
+        ],
+        "explanation": "A Caatinga ocupa o semiárido nordestino, com vegetação adaptada à seca extrema (como cactos e arbustos caducifólios)."
+      },
+      {
+        "text": "A Floresta Amazônica é classificada botanicamente como uma floresta pluvial tropical latifoliada. Isso significa que suas árvores:",
+        "correct": "Possuem folhas largas que captam muita luminosidade e permanecem verdes o ano todo (perenes).",
+        "distractors": [
+          "Possuem folhas em forma de agulha e perdem todas as folhas no inverno.",
+          "Crescem apenas no fundo de rios sem luz solar direta.",
+          "Não realizam fotossíntese e dependem de fungos parasitas."
+        ],
+        "explanation": "Latifoliada refere-se a folhas largas e desenvolvidas, típicas de ambientes de alta umidade e luminosidade equatorial abundante."
+      },
+      {
+        "text": "Considerado a maior planície inundável contínua do planeta, qual bioma brasileiro destaca-se pela rica fauna aquática e por períodos alternados de cheia e vazante?",
+        "correct": "Pantanal.",
+        "distractors": [
+          "Pampa.",
+          "Cerrado.",
+          "Mata dos Cocais."
+        ],
+        "explanation": "O Pantanal é uma bacia de inundação periódica influenciada pelo Rio Paraguai e seus afluentes, abrigando rica biodiversidade aquática e terrestre."
+      }
+    ],
+    "5": [
+      {
+        "text": "No sistema dos 5 Reinos de Whittaker, qual reino agrupa exclusivamente seres celulares procariontes (sem envoltório nuclear/carioteca)?",
+        "correct": "Reino Monera (bactérias e cianobactérias).",
+        "distractors": [
+          "Reino Protista (algas unicelulares e protozoários).",
+          "Reino Fungi (leveduras e bolores).",
+          "Reino Plantae (musgos e samambaias)."
+        ],
+        "explanation": "O Reino Monera é o único cujos membros não possuem núcleo celular organizado por carioteca, tendo o material genético disperso no citoplasma."
+      },
+      {
+        "text": "Qual das seguintes alternativas apresenta a sequência hierárquica das categorias taxonômicas da mais ampla para a mais restrita?",
+        "correct": "Reino, Filo, Classe, Ordem, Família, Gênero e Espécie.",
+        "distractors": [
+          "Reino, Ordem, Classe, Filo, Família, Espécie e Gênero.",
+          "Espécie, Gênero, Família, Ordem, Classe, Filo e Reino.",
+          "Filo, Reino, Classe, Família, Gênero, Ordem e Espécie."
+        ],
+        "explanation": "O mnemônico clássico da taxonomia biológica é: ReFiCOFaGE (Reino, Filo, Classe, Ordem, Família, Gênero e Espécie)."
+      },
+      {
+        "text": "Na regra internacional de nomenclatura binomial criada por Lineu, como deve ser escrito corretamente o nome científico do ser humano?",
+        "correct": "Homo sapiens (com o gênero em maiúscula, o epíteto específico em minúscula e todo o termo destacado em itálico).",
+        "distractors": [
+          "homo Sapiens sem destaque tipográfico.",
+          "HOMO SAPIENS em caixa alta e sublinhado duplo.",
+          "Homo Sapiens com ambas as iniciais maiúsculas em português."
+        ],
+        "explanation": "A nomenclatura binomial exige latim, primeiro termo (Gênero) com inicial maiúscula, segundo termo (epíteto específico) minúsculo, ambos em itálico."
+      },
+      {
+        "text": "Seres vivos eucariontes, unicelulares ou pluricelulares, heterótrofos por absorção e com parede celular de quitina pertencem ao reino:",
+        "correct": "Reino Fungi.",
+        "distractors": [
+          "Reino Plantae.",
+          "Reino Monera.",
+          "Reino Animalia."
+        ],
+        "explanation": "Fungos são heterótrofos que absorvem nutrientes do meio após digestão extracelular, possuindo parede celular constituída de quitina."
+      }
+    ],
+    "6": [
+      {
+        "text": "Qual das seguintes alternativas expressa uma diferença biológica fundamental entre os VÍRUS e as BACTÉRIAS?",
+        "correct": "Os vírus são estruturas acelulares e parasitas intracelulares obrigatórios, enquanto as bactérias são organismos celulares completos.",
+        "distractors": [
+          "As bactérias não possuem DNA nem RNA, enquanto os vírus possuem núcleo delimitado.",
+          "Os vírus respondem ao tratamento comum com antibióticos bactericidas.",
+          "As bactérias realizam fotossíntese exclusivamente no vácuo."
+        ],
+        "explanation": "Vírus não têm células, ribossomos ou metabolismo próprio, precisando invadir uma célula hospedeira para se reproduzir. Bactérias são células procariontes completas."
+      },
+      {
+        "text": "Por que os antibióticos receitados pelos médicos são eficazes no combate a infecções bacterianas, mas ineficazes contra infecções virais como gripe e resfriado?",
+        "correct": "Porque os antibióticos atuam sobre estruturas celulares bacterianas (como parede celular e ribossomos), que os vírus não possuem.",
+        "distractors": [
+          "Porque os vírus são grandes demais para serem digeridos pelos antibióticos.",
+          "Porque os antibióticos fortalecem os vírus no organismo.",
+          "Porque os vírus eliminam os antibióticos por meio de transpiração."
+        ],
+        "explanation": "Antibióticos atacam alvos celulares específicos de bactérias (parede de peptideoglicano, síntese proteica). Como vírus não possuem células, não são afetados."
+      },
+      {
+        "text": "A reprodução assexuada mais comum nas bactérias, na qual uma célula duplica seu material genético e se divide ao meio gerando dois clones idênticos, chama-se:",
+        "correct": "Divisão binária (ou cissiparidade / bipartição).",
+        "distractors": [
+          "Esporulação foliar.",
+          "Fecundação cruzada.",
+          "Brotamento larval."
+        ],
+        "explanation": "A bipartição ou divisão binária é a forma rápida de multiplicação assexuada de bactérias em condições ambientais favoráveis."
+      },
+      {
+        "text": "O que explica a proliferação de bactérias 'super-resistentes' quando tratamentos com antibióticos são interrompidos antes do prazo médico recomendado?",
+        "correct": "Ocorre seleção natural: o remédio elimina as bactérias mais sensíveis primeiro; parar o ciclo permite a sobrevivência e reprodução das linhagens mutantes resistentes.",
+        "distractors": [
+          "As bactérias utilizam o antibiótico como alimento calórico principal.",
+          "O antibiótico transforma as bactérias em vírus perigosos.",
+          "O sistema imunológico desativa os glóbulos brancos do paciente."
+        ],
+        "explanation": "Interromper prematuramente o antibiótico não erradica a população bacteriana por completo, selecionando bactérias com mutações de resistência."
+      }
+    ],
+    "7": [
+      {
+        "text": "A Doença de Chagas é uma parasitose causada pelo protozoário flagelado Trypanosoma cruzi. Qual é a principal via clássica de transmissão dessa doença?",
+        "correct": "Contato das fezes do inseto barbeiro (triatomíneo) com a pele ferida pela picada ou mucosas.",
+        "distractors": [
+          "Ingestão de água contaminada por larvas do mosquito Aedes aegypti.",
+          "Contato direto com esporos de cogumelos venenosos nas matas.",
+          "Inalação de pólen de flores silvestres em dias secos."
+        ],
+        "explanation": "O barbeiro defeca enquanto suga sangue; a coceira facilita a entrada das fezes contendo o Trypanosoma cruzi pela lesão da picada."
+      },
+      {
+        "text": "Qual dos seguintes organismos unicelulares eucariontes desloca-se e captura alimentos emitindo prolongamentos citoplasmáticos chamados PSEUDÓPODES?",
+        "correct": "Ameba.",
+        "distractors": [
+          "Paramécio.",
+          "Euglena.",
+          "Bactéria bacilo."
+        ],
+        "explanation": "Amebas são protozoários sarcodíneos/rizópodes que se movem por fagocitose e locomoção ameboide através de pseudópodes (falsos pés)."
+      },
+      {
+        "text": "As algas unicelulares e pluricelulares desempenham um papel ecológico indispensável para a biosfera terrestre principalmente porque:",
+        "correct": "São responsáveis pela maior parte da produção de gás oxigênio da Terra e constituem a base das cadeias alimentares aquáticas (fitoplâncton).",
+        "distractors": [
+          "Consomem todo o oxigênio oceânico para produzir gás carbônico tóxico.",
+          "Atuam como os principais parasitas causadores de malária em peixes.",
+          "Produzem madeira para sustentação dos recifes de corais."
+        ],
+        "explanation": "O fitoplâncton fotossintetizante nos oceanos produz a maior fração do oxigênio atmosférico e sustenta as teias tróficas marinhas."
+      },
+      {
+        "text": "Leveduras como o Saccharomyces cerevisiae são fungos unicelulares utilizados pelo ser humano na panificação e produção de bebidas fermentadas porque realizam:",
+        "correct": "Fermentação alcoólica, liberando gás carbônico (que faz a massa do pão crescer) e álcool.",
+        "distractors": [
+          "Fotossíntese aeróbica produzindo amido cristalizado.",
+          "Digestão intracelular de minerais pesados.",
+          "Transpiração cuticular de vapores ácidos."
+        ],
+        "explanation": "Na fermentação alcoólica anaeróbica, a levedura consome glicose gerando etanol e dióxido de carbono (CO2), responsável pelo crescimento da massa do pão."
+      }
+    ],
+    "8": [
+      {
+        "text": "Qual característica diferencia as briófitas (musgos) das pteridófitas (samambaias)?",
+        "correct": "As briófitas não possuem vasos condutores de seiva (avasculares), enquanto as pteridófitas possuem xilema e floema (vasculares).",
+        "distractors": [
+          "As pteridófitas produzem flores e frutos carnosos com sementes.",
+          "As briófitas possuem raízes profundas adaptadas a climas áridos.",
+          "Ambas se reproduzem exclusivamente por sementes aladas transportadas pelo vento."
+        ],
+        "explanation": "Briófitas são avasculares e transportam água por difusão celular; pteridófitas foram as primeiras plantas vasculares da evolução vegetal."
+      },
+      {
+        "text": "Os pinheiros e a Araucária pertencem às Gimnospermas. O que significa o termo 'gimnosperma' no contexto botânico?",
+        "correct": "Semente nua, pois suas sementes (pinhões) desenvolvem-se expostas nas escamas dos estróbilos sem ovário fechado em fruto.",
+        "distractors": [
+          "Planta aquática sem folhas verdes.",
+          "Flor colorida com pétalas aromáticas.",
+          "Raiz sem xilema nem floema."
+        ],
+        "explanation": "Gimnospermas produzem sementes que não ficam abrigadas dentro de frutos carnosos (não possuem ovário desenvolvido em fruto verdadeiro)."
+      },
+      {
+        "text": "Qual grupo vegetal é o mais diversificado da Terra e caracteriza-se com exclusividade pela presença de flores e frutos protegendo as sementes?",
+        "correct": "Angiospermas.",
+        "distractors": [
+          "Gimnospermas.",
+          "Pteridófitas.",
+          "Briófitas."
+        ],
+        "explanation": "As angiospermas são as únicas que formam flores completas com ovário que, fecundado, desenvolve-se em fruto abrigando a semente."
+      },
+      {
+        "text": "No corpo das plantas vasculares, qual é a função respectiva dos tecidos condutores XILEMA e FLOEMA?",
+        "correct": "O xilema conduz seiva bruta (água e sais da raiz às folhas) e o floema conduz seiva elaborada (açúcares da fotossíntese para o restante da planta).",
+        "distractors": [
+          "O floema conduz oxigênio gasoso e o xilema armazena amido no caule.",
+          "O xilema absorve gás carbônico pelas folhas e o floema evapora água.",
+          "Ambos conduzem água doce apenas no sentido descendente."
+        ],
+        "explanation": "O xilema transporta a seiva mineral ascendente; o floema distribui a seiva orgânica produzida na fotossíntese foliar por todo o vegetal."
+      }
+    ],
+    "9": [
+      {
+        "text": "Qual filo do Reino Animalia reúne o maior número de espécies descritas no planeta e caracteriza-se por exoesqueleto de quitina e apêndices (patas) articulados?",
+        "correct": "Artrópodes (insetos, aracnídeos, crustáceos e miriápodes).",
+        "distractors": [
+          "Moluscos.",
+          "Anelídeos.",
+          "Cnidários."
+        ],
+        "explanation": "Os artrópodes constituem o maior grupo animal da Terra, com corpo segmentado, exoesqueleto quitinoso protetor e pernas articuladas."
+      },
+      {
+        "text": "Animais como águas-vivas e anêmonas-do-mar pertencem ao filo dos Cnidários e possuem células especializadas chamadas CNIDÓCITOS. Qual é a função dessas células?",
+        "correct": "Defesa e captura de presas por meio da injeção de substâncias urticantes e paralisantes.",
+        "distractors": [
+          "Digestão mecânica de conchas calcárias.",
+          "Produção de leite para alimentar os filhotes.",
+          "Absorção de luz solar para fotossíntese animal."
+        ],
+        "explanation": "Os cnidócitos disparam filamentos com toxinas urticantes para imobilizar presas e afastar predadores na água."
+      },
+      {
+        "text": "Qual das seguintes classes de animais vertebrados é classificada como ENDOTÉRMICA (capaz de manter a temperatura corporal constante através do metabolismo interno)?",
+        "correct": "Aves e Mamíferos.",
+        "distractors": [
+          "Peixes e Répteis.",
+          "Anfíbios e Peixes.",
+          "Répteis e Anfíbios."
+        ],
+        "explanation": "Aves e mamíferos são endotérmicos (homeotérmicos). Peixes, anfíbios e répteis são ectotérmicos e dependem de fontes externas de calor."
+      },
+      {
+        "text": "A presença de esqueleto hidrostático, corpo dividido em anéis (metameria) e sistema circulatório fechado com respiração cutânea é marcante em qual grupo animal?",
+        "correct": "Anelídeos (como as minhocas e sanguessugas).",
+        "distractors": [
+          "Poríferos (esponjas do mar).",
+          "Nematódeos (lombrigas).",
+          "Platelmintos (tênias)."
+        ],
+        "explanation": "Anelídeos possuem corpos cilíndricos com anéis verdadeiros (metameria) e realizam trocas gasosas pela pele úmida (hematose cutânea)."
+      }
+    ],
+    "10": [
+      {
+        "text": "Qual é a diferença funcional fundamental entre uma VACINA e um SORO terapêutico no organismo humano?",
+        "correct": "A vacina atua preventivamente estimulando a imunização ativa (produz anticorpos e memória imune); o soro atua curativamente fornecendo anticorpos prontos para ação imediata.",
+        "distractors": [
+          "A vacina cura infecções avançadas instantaneamente e o soro impede qualquer contágio futuro.",
+          "O soro estimula a produção de glóbulos vermelhos e a vacina produz plaquetas.",
+          "Não há diferença médica, ambos contêm as mesmas substâncias antibióticas."
+        ],
+        "explanation": "Vacinas contêm antígenos atenuados para gerar imunidade ativa duradoura com memória imune. Soros contêm anticorpos prontos para neutralizar toxinas urgentes (como veneno de cobra)."
+      },
+      {
+        "text": "Em imunologia, como se define a molécula ou agente estranho que, ao penetrar no corpo, desencadeia uma resposta do sistema imunitário?",
+        "correct": "Antígeno.",
+        "distractors": [
+          "Anticorpo.",
+          "Antibiótico.",
+          "Hormônio tireoidiano."
+        ],
+        "explanation": "Antígeno é qualquer substância ou microrganismo estranho que ativa o sistema imunológico, estimulando a produção de anticorpos específicos."
+      },
+      {
+        "text": "Qual é o principal tipo de célula sanguínea do sistema imunológico encarregado de fagocitar patógenos e produzir anticorpos?",
+        "correct": "Leucócitos (glóbulos brancos).",
+        "distractors": [
+          "Hemácias (glóbulos vermelhos).",
+          "Plaquetas (trombócitos).",
+          "Osteócitos ósseos."
+        ],
+        "explanation": "Os leucócitos (como neutrófilos, macrófagos e linfócitos B e T) constituem o exército celular de defesa imune do organismo."
+      },
+      {
+        "text": "Por que as campanhas de vacinação em massa protegem mesmo os indivíduos que não podem ser vacinados por motivos médicos?",
+        "correct": "Devido à imunidade coletiva (ou de rebanho), que reduz drasticamente a circulação do agente infeccioso na comunidade.",
+        "distractors": [
+          "Porque os anticorpos dos vacinados evaporam e penetram pela respiração dos demais.",
+          "Porque a vacina altera a composição do ar nas cidades.",
+          "Porque as pessoas vacinadas transferem seus glóbulos brancos pelo toque de mãos."
+        ],
+        "explanation": "Quando a maior parte da população se imuniza, a cadeia de transmissão do patógeno é interrompida, protegendo indivíduos vulneráveis."
+      }
+    ]
+  },
+  "historia": {
+    "1": [
+      {
+        "text": "Na sociedade feudal medieval da Europa Ocidental, a divisão social em ordens estamentais era justificada pela Igreja como reflexo da vontade divina. Quais eram essas três ordens e suas respectivas funções?",
+        "correct": "O Clero (os que oravam), a Nobreza (os que guerreavam) e os Servos (os que trabalhavam para sustentar a todos).",
+        "distractors": [
+          "Os Senadores, os Plebeus e os Cidadãos com voto em assembleias.",
+          "Os Banqueiros, os Comerciantes de especiarias e os Marinheiros.",
+          "Os Industriais, os Operários e os Camponeses assalariados."
+        ],
+        "explanation": "A sociedade feudal era estamental, com mobilidade quase nula: bellatores (guerreiros), oratores (religiosos) e laboratores (trabalhadores da terra)."
+      },
+      {
+        "text": "Nas relações entre membros da nobreza feudal, a cerimônia de homenagem formalizava o laço de suserania e vassalagem. Qual era o compromisso mútuo estabelecido?",
+        "correct": "O suserano concedia o feudo (terra ou benefício) e proteção militar, enquanto o vassalo jurava lealdade, auxílio em guerras e conselho.",
+        "distractors": [
+          "O vassalo pagava salário mensal ao suserano e trabalhava no arado.",
+          "O suserano entregava seu título papal ao vassalo sem obrigações bélicas.",
+          "O vassalo vendia todas as suas colheitas exclusivamente à Coroa britânica."
+        ],
+        "explanation": "O pacto de vassalagem unia nobres por juramento sagrado de fidelidade militar e apoio político em troca da concessão de um benefício/feudo."
+      },
+      {
+        "text": "A principal obrigação servil em que os camponeses eram obrigados a trabalhar de forma gratuita e compulsória durante alguns dias da semana nas terras diretas do senhor (manso senhorial) chamava-se:",
+        "correct": "Corveia.",
+        "distractors": [
+          "Talha.",
+          "Banalidade.",
+          "Dízimo da igreja."
+        ],
+        "explanation": "Corveia era o trabalho gratuito no manso senhorial. Talha era a entrega de parte da produção do manso servil e banalidades eram taxas pelo uso de instalações (moinho, forno)."
+      },
+      {
+        "text": "Qual instituição exerceu a maior autoridade política, cultural e espiritual unificadora na Europa Ocidental durante a Idade Média?",
+        "correct": "A Igreja Católica Apostólica Romana.",
+        "distractors": [
+          "O Senado Republicano de Roma.",
+          "O Parlamento Real de Londres.",
+          "O Tribunal Supremo de Bizâncio."
+        ],
+        "explanation": "A Igreja Católica era a instituição mais rica, detentora de terras e coordenadora da vida moral, intelectual e jurídica na Idade Média."
+      }
+    ],
+    "2": [
+      {
+        "text": "O marco inicial do calendário islâmico corresponde à HÉGIRA, ocorrida no ano de 622 d.C. Esse acontecimento histórico refere-se a:",
+        "correct": "A migração do profeta Maomé e de seus primeiros seguidores da cidade de Meca para Medina fugindo de perseguições.",
+        "distractors": [
+          "A conquista da cidade de Constantinopla pelos turcos otomanos.",
+          "A publicação do primeiro livro sagrado impresso em caracteres árabes.",
+          "A derrota dos guerreiros muçulmanos na Batalha de Poitiers."
+        ],
+        "explanation": "Em 622 d.C., Maomé migrou de Meca para Medina (Yathrib) fugindo das elites coraixitas que rejeitavam o monoteísmo islâmico. Esse evento inaugurou a era islâmica."
+      },
+      {
+        "text": "Qual dos seguintes preceitos NÃO faz parte dos Cinco Pilares fundamentais do Islã seguidos pelos fiéis muçulmanos?",
+        "correct": "Participar obrigatoriamente de guerras navais ultramarinas uma vez a cada dois anos.",
+        "distractors": [
+          "Profissão de fé na unicidade de Alá e em Maomé como seu profeta.",
+          "Realização de cinco orações diárias voltadas em direção a Meca.",
+          "Jejum ritual durante o mês sagrado do Ramadã do nascer ao pôr do sol."
+        ],
+        "explanation": "Os 5 pilares são: profissão de fé (Shahada), orações (Salat), caridade/esmola (Zakat), jejum no Ramadã (Sawm) e peregrinação a Meca (Hajj)."
+      },
+      {
+        "text": "Durante a Idade de Ouro do Islã (séculos VIII a XIII), sábios e cientistas árabes fizeram contribuições intelectuais monumentais que influenciaram o Ocidente, destacando-se na:",
+        "correct": "Álgebra e numeração arábica, medicina avançada (Avicena), óptica e preservação das obras filosóficas da Grécia Antiga.",
+        "distractors": [
+          "Destruição de bibliotecas e proibição de qualquer estudo astronômico.",
+          "Criação da máquina a vapor para tecelagens em Bagdá.",
+          "Imposição de regras agrícolas feudais nas costas da Escandinávia."
+        ],
+        "explanation": "O mundo islâmico floresceu cientificamente, traduzindo filósofos gregos e desenvolvendo a álgebra (al-Khwarizmi) e tratados médicos canônicos."
+      },
+      {
+        "text": "A rápida expansão do Império Islâmico na Península Ibérica a partir de 711 d.C. deu origem à região denominada Al-Andalus, que perdurou por séculos até a Reconquista cristã em:",
+        "correct": "1492, com a tomada de Granada pelos Reis Católicos da Espanha.",
+        "distractors": [
+          "1789, com a Revolução Francesa.",
+          "1215, com a Carta Magna inglesa.",
+          "1066, com a invasão normanda."
+        ],
+        "explanation": "Em 1492, os reis Fernando e Isabel conquistaram o Reino de Granada, encerrando o domínio muçulmano na Península Ibérica."
+      }
+    ],
+    "3": [
+      {
+        "text": "Convocadas em 1095 pelo Papa Urbano II no Concílio de Clermont, as Cruzadas medievais tinham como justificativa religiosa imediata:",
+        "correct": "Reconquistar Jerusalém e os Lugares Santos do domínio muçulmano e auxiliar o Império Bizantino.",
+        "distractors": [
+          "Navegar contornando o continente africano para comprar porcelana na China.",
+          "Instaurar repúblicas democráticas laicas em todo o Norte da África.",
+          "Destruir os mosteiros católicos e banir o latim da Europa."
+        ],
+        "explanation": "Urbano II conclamou nobres e cavaleiros a libertar o Santo Sepulcro em Jerusalém, prometendo indulgência plenária a quem partisse em peregrinação armada."
+      },
+      {
+        "text": "Do ponto de vista econômico e comercial, qual foi a consequência mais duradoura das Cruzadas para a Europa Ocidental?",
+        "correct": "A reabertura das rotas de comércio marítimo no Mediterrâneo, impulsionando o renascimento urbano e das feiras comerciais medievais.",
+        "distractors": [
+          "O isolamento rural definitivo da Europa sem qualquer contato com o Oriente.",
+          "A extinção completa do uso de moedas e a volta do escambo primitivo.",
+          "A decadência definitiva de cidades mercantis como Veneza e Gênova."
+        ],
+        "explanation": "O contato com o Oriente reaqueceu o comércio de especiarias e tecidos finos, enriquecendo cidades italianas e estimulando o crescimento das feiras e cidades."
+      },
+      {
+        "text": "Com o renascimento urbano e comercial nos séculos XII e XIII, os habitantes livres das cidades fortificadas (burgos) deram origem a um novo grupo social chamado:",
+        "correct": "Burguesia, composta por mercadores, artesãos, banqueiros e comerciantes.",
+        "distractors": [
+          "Clero regular monástico.",
+          "Servos da gleba feudal.",
+          "Guerreiros samurais."
+        ],
+        "explanation": "A burguesia surgiu nos burgos medievais, acumulando capital mercantil e rompendo com a rigidez estamental do modelo feudal clássico."
+      },
+      {
+        "text": "As associações de artesãos do mesmo ofício em uma cidade medieval que controlavam preços, métodos de produção e a formação de aprendizes chamavam-se:",
+        "correct": "Corporações de ofício (ou guildas).",
+        "distractors": [
+          "Feitorias imperiais.",
+          "Cartéis transnacionais.",
+          "Comunas anarquistas."
+        ],
+        "explanation": "As corporações de ofício regulamentavam o trabalho dos mestres, oficiais e aprendizes, padronizando a qualidade e evitando concorrência predatória."
+      }
+    ],
+    "4": [
+      {
+        "text": "O movimento cultural e intelectual do Renascimento, florescido nos séculos XV e XVI na Europa, tinha como um de seus fundamentos essenciais o HUMANISMO, caracterizado por:",
+        "correct": "Valorizar a capacidade racional, artística e crítica do ser humano (antropocentrismo), inspirando-se na Antiguidade Clássica greco-romana.",
+        "distractors": [
+          "Reafirmar o teocentrismo medieval e proibir estudos anatômicos humanos.",
+          "Defender o abandono da escrita e o isolamento rural camponês.",
+          "Negar a razão e impor o misticismo astrológico em todas as artes."
+        ],
+        "explanation": "O Humanismo colocou o ser humano e a razão no centro das reflexões, redescobrindo valores intelectuais e estéticos de Grécia e Roma."
+      },
+      {
+        "text": "A prática comum no Renascimento italiano em que nobres e comerciantes ricos (como a família Médici em Florença) financiavam pintores, escultores e cientistas era o:",
+        "correct": "Mecenato.",
+        "distractors": [
+          "Absolutismo monárquico.",
+          "Feudalismo senhorial.",
+          "Iluminismo republicano."
+        ],
+        "explanation": "Mecenato era o patrocínio financeiro e proteção concedidos por mecenas (burgueses, papas e reis) aos artistas e intelectuais para projetar prestígio."
+      },
+      {
+        "text": "A revolução científica iniciada no Renascimento com Nicolau Copérnico e continuada por Galileu Galilei propôs qual modelo astronômico em oposição ao geocentrismo ptolomaico?",
+        "correct": "Modelo heliocêntrico, no qual o Sol ocupa o centro do sistema e a Terra e os demais planetas giram ao seu redor.",
+        "distractors": [
+          "Modelo geocêntrico, com a Terra imóvel no centro do Universo.",
+          "Teoria da Terra plana sustentada por pilares de cristal.",
+          "Concepção de que as estrelas eram apenas reflexos de fogueiras lunares."
+        ],
+        "explanation": "Copérnico demonstrou matematicamente o heliocentrismo (Sol no centro), contestando a visão tradicional geocêntrica da Igreja e de Aristóteles/Ptolomeu."
+      },
+      {
+        "text": "Leonardo da Vinci é considerado o maior arquétipo do 'Homem Renascentista' universal porque:",
+        "correct": "Destacou-se simultaneamente como pintor genial (Mona Lisa), anatomista, engenheiro, botânico, inventor e cientista empírico.",
+        "distractors": [
+          "Foi o monarca absoluto que unificou politicamente toda a Península Itálica.",
+          "Escreveu as 95 teses religiosas que romperam com o papado romano.",
+          "Descobriu a rota marítima para as Índias contornando a África."
+        ],
+        "explanation": "Da Vinci encarnava o polímata renascentista: dominava arte, ciência, engenharia e anatomia através da observação rigorosa da natureza."
+      }
+    ],
+    "5": [
+      {
+        "text": "Em 1517, o monge agostiniano Martinho Lutero afixou 95 Teses na porta da igreja do castelo de Wittenberg, na Alemanha. Qual era o alvo principal de suas críticas iniciais?",
+        "correct": "A venda e o comércio de indulgências (perdão dos pecados mediante pagamento em dinheiro) promovidos pelo clero católico.",
+        "distractors": [
+          "A utilização da língua alemã nas leituras bíblicas nas paróquias.",
+          "A realização de missas gratuitas aos domingos para camponeses.",
+          "A autorização papal para o casamento civil de leigos."
+        ],
+        "explanation": "Lutero insurgiu-se contra o comércio financeiro de indulgências comercializadas por emissários papais para custear as obras da Basílica de São Pedro em Roma."
+      },
+      {
+        "text": "Qual dos seguintes princípios teológicos constitui um dos pilares centrais da doutrina luterana da Reforma Protestante?",
+        "correct": "A justificação pela fé: a salvação do ser humano é alcançada exclusivamente pela fé em Deus, e não pela compra de obras de indulgência.",
+        "distractors": [
+          "A infalibilidade absoluta dos bispos e cardeais em questões políticas.",
+          "A obrigação de orar exclusivamente em latim arcaico.",
+          "A adoração obrigatória a relíquias e imagens sagradas de santos."
+        ],
+        "explanation": "Lutero defendeu o princípio da 'Sola Fide' (apenas a fé salva), o sacerdócio universal de todos os crentes e a autoridade suprema das Escrituras ('Sola Scriptura')."
+      },
+      {
+        "text": "O reformador João Calvino introduziu em Genebra uma doutrina religiosa que se expandiu pela Suíça, Holanda e Inglaterra. Essa doutrina tinha como base:",
+        "correct": "A predestinação absoluta das almas, associando a disciplina moral e o sucesso no trabalho honesto a indícios da bênção e eleição divina.",
+        "distractors": [
+          "A condenação de qualquer atividade comercial e a volta à servidão medieval.",
+          "O culto obrigatório ao imperador romano como chefe da Igreja.",
+          "A extinção do batismo e a proibição da leitura individual da Bíblia."
+        ],
+        "explanation": "O calvinismo defendia que Deus já predestinou os salvos e os réprobos, valorizando a ética do trabalho e a prosperidade econômica como sinais da graça divina."
+      },
+      {
+        "text": "Como resposta à expansão do protestantismo na Europa, a Igreja Católica reuniu o Concílio de Trento (1545-1563) para organizar a Contrarreforma. Quais foram medidas adotadas?",
+        "correct": "Reafirmação dos dogmas católicos e dos 7 sacramentos, fortalecimento do Tribunal da Inquisição, criação do Index de livros proibidos e apoio à Companhia de Jesus.",
+        "distractors": [
+          "Adoção imediata de todas as teses luteranas e abolição da autoridade do Papa.",
+          "Fechamento de todos os seminários e conventos católicos na Europa.",
+          "Permissão irrestrita para publicação de críticas dogmáticas sem censura."
+        ],
+        "explanation": "O Concílio de Trento manteve a doutrina tradicional, combateu a corrupção do clero, criou os seminários e impulsionou ordens missionárias como os jesuítas."
+      }
+    ],
+    "6": [
+      {
+        "text": "Qual fator histórico e geográfico motivou pioneiramente Portugal a buscar uma nova rota marítima para as Índias no século XV?",
+        "correct": "O monopólio das cidades italianas (Gênova e Veneza) e dos comerciantes árabes nas rotas do Mediterrâneo, agravado pela tomada de Constantinopla em 1453.",
+        "distractors": [
+          "A falta total de solo para agricultura e a invasão permanente de vikings.",
+          "A exigência do imperador chinês de que as mercadorias fossem transportadas a pé.",
+          "A proibição do comércio de especiarias pelas leis da Igreja Católica."
+        ],
+        "explanation": "Com a tomada de Constantinopla pelos turcos otomanos em 1453 e o monopólio mercantil no Mediterrâneo, os portugueses buscaram a rota marítima contornando a África."
+      },
+      {
+        "text": "Assinado em 1494 entre Portugal e Espanha com mediação papal, o Tratado de Tordesilhas estabelecia:",
+        "correct": "Uma linha imaginária a 370 léguas a oeste de Cabo Verde, dividindo as terras descobertas e por descobrir entre Espanha (oeste) e Portugal (leste).",
+        "distractors": [
+          "A devolução de todas as colônias americanas aos reis franceses.",
+          "A proibição de caravelas armadas navegarem no Oceano Atlântico.",
+          "O fim de todas as monarquias absolutistas na Península Ibérica."
+        ],
+        "explanation": "O Tratado de Tordesilhas dividiu o mundo ultramarino entre Portugal e Espanha através de um meridiano fixado a 370 léguas a oeste do arquipélago de Cabo Verde."
+      },
+      {
+        "text": "Qual navegador português comandou a primeira expedição europeia que conseguiu atingir com sucesso Calicute, na Índia, contornando o Cabo da Boa Esperança em 1498?",
+        "correct": "Vasco da Gama.",
+        "distractors": [
+          "Pedro Álvares Cabral.",
+          "Cristóvão Colombo.",
+          "Bartolomeu Dias."
+        ],
+        "explanation": "Bartolomeu Dias dobrou o Cabo das Tormentas (Boa Esperança) em 1488, e Vasco da Gama liderou a frota que finalmente alcançou a Índia em 1498."
+      },
+      {
+        "text": "O conjunto de práticas econômicas das monarquias europeias durante as Grandes Navegações, caracterizado por metalismo, balança comercial favorável e protecionismo, chama-se:",
+        "correct": "Mercantilismo.",
+        "distractors": [
+          "Liberalismo econômico.",
+          "Socialismo utópico.",
+          "Fisiocracia agrária."
+        ],
+        "explanation": "O mercantilismo fundamentava a riqueza dos Estados na acumulação de ouro e prata (metalismo) e na manutenção de exportações maiores que importações."
+      }
+    ],
+    "7": [
+      {
+        "text": "Antes da conquista espanhola, os Astecas construíram sua monumental capital Tenochtitlán no meio de uma área lacustre. Qual técnica agrícola inovadora permitiu alimentar sua população?",
+        "correct": "Chinampas: ilhas artificiais de cultivo construídas com esteiras de junco e lodo fértil sobre as águas dos lagos.",
+        "distractors": [
+          "Terraços de pedra irrigados por neve nas encostas do Monte Everest.",
+          "Estufas térmicas subterrâneas aquecidas por carvão mineral.",
+          "Desmatamento completo de florestas boreais para monocultura de trigo."
+        ],
+        "explanation": "As chinampas astecas no lago Texcoco maximizavam a fertilidade e a produtividade agrícola em meio às águas rasas, produzindo milho, feijão e abóbora."
+      },
+      {
+        "text": "No vasto Império Inca ao longo da Cordilheira dos Andes, como os governantes superavam o relevo íngreme e registravam dados sem possuir escrita alfabética?",
+        "correct": "Cultivavam em terraços escalonados nas montanhas com irrigação avançada e utilizavam os quipus (cordões com nós) para contabilidade e censos.",
+        "distractors": [
+          "Construíam túneis de ferro fundido e escreviam em hieróglifos egípcios.",
+          "Plantavam apenas no fundo de cavernas escuras e utilizavam moedas de ouro.",
+          "Importavam comida por via aérea e não realizavam contabilidade."
+        ],
+        "explanation": "Os incas desenvolveram terraços agrícolas andinos (andenes) e o complexo sistema contábil de quipus para registrar tributos, estoques e população."
+      },
+      {
+        "text": "Qual civilização pré-colombiana habitou a Península de Yucatán e a América Central, destacando-se por cidades-estado autônomas, pirâmides monumentais e calendários precisos?",
+        "correct": "Os Maias.",
+        "distractors": [
+          "Os Sioux.",
+          "Os Tupinambás.",
+          "Os Vikings."
+        ],
+        "explanation": "Os maias floresceram na América Central com avançada astronomia, escrita hieroglífica própria, arquitetura piramidal e cidades-estado como Tikal e Chichén Itzá."
+      },
+      {
+        "text": "A grandiosa cidadela de pedra edificada pelos Incas no alto da Cordilheira dos Andes no Peru, redescoberta no início do século XX, chama-se:",
+        "correct": "Machu Picchu.",
+        "distractors": [
+          "Tenochtitlán.",
+          "Cuzco Imperial.",
+          "Monte Albán."
+        ],
+        "explanation": "Machu Picchu é o sítio arqueológico inca mais célebre, construído a mais de 2.400 metros de altitude com sofisticado domínio de cantaria em pedra."
+      }
+    ],
+    "8": [
+      {
+        "text": "Qual conquistador espanhol liderou a expedição militar que, valendo-se de armas de fogo, cavalos, alianças com povos rivais e epidemias de varíola, conquistou o Império Asteca em 1521?",
+        "correct": "Hernán Cortés.",
+        "distractors": [
+          "Francisco Pizarro.",
+          "Cristóvão Colombo.",
+          "Américo Vespúcio."
+        ],
+        "explanation": "Cortés aliou-se a povos subjugados pelos astecas (como os tlaxcaltecas) e sitiou Tenochtitlán, capturando o imperador Cuauhtémoc em 1521."
+      },
+      {
+        "text": "Na colonização da América Espanhola, a instituição compulsória da MITA consistia em:",
+        "correct": "O recrutamento forçado e temporário de aldeias indígenas para o trabalho nas minas de prata e ouro (como em Potosí) mediante remuneração irrisória.",
+        "distractors": [
+          "A concessão de terras privadas e cidadania plena aos chefes nativos.",
+          "O pagamento em barras de prata feito pelos espanhóis para alugar templos maias.",
+          "A libertação total de todos os escravizados e servos da América."
+        ],
+        "explanation": "A mita espanhola adaptou uma antiga tradição inca, transformando-a em trabalho extenuante e mortal de milhares de indígenas nas minas de prata de Potosí."
+      },
+      {
+        "text": "Qual era o papel da ENCOMIENDA nas colônias espanholas da América?",
+        "correct": "A Coroa concedia a um colono (encomendero) o direito de explorar o trabalho e recolher tributos de uma comunidade indígena sob pretexto de evangelizá-los e protegê-los.",
+        "distractors": [
+          "Um tratado militar assinado para expulsar piratas ingleses do Caribe.",
+          "O imposto aduaneiro cobrado sobre as caravelas de comércio com a Ásia.",
+          "A eleição de prefeitos indígenas para os cabildos municipais."
+        ],
+        "explanation": "A encomienda submetia os nativos ao trabalho compulsório em lavouras e minas em troca de uma 'catequese' religiosa frequentemente coercitiva."
+      },
+      {
+        "text": "Na pirâmide social da América espanhola colonial, os CHAPETONES e os CRIOLLOS correspondiam, respectivamente, a:",
+        "correct": "Espanhóis nascidos na Espanha que ocupavam os altos cargos da administração; e filhos de espanhóis nascidos na América, donos de terras e minas.",
+        "distractors": [
+          "Indígenas catequizados e africanos livres.",
+          "Piratas holandeses e marinheiros portugueses legalizados.",
+          "Sacerdotes jesuítas e militares mercenários italianos."
+        ],
+        "explanation": "Os chapetones controlavam os postos de vice-reis e ouvidores da Coroa, enquanto os criollos eram a elite econômica agrária nascida na colônia."
+      }
+    ],
+    "9": [
+      {
+        "text": "Na África Ocidental medieval, o Império do Mali destacou-se pela riqueza extraordinária e pelo florescimento cultural. Qual soberano realizou uma famosa peregrinação a Meca em 1324 distribuindo ouro?",
+        "correct": "Mansa Musa.",
+        "distractors": [
+          "Suni Ali.",
+          "Askia Mohammed.",
+          "Shaka Zulu."
+        ],
+        "explanation": "Mansa Musa, imperador do Mali, viajou a Meca com uma comitiva suntuosa e tanto ouro que alterou temporariamente a cotação do metal no Egito e no Mediterrâneo."
+      },
+      {
+        "text": "A cidade histórica de Timbuktu, integrada às rotas caravanistas transaarianas, notabilizou-se como um dos maiores centros mundiais de:",
+        "correct": "Estudos islâmicos, comércio de ouro, sal e manuscritos raros, abrigando a famosa Universidade de Sankoré.",
+        "distractors": [
+          "Indústrias têxteis mecânicas a vapor.",
+          "Construção de navios de guerra para navegar no oceano Antártico.",
+          "Mineração de carvão mineral sob controle europeu."
+        ],
+        "explanation": "Timbuktu tornou-se polo intelectual do Islã na África subsaariana, reunindo milhares de estudantes e volumosas bibliotecas de tratados científicos e jurídicos."
+      },
+      {
+        "text": "Como funcionava o comércio mercantilista de escravizados no tráfico transatlântico a partir do século XVI?",
+        "correct": "Mercadores europeus trocavam armas de fogo, tecidos, tabaco e aguardente por cativos na costa africana, transportando-os forçadamente em navios negreiros para a América.",
+        "distractors": [
+          "Trabalhadores africanos viajavam voluntariamente com contratos assalariados de 1 ano.",
+          "A Coroa espanhola proibia qualquer transporte de escravizados pelo Atlântico.",
+          "Os africanos compravam as caravelas dos europeus para fundar colônias na Europa."
+        ],
+        "explanation": "O tráfico negreiro foi uma engrenagem mercantilista de enorme rentabilidade que desestruturou sociedades africanas e submeteu milhões à escravidão forçada nas Américas."
+      },
+      {
+        "text": "As embarcações precárias e insalubres utilizadas para transportar seres humanos escravizados da África para os portos do Brasil e das Antilhas eram chamadas de:",
+        "correct": "Navios negreiros (ou tumbeiros).",
+        "distractors": [
+          "Caravelas de luxo.",
+          "Galeões mercantes neutros.",
+          "Fragatas de instrução."
+        ],
+        "explanation": "Recebiam o nome trágico de tumbeiros devido à altíssima mortalidade causada pela superlotação, fome, sede, maus-tratos e doenças infecciosas na travessia."
+      }
+    ],
+    "10": [
+      {
+        "text": "Para organizar a colonização do Brasil a partir de 1534 sem despender recursos diretos da Coroa, o rei Dom João III dividiu a costa brasileira no sistema de:",
+        "correct": "Capitanias Hereditárias, doadas a fidalgos donatários com amplos poderes de povoamento e cultivo.",
+        "distractors": [
+          "Províncias republicanas com presidentes eleitos por voto popular.",
+          "Distritos federais submetidos a governadores franceses.",
+          "Feudos monásticos geridos exclusivamente pela Ordem dos Franciscanos."
+        ],
+        "explanation": "Portugal dividiu o litoral em 15 faixas de terra concedidas a 12 capitães donatários, que arcavam com os custos da colonização em troca de direitos hereditários."
+      },
+      {
+        "text": "A base econômica da colonização portuguesa no Nordeste brasileiro durante os séculos XVI e XVII fundamentava-se na montagem da 'plantation' açucareira, caracterizada por:",
+        "correct": "Latifúndio (grandes propriedades), monocultura da cana-de-açúcar, mão de obra escravizada e produção voltada para o mercado externo europeu.",
+        "distractors": [
+          "Pequena propriedade familiar policultora com trabalhadores assalariados.",
+          "Produção exclusiva de trigo e cevada para consumo do mercado local.",
+          "Extração mecanizada de minério de ferro com robôs industriais."
+        ],
+        "explanation": "O engenho de açúcar funcionava sob o tripé da plantation: grandes extensões de terra (latifúndio), monocultura canavieira, escravização e exportação."
+      },
+      {
+        "text": "Qual foi o principal e mais duradouro foco de resistência armada contra a escravidão no Brasil colonial, situado na Serra da Barriga (Alagoas)?",
+        "correct": "O Quilombo dos Palmares, liderado por Ganga Zumba e Zumbi.",
+        "distractors": [
+          "O Quilombo do Campo Grande.",
+          "A Confederação dos Tamoios.",
+          "A Revolta da Chibata."
+        ],
+        "explanation": "Palmares reuniu milhares de escravizados fugidos, indígenas e pessoas marginalizadas durante quase um século, simbolizando a resistência à opressão colonial."
+      },
+      {
+        "text": "Em 1549, com o objetivo de centralizar a administração e prestar apoio militar aos donatários, a Coroa portuguesa criou o Governo-Geral, estabelecendo a primeira capital do Brasil em:",
+        "correct": "Salvador (Bahia), tendo Tomé de Sousa como primeiro governador-geral.",
+        "distractors": [
+          "Rio de Janeiro, tendo Mem de Sá como primeiro governador.",
+          "São Paulo de Piratininga, fundada por jesuítas.",
+          "Recife, governada pelo príncipe Maurício de Nassau."
+        ],
+        "explanation": "Tomé de Sousa desembarcou na Baía de Todos-os-Santos em 1549 para fundar Salvador, a primeira sede político-administrativa do Estado do Brasil."
+      }
+    ],
+    "11": [
+      {
+        "text": "A descoberta de jazidas de ouro no final do século XVII na região das 'Minas Gerais' provocou transformações decisivas na colônia brasileira, como:",
+        "correct": "A interiorização da ocupação territorial, o crescimento populacional, o surgimento de uma malha urbana no interior e a transferência da capital de Salvador para o Rio de Janeiro em 1763.",
+        "distractors": [
+          "O esvaziamento total do Brasil e o retorno de 90% dos colonos para Portugal.",
+          "A proibição do comércio de açúcar e a demolição de todos os portos litorâneos.",
+          "A anexação de Minas Gerais pelo império britânico sem reação portuguesa."
+        ],
+        "explanation": "O ciclo do ouro deslocou o eixo econômico e demográfico do Nordeste para o Centro-Sul, levando a Coroa a mudar a capital para o Rio de Janeiro para melhor fiscalizar os embarques."
+      },
+      {
+        "text": "Qual imposto cobrado pela Coroa portuguesa sobre o ouro extraído na região das Minas Gerais correspondia a 20% (um quinto) de todo o metal fundido nas Casas de Fundição?",
+        "correct": "O Quinto.",
+        "distractors": [
+          "A Derrama.",
+          "O Dízimo real.",
+          "A Finta."
+        ],
+        "explanation": "O quinto era a retenção legal de 20% do ouro transformado em barras com o selo real nas Casas de Fundição para combater o contrabando do ouro em pó."
+      },
+      {
+        "text": "O movimento separatista conspiratório ocorrido em Vila Rica em 1789, influenciado pelo Iluminismo e pela Independência dos Estados Unidos, motivado pela ameaça da DERRAMA, foi:",
+        "correct": "A Inconfidência Mineira (ou Conjuração Mineira).",
+        "distractors": [
+          "A Conjuração Baiana.",
+          "A Revolta de Felipe dos Santos.",
+          "A Guerra dos Mascates."
+        ],
+        "explanation": "A elite mineira rebelou-se contra os abusos fiscais da Coroa (especialmente a iminente cobrança forçada de dívidas do ouro, a derrama), tendo Tiradentes como mártir."
+      },
+      {
+        "text": "Nas artes coloniais de Minas Gerais no século XVIII, qual escultor e arquiteto consagrou-se como o expoente máximo do Barroco brasileiro com obras em pedra-sabão em Congonhas do Campo?",
+        "correct": "Antônio Francisco Lisboa (o Aleijadinho).",
+        "distractors": [
+          "Mestre Ataíde.",
+          "Victor Meirelles.",
+          "Benedito Calixto."
+        ],
+        "explanation": "Aleijadinho esculpiu os Doze Profetas e os passos da Paixão em pedra-sabão e madeira no Santuário de Bom Jesus de Matosinhos, marcando a estética barroca nacional."
+      }
+    ]
+  },
+  "geografia": {
+    "1": [
+      {
+        "text": "Devido à sua vasta extensão leste-oeste (longitudinal), o território brasileiro é cortado por quatro fusos horários oficiais. Em relação ao Meridiano de Greenwich (GMT/UTC), todos os fusos brasileiros estão situados a:",
+        "correct": "Oeste, possuindo horários atrasados em relação a Greenwich (UTC-2, UTC-3, UTC-4 e UTC-5).",
+        "distractors": [
+          "Leste, com horários adiantados em relação ao meridiano de referência.",
+          "Norte, alinhados com o fuso padrão do Círculo Polar Ártico.",
+          "Sul, compartilhando exatamente o mesmo horário que o Japão."
+        ],
+        "explanation": "Como o Brasil situa-se integralmente no hemisfério ocidental (a oeste de Greenwich), todos os fusos têm horas negativas (-2h Noronha, -3h Brasília, -4h Manaus, -5h Acre)."
+      },
+      {
+        "text": "O Brasil possui duas propostas consagradas de divisão regional: a oficial do IBGE em 5 macrorregiões e a divisão geoeconômica de Pedro Pinchas Geiger em 3 complexos. Qual é o critério diferenciador da divisão de Geiger?",
+        "correct": "Agrupa o país em Amazônia, Nordeste e Centro-Sul segundo características históricas e socioeconômicas, sem respeitar os limites políticos dos estados.",
+        "distractors": [
+          "Divide o território em 10 regiões de mesmo tamanho territorial exato.",
+          "Utiliza apenas a altitude das serras para separar os estados.",
+          "Exclui a Região Sudeste de qualquer classificação econômica."
+        ],
+        "explanation": "Geiger baseou-se no desenvolvimento socioeconômico e no processo de formação histórica, cortando fronteiras estaduais (ex: norte de Minas no Nordeste)."
+      },
+      {
+        "text": "Qual é o fuso horário oficial que rege a hora da capital federal (Brasília) e da maior parte dos estados das regiões Sul, Sudeste e Nordeste?",
+        "correct": "Fuso de Brasília (UTC-3), situado 3 horas atrasado em relação a Greenwich.",
+        "distractors": [
+          "Fuso insular (UTC-2).",
+          "Fuso ocidental (UTC-4).",
+          "Fuso do Acre (UTC-5)."
+        ],
+        "explanation": "A hora oficial do Brasil é a de Brasília, correspondente ao fuso de 45° a oeste de Greenwich (UTC-3)."
+      },
+      {
+        "text": "Qual dos seguintes países da América do Sul NÃO faz fronteira terrestre com o território brasileiro?",
+        "correct": "Chile e Equador.",
+        "distractors": [
+          "Argentina e Uruguai.",
+          "Colômbia e Peru.",
+          "Bolívia e Paraguai."
+        ],
+        "explanation": "De todos os países sul-americanos, apenas o Chile e o Equador não fazem fronteira física com o Brasil."
+      }
+    ],
+    "2": [
+      {
+        "text": "Na classificação moderna do relevo brasileiro proposta pelo geógrafo Jurandyr Ross, o território do Brasil é dividido em quais três grandes macroformas?",
+        "correct": "Planaltos, Depressões e Planícies.",
+        "distractors": [
+          "Montanhas jovens, Cordilheiras vulcânicas e Fossas marinhas.",
+          "Falésias glaciais, Fiordes e Chapadas polares.",
+          "Desertos de dunas, Savanas e Estepes áridas."
+        ],
+        "explanation": "A classificação de Ross baseia-se em dados de altimetria e geomorfologia do Projeto Radambrasil, classificando o relevo em planaltos, depressões e planícies."
+      },
+      {
+        "text": "Qual tipo climático predomina na Região Norte do Brasil, caracterizado por temperaturas médias elevadas o ano todo e chuvas abundantes e constantes (baixo índice de estiagem)?",
+        "correct": "Clima Equatorial Úmido.",
+        "distractors": [
+          "Clima Semiárido.",
+          "Clima Subtropical de altitude.",
+          "Clima Mediterrâneo seco."
+        ],
+        "explanation": "O clima equatorial possui alta pluviosidade decorrente da convergência dos ventos alísios e da evapotranspiração da Floresta Amazônica."
+      },
+      {
+        "text": "Considerada a maior bacia hidrográfica exclusivamente brasileira (que nasce e deságua integralmente no território nacional), destaca-se a:",
+        "correct": "Bacia do Rio Tocantins-Araguaia.",
+        "distractors": [
+          "Bacia Amazônica.",
+          "Bacia do Rio da Prata.",
+          "Bacia do Rio Paraguai."
+        ],
+        "explanation": "A Bacia Amazônica é internacional (abrange vários países andinos). A bacia 100% contida no Brasil de maior porte é a do Tocantins-Araguaia."
+      },
+      {
+        "text": "O Rio São Francisco é historicamente conhecido como o 'Rio da Integração Nacional' porque:",
+        "correct": "Nasce em Minas Gerais (Sudeste) e percorre o semiárido nordestino até a foz, integrando rotas humanas e viabilizando a agricultura irrigada no Sertão.",
+        "distractors": [
+          "Atravessa toda a Cordilheira dos Andes ligando o Brasil ao Oceano Pacífico.",
+          "É o único rio congelado da América do Sul utilizado para trenós.",
+          "Foi construído de forma totalmente artificial por escavadeiras no século XX."
+        ],
+        "explanation": "O 'Velho Chico' nasce na Serra da Canastra (MG) e flui para o Nordeste, sendo vital para geração de energia, navegação e irrigação em Petrolina/Juazeiro."
+      }
+    ],
+    "3": [
+      {
+        "text": "A transição demográfica vivenciada pelo Brasil nas últimas décadas caracteriza-se principalmente por:",
+        "correct": "Queda acentuada da taxa de fecundidade e aumento da expectativa de vida, resultando no envelhecimento progressivo da população brasileira.",
+        "distractors": [
+          "Aumento expressivo do número de nascimentos para mais de 6 filhos por mulher.",
+          "Redução drástica da expectativa de vida para menos de 45 anos nas cidades.",
+          "Estagnação total com emigração de metade dos jovens para outros continentes."
+        ],
+        "explanation": "A taxa de fecundidade caiu para menos de 1,7 filho por mulher e a longevidade aumentou, estreitando a base da pirâmide e alargando o topo (idosos)."
+      },
+      {
+        "text": "Em demografia, qual é a diferença entre os conceitos de país POPULOSO e país POVOADO?",
+        "correct": "Populoso refere-se ao número total absoluto de habitantes; povoado refere-se à densidade demográfica (habitantes por km²).",
+        "distractors": [
+          "Povoado significa que todos os habitantes moram na zona rural.",
+          "Populoso é o país que não possui nenhuma fronteira com vizinhos.",
+          "Ambos os termos são sinônimos e indicam apenas a taxa de natalidade."
+        ],
+        "explanation": "O Brasil é um país muito populoso (mais de 200 milhões de pessoas), mas pouco povoado (baixa densidade média de ~25 hab/km² decorrente do território gigante)."
+      },
+      {
+        "text": "O indicador socioeconômico global elaborado pela ONU que sintetiza saúde (esperança de vida), educação (anos de escolaridade) e renda per capita é o:",
+        "correct": "IDH (Índice de Desenvolvimento Humano).",
+        "distractors": [
+          "PIB nominal.",
+          "Coeficiente de Gini.",
+          "Taxa de mortalidade infantil."
+        ],
+        "explanation": "O IDH varia de 0 a 1 e mede a qualidade de vida integrando longevidade, acesso ao conhecimento e padrão de vida digno."
+      },
+      {
+        "text": "O movimento migratório diário em que trabalhadores e estudantes se deslocam entre sua cidade de moradia e outra cidade onde trabalham ou estudam, retornando à noite, chama-se:",
+        "correct": "Migração pendular.",
+        "distractors": [
+          "Êxodo rural.",
+          "Transumância sazonal.",
+          "Nomadismo pastoril."
+        ],
+        "explanation": "A migração pendular é o fluxo diário de ida e volta, muito frequente entre municípios periféricos ('cidades-dormitório') e grandes centros metropolitanos."
+      }
+    ],
+    "4": [
+      {
+        "text": "O intenso fluxo migratório em que milhões de trabalhadores rurais deixaram o campo em direção às cidades brasileiras entre as décadas de 1960 e 1980 é denominado:",
+        "correct": "Êxodo rural, impulsionado pela mecanização agrícola e atração de empregos na indústria e serviços urbanos.",
+        "distractors": [
+          "Migração de retorno ao campo.",
+          "Colonização de fronteiras florestais.",
+          "Transumância de inverno."
+        ],
+        "explanation": "A concentração de terras e tratores no campo expulsou camponeses, enquanto o crescimento industrial de capitais como São Paulo atraiu essa mão de obra."
+      },
+      {
+        "text": "Quando duas ou mais cidades vizinhas crescem territorialmente até que suas manchas urbanas se encontram fisicamente, formando uma malha urbana contínua, ocorre o fenômeno da:",
+        "correct": "Conurbação.",
+        "distractors": [
+          "Macrocefalia agrária.",
+          "Gentrificação ecológica.",
+          "Segregação continental."
+        ],
+        "explanation": "Conurbação é a união física e funcional do tecido urbano de municípios contíguos, muito comum nas regiões metropolitanas."
+      },
+      {
+        "text": "O termo 'Metrópole' no contexto da hierarquia urbana brasileira designa:",
+        "correct": "Uma grande cidade que centraliza serviços avançados, hospitais de alta complexidade e comando econômico, exercendo influência sobre ampla rede urbana.",
+        "distractors": [
+          "Uma pequena vila rural que não possui conexão rodoviária com outros locais.",
+          "Qualquer cidade costeira voltada exclusivamente para pesca artesanal.",
+          "Um bairro periférico que não possui iluminação pública."
+        ],
+        "explanation": "Metrópoles são centros urbanos de topo na hierarquia, polarizando decisões financeiras, tecnológicas e fluxos de pessoas de estados ou regiões inteiras."
+      },
+      {
+        "text": "Entre os problemas socioambientais frequentes nas grandes cidades brasileiras resultantes do crescimento urbano acelerado e sem planejamento, destaca-se:",
+        "correct": "Ocupação irregular de encostas sujeitas a deslizamentos, deficiência no saneamento básico e impermeabilização do solo gerando enchentes.",
+        "distractors": [
+          "A falta total de construções de concreto nas capitais.",
+          "O excesso de fazendas de café dentro das avenidas centrais.",
+          "A proliferação de geleiras permanentes nos viadutos."
+        ],
+        "explanation": "A urbanização desordenada gera déficit habitacional, favelização em áreas de risco e alagamentos causados pela falta de drenagem e asfalto impermeável."
+      }
+    ],
+    "5": [
+      {
+        "text": "A Zona Franca de Manaus (ZFM), criada em 1967 no estado do Amazonas, teve como objetivo primordial de política regional:",
+        "correct": "Atrair indústrias mediante incentivos fiscais para integrar a Amazônia à economia nacional e gerar empregos e povoamento estratégico.",
+        "distractors": [
+          "Impedir a navegação de embarcações comerciais nos rios amazônicos.",
+          "Transformar a floresta em uma plantação exclusiva de cana-de-açúcar.",
+          "Exportar toda a madeira nativa sem fiscalização tributária."
+        ],
+        "explanation": "A ZFM estabeleceu um polo industrial (eletroeletrônicos, motocicletas) sustentado por isenções tributárias para fomentar o desenvolvimento na Amazônia Ocidental."
+      },
+      {
+        "text": "A faixa territorial no sul e leste da Amazônia que concentra os maiores índices de queimadas e desmatamento devido ao avanço da pecuária e da soja é conhecida como:",
+        "correct": "Arco do Desmatamento (ou Arco das Queimadas).",
+        "distractors": [
+          "Cinturão Polar.",
+          "Polígono das Secas.",
+          "Faixa Litorânea da Mata Atlântica."
+        ],
+        "explanation": "O Arco do Desmatamento estende-se do Maranhão e Pará até Rondônia e Acre, pressionado pela fronteira agropecuária e extração madeireira."
+      },
+      {
+        "text": "Na Floresta Amazônica, os rios desempenham um papel de transporte e circulação tão vital para as comunidades ribeirinhas que são chamados popularmente de:",
+        "correct": "'Estradas de água' (hidrovias naturais).",
+        "distractors": [
+          "Canais artificiais de irrigação.",
+          "Trilhas de terra batida.",
+          "Fronteiras inacessíveis."
+        ],
+        "explanation": "Em grande parte da Amazônia a malha rodoviária é escassa, sendo os barcos e rios o principal meio de deslocamento, comércio e acesso a serviços."
+      },
+      {
+        "text": "Qual é o maior estado brasileiro em extensão territorial, localizado integralmente na Região Norte?",
+        "correct": "Amazonas.",
+        "distractors": [
+          "Pará.",
+          "Mato Grosso.",
+          "Minas Gerais."
+        ],
+        "explanation": "O Amazonas possui mais de 1,5 milhão de km², sendo o estado mais extenso da federação brasileira."
+      }
+    ],
+    "6": [
+      {
+        "text": "A Região Nordeste do Brasil é tradicionalmente subdividida em quatro sub-regiões geográficas com características naturais distintas. Quais são essas quatro sub-regiões?",
+        "correct": "Zona da Mata, Agreste, Sertão e Meio-Norte.",
+        "distractors": [
+          "Amazônia, Centro-Sul, Pampa e Pantanal.",
+          "Litoral Leste, Chapada Diamantina, Jalapão e Planalto Central.",
+          "Zona Canavieira, Zona Cafeeira, Zona Metalúrgica e Zona Portuária."
+        ],
+        "explanation": "A geografia divide o Nordeste em 4 sub-regiões faixadas de leste para oeste: Zona da Mata, Agreste, Sertão e Meio-Norte."
+      },
+      {
+        "text": "A sub-região nordestina que funciona como faixa de transição física e humana entre a Zona da Mata úmida e o Sertão semiárido é:",
+        "correct": "O Agreste, caracterizado pela policultura alimentar, feiras comerciais e pecuária leiteira.",
+        "distractors": [
+          "O Meio-Norte.",
+          "O Pantanal.",
+          "A restinga salina."
+        ],
+        "explanation": "O Agreste é a zona de transição climática e econômica, com relevo do Planalto da Borborema e agricultura diversificada."
+      },
+      {
+        "text": "O clima Semiárido presente no Sertão nordestino decorre de fatores atmosféricos e do relevo. Qual feição do relevo atua como barreira natural contra as massas de ar úmidas do oceano?",
+        "correct": "O Planalto da Borborema.",
+        "distractors": [
+          "A Serra do Mar.",
+          "A Cordilheira dos Andes.",
+          "O Pico da Neblina."
+        ],
+        "explanation": "O relevo da Borborema provoca chuvas orográficas na encosta oriental, fazendo o ar descer seco sobre o Sertão (efeito de sombra de chuva)."
+      },
+      {
+        "text": "Na sub-região do Meio-Norte (Maranhão e Piauí), destaca-se a formação vegetal de transição para a Amazônia rica em palmeiras de babaçu e carnaúba, denominada:",
+        "correct": "Mata dos Cocais.",
+        "distractors": [
+          "Manguezal salino.",
+          "Floresta de Araucárias.",
+          "Campos limpos."
+        ],
+        "explanation": "A Mata dos Cocais é uma mata de transição dominada por babaçu e carnaúba, cuja exploração extrativista é vital para milhares de famílias de quebradeiras de coco."
+      }
+    ],
+    "7": [
+      {
+        "text": "A construção e inauguração de Brasília em 1960 durante o governo do presidente Juscelino Kubitschek (JK) teve como impacto geoestratégico central:",
+        "correct": "Promover a interiorização do desenvolvimento e do povoamento, integrando o Centro-Oeste à malha rodoviária e econômica nacional.",
+        "distractors": [
+          "Transferir todo o parque industrial automotivo para o deserto do Saara.",
+          "Isolar os órgãos do governo no litoral fluminense.",
+          "Proibir a produção de grãos em todo o território nacional."
+        ],
+        "explanation": "A interiorização da capital visava integrar as regiões do interior, povoar o Centro-Oeste e afastar o poder central das pressões urbanas do Rio de Janeiro."
+      },
+      {
+        "text": "A Região Centro-Oeste transformou-se em um dos principais polos mundiais do agronegócio moderno. Quais são as duas atividades produtivas dominantes nessa expansão?",
+        "correct": "A agricultura mecanizada de grãos (principalmente soja e milho) e a pecuária bovina de corte.",
+        "distractors": [
+          "O plantio intensivo de maçãs e a criação de ovelhas polares.",
+          "A extração exclusiva de sal marinho em tanques costeiros.",
+          "A produção de cacau e pesca industrial em alto-mar."
+        ],
+        "explanation": "Com a correção da acidez do solo do Cerrado por calagem e avanço tecnológico da Embrapa, o Centro-Oeste lidera a safra de soja e o rebanho bovino."
+      },
+      {
+        "text": "O rápido avanço da fronteira agrícola sobre a vegetação nativa do Centro-Oeste gerou severos impactos ambientais, destacando-se:",
+        "correct": "A fragmentação da biodiversidade do bioma Cerrado, assoreamento de nascentes e contaminação de lençóis freáticos por defensivos agrícolas.",
+        "distractors": [
+          "A formação de tsunamis artificiais no Rio Paraná.",
+          "O congelamento das pastagens pelo surgimento de geleiras.",
+          "A total regeneração espontânea das matas sem nenhuma intervenção."
+        ],
+        "explanation": "O desmatamento do Cerrado reduz a capacidade de recarga dos aquíferos e afeta bacias hidrográficas cruciais que abastecem o país."
+      },
+      {
+        "text": "Qual dos seguintes estados NÃO integra a Região Centro-Oeste do Brasil?",
+        "correct": "Tocantins (que pertence à Região Norte).",
+        "distractors": [
+          "Goiás.",
+          "Mato Grosso.",
+          "Mato Grosso do Sul."
+        ],
+        "explanation": "A Região Centro-Oeste é composta por Mato Grosso, Mato Grosso do Sul, Goiás e o Distrito Federal. Tocantins foi criado em 1988 e integra a Região Norte."
+      }
+    ],
+    "8": [
+      {
+        "text": "As regiões Sudeste e Sul concentram a maior parcela da produção industrial e dos fluxos financeiros do Brasil. Qual complexo portuário paulista é o mais movimentado da América Latina?",
+        "correct": "Porto de Santos.",
+        "distractors": [
+          "Porto de Paranaguá.",
+          "Porto de Suape.",
+          "Porto de Itaqui."
+        ],
+        "explanation": "O Porto de Santos é o principal escoadouro de safras agrícolas e manufaturas do país, liderando a movimentação de contêineres na América Latina."
+      },
+      {
+        "text": "O clima Subtropical, caracterizado pelas quatro estações bem definidas, chuvas regulares e invernos mais frios com ocorrência ocasional de geadas, predomina em qual região brasileira?",
+        "correct": "Região Sul (e sul do estado de São Paulo).",
+        "distractors": [
+          "Região Norte amazônica.",
+          "Região Nordeste sertaneja.",
+          "Região Centro-Oeste."
+        ],
+        "explanation": "Por estar ao sul do Trópico de Capricórnio, a Região Sul possui clima subtropical com invernos amenos ou frios e amplitude térmica anual acentuada."
+      },
+      {
+        "text": "No estado do Paraná e em Santa Catarina, a formação florestal histórica associada ao clima subtropical e à exploração de madeira e pinhão é a:",
+        "correct": "Mata das Araucárias (ou Floresta Ombrófila Mista).",
+        "distractors": [
+          "Caatinga xerófila.",
+          "Manguezal estuarino.",
+          "Cerradão tropical."
+        ],
+        "explanation": "A Floresta com Araucária (pinheiro-do-paraná) cobria amplas áreas do planalto meridional, hoje intensamente reduzida por ciclos de corte e agricultura."
+      },
+      {
+        "text": "A agropecuária da Região Sul destaca-se no cenário nacional pela alta produtividade em lavouras mecanizadas e cadeias agroindustriais de:",
+        "correct": "Soja, trigo, arroz irrigado e criação integrada de aves e suínos.",
+        "distractors": [
+          "Borracha natural e castanha-do-pará em florestas alagadas.",
+          "Cana-de-açúcar de sequeiro e sisal no semiárido.",
+          "Extração de açaí selvagem em igarapés costeiros."
+        ],
+        "explanation": "O Sul é líder na produção de trigo, arroz (no Rio Grande do Sul) e polos integrados de avicultura e suinocultura com frigoríficos de padrão mundial."
+      }
+    ]
+  },
+  "portugues": {
+    "1": [
+      {
+        "text": "No gênero jornalístico NOTÍCIA, o primeiro parágrafo que resume as informações essenciais do acontecimento respondendo a 'Quem? O quê? Onde? Quando? Por quê? Como?' é chamado de:",
+        "correct": "Lide (ou lead).",
+        "distractors": [
+          "Manchete sensacionalista.",
+          "Epígrafe literária.",
+          "Editorial de opinião."
+        ],
+        "explanation": "O lide apresenta o núcleo dos fatos no início do texto noticioso, permitindo ao leitor apreender os elementos centrais do ocorrido."
+      },
+      {
+        "text": "A estrutura textual padrão da notícia jornalística, em que as informações mais importantes aparecem no início e os detalhes secundários nos parágrafos finais, segue o modelo da:",
+        "correct": "Pirâmide invertida.",
+        "distractors": [
+          "Narrativa circular mitológica.",
+          "Estrutura poética em redondilhas.",
+          "Crônica epistolar."
+        ],
+        "explanation": "A técnica da pirâmide invertida organiza a notícia por ordem decrescente de relevância (mais importante no topo, detalhes no desfecho)."
+      },
+      {
+        "text": "Qual das seguintes frases apresenta a linguagem objetiva e impessoal recomendada para uma notícia jornalística?",
+        "correct": "'O instituto de meteorologia registrou temperatura de 12 °C na capital na madrugada de terça-feira.'",
+        "distractors": [
+          "'Acho que aquele frio horroroso de terça-feira congelou os ossos de todo mundo na cidade.'",
+          "'Eu fiquei com muita preguiça de sair da cama naquele dia terrivelmente gelado.'",
+          "'Foi uma madrugada espetacular e maravilhosa como nunca vi na minha vida inteira.'"
+        ],
+        "explanation": "O texto noticioso exige objetividade, precisão de fatos e impessoalidade em terceira pessoa, evitando juízos emocionais subjetivos do autor."
+      },
+      {
+        "text": "A frase curta, em destaque tipográfico no topo da notícia, elaborada para chamar a atenção do leitor e sintetizar o fato principal é a:",
+        "correct": "Manchete (ou título principal).",
+        "distractors": [
+          "Rubrica teatral.",
+          "Sinopse cinematográfica.",
+          "Tese dissertativa."
+        ],
+        "explanation": "A manchete sintetiza o tema central de forma atrativa e informativa na abertura do texto jornalístico."
+      }
+    ],
+    "2": [
+      {
+        "text": "Qual das seguintes frases classifica-se como uma FRASE IMPERATIVA, expressando uma ordem, pedido ou orientação direta ao interlocutor?",
+        "correct": "'Guarde os materiais escolares em sua mochila antes de sair da sala.'",
+        "distractors": [
+          "'Os alunos guardaram os materiais na mochila com bastante cuidado.'",
+          "'Você guardou todos os materiais na mochila antes de sair?'",
+          "'Que organizados ficaram os materiais nesta mochila!'"
+        ],
+        "explanation": "Frases imperativas contêm verbos no modo imperativo ('guarde', 'leia', 'venha') para orientar, ordenar ou fazer um pedido ao receptor."
+      },
+      {
+        "text": "Assinale a frase em que a VÍRGULA foi empregada corretamente para isolar um VOCATIVO (termo de chamamento):",
+        "correct": "'Professor, podemos iniciar a resolução do exercício agora?'",
+        "distractors": [
+          "'O professor, de matemática explicou a matéria com clareza.'",
+          "'Eles compraram cadernos, lápis borrachas e réguas.'",
+          "'Naquela manhã fria todos, chegaram adiantados ao colégio.'"
+        ],
+        "explanation": "O vocativo é o chamamento direto ao interlocutor e deve ser obrigatoriamente separado por vírgula em qualquer posição da oração."
+      },
+      {
+        "text": "Em qual das seguintes orações a vírgula foi utilizada para isolar um APOSTO EXPLICATIVO?",
+        "correct": "'Dom Pedro II, imperador do Brasil durante quase meio século, era um apaixonado pela ciência.'",
+        "distractors": [
+          "'Chegamos cedo, arrumamos a sala e começamos o debate.'",
+          "'Ele correu tanto, que perdeu o fôlego antes da chegada.'",
+          "'Se chover forte à tarde, não iremos ao parque municipal.'"
+        ],
+        "explanation": "O aposto explicativo ('imperador do Brasil durante quase meio século') explica ou detalha o termo anterior e vem isolado entre vírgulas."
+      },
+      {
+        "text": "Qual frase apresenta pontuação que expressa surpresa, espanto ou admiração (frase exclamativa)?",
+        "correct": "'Como este pôr do sol na praia de Ipanema está deslumbrante!'",
+        "distractors": [
+          "'O pôr do sol na praia ocorre por volta das dezoito horas.'",
+          "'A que horas o sol vai se pôr na praia de Ipanema hoje?'",
+          "'Observe o pôr do sol e anote suas impressões no caderno.'"
+        ],
+        "explanation": "A frase exclamativa veicula estados emotivos de admiração ou espanto e encerra-se com o ponto de exclamação (!)."
+      }
+    ],
+    "3": [
+      {
+        "text": "Na oração: 'Aquele velho casarão colonial abrigava memórias inesquecíveis da infância', os termos destacados 'velho', 'colonial' e 'inesquecíveis' exercem a função gramatical de:",
+        "correct": "Adjetivos, que caracterizam os substantivos 'casarão' e 'memórias'.",
+        "distractors": [
+          "Verbos no particípio passado em tempos compostos.",
+          "Advérbios de modo modificando o verbo abrigar.",
+          "Preposições essenciais que ligam orações subordinadas."
+        ],
+        "explanation": "Adjetivos qualificam, especificam ou caracterizam os substantivos com os quais concordam em gênero e número."
+      },
+      {
+        "text": "Qual das seguintes alternativas apresenta o plural CORRETO do substantivo composto 'guarda-chuva' e do adjetivo 'azul-escuro'?",
+        "correct": "Guarda-chuvas e azul-escuro (invariável).",
+        "distractors": [
+          "Guardas-chuvas e azuis-escuros.",
+          "Guarda-chuva e azuis-escuro.",
+          "Guardas-chuva e azul-escuros."
+        ],
+        "explanation": "Em 'guarda-chuva', 'guarda' é forma verbal (invariável), variando apenas o substantivo 'chuvas'. Em adjetivos compostos de cores onde o segundo termo é adjetivo, varia apenas o segundo (exceto regras especiais), mas azul-escuro no plural faz azuis-escuros se flexionado normalmente."
+      },
+      {
+        "text": "Em um texto narrativo, os adjetivos e locuções adjetivas desempenham papel expressivo fundamental para:",
+        "correct": "Construir a atmosfera da cena, caracterizar a personalidade física e psicológica dos personagens e envolver o leitor.",
+        "distractors": [
+          "Eliminar a necessidade de colocar verbos de ação na história.",
+          "Garantir que o texto seja classificado como documento jurídico formal.",
+          "Substituir todos os pontos finais por travessões de diálogo."
+        ],
+        "explanation": "A adjetivação rica qualifica o espaço e o perfil psicológico das personagens, tornando a descrição mais vívida e sensorial."
+      },
+      {
+        "text": "Qual das opções contém apenas substantivos ABSTRATOS (que nomeiam sentimentos, ações, qualidades ou estados que dependem de outro ser para existir)?",
+        "correct": "Coragem, saudade, beleza e esperança.",
+        "distractors": [
+          "Caderno, relógio, árvore e lápis.",
+          "Pedra, rio, castelo e montanha.",
+          "Ouro, prata, ferro e cobre."
+        ],
+        "explanation": "Substantivos abstratos designam sentimentos, sensações, qualidades e ações que não existem independentemente de um portador."
+      }
+    ],
+    "4": [
+      {
+        "text": "Analise a oração: 'Durante a reunião escolar, os professores e os alunos debateram novas propostas com entusiasmo.' O sujeito desta oração classifica-se como:",
+        "correct": "Sujeito composto, pois possui dois núcleos substantivos: 'professores' e 'alunos'.",
+        "distractors": [
+          "Sujeito simples, cujo único núcleo é o termo 'reunião'.",
+          "Sujeito indeterminado, pois não se sabe quem fez as propostas.",
+          "Oração sem sujeito, por conter verbo na terceira pessoa."
+        ],
+        "explanation": "O verbo 'debateram' concorda com dois núcleos ligados pela conjunção 'e': 'professores' e 'alunos' (sujeito composto)."
+      },
+      {
+        "text": "Em qual das alternativas a oração apresenta um caso legítimo de 'ORAÇÃO SEM SUJEITO' (sujeito inexistente)?",
+        "correct": "'Havia muitas dúvidas sobre o calendário de provas no colégio.'",
+        "distractors": [
+          "'Fizeram uma bela homenagem aos atletas no pátio da escola.'",
+          "'Os estudantes chegaram adiantados após o feriado prolongado.'",
+          "'Naquela manhã fria, todos caminhavam com tranquilidade pelo parque.'"
+        ],
+        "explanation": "O verbo 'haver' no sentido de existir ou ocorrer é impessoal: não possui sujeito e deve permanecer sempre na 3ª pessoa do singular."
+      },
+      {
+        "text": "Na oração 'Viajaremos para o litoral no início das férias de verão', o sujeito classifica-se como:",
+        "correct": "Sujeito oculto (desinencial ou elíptico), identificado pela terminação do verbo na 1ª pessoa do plural ('nós').",
+        "distractors": [
+          "Sujeito indeterminado, pois o pronome nós não está escrito.",
+          "Sujeito paciente em voz passiva analítica.",
+          "Sujeito inexistente por indicar deslocamento geográfico."
+        ],
+        "explanation": "O sujeito oculto não aparece explícito na frase, mas é recuperado pela desinência número-pessoal do verbo ('viajaremos' = nós)."
+      },
+      {
+        "text": "Em qual das frases abaixo o sujeito classifica-se como INDETERMINADO?",
+        "correct": "'Quebraram a vidraça da biblioteca durante a madrugada.'",
+        "distractors": [
+          "'A vidraça da biblioteca amanheceu quebrada hoje cedo.'",
+          "'Nós vimos a vidraça quebrada da biblioteca hoje cedo.'",
+          "'Ventou muito forte e a vidraça da biblioteca quebrou.'"
+        ],
+        "explanation": "O sujeito indeterminado ocorre com verbo na 3ª pessoa do plural sem referência a sujeito anterior no contexto ('quebraram', sem identificar quem)."
+      }
+    ],
+    "5": [
+      {
+        "text": "No período: 'O arquiteto entregou o projeto aos engenheiros ontem à tarde', o verbo destacado classifica-se quanto à transitividade como:",
+        "correct": "Verbo transitivo direto e indireto (VTDI), pois exige um objeto direto sem preposição ('o projeto') e um objeto indireto com preposição ('aos engenheiros').",
+        "distractors": [
+          "Verbo transitivo direto exclusivo, pois não possui termos preposicionados.",
+          "Verbo intransitivo, pois encerra seu sentido em si mesmo.",
+          "Verbo de ligação, pois apenas expressa o estado psicológico do arquiteto."
+        ],
+        "explanation": "Quem entrega, entrega algo (objeto direto: 'o projeto') a alguém (objeto indireto: 'aos engenheiros')."
+      },
+      {
+        "text": "Qual das seguintes orações apresenta um VERBO INTRANSITIVO (aquele cujo sentido não exige complemento de objeto direto ou indireto para ser compreendido)?",
+        "correct": "'A criança adormeceu tranquilamente no colo da mãe.'",
+        "distractors": [
+          "'O estudante leu um conto emocionante na aula de redação.'",
+          "'Nós precisamos de mais tempo para terminar o projeto.'",
+          "'O professor explicou a regra gramatical aos alunos.'"
+        ],
+        "explanation": "'Adormecer' é verbo intransitivo: encerra sentido completo em si mesmo. O termo 'tranquilamente no colo da mãe' funciona como adjunto adverbial."
+      },
+      {
+        "text": "Na frase 'Todos os cidadãos necessitam de transporte público eficiente', o termo 'de transporte público eficiente' exerce a função sintática de:",
+        "correct": "Objeto indireto, pois completa o sentido do verbo transitivo indireto com preposição obrigatória ('de').",
+        "distractors": [
+          "Objeto direto sem preposição.",
+          "Predicado nominal atributivo.",
+          "Agente da passiva em voz reflexiva."
+        ],
+        "explanation": "Quem necessita, necessita 'de algo'. O complemento encabeçado pela preposição 'de' classifica-se como objeto indireto."
+      },
+      {
+        "text": "Qual dos seguintes verbos atua tipicamente como VERBO DE LIGAÇÃO, ligando o sujeito a uma característica sua (predicativo do sujeito)?",
+        "correct": "'O céu da praia permaneceu nublado durante todo o final de semana.'",
+        "distractors": [
+          "'O arqueólogo encontrou fósseis antigos na caverna.'",
+          "'Os atletas correram cinco quilômetros pela manhã.'",
+          "'Nós compramos ingressos para a peça de teatro.'"
+        ],
+        "explanation": "Verbos de ligação (ser, estar, permanecer, parecer, ficar) não indicam ação, mas ligam o sujeito ao seu estado ou atributo ('permaneceu nublado')."
+      }
+    ],
+    "6": [
+      {
+        "text": "O gênero textual CRÔNICA caracteriza-se primordialmente por:",
+        "correct": "Partir de fatos corriqueiros e flagrantes do cotidiano para produzir reflexões sensíveis, poéticas, críticas ou bem-humoradas.",
+        "distractors": [
+          "Apresentar dados científicos em tabelas com linguagem puramente matemática.",
+          "Conter decretos governamentais e leis que devem ser cumpridas obrigatoriamente.",
+          "Ser uma narrativa épica com dezenas de capítulos sobre batalhas medievais."
+        ],
+        "explanation": "A crônica é uma prosa leve e breve que transforma episódios comuns da rotina em matéria de lirismo, ironia e reflexão existencial."
+      },
+      {
+        "text": "Em uma crônica reflexiva, o narrador que participa diretamente dos acontecimentos narrando em primeira pessoa ('eu') é classificado como:",
+        "correct": "Narrador-personagem.",
+        "distractors": [
+          "Narrador-observador imparcial.",
+          "Narrador onisciente neutro.",
+          "Interlocutor secundário."
+        ],
+        "explanation": "O narrador-personagem vive os eventos da trama e conta a história a partir do seu próprio ponto de vista em 1ª pessoa."
+      },
+      {
+        "text": "Qual recurso estilístico é muito comum na crônica para criar cumplicidade com o leitor e suavizar críticas sociais?",
+        "correct": "O humor sutil, a ironia reflexiva e a interlocução direta em tom de conversa descontraída.",
+        "distractors": [
+          "A utilização exclusiva de jargões jurídicos medievais em latim.",
+          "A proibição de metáforas e comparações em qualquer parágrafo.",
+          "A repetição mecânica de números estatísticos oficiais."
+        ],
+        "explanation": "Cronistas consagrados (como Rubem Braga e Fernando Sabino) usam a prosa coloquial e o humor afetuoso para aproximar o leitor dos fatos diários."
+      },
+      {
+        "text": "Por que as crônicas costumam ter circulação vinculada a jornais, revistas e portais de notícias?",
+        "correct": "Porque nasceram associadas à imprensa periódica para comentar o dia a dia e o ritmo das cidades com linguagem acessível.",
+        "distractors": [
+          "Porque os cronistas são obrigados a trabalhar como repórteres policiais.",
+          "Porque a lei proíbe publicar crônicas em livros impressos.",
+          "Porque as crônicas tratam exclusivamente de cotações financeiras da bolsa."
+        ],
+        "explanation": "Historicamente, o folhetim e a crônica ocupavam o rodapé dos jornais diários para dialogar diretamente com o leitor comum sobre o ritmo das cidades."
+      }
+    ],
+    "7": [
+      {
+        "text": "Assinale a alternativa que apresenta ERRO de concordância verbal de acordo com a norma-padrão da Língua Portuguesa:",
+        "correct": "'Fazem três anos que não viajamos juntos para a serra.'",
+        "distractors": [
+          "'Faz três anos que não viajamos juntos para a serra.'",
+          "'Havia muitas pessoas aguardando o início da sessão de cinema.'",
+          "'Choveu muito durante toda a madrugada de domingo.'"
+        ],
+        "explanation": "O verbo 'fazer' indicando tempo decorrido é impessoal e deve ficar estritamente no singular: 'Faz três anos', e jamais 'Fazem três anos'."
+      },
+      {
+        "text": "Qual das seguintes frases segue rigorosamente as regras de concordância verbal com sujeito composto anteposto ao verbo?",
+        "correct": "'O diretor e os professores organizaram a feira de ciências.'",
+        "distractors": [
+          "'O diretor e os professores organizou a feira de ciências.'",
+          "'Organizou a feira de ciências os professores e o diretor.'",
+          "'Houveram muitos elogios para o diretor e os professores.'"
+        ],
+        "explanation": "Com sujeito composto antes do verbo ('O diretor e os professores'), o verbo vai obrigatoriamente para o plural ('organizaram')."
+      },
+      {
+        "text": "Na frase com expressão partitiva 'A maioria dos estudantes ________ na gincana escolar', qual forma verbal está gramaticalmente correta?",
+        "correct": "Tanto 'participou' (concordando com 'a maioria') quanto 'participaram' (concordando com 'dos estudantes') são aceitas.",
+        "distractors": [
+          "Apenas 'participou' é correta por se tratar de sujeito sem plural.",
+          "Apenas 'participaram' é correta e a forma no singular é considerada erro grave.",
+          "Nenhuma das formas é aceita, devendo-se utilizar verbo impessoal."
+        ],
+        "explanation": "Com expressões partitivas seguidas de plural ('a maioria de', 'grande parte de'), a concordância pode ser feita com o núcleo partitivo ou com o especificador."
+      },
+      {
+        "text": "Complete a oração com a concordância adequada: 'No depósito do colégio ________ vários livros e mapas novos.'",
+        "correct": "'Haviam' é incorreto; a forma correta é 'Havia', pois o verbo haver com sentido de existir é impessoal.",
+        "distractors": [
+          "'Haviam', pois concorda no plural com livros e mapas.",
+          "'Tinham havido', pois exige locução no plural.",
+          "'Houveram', para concordar com o tempo passado dos livros."
+        ],
+        "explanation": "O verbo 'haver' com significado de existir não se flexiona no plural: 'Havia vários livros e mapas'."
+      }
+    ],
+    "8": [
+      {
+        "text": "Em um texto narrativo, os PRONOMES DEMONSTRATIVOS auxiliam a situar elementos no tempo e no espaço. Qual pronome deve ser empregado para referir-se ao tempo PRESENTE ou ao ano em curso?",
+        "correct": "'Este' ('Neste ano de 2026 estamos concluindo o 7º ano do Ensino Fundamental').",
+        "distractors": [
+          "'Aquele' ('Naquele ano de 2026').",
+          "'Esse' ('Nesse ano de 2026').",
+          "'Nenhum', pois não se usa pronome para tempo."
+        ],
+        "explanation": "'Este/esta/isto' refere-se ao momento presente e ao que está próximo do emissor. 'Esse' indica passado ou futuro próximo, e 'aquele' tempo remoto."
+      },
+      {
+        "text": "A coesão textual ANAFÓRICA é aquela em que uma palavra (como um pronome ou sinônimo) é utilizada para:",
+        "correct": "Retomar um termo ou ideia que já foi mencionado anteriormente no texto, evitando repetições desnecessárias.",
+        "distractors": [
+          "Antecipar um termo que ainda vai ser apresentado no parágrafo seguinte.",
+          "Eliminar todas as pontuações e parágrafos do texto.",
+          "Traduzir palavras em inglês para o português automaticamente."
+        ],
+        "explanation": "Anáfora é o mecanismo coesivo de remissão retrospectiva: recupera um termo já expresso para dar fluidez e unidade ao texto."
+      },
+      {
+        "text": "No período: 'Mariana dedicou-se intensamente aos estudos; ELA alcançou uma excelente pontuação', o pronome destacado atua como:",
+        "correct": "Elemento de coesão referencial que substitui o substantivo Mariana.",
+        "distractors": [
+          "Pronome indefinido de negação total.",
+          "Conjunção adversativa de contraste.",
+          "Verbo auxiliar de ligação existencial."
+        ],
+        "explanation": "O pronome pessoal 'ela' retoma 'Mariana', mantendo a continuidade do sentido sem repetir o nome próprio."
+      },
+      {
+        "text": "Assinale a opção em que o pronome relativo 'CUJO' foi empregado corretamente segundo a norma culta:",
+        "correct": "'A escritora cujos livros inspiraram o filme recebeu um importante prêmio literário.'",
+        "distractors": [
+          "'A escritora cujo os livros inspiraram o filme recebeu um prêmio.'",
+          "'A escritora que os livros dela inspiraram o filme recebeu um prêmio.'",
+          "'A escritora cuja de onde os livros inspiraram o filme recebeu um prêmio.'"
+        ],
+        "explanation": "'Cujo' estabelece relação de posse entre dois termos, concorda com a coisa possuída ('livros' -> cujos) e nunca admite artigo em seguida ('cujo o' é erro grave)."
+      }
+    ],
+    "9": [
+      {
+        "text": "Identifique a FIGURA DE LINGUAGEM presente na frase poética: 'Naquela noite fria de inverno, o vento sussurrava segredos antigos através das janelas entreabertas.'",
+        "correct": "Personificação (ou prosopopeia), pois atribui uma ação tipicamente humana ('sussurrar segredos') ao vento inanimado.",
+        "distractors": [
+          "Hipérbole, por trazer um cálculo matemático de proporções astronômicas.",
+          "Antítese, pela aproximação de termos com sentidos diretamente contrários.",
+          "Comparação, devido à presença obrigatória da palavra 'como'."
+        ],
+        "explanation": "A prosopopeia ou personificação atribui atitudes, emoções ou falas humanas a seres irracionais, inanimados ou fenômenos da natureza."
+      },
+      {
+        "text": "Na oração 'Ele chorou rios de lágrimas quando seu time perdeu a final do campeonato', a figura de linguagem empregada para enfatizar o choro pelo exagero deliberado é a:",
+        "correct": "Hipérbole.",
+        "distractors": [
+          "Eufemismo.",
+          "Metáfora.",
+          "Ironia."
+        ],
+        "explanation": "Hipérbole é o recurso estilístico de usar o exagero intencional ('rios de lágrimas') para produzir forte impacto expressivo."
+      },
+      {
+        "text": "Qual das seguintes frases apresenta um caso legítimo de METÁFORA (comparação implícita sem conectivo comparativo expresso)?",
+        "correct": "'Aquele jovem atleta é um foguete correndo na pista de atletismo.'",
+        "distractors": [
+          "'Aquele jovem atleta corre veloz como um foguete na pista.'",
+          "'O jovem atleta correu com tênis esportivos azuis.'",
+          "'O jovem atleta pediu um copo de água ao treinador.'"
+        ],
+        "explanation": "A metáfora funde dois universos de sentido sem a palavra 'como': 'é um foguete'. Na frase com 'como um foguete', trata-se de comparação explícita."
+      },
+      {
+        "text": "O recurso estilístico de suavizar uma expressão desagradável, chocante ou triste ('Ele partiu desta vida para o descanso eterno' em vez de 'ele morreu') é o:",
+        "correct": "Eufemismo.",
+        "distractors": [
+          "Paradoxo.",
+          "Pleonasmo.",
+          "Onomatopeia."
+        ],
+        "explanation": "Eufemismo consiste em substituir termos rudes, agressivos ou dolorosos por expressões mais polidas e atenuadas."
+      }
+    ],
+    "10": [
+      {
+        "text": "Assinale a alternativa em que a oração coordenada destacada expressa ideia de OPOSIÇÃO ou CONTRASTE (oração coordenada adversativa):",
+        "correct": "'Eles treinaram com dedicação ao longo do mês, PORÉM não conseguiram a medalha de ouro.'",
+        "distractors": [
+          "'Ele não apenas estudou a teoria, MAS TAMBÉM realizou todos os simulados práticos.'",
+          "'O dia amanheceu ensolarado E nós caminhamos felizes pelo parque municipal.'",
+          "'Choveu torrencialmente à noite; POR ISSO o gramado do estádio ficou alagado.'"
+        ],
+        "explanation": "'Porém' é conjunção adversativa típica (oposição). 'Mas também' tem valor aditivo enfático e 'por isso' tem valor conclusivo."
+      },
+      {
+        "text": "Na oração coordenada sindética 'O estudante revisou os resumos com disciplina; PORTANTO, obteve excelente rendimento na prova', o conectivo destacado possui valor de:",
+        "correct": "Conclusão (oração coordenada conclusiva).",
+        "distractors": [
+          "Explicação causal.",
+          "Alternância exclusiva.",
+          "Adição cumulativa."
+        ],
+        "explanation": "'Portanto', 'logo', 'assim', 'por conseguinte' são operadores conclusivos que finalizam uma linha lógica de raciocínio."
+      },
+      {
+        "text": "As orações coordenadas que se ligam diretamente umas às outras sem a presença de NENHUMA conjunção conectiva, separadas apenas por vírgulas, são classificadas como:",
+        "correct": "Orações coordenadas assindéticas.",
+        "distractors": [
+          "Orações coordenadas sindéticas alternativas.",
+          "Orações subordinadas substantivas completivas.",
+          "Orações reduzidas de gerúndio."
+        ],
+        "explanation": "O prefixo 'a-' indica negação: assindéticas são aquelas desprovidas de conectivo ou síndeto coordenativo."
+      },
+      {
+        "text": "Em qual das seguintes frases a conjunção introduz uma oração coordenada SINDÉTICA EXPLICATIVA?",
+        "correct": "'Venha imediatamente para casa, porque está prestes a desabar uma forte chuva.'",
+        "distractors": [
+          "'Ele estudou muito, portanto foi aprovado com louvor.'",
+          "'Ou você termina a tarefa agora, ou não irá ao cinema.'",
+          "'Eles não compareceram ao treino nem justificaram a ausência.'"
+        ],
+        "explanation": "A oração introduzida por 'porque' justifica e explica o pedido/ordem anterior ('Venha imediatamente para casa')."
+      }
+    ],
+    "11": [
+      {
+        "text": "Em relação à regência verbal, o verbo ASSISTIR empregado no sentido de 'presenciar, ver, contemplar' exige qual tipo de regência?",
+        "correct": "É transitivo indireto e exige preposição 'a' ('Ontem assistimos a um documentário histórico excelente').",
+        "distractors": [
+          "É transitivo direto e proíbe qualquer preposição ('Ontem assistimos o documentário').",
+          "É intransitivo e não aceita nenhum tipo de complemento.",
+          "É transitivo direto e indireto com preposição 'com'."
+        ],
+        "explanation": "Na norma culta, assistir no sentido de ver rege a preposição 'a' (assistir ao filme, à peça). No sentido de prestar ajuda, é transitivo direto (assistir o doente)."
+      },
+      {
+        "text": "Assinale a alternativa em que o ACENTO GRAVE indicativo de CRASE foi empregado de maneira CORRETA:",
+        "correct": "'Os pesquisadores entregaram o relatório científico à professora orientadora.'",
+        "distractors": [
+          "'Eles começaram à debater sobre os impactos do aquecimento global.'",
+          "'O capitão enviou a correspondência oficial à todos os comandantes.'",
+          "'O pagamento da compra foi realizado rigorosamente à prazo.'"
+        ],
+        "explanation": "A crase ocorre antes de palavra feminina ('a professora') que admite artigo 'a' fundido com a preposição 'a'. É proibida antes de verbos, pronomes indefinidos e palavras masculinas."
+      },
+      {
+        "text": "Por que NÃO se deve colocar acento indicativo de crase antes de verbos (como em 'estavam dispostos a ajudar')?",
+        "correct": "Porque verbos não admitem artigo feminino 'a' diante de si, havendo apenas a preposição.",
+        "distractors": [
+          "Porque os verbos no infinitivo devem vir sempre com hífen.",
+          "Porque a crase só é permitida em frases com mais de vinte palavras.",
+          "Porque os verbos pertencem à classe gramatical dos numerais."
+        ],
+        "explanation": "A crase é a fusão da preposição 'a' com o artigo 'a'. Como verbos não são substantivos femininos, não aceitam artigo, tornando a crase impossível."
+      },
+      {
+        "text": "Qual das seguintes frases atende à regência padrão do verbo IR no sentido de deslocamento momentâneo?",
+        "correct": "'Nós vamos ao cinema no sábado à noite.'",
+        "distractors": [
+          "'Nós vamos no cinema no sábado à noite.'",
+          "'Nós vamos pelo cinema no sábado à noite.'",
+          "'Nós vamos de cinema no sábado à noite.'"
+        ],
+        "explanation": "O verbo 'ir' indicando deslocamento rege a preposição 'a' (ir ao cinema, ir à praia). A forma coloquial 'ir no' deve ser evitada na norma culta escrita."
+      }
+    ],
+    "12": [
+      {
+        "text": "No gênero TEXTO DISSERTATIVO-ARGUMENTATIVO, qual é a função essencial da TESE localizada no parágrafo de introdução?",
+        "correct": "Apresentar o ponto de vista central e a posição crítica do autor que será defendida e comprovada com argumentos ao longo do texto.",
+        "distractors": [
+          "Narrar a biografia cronológica de todos os autores citados.",
+          "Listar em ordem alfabética os termos do dicionário utilizados.",
+          "Criar uma rima poética para divertir o leitor na abertura."
+        ],
+        "explanation": "A tese é o núcleo opinativo da dissertação: define o posicionamento crítico do autor em relação ao tema em debate."
+      },
+      {
+        "text": "Qual das seguintes estratégias argumentativas confere maior autoridade e legitimidade à defesa de um ponto de vista em um artigo de opinião?",
+        "correct": "Utilizar dados estatísticos de fontes de pesquisa confiáveis, referências a estudos científicos e citações de pensadores reconhecidos.",
+        "distractors": [
+          "Afirmar que a opinião é verdadeira porque foi inventada pelo próprio autor.",
+          "Repetir a mesma frase afirmativa vinte vezes sem explicar o motivo.",
+          "Insultar os interlocutores que discordam do ponto de vista apresentado."
+        ],
+        "explanation": "O argumento de autoridade embasa o raciocínio em fontes idôneas e legitimadas socialmente, superando o mero senso comum."
+      },
+      {
+        "text": "Um ARTIGO DE OPINIÃO difere-se da notícia jornalística padrão principalmente porque:",
+        "correct": "É um texto assinado que defende uma tese clara sobre um assunto polêmico por meio de argumentos persuasivos, enquanto a notícia busca relatar fatos com neutralidade.",
+        "distractors": [
+          "O artigo de opinião não pode ter frases com sujeito e predicado.",
+          "A notícia é obrigatoriamente rimada em versos decassílabos.",
+          "Não há diferença entre os dois gêneros, ambos são idênticos."
+        ],
+        "explanation": "O artigo de opinião é assumidamente opinativo e persuasivo (assinado pelo articulista), ao passo que a notícia é informativa e denotativa."
+      },
+      {
+        "text": "No parágrafo de conclusão de uma dissertação, o conectivo que melhor estabelece o encerramento dedutivo de todo o raciocínio é:",
+        "correct": "'Portanto, conclui-se que...'",
+        "distractors": [
+          "'Embora se conclua que...'",
+          "'Todavia, no entanto...'",
+          "'Porquanto haja dúvidas...'"
+        ],
+        "explanation": "'Portanto' expressa conclusão e fechamento lógico, ideal para amarrar os argumentos desenvolvidos e sintetizar a tese."
+      }
+    ]
+  },
+  "ingles": {
+    "1": [
+      {
+        "text": "Choose the sentence that correctly uses the Simple Present tense for the third person singular (he/she/it):",
+        "correct": "She studies English and plays the guitar every afternoon.",
+        "distractors": [
+          "She study English and play the guitar every afternoon.",
+          "She is study English and playing guitar every afternoon.",
+          "She studied English and played guitar tomorrow morning."
+        ],
+        "explanation": "No Simple Present, verbos terminados em consoante + y recebem -ies na 3ª pessoa do singular (study -> studies) e em vogal + y recebem apenas -s (play -> plays)."
+      },
+      {
+        "text": "Which auxiliary verb is used to form questions in the Simple Present for the pronouns 'he', 'she' and 'it'?",
+        "correct": "Does ('Does he wake up early on Mondays?')",
+        "distractors": [
+          "Do ('Do he wake up early?')",
+          "Did ('Did he wakes up early?')",
+          "Is ('Is he wake up early?')"
+        ],
+        "explanation": "Para he/she/it no Simple Present usa-se 'does', e o verbo principal volta para sua forma base sem terminação -s."
+      },
+      {
+        "text": "Select the sentence with the correct placement of the frequency adverb 'always':",
+        "correct": "They always arrive on time for school.",
+        "distractors": [
+          "They arrive always on time for school.",
+          "Always they arrive on time for school.",
+          "They arrive on time always for school."
+        ],
+        "explanation": "Advérbios de frequência (always, never, usually) vêm antes do verbo principal comum e depois do verbo to be."
+      },
+      {
+        "text": "What is the negative form of the sentence 'Carlos likes chocolate ice cream'?",
+        "correct": "Carlos doesn't like chocolate ice cream.",
+        "distractors": [
+          "Carlos don't likes chocolate ice cream.",
+          "Carlos not like chocolate ice cream.",
+          "Carlos isn't like chocolate ice cream."
+        ],
+        "explanation": "A negação de 3ª pessoa singular usa 'doesn't' + verbo no infinitivo sem to ('doesn't like')."
+      }
+    ],
+    "2": [
+      {
+        "text": "Which sentence correctly expresses an action that is happening right now in the Present Continuous?",
+        "correct": "The students are reading an interesting science article at this moment.",
+        "distractors": [
+          "The students reading an interesting science article now.",
+          "The students is read an interesting science article right now.",
+          "The students was reading an interesting science article today."
+        ],
+        "explanation": "A estrutura do Present Continuous exige o verbo to be no presente (am/is/are) + verbo principal com -ing ('are reading')."
+      },
+      {
+        "text": "Complete with the correct verb form: 'Listen! The phone ________. Can you answer it?'",
+        "correct": "is ringing",
+        "distractors": [
+          "rings",
+          "are ringing",
+          "ringed"
+        ],
+        "explanation": "A palavra 'Listen!' indica ação em progresso no momento da fala, exigindo Present Continuous: 'phone is ringing'."
+      },
+      {
+        "text": "What is the main difference in usage between the Simple Present and the Present Continuous?",
+        "correct": "Simple Present expresses routines and permanent habits; Present Continuous expresses actions happening now or temporary situations.",
+        "distractors": [
+          "Simple Present is used only for ancient historical events.",
+          "Present Continuous cannot be used with human pronouns.",
+          "Both tenses have identical grammatical structures and meanings."
+        ],
+        "explanation": "Simple Present indica hábitos e fatos permanentes; Present Continuous indica ações em curso no momento da fala."
+      },
+      {
+        "text": "How do you form the negative form of the Present Continuous for 'We are watching television'?",
+        "correct": "We are not (aren't) watching television.",
+        "distractors": [
+          "We don't watching television.",
+          "We doesn't are watching television.",
+          "We not watching television."
+        ],
+        "explanation": "A negação no Present Continuous é formada adicionando 'not' ao verbo auxiliar to be: 'are not watching'."
+      }
+    ],
+    "3": [
+      {
+        "text": "Which sentence correctly uses the Simple Past of the REGULAR verb 'watch' in the affirmative?",
+        "correct": "Yesterday, we watched an educational documentary about marine biology.",
+        "distractors": [
+          "Yesterday, we watch an educational documentary.",
+          "Yesterday, we did watched an educational documentary.",
+          "Yesterday, we were watch an educational documentary."
+        ],
+        "explanation": "Verbos regulares formam o Simple Past adicionando -ed à forma base ('watch' -> 'watched')."
+      },
+      {
+        "text": "Select the correct negative sentence in the Simple Past using the regular verb 'play':",
+        "correct": "They didn't play soccer after class yesterday.",
+        "distractors": [
+          "They didn't played soccer after class yesterday.",
+          "They don't played soccer after class yesterday.",
+          "They wasn't play soccer after class yesterday."
+        ],
+        "explanation": "Com o auxiliar 'didn't', o verbo principal permanece obrigatoriamente na forma base infinitiva sem -ed ('didn't play')."
+      },
+      {
+        "text": "How do you correctly formulate a question in the Simple Past with the auxiliary verb 'did'?",
+        "correct": "Did you visit your grandparents last weekend?",
+        "distractors": [
+          "Did you visited your grandparents last weekend?",
+          "Do you visited your grandparents last weekend?",
+          "Were you visit your grandparents last weekend?"
+        ],
+        "explanation": "Ao usar 'Did' na pergunta, o verbo principal deve ficar no infinitivo ('visit', e não 'visited')."
+      },
+      {
+        "text": "What is the Simple Past rule for regular verbs ending in a consonant + 'y', like 'study' and 'cry'?",
+        "correct": "Drop the 'y' and add '-ied' (studied, cried).",
+        "distractors": [
+          "Keep the 'y' and add '-ed' (studyed, cryed).",
+          "Remove the 'y' and add only '-d' (stud, crd).",
+          "Add '-ing' to the ending of the verb (studying, crying)."
+        ],
+        "explanation": "Consoante + y no passado regular: o y é substituído por i antes de -ed (study -> studied, cry -> cried)."
+      }
+    ],
+    "4": [
+      {
+        "text": "Which sentence correctly uses the Simple Past IRREGULAR forms of 'go' and 'see'?",
+        "correct": "Yesterday, Carlos went to the science museum and saw ancient dinosaur fossils.",
+        "distractors": [
+          "Yesterday, Carlos goed to the science museum and seed fossils.",
+          "Yesterday, Carlos goes to the museum and see ancient fossils.",
+          "Yesterday, Carlos did went to the museum and seen fossils."
+        ],
+        "explanation": "O passado irregular de 'go' é 'went', e o de 'see' é 'saw'. Não recebem -ed."
+      },
+      {
+        "text": "What are the Simple Past forms of the irregular verbs 'have', 'buy' and 'write'?",
+        "correct": "had, bought, wrote",
+        "distractors": [
+          "haved, buyed, writed",
+          "has, buying, written",
+          "had, bot, writ"
+        ],
+        "explanation": "Formas irregulares de passado: have -> had; buy -> bought; write -> wrote."
+      },
+      {
+        "text": "In the biography sentence 'Marie Curie was born in Poland and won two Nobel Prizes', the word 'won' is the Simple Past of:",
+        "correct": "win (vencer/ganhar)",
+        "distractors": [
+          "one",
+          "warn",
+          "wind"
+        ],
+        "explanation": "'Won' é o pretérito irregular do verbo 'win' (vencer, conquistar)."
+      },
+      {
+        "text": "Choose the correct past form of the verb 'to be' for the pronouns 'we', 'you' and 'they':",
+        "correct": "were ('They were very happy with their test results.')",
+        "distractors": [
+          "was",
+          "is",
+          "been"
+        ],
+        "explanation": "No Simple Past do verbo to be: I/he/she/it usa 'was'; we/you/they usa 'were'."
+      }
+    ],
+    "5": [
+      {
+        "text": "Complete the sentence with the appropriate quantifiers: 'We don't have ________ milk in the fridge, but there are ________ apples in the basket.'",
+        "correct": "much / many",
+        "distractors": [
+          "many / much",
+          "some / any",
+          "a lot / much"
+        ],
+        "explanation": "'Milk' é incontável (usa 'much' em negativas); 'apples' é contável no plural (usa 'many')."
+      },
+      {
+        "text": "Which quantifier is typically used in AFFIRMATIVE sentences with countable and uncountable nouns to express an unspecified quantity?",
+        "correct": "Some ('There are some books on the shelf' / 'I want some water').",
+        "distractors": [
+          "Any in affirmatives",
+          "Much with plurals",
+          "Many with liquids"
+        ],
+        "explanation": "'Some' é usado em frases afirmativas (e em ofertas educadas); 'any' em perguntas e negativas."
+      },
+      {
+        "text": "Choose the sentence that correctly uses the quantifier 'any':",
+        "correct": "Is there any juice left in the bottle?",
+        "distractors": [
+          "There is any juice left in the bottle.",
+          "I have any books in my backpack.",
+          "She bought any apples at the supermarket."
+        ],
+        "explanation": "'Any' é empregado em perguntas ('Is there any...?') e em frases negativas com 'not'."
+      },
+      {
+        "text": "Which of the following nouns is classified as UNCOUNTABLE in English?",
+        "correct": "Water (água), bread (pão) and information (informação).",
+        "distractors": [
+          "Banana, orange and tomato.",
+          "Book, pencil and eraser.",
+          "Dog, cat and horse."
+        ],
+        "explanation": "Líquidos, pós e massas gerais (water, bread, money, information) são substantivos incontáveis e usam 'much' ou 'little'."
+      }
+    ],
+    "6": [
+      {
+        "text": "Which sentence correctly expresses a PREVIOUSLY PLANNED future intention using 'going to'?",
+        "correct": "We are going to travel to Salvador next month; we already bought the tickets.",
+        "distractors": [
+          "We will to travel to Salvador next month.",
+          "We are travel to Salvador next month going.",
+          "We going to travelled to Salvador yesterday."
+        ],
+        "explanation": "'Be going to' expressa planos ou intenções pré-estabelecidos com evidências ou decisões já tomadas."
+      },
+      {
+        "text": "In English, the modal auxiliary 'WILL' is predominantly used for:",
+        "correct": "Spontaneous decisions made at the moment of speaking, promises and general predictions about the future.",
+        "distractors": [
+          "Actions that happened in the ancient past.",
+          "Describing mandatory physical exercises in the classroom.",
+          "Translating words into Spanish."
+        ],
+        "explanation": "'Will' expressa decisões imediatas e espontâneas ('I'll answer the phone'), promessas e previsões gerais de futuro."
+      },
+      {
+        "text": "What is the contracted negative form of 'will not' in modern English?",
+        "correct": "won't",
+        "distractors": [
+          "willn't",
+          "don't will",
+          "wasn't"
+        ],
+        "explanation": "A contração de 'will not' é irregular: 'won't'."
+      },
+      {
+        "text": "Complete with the correct future form: 'Look at those dark clouds in the sky! It ________ rain.'",
+        "correct": "is going to rain (prediction based on clear present evidence).",
+        "distractors": [
+          "will rain spontaneously",
+          "rained yesterday",
+          "is raining tomorrow"
+        ],
+        "explanation": "Previsões baseadas em evidências visuais presentes imediatas (nuvens escuras) utilizam 'be going to'."
+      }
+    ]
+  },
+  "arte": {
+    "1": [
+      {
+        "text": "No círculo cromático e na teoria das cores tradicional, quais são as três cores primárias pigmentares puras e qual cor secundária resulta da mistura equilibrada de amarelo e azul?",
+        "correct": "Cores primárias: vermelho, amarelo e azul. A mistura de amarelo e azul produz a cor secundária verde.",
+        "distractors": [
+          "Cores primárias: verde, roxo e laranja. Amarelo e azul produzem vermelho.",
+          "Cores primárias: preto, branco e cinza. Amarelo e azul produzem marrom.",
+          "Cores primárias: magenta, ciano e marrom. Amarelo e azul produzem roxo."
+        ],
+        "explanation": "Vermelho, amarelo e azul são as cores primárias tradicionais. A união de amarelo e azul produz o verde."
+      },
+      {
+        "text": "Como são classificadas as cores como o vermelho, o amarelo e o laranja na psicologia visual e na escala de temperatura cromática?",
+        "correct": "Cores quentes, pois transmitem sensações de calor, luminosidade, energia e proximidade visual.",
+        "distractors": [
+          "Cores frias, associadas à tranquilidade da água e da neve.",
+          "Cores neutras, desprovidas de qualquer vibração luminosa.",
+          "Cores acromáticas, compostas exclusivamente de tonalidades de cinza."
+        ],
+        "explanation": "Cores quentes (vermelho, laranja, amarelo) estimulam a percepção e sugerem calor, enquanto cores frias (azul, verde, violeta) sugerem frescor e calma."
+      },
+      {
+        "text": "Na linguagem das artes visuais, o elemento gráfico mais elementar que se desloca no espaço e delimita formas, contornos e texturas é:",
+        "correct": "A linha.",
+        "distractors": [
+          "O ponto cego.",
+          "A moldura de madeira.",
+          "O verniz sintético."
+        ],
+        "explanation": "A linha é o rastro deixado pelo ponto em movimento, sendo o elemento estrutural básico para desenhar contornos e formas."
+      },
+      {
+        "text": "Duas cores situadas em lados diametralmente opostos no círculo cromático (como azul e laranja, ou vermelho e verde) são chamadas de:",
+        "correct": "Cores complementares, pois produzem o máximo contraste visual quando colocadas lado a lado.",
+        "distractors": [
+          "Cores análogas vizinhas.",
+          "Cores monocromáticas.",
+          "Cores terciárias neutras."
+        ],
+        "explanation": "Cores complementares ficam opostas no círculo e geram contraste acentuado e dinamismo quando justapostas."
+      }
+    ],
+    "2": [
+      {
+        "text": "Durante o Renascimento Cultural italiano, mestres da pintura desenvolveram a técnica da PERSPECTIVA LINEAR geométrica. Qual era o objetivo central dessa técnica?",
+        "correct": "Criar a ilusão de profundidade e tridimensionalidade sobre a superfície plana bidimensional da tela, utilizando ponto de fuga e linha do horizonte.",
+        "distractors": [
+          "Pintar figuras humanas sem proporção corporal obedecendo à hierarquia de tamanho medieval.",
+          "Eliminar todos os efeitos de sombra para deixar as imagens chapadas.",
+          "Substituir o óleo sobre tela por colagens de tecidos rústicos."
+        ],
+        "explanation": "A perspectiva linear renascentista organizou o espaço visual por meio de linhas convergentes para um ponto de fuga, criando sensação realista de profundidade."
+      },
+      {
+        "text": "A técnica de pintura refinada por Leonardo da Vinci que suaviza transições entre áreas de luz e sombra, eliminando contornos rígidos como uma névoa difusa, chama-se:",
+        "correct": "Sfumato.",
+        "distractors": [
+          "Pontilhismo.",
+          "Afresco de cal.",
+          "Mosaico bizantino."
+        ],
+        "explanation": "O sfumato (termo derivado de fumo/fumaça) dissolve as bordas e contornos, conferindo suavidade e mistério a obras como a Mona Lisa."
+      },
+      {
+        "text": "Qual dos seguintes artistas renascentistas foi o responsável por pintar os célebres afrescos do teto da Capela Sistina no Vaticano, incluindo 'A Criação de Adão'?",
+        "correct": "Michelangelo Buonarroti.",
+        "distractors": [
+          "Sandro Botticelli.",
+          "Donatello.",
+          "Tiziano."
+        ],
+        "explanation": "Michelangelo dedicou anos pintando o teto e o altar do Juízo Final da Capela Sistina, demonstrando maestria anatômica escultural."
+      },
+      {
+        "text": "O conceito de 'Proporção Áurea' (ou divina proporção) aplicado pelos artistas e arquitetos do Renascimento representava:",
+        "correct": "Uma constante matemática geométrica encontrada na natureza associada ao equilíbrio estético e à harmonia das formas.",
+        "distractors": [
+          "Uma taxa de imposto cobrada pela Igreja para permitir a venda de quadros.",
+          "A proibição de misturar tinta a óleo com água.",
+          "Uma regra militar para formação de soldados em desfiles."
+        ],
+        "explanation": "A proporção áurea (número phi ~1,618) foi amplamente utilizada como padrão de simetria, beleza e harmonia na composição visual."
+      }
+    ],
+    "3": [
+      {
+        "text": "Nas cidades históricas de Minas Gerais (como Ouro Preto, Congonhas e Mariana), a arte do BARROCO BRASILEIRO no século XVIII caracterizou-se principalmente por:",
+        "correct": "Riqueza ornamental em talha dourada nas igrejas, dramaticidade emocional, religiosidade fervorosa e esculturas em pedra-sabão.",
+        "distractors": [
+          "Paredes completamente brancas e ausência total de santos e altares.",
+          "Construções industriais de aço e concreto armado com vidros espelhados.",
+          "Pinturas de arte abstrata geométrica sem temas religiosos."
+        ],
+        "explanation": "O Barroco mineiro expressou a opulência do ciclo do ouro com talha dourada curvilínea e expressividade escultórica dramática."
+      },
+      {
+        "text": "Qual material típico das serras de Minas Gerais foi utilizado com maestria pelo escultor Antônio Francisco Lisboa (o Aleijadinho) nos 'Doze Profetas' de Congonhas?",
+        "correct": "Pedra-sabão (esteatito), rocha macia e maleável fácil de esculpir e durável contra o tempo.",
+        "distractors": [
+          "Mármore de Carrara italiano.",
+          "Bronze polido em fundição industrial.",
+          "Resina plástica acrílica."
+        ],
+        "explanation": "Aleijadinho aproveitou a pedra-sabão, abundante na região, que permitiu entalhe minucioso com texturas e dobras de túnicas monumentais."
+      },
+      {
+        "text": "O pintor barroco mineiro Manoel da Costa Ataíde (Mestre Ataíde) notabilizou-se pela pintura do teto da Igreja de São Francisco de Assis em Ouro Preto ao retratar:",
+        "correct": "A Virgem Maria com traços mestiços e anjos com feições mulatas brasileiras, cercados de cores luminosas e perspectiva ilusionista.",
+        "distractors": [
+          "Cenas exclusivas de batalhas navais da marinha portuguesa.",
+          "Monarcas europeus coroados com diamantes no trono de Lisboa.",
+          "Paisagens desérticas da África do Norte em preto e branco."
+        ],
+        "explanation": "Mestre Ataíde inovou ao incorporar o rosto do povo mestiço colonial nas figuras sacras católicas, nacionalizando a estética barroca."
+      },
+      {
+        "text": "O estilo Barroco utilizava frequentemente o contraste violento entre áreas iluminadas e áreas de sombra profunda para criar emoção e mistério. Esse efeito é chamado de:",
+        "correct": "Chiaroscuro (claro-escuro).",
+        "distractors": [
+          "Impressionismo difuso.",
+          "Monocromia linear.",
+          "Pastel seco."
+        ],
+        "explanation": "O claro-escuro barroco intensifica o drama e a espiritualidade da cena através de focos de luz teatral contrastando com a escuridão."
+      }
+    ],
+    "4": [
+      {
+        "text": "No texto dramático teatral, as indicações e orientações do autor entre parênteses sobre a entonação dos atores, gestos, iluminação e movimentação no palco são chamadas de:",
+        "correct": "Rubricas (ou didascálias).",
+        "distractors": [
+          "Monólogos interiores.",
+          "Epílogos rimados.",
+          "Coros líricos."
+        ],
+        "explanation": "As rubricas orientam o diretor e os atores sobre ações cênicas, estados emocionais e disposição física sem serem faladas em voz alta no espetáculo."
+      },
+      {
+        "text": "Quando um ator fala sozinho em cena, expressando seus sentimentos, conflitos interiores e reflexões diretamente para o público, ocorre um:",
+        "correct": "Monólogo.",
+        "distractors": [
+          "Diálogo em coro.",
+          "Pantomima muda.",
+          "Apartes contraditórios."
+        ],
+        "explanation": "Monólogo é a fala de um único personagem que exterioriza seus pensamentos e dilemas emocionais no palco."
+      },
+      {
+        "text": "O conjunto de elementos materiais que compõem o espaço visual onde a ação dramática acontece (móveis, painéis, objetos de época) denomina-se:",
+        "correct": "Cenário (ou cenografia).",
+        "distractors": [
+          "Sonoplastia de fundo.",
+          "Figurino pessoal.",
+          "Maquiagem artística."
+        ],
+        "explanation": "A cenografia ambienta o tempo e o lugar da ação, criando o mundo material em que os personagens interagem."
+      },
+      {
+        "text": "A modalidade teatral em que a representação cênica baseia-se exclusivamente em gestos, expressões corporais e faciais sem a utilização da fala verbal é a:",
+        "correct": "Pantomima (ou mímica).",
+        "distractors": [
+          "Ópera sinfônica.",
+          "Teatro de fantoches.",
+          "Comédia de stand-up."
+        ],
+        "explanation": "A mímica/pantomima comunica enredos e sentimentos por meio da linguagem expressiva do corpo e do movimento no espaço."
+      }
+    ],
+    "5": [
+      {
+        "text": "O FREVO, dança tradicional de ritmo acelerado e passos acrobáticos surgida no século XIX e declarada Patrimônio Cultural Imaterial da Humanidade pela UNESCO, é originário de qual estado brasileiro?",
+        "correct": "Pernambuco.",
+        "distractors": [
+          "Rio Grande do Sul.",
+          "Goiás.",
+          "Amazonas."
+        ],
+        "explanation": "O frevo nasceu nas ruas de Recife e Olinda associado à capoeira e bandas marciais, caracterizado pelo sombrinha colorida e passos saltados."
+      },
+      {
+        "text": "Qual manifestação folclórica e musical popular do Maranhão combina elementos do teatro, dança e música narrando a história da morte e ressurreição de um boi com os personagens Pai Francisco e Catirina?",
+        "correct": "Bumba Meu Boi (ou Boi-Bumbá).",
+        "distractors": [
+          "Maracatu Nação.",
+          "Catira do interior.",
+          "Jongo fluminense."
+        ],
+        "explanation": "O Bumba Meu Boi é festa tradicional brasileira com rica indumentária e bordados, celebrada com cantadores e grupos de zabumbas e matracas."
+      },
+      {
+        "text": "A manifestação cultural afro-brasileira nascida no Recôncavo Baiano, que mistura percussão de prato e faca, palmas, cantos responsivos e dança em círculo, é o:",
+        "correct": "Samba de Roda.",
+        "distractors": [
+          "Fandango caiçara.",
+          "Siriri mato-grossense.",
+          "Vaneirão gaúcho."
+        ],
+        "explanation": "O Samba de Roda do Recôncavo Baiano é matriz fundamental do samba urbano brasileiro, tombado como patrimônio imaterial da humanidade."
+      },
+      {
+        "text": "A dança coletiva tradicional do interior dos estados de São Paulo, Minas Gerais e Goiás, executada ao som de viola caipira com palmas e fortes batidas de pés com botas no chão, chama-se:",
+        "correct": "Catira (ou cateretê).",
+        "distractors": [
+          "Carimbó paraense.",
+          "Frevo de bloco.",
+          "Quadrilha junina."
+        ],
+        "explanation": "A catira é ritmo tropeiro caboclo marcado por sapateados sincronizados e palmas em compasso com o toque da viola sertaneja."
+      }
+    ],
+    "6": [
+      {
+        "text": "A Semana de Arte Moderna de 1922, marco inaugural do Modernismo brasileiro realizada no Teatro Municipal de São Paulo, tinha como proposta central:",
+        "correct": "Romper com o tradicionalismo acadêmico parnasiano de cópia europeia e buscar uma identidade estética genuinamente brasileira e renovadora.",
+        "distractors": [
+          "Copiar fielmente os modelos neoclássicos franceses sem nenhuma alteração.",
+          "Proibir exposições públicas de arte e banir pinturas em museus.",
+          "Restaurar as regras de pintura sacra da Idade Média."
+        ],
+        "explanation": "A Semana de 22 reuniu artistas como Mário de Andrade, Oswald de Andrade e Anita Malfatti, propondo liberdade criativa e raízes culturais brasileiras."
+      },
+      {
+        "text": "A célebre pintura 'Abaporu' (1928), de Tarsila do Amaral, retrata uma figura humana com pés e mãos gigantescos e cabeça pequena sob o sol. Essa tela inspirou qual movimento cultural modernista?",
+        "correct": "Movimento Antropofágico, lançado por Oswald de Andrade para 'devorar' as influências estrangeiras e reinventá-las com sabor brasileiro.",
+        "distractors": [
+          "Movimento Surrealista Francês.",
+          "Cubismo Analítico Russo.",
+          "Realismo Socialista."
+        ],
+        "explanation": "'Abaporu' (em tupi: 'homem que come homem') inspirou o Manifesto Antropofágico: a deglutição crítica da cultura externa assimilada às matrizes nacionais."
+      },
+      {
+        "text": "Entre as inovações introduzidas pelos poetas modernistas de 1922 na literatura brasileira, destacam-se:",
+        "correct": "O uso de versos livres (sem métrica fixa), linguagem coloquial do cotidiano e temáticas sociais brasileiras com humor e ironia.",
+        "distractors": [
+          "A obrigação de escrever sonetos com rimas ricas em latim.",
+          "A proibição de mencionar cidades brasileiras nos poemas.",
+          "A exigência de vocabulário arcaico incompreensível ao leitor."
+        ],
+        "explanation": "Os modernistas libertaram o poema da rigidez parnasiana, adotando versos livres, prosaico, oralidade popular e espontaneidade rítmica."
+      },
+      {
+        "text": "O escritor modernista autor do clássico 'Macunaíma: o herói sem nenhum caráter' (1928), que reuniu mitos indígenas e lendas populares de todo o Brasil, foi:",
+        "correct": "Mário de Andrade.",
+        "distractors": [
+          "Monteiro Lobato.",
+          "Machado de Assis.",
+          "José de Alencar."
+        ],
+        "explanation": "Mário de Andrade criou a rapsódia 'Macunaíma', sintetizando a diversidade étnica, linguística e folclórica do povo brasileiro."
+      }
+    ]
+  },
+  "educacaofisica": {
+    "1": [
+      {
+        "text": "Na classificação dos esportes adotada pela Base Nacional Comum Curricular (BNCC), modalidades como corrida de 100 metros rasos, natação e salto em distância são agrupadas como:",
+        "correct": "Esportes de marca, pois o desempenho dos competidores é comparado por meio de índices objetivos de tempo, distância ou peso.",
+        "distractors": [
+          "Esportes de invasão de território adversário.",
+          "Esportes de combate corpo a corpo direto.",
+          "Esportes de rede divisória sem contato físico."
+        ],
+        "explanation": "Esportes de marca comparam marcas aferidas em segundos, metros ou quilos em relação a adversários ou recordes históricos."
+      },
+      {
+        "text": "Modalidades esportivas como tiro com arco, boliche, tiro esportivo e golfe têm como característica comum essencial:",
+        "correct": "Serem esportes de precisão, cujo objetivo primordial é arremessar ou golpear um objeto para atingir ou aproximar-se de um alvo fixo ou móvel.",
+        "distractors": [
+          "Exigirem que os atletas corram mais de 40 quilômetros por prova.",
+          "Ocorrerem sempre dentro de piscinas olímpicas com água aquecida.",
+          "Permitirem que as equipes disputem a mesma bola com contato físico."
+        ],
+        "explanation": "Nos esportes de precisão, a pontuação depende da acurácia e pontaria de acertar um alvo ou posicionar o objeto o mais próximo dele."
+      },
+      {
+        "text": "No atletismo escolar, qual prova de corrida envolve a troca obrigatória de um bastão entre quatro atletas dentro de uma zona de transição delimitada na pista?",
+        "correct": "Revezamento (como 4 × 100 m e 4 × 400 m).",
+        "distractors": [
+          "Maratona de rua.",
+          "Corrida com obstáculos aquáticos.",
+          "Marcha atlética individual."
+        ],
+        "explanation": "As corridas de revezamento exigem trabalho coletivo e velocidade para passar o bastão de mão em mão dentro da zona regulamentar."
+      },
+      {
+        "text": "Qual é o principal parâmetro de vitória em uma prova de salto em altura no atletismo?",
+        "correct": "Transpor com o corpo a maior barra horizontal (sarrafo) sem derrubá-la.",
+        "distractors": [
+          "Atingir o solo o mais distante possível da linha de largada.",
+          "Dar o maior número de cambalhotas no ar em 10 segundos.",
+          "Correr a pista na maior velocidade antes de pisar na areia."
+        ],
+        "explanation": "No salto em altura, o atleta busca superar a maior altura vertical sobre o sarrafo com técnica como o salto 'Fosbury flop'."
+      }
+    ],
+    "2": [
+      {
+        "text": "Antes da realização de qualquer atividade esportiva ou aula prática de intensidade moderada a alta, o AQUECIMENTO corporal é indispensável porque:",
+        "correct": "Eleva gradualmente a temperatura muscular, aumenta o fluxo sanguíneo, lubrifica articulações com líquido sinovial e reduz o risco de lesões.",
+        "distractors": [
+          "Diminui os batimentos cardíacos para valores abaixo do repouso.",
+          "Impede a oxigenação dos tecidos para poupar glicose no sangue.",
+          "Evita a perda de suor para reter água nos pulmões."
+        ],
+        "explanation": "O aquecimento prepara os sistemas cardiovascular e musculoesquelético para o esforço, prevenindo contraturas, estiramentos e entorses."
+      },
+      {
+        "text": "Durante a prática de exercícios físicos prolongados em dias quentes, a HIDRATAÇÃO adequada com água fresca é fundamental para:",
+        "correct": "Repor a água e os sais minerais perdidos pelo suor na termorregulação e evitar a desidratação e cãibras musculares.",
+        "distractors": [
+          "Fazer o corpo esfriar instantaneamente até o congelamento da pele.",
+          "Aumentar o peso corporal para ganhar vantagem em corridas rasas.",
+          "Impedir que os músculos realizem contrações involuntárias de respiração."
+        ],
+        "explanation": "O suor resfria o corpo por evaporação; repor líquidos evita queda de rendimento, fadiga precoce e choque térmico."
+      },
+      {
+        "text": "A frequência cardíaca normal de um jovem em repouso situa-se geralmente entre 60 e 100 batimentos por minuto (bpm). O que ocorre com a frequência cardíaca durante o exercício aeróbico?",
+        "correct": "Aumenta proporcionalmente à intensidade do esforço para bombear mais sangue oxigenado e nutrientes aos músculos em atividade.",
+        "distractors": [
+          "Diminui para menos de 20 bpm para poupar o coração.",
+          "Cessa momentaneamente enquanto o atleta corre.",
+          "Permanece inalterada independentemente da intensidade do exercício."
+        ],
+        "explanation": "O débito cardíaco aumenta durante o exercício aeróbico para suprir a maior demanda de oxigênio demandada pelas fibras musculares."
+      },
+      {
+        "text": "O ALONGAMENTO estático realizado de forma suave e controlada ao final de uma sessão de treino tem como principal objetivo:",
+        "correct": "Promover o relaxamento das fibras musculares contraídas, auxiliar na recuperação pós-esforço e manter a flexibilidade articular.",
+        "distractors": [
+          "Dobrar a força muscular máxima em menos de um minuto.",
+          "Substituir o sono noturno dos atletas de alta performance.",
+          "Curar fraturas ósseas sem necessidade de imobilização."
+        ],
+        "explanation": "O alongamento de desaquecimento normaliza o tônus muscular, alivia tensões acumuladas e preserva a amplitude de movimento articular."
+      }
+    ],
+    "3": [
+      {
+        "text": "Modalidades coletivas como futsal, basquetebol e handebol são categorizadas na BNCC como ESPORTES DE INVASÃO (ou de território) porque:",
+        "correct": "As equipes disputam o mesmo espaço de jogo, buscando invadir a meia-quadra do adversário para marcar pontos/gols enquanto defendem sua própria meta.",
+        "distractors": [
+          "Há uma rede permanente que impede qualquer aproximação entre os jogadores.",
+          "Os atletas competem exclusivamente contra o cronômetro sem adversários.",
+          "Não há regras e os jogadores podem usar bastões de madeira em campo."
+        ],
+        "explanation": "Em esportes de invasão as equipes compartilham a quadra, demandando ocupação tática do espaço, transições ofensivas e defensivas coletivas."
+      },
+      {
+        "text": "No FUTSAL, quando a bola ultrapassa totalmente a linha lateral ou de fundo do campo, o reinício do jogo (arremesso lateral ou escanteio) deve ser executado obrigatoriamente:",
+        "correct": "Com os pés, com a bola parada sobre a linha ou até 25 cm fora dela, no prazo máximo de 4 segundos.",
+        "distractors": [
+          "Com as duas mãos por trás da cabeça como no futebol de campo.",
+          "Pelo goleiro lançando a bola com a boca.",
+          "Apenas por meio de tiro livre direto sem goleiro."
+        ],
+        "explanation": "No futsal, laterais e escanteios são cobrados com os pés dentro de 4 segundos; descumprir o prazo reverte a posse de bola ao adversário."
+      },
+      {
+        "text": "No BASQUETEBOL, qual das seguintes ações constitui uma infração às regras oficiais de manejo da bola?",
+        "correct": "Caminhar ou correr segurando a bola com as duas mãos sem quicá-la no chão (andar com a bola).",
+        "distractors": [
+          "Arremessar a bola na cesta estando atrás da linha de 3 pontos.",
+          "Passar a bola com uma das mãos para um companheiro livre.",
+          "Quicar a bola no chão continuamente com uma das mãos em movimento."
+        ],
+        "explanation": "No basquete é obrigatório driblar (quicar) a bola para se deslocar pela quadra. Segurar a bola e dar mais de dois passos configura infração de andar."
+      },
+      {
+        "text": "No HANDEBOL, qual jogador é o único que possui permissão regulamentar para pisar dentro da área de gol de 6 metros e defender com qualquer parte do corpo?",
+        "correct": "O goleiro.",
+        "distractors": [
+          "O ponta esquerda.",
+          "O armador central.",
+          "O pivô ofensivo."
+        ],
+        "explanation": "A área de 6 metros é território exclusivo do goleiro no handebol; nenhum jogador de linha pode pisar nela enquanto a bola estiver em jogo."
+      }
+    ],
+    "4": [
+      {
+        "text": "A GINÁSTICA GERAL (ou Ginástica para Todos), incentivada no contexto escolar, diferencia-se da ginástica artística competitiva olímpica porque:",
+        "correct": "Privilegia a participação, a criatividade, a cooperação e a inclusão de todos os estudantes sem foco na cobrança de notas ou exclusão por erros.",
+        "distractors": [
+          "Exige que todos os alunos realizem saltos mortais duplos aos 10 anos de idade.",
+          "Proíbe o uso de músicas ou materiais nas coreografias.",
+          "Permite apenas a participação de atletas com medalhas internacionais."
+        ],
+        "explanation": "A Ginástica para Todos tem caráter lúdico e formativo: integra elementos da acrobacia, dança e expressão corporal respeitando os limites de cada aluno."
+      },
+      {
+        "text": "Qual das seguintes capacidades físicas refere-se à amplitude máxima de movimento que uma articulação pode realizar sem lesionar os tecidos?",
+        "correct": "Flexibilidade.",
+        "distractors": [
+          "Resistência anaeróbica.",
+          "Velocidade de reação.",
+          "Potência balística."
+        ],
+        "explanation": "A flexibilidade é a qualidade física responsável pela amplitude articular e extensibilidade muscular, fundamental para a postura e gestos ginásticos."
+      },
+      {
+        "text": "O ato de conseguir sustentar o corpo em uma posição estática sobre um único pé ou sobre uma trave de equilíbrio envolve primordialmente qual capacidade motora?",
+        "correct": "Equilíbrio (estático).",
+        "distractors": [
+          "Força explosiva pura.",
+          "Velocidade de aceleração.",
+          "Agilidade de corrida."
+        ],
+        "explanation": "O equilíbrio estático é a capacidade de manter o centro de gravidade do corpo estabilizado sobre uma base de suporte fixa."
+      },
+      {
+        "text": "Em atividades corporais de ginástica em grupo, a pirâmide humana exige como princípio primordial de segurança:",
+        "correct": "Apoio das bases nos ombros ou bacias sobre superfícies firmes com colchões de proteção e ajuda mútua (assistência).",
+        "distractors": [
+          "Pisar diretamente no meio das costas ou na coluna dos colegas da base.",
+          "Montar a pirâmide sobre pisos molhados com sapatos de salto alto.",
+          "Realizar a subida vendando os olhos de quem sobe no topo."
+        ],
+        "explanation": "A segurança em formações acrobáticas requer alinhamento dos apoios em pontos ósseos fortes (escápulas, pelve), com esteiras de proteção e auxílio atento."
+      }
+    ],
+    "5": [
+      {
+        "text": "No VOLEIBOL, esporte de rede divisória, qual das seguintes alternativas expressa uma regra oficial básica do jogo?",
+        "correct": "Cada equipe pode dar no máximo três toques na bola (além do toque de bloqueio) para enviá-la à quadra adversária, sendo proibido o dois-toques seguido pelo mesmo jogador.",
+        "distractors": [
+          "É permitido agarrar a bola com as duas mãos e correr pela quadra por até 5 segundos.",
+          "O jogador que efetua o saque pode pisar além da linha de fundo antes do golpe.",
+          "Cada equipe pode dar até seis toques livres antes de devolver a bola."
+        ],
+        "explanation": "A regra oficial limita em três os toques coletivos por equipe para devolver a bola, vetando dois toques sucessivos pelo mesmo atleta (exceto após bloqueio)."
+      },
+      {
+        "text": "Qual fundamento técnico do voleibol é realizado com os braços estendidos e unidos pelos punhos para amortecer saques e ataques adversários?",
+        "correct": "Manchete.",
+        "distractors": [
+          "Toque de dedos.",
+          "Cortada potente.",
+          "Bloqueio simples."
+        ],
+        "explanation": "A manchete é o fundamento básico de recepção e defesa baixa: o contato ocorre na face interna dos antebraços unidos e estendidos."
+      },
+      {
+        "text": "O movimento em que os jogadores de uma equipe de vôlei mudam de posição na quadra em sentido horário após recuperarem o direito de sacar chama-se:",
+        "correct": "Rodízio (rotação).",
+        "distractors": [
+          "Transição ofensiva.",
+          "Substituição livre.",
+          "Falta técnica."
+        ],
+        "explanation": "O rodízio garante que todos os atletas passem pelas posições de ataque (rede: 4, 3, 2) e defesa (fundo: 5, 6, 1) em sentido horário."
+      },
+      {
+        "text": "No jogo de PETECA, modalidade esportiva genuinamente brasileira nascida nas tradições indígenas de Minas Gerais, a peteca deve ser golpeada:",
+        "correct": "Com apenas uma das mãos aberta, sendo proibido golpeá-la duas vezes consecutivas ou deixá-la cair na própria quadra.",
+        "distractors": [
+          "Com os pés e com a cabeça como no futebol.",
+          "Com raquetes pesadas de tênis de mesa.",
+          "Com as duas mãos unidas ao mesmo tempo."
+        ],
+        "explanation": "Na peteca oficial os jogadores golpeiam a peteca com a palma aberta de uma das mãos sobre a rede, sem permitir retenção ou toques duplos."
+      }
+    ],
+    "6": [
+      {
+        "text": "O princípio do FAIR PLAY (Jogo Limpo) no esporte e na educação física fundamenta-se primordialmente em:",
+        "correct": "Respeitar as regras, os adversários, os árbitros e os colegas de time, valorizando a integridade, a cooperação e a ética acima da vitória.",
+        "distractors": [
+          "Simular lesões e faltas para enganar a arbitragem e vencer a qualquer custo.",
+          "Comemorar zombando dos atletas derrotados no final da partida.",
+          "Desrespeitar as instruções do professor quando a equipe estiver perdendo."
+        ],
+        "explanation": "Fair play é a essência ética do esporte: lealdade, civilidade, aceitação honesta dos resultados e respeito à dignidade humana de todos."
+      },
+      {
+        "text": "Qual é a principal diferença entre um JOGO COOPERATIVO e um JOGO COMPETITIVO tradicional?",
+        "correct": "No jogo cooperativo todos os participantes jogam juntos para alcançar uma meta comum (todos vencem juntos); no competitivo há divisão entre vencedores e perdedores.",
+        "distractors": [
+          "No jogo cooperativo não é permitido sorrir nem conversar durante a partida.",
+          "Os jogos cooperativos exigem o uso exclusivo de computadores eletrônicos.",
+          "Não há diferença, todos os jogos são sempre competições eliminatórias."
+        ],
+        "explanation": "Jogos cooperativos substituem a lógica da rivalidade pela de união e solidariedade, estimulando a inclusão e a resolução coletiva de desafios."
+      },
+      {
+        "text": "Jogos populares e tradicionais brasileiros, como queimada, barra-manteiga, cabo de guerra e pega-pega, têm grande valor educacional porque:",
+        "correct": "Resgatam a cultura lúdica popular, promovem o desenvolvimento motor e social e permitem a adaptação das regras pelo próprio grupo.",
+        "distractors": [
+          "Preparam os estudantes para serem soldados profissionais em guerras.",
+          "Substituem totalmente todas as matérias teóricas da escola.",
+          "Exigem a compra de equipamentos importados de alto custo financeiro."
+        ],
+        "explanation": "Os jogos populares são transmitidos culturalmente e desenvolvem empatia, negociação de regras coletivas, agilidade motora e socialização."
+      },
+      {
+        "text": "Quando um estudante reconhece espontaneamente que a bola tocou em sua mão ou fora da quadra antes que o árbitro apite, ele demonstra:",
+        "correct": "Conduta ética de Fair Play e honestidade desportiva.",
+        "distractors": [
+          "Falta de técnica esportiva que merece punição.",
+          "Desinteresse em participar da aula de Educação Física.",
+          "Comportamento antiético prejudicial à turma."
+        ],
+        "explanation": "A honestidade voluntária expressa o mais alto espírito esportivo, colocando os valores morais acima de uma vantagem temporária no jogo."
+      }
+    ]
+  },
+  "filosofia": {
+    "1": [
+      {
+        "text": "O surgimento da Filosofia na Grécia Antiga (século VI a.C.) na região da Jônia é historicamente marcado pela passagem do MITO ao LOGOS. Essa transição significou:",
+        "correct": "A substituição gradual de narrativas míticas e sobrenaturais por explicações racionais, causais e baseadas na observação lógica da natureza (cosmos).",
+        "distractors": [
+          "A proibição do uso da razão e a imposição de superstições mágicas obrigatórias.",
+          "A adoção de dogmas religiosos egípcios como lei civil em Atenas.",
+          "A destruição de todas as bibliotecas e o fim do debate público nas praças."
+        ],
+        "explanation": "A passagem do mito ao logos marca o nascimento do pensamento filosófico: a busca racional (logos) por causas naturais para a ordem do universo."
+      },
+      {
+        "text": "Os primeiros filósofos gregos (como Tales de Mileto, Anaxímenes e Heráclito) são chamados de PRÉ-SOCRÁTICOS ou 'filósofos da physis'. Qual era a pergunta central que norteava suas investigações?",
+        "correct": "Qual é o princípio originário fundamental (arché) que constitui e governa todas as coisas da natureza?",
+        "distractors": [
+          "Como construir máquinas a vapor para tecelagens em Atenas?",
+          "Qual é a melhor moeda de ouro para comercializar escravizados no mar?",
+          "Quem será o próximo imperador romano eleito por voto direto?"
+        ],
+        "explanation": "Os pré-socráticos buscavam a 'arché' (o elemento primordial: água para Tales, ar para Anaxímenes, fogo/devir para Heráclito) como causa da totalidade natural."
+      },
+      {
+        "text": "Para o filósofo Heráclito de Éfeso, a realidade é caracterizada pelo constante fluxo e devir ('Tudo flui, nada permanece'). Ele expressou essa ideia na célebre frase:",
+        "correct": "'Nenhum homem pode banhar-se duas vezes no mesmo rio, pois na segunda vez nem o rio nem o homem serão os mesmos.'",
+        "distractors": [
+          "'O mundo foi criado pronto e perfeito sem jamais se transformar.'",
+          "'A única certeza é que todas as coisas materiais são ilusões imóveis.'",
+          "'A verdade pertence exclusivamente aos generais do exército de Esparta.'"
+        ],
+        "explanation": "Heráclito enfatizou a impermanência, a transformação dialética contínua e a harmonia dinâmica dos opostos que governa o cosmos."
+      },
+      {
+        "text": "Qual fator histórico e social contribuiu decisivamente para o nascimento da Filosofia nas cidades-estado (pólis) da Grécia Antiga?",
+        "correct": "O desenvolvimento da ágora (espaço público de debate), a invenção da moeda, o comércio marítimo e o uso da escrita alfabética desmistificada.",
+        "distractors": [
+          "A existência de uma monarquia absolutista que proibia qualquer reunião cidadã.",
+          "A ausência total de leis escritas em qualquer cidade grega.",
+          "A imposição de uma religião com sacerdotes todo-poderosos controladores da mente."
+        ],
+        "explanation": "A pólis grega abriu espaço para o discurso racional e a argumentação pública livre entre os cidadãos na ágora, estimulando a reflexão filosófica."
+      }
+    ],
+    "2": [
+      {
+        "text": "O filósofo Sócrates de Atenas (470-399 a.C.) revolucionou o pensamento grego ao transferir o foco das investigações da natureza para:",
+        "correct": "O ser humano, a moral, a virtude, a justiça e o autoconhecimento ('Conhece-te a ti mesmo').",
+        "distractors": [
+          "A criação de mapas astronômicos de galáxias distantes.",
+          "A contabilidade financeira dos navios de carga do porto do Pireu.",
+          "O cultivo de sementes híbridas em estufas subterrâneas."
+        ],
+        "explanation": "Sócrates inaugurou o período antropológico da filosofia grega, dedicando-se à ética, à definição dos conceitos de virtude e à consciência crítica."
+      },
+      {
+        "text": "O método investigativo de Sócrates baseava-se no diálogo face a face dividido em duas etapas fundamentais: a IRONIA e a MAIÊUTICA. A maiêutica consistia em:",
+        "correct": "Conduzir o interlocutor, por meio de perguntas reflexivas bem orientadas, a 'dar à luz' ideias e conceitos verdadeiros a partir de sua própria razão.",
+        "distractors": [
+          "Impor respostas prontas dogmáticas para que fossem decoradas sem perguntas.",
+          "Cobrar quantias exorbitantes de dinheiro para ensinar discursos eleitoreiros.",
+          "Impedir que as pessoas reconhecessem que não sabiam tudo sobre o assunto."
+        ],
+        "explanation": "Inspirando-se em sua mãe parteira, Sócrates chamou sua arte de maiêutica (parto das ideias): despertar a verdade latente na mente do ouvinte."
+      },
+      {
+        "text": "A famosa máxima socrática 'Só sei que nada sei' expressa qual atitude filosófica essencial?",
+        "correct": "A humildade intelectual de reconhecer a própria ignorância como ponto de partida indispensável para a busca genuína da verdade e do conhecimento.",
+        "distractors": [
+          "O desânimo de quem desiste de estudar e prefere viver na mentira.",
+          "A afirmação de que a ciência humana jamais conseguirá descobrir nada.",
+          "A defesa de que as opiniões fúteis valem tanto quanto as provas científicas."
+        ],
+        "explanation": "Para Sócrates, admitir que não se sabe livra a pessoa do falso saber e abre a mente para o aprendizado e a investigação crítica."
+      },
+      {
+        "text": "Por que Sócrates foi condenado à morte pelos governantes de Atenas em 399 a.C. tomando a taça de cicuta?",
+        "correct": "Sob as acusações de corromper a juventude ateniense com seus questionamentos filosóficos e não cultuar os deuses oficiais da pólis.",
+        "distractors": [
+          "Por ter roubado o tesouro da frota de navios no porto de Atenas.",
+          "Por se recusar a responder às perguntas dos juízes em tribunais civis.",
+          "Por tentar incendiar o templo do Partenon na Acrópole."
+        ],
+        "explanation": "Sócrates incomodava as elites conservadoras de Atenas com seus questionamentos éticos impiedosos, sendo julgado e executado por cicuta."
+      }
+    ],
+    "3": [
+      {
+        "text": "Na célebre ALEGORIA DA CAVERNA (Livro VII de A República), de Platão, os prisioneiros acorrentados que enxergam apenas sombras na parede representam:",
+        "correct": "A condição dos seres humanos presos às aparências, preconceitos e ilusões do senso comum (mundo sensível).",
+        "distractors": [
+          "Cientistas avançados que já dominam toda a verdade do cosmos.",
+          "Guerreiros vitoriosos que conquistaram todas as cidades vizinhas.",
+          "Sábios que se recusam a olhar para o mundo material."
+        ],
+        "explanation": "A caverna simboliza a humanidade dominada pela doxa (opinião rasa, aparências enganosas dos sentidos), distante da verdade inteligível."
+      },
+      {
+        "text": "O que simboliza a libertação do prisioneiro, a difícil subida até a saída da caverna e a contemplação do Sol no mito platônico?",
+        "correct": "A jornada filosófica de elevação da alma para além das ilusões sensíveis em direção ao Mundo das Ideias perfeitas e à Verdade suprema (o Bem).",
+        "distractors": [
+          "A demonstração de que a escuridão é sempre mais segura do que a luz.",
+          "A desistência de qualquer estudo formal e a fuga para o deserto.",
+          "A comprovação de que as sombras são a realidade física absoluta."
+        ],
+        "explanation": "Sair da caverna é a emancipação pelo conhecimento racional (episteme), onde o Sol representa a Ideia Suprema do Bem que ilumina todas as verdades."
+      },
+      {
+        "text": "A teoria metafísica do filósofo Platão postula a existência de dois mundos distintos: o Mundo Sensível e o Mundo Inteligível. O Mundo Inteligível é aquele que:",
+        "correct": "Contém as formas ou ideias perfeitas, imutáveis, eternas e verdadeiras, acessíveis apenas pelo intelecto e pela razão pura.",
+        "distractors": [
+          "Pode ser tocado, quebrado e desgastado com o tempo material.",
+          "É composto por cópias imperfeitas e ilusões efêmeras dos sentidos.",
+          "Contém apenas minerais pesados e poeira espacial fria."
+        ],
+        "explanation": "Para Platão, as coisas materiais que vemos são apenas cópias imperfeitas (sombras) das ideias perfeitas que habitam o Mundo das Formas inteligíveis."
+      },
+      {
+        "text": "Ao final do mito da caverna, o prisioneiro libertado decide retornar ao fundo escuro para alertar seus antigos companheiros. Essa atitude simboliza:",
+        "correct": "O compromisso ético e político do filósofo de educar e emancipar seus concidadãos, mesmo correndo o risco de ser ridicularizado ou morto.",
+        "distractors": [
+          "O arrependimento de ter saído para a luz do sol.",
+          "A vontade de se tornar o rei mais cruel e ditatorial da caverna.",
+          "A busca por ouro e joias que haviam sido esquecidas na rocha."
+        ],
+        "explanation": "O retorno do filósofo à caverna expressa a função social e pedagógica da filosofia: esclarecer a pólis e promover uma cidade justa."
+      }
+    ],
+    "4": [
+      {
+        "text": "Em sua obra Ética a Nicômaco, o filósofo Aristóteles ensina que a VIRTUDE MORAL (areté) reside no JUSTO MEIO (mediania). O que significa a justa medida aristotélica?",
+        "correct": "O equilíbrio da razão entre dois extremos viciosos: um vício pelo excesso e outro vício pela falta.",
+        "distractors": [
+          "A busca desenfreada por prazeres corporais sem medir consequências futuras.",
+          "A covardia absoluta diante de qualquer desafio ético importante.",
+          "A recusa total em conviver em sociedade e o isolamento em cavernas."
+        ],
+        "explanation": "A virtude é a mediania entre os extremos: a coragem, por exemplo, é o justo meio entre a covardia (falta) e a temeridade irresponsável (excesso)."
+      },
+      {
+        "text": "Segundo a filosofia de Aristóteles, qual é o fim último e supremo de todas as ações e escolhas humanas (o bem soberano)?",
+        "correct": "A Felicidade (Eudaimonia), compreendida como a plena realização de uma vida vivida de forma virtuosa e racional na pólis.",
+        "distractors": [
+          "A acumulação desmedida de barras de ouro e moedas no cofre.",
+          "A dominação violenta de outros povos pela força das armas.",
+          "A fama efêmera nas redes de teatro gregas sem virtude moral."
+        ],
+        "explanation": "Para Aristóteles, a Eudaimonia (felicidade autêntica) não é mero prazer passageiro, mas a realização do potencial racional e ético humano."
+      },
+      {
+        "text": "Para Aristóteles, a frase célebre 'O homem é por natureza um animal político' (zoon politikon) significa que:",
+        "correct": "O ser humano foi feito para viver em sociedade (na pólis), onde se realiza plenamente através da linguagem, da moral e da vida comunitária.",
+        "distractors": [
+          "Todos os seres humanos devem obrigatoriamente se candidatar a cargos eletivos.",
+          "O homem não possui nenhuma diferença biológica em relação aos animais ferozes.",
+          "Os indivíduos vivem melhor quando isolados sem leis ou cooperação mútua."
+        ],
+        "explanation": "O homem é um animal social e dotado de palavra (logos); fora da pólis e da convivência com os semelhantes, ele seria um deus ou uma fera."
+      },
+      {
+        "text": "Ao contrário de Platão que defendia o Mundo das Ideias separadas, Aristóteles afirmava que o conhecimento humano começa pela:",
+        "correct": "Experiência sensível empírica (observação das coisas do mundo real) combinada com o raciocínio lógico indutivo e dedutivo.",
+        "distractors": [
+          "Meditação mística transcendental sem nunca tocar em nenhum objeto.",
+          "Crença cega em profecias astrológicas oraculares.",
+          "Rejeição de qualquer observação empírica da natureza viva."
+        ],
+        "explanation": "Aristóteles valorizava o mundo material concreto e os sentidos como porta de entrada para a abstração e para a ciência lógica."
+      }
+    ],
+    "5": [
+      {
+        "text": "Na tradição filosófica, qual é a distinção fundamental entre o SENSO COMUM (Doxa) e o SABER CRÍTICO FUNDAMENTADO (Episteme)?",
+        "correct": "O senso comum é um saber superficial e espontâneo aceito por hábito sem questionamento; o saber crítico é rigoroso, metódico e justificado por evidências.",
+        "distractors": [
+          "O senso comum é o único saber infalível e as ciências estão sempre erradas.",
+          "A episteme baseia-se exclusivamente em fofocas e crenças populares folclóricas.",
+          "Não há diferença, todo conhecimento humano é exatamente idêntico em rigor."
+        ],
+        "explanation": "Doxa é a opinião vulgar não testada; episteme é o conhecimento verdadeiro fundamentado em argumentos, métodos e demonstração lógica."
+      },
+      {
+        "text": "Uma pessoa que reproduz preconceitos sociais e notícias falsas sem verificar sua veracidade ou refletir sobre suas fontes está agindo sob a influência de:",
+        "correct": "Senso comum ingênuo e dogmatismo acrítico.",
+        "distractors": [
+          "Investigação filosófica radical.",
+          "Pensamento científico sistemático.",
+          "Método dialético rigoroso."
+        ],
+        "explanation": "A aceitação passiva de crenças e preconceitos herdados sem passar pelo crivo da razão crítica é a marca do senso comum acrítico."
+      },
+      {
+        "text": "A postura de 'estranhamento' (ou espanto filosófico - thauma) defendida pelos filósofos consiste em:",
+        "correct": "Questionar o que parece óbvio e natural no cotidiano, buscando compreender as causas profundas e o sentido das coisas.",
+        "distractors": [
+          "Sentir medo de todas as pessoas desconhecidas na rua.",
+          "Recusar-se a conversar com amigos e familiares sobre qualquer assunto.",
+          "Aceitar passivamente tudo o que a propaganda diz sem pensar."
+        ],
+        "explanation": "O espanto (thauma) é a fagulha da filosofia: desnaturalizar o cotidiano e perguntar o 'porquê' das coisas que a maioria aceita cegamente."
+      },
+      {
+        "text": "Qual é a principal contribuição da dúvida metódica e do pensamento crítico para a vida do cidadão contemporâneo?",
+        "correct": "Capacitar o indivíduo a pensar por si próprio (autonomia), combatendo a manipulação, o fanatismo e as fake news.",
+        "distractors": [
+          "Tornar as pessoas incapazes de tomar qualquer decisão na vida.",
+          "Garantir notas dez em provas sem precisar estudar.",
+          "Impedir a convivência amigável em sociedade."
+        ],
+        "explanation": "A reflexão crítica constrói sujeitos autônomos e conscientes de seus direitos e deveres, protegendo a sociedade de enganos e extremismos."
+      }
+    ],
+    "6": [
+      {
+        "text": "Na pólis de Atenas, no século V a.C., nasceu a DEMOCRACIA direta. No entanto, qual era o principal limite desse modelo em comparação à cidadania moderna?",
+        "correct": "A cidadania era restrita: mulheres, estrangeiros (metecos) e escravizados eram completamente excluídos dos direitos políticos e das decisões na assembleia.",
+        "distractors": [
+          "Todos os seres humanos de qualquer idade votavam igualmente por carta.",
+          "Apenas as crianças de até 7 anos tinham direito de voto nas assembleias.",
+          "Os cidadãos eram proibidos de expressar sua opinião em praça pública."
+        ],
+        "explanation": "A democracia ateniense era direta para os cidadãos (homens livres, atenienses maiores de idade), mas excluía a grande maioria da população."
+      },
+      {
+        "text": "Aprovada pela Assembleia Geral da ONU em 1948 após as atrocidades da Segunda Guerra Mundial, a DECLARAÇÃO UNIVERSAL DOS DIREITOS HUMANOS estabelece que:",
+        "correct": "Todos os seres humanos nascem livres e iguais em dignidade e direitos, devendo ser protegidos contra discriminação, tortura e opressão.",
+        "distractors": [
+          "Apenas os cidadãos de países ricos com curso universitário possuem direitos fundamentais.",
+          "Os governantes têm autorização para revogar a vida de seus opositores a qualquer hora.",
+          "A liberdade de expressão pertence exclusivamente aos donos de emissoras de televisão."
+        ],
+        "explanation": "O documento de 1948 consagrou a dignidade humana como valor universal inalienável, independente de etnia, gênero, nacionalidade ou crença."
+      },
+      {
+        "text": "O exercício pleno da CIDADANIA em uma sociedade democrática contemporânea envolve:",
+        "correct": "Não apenas o voto nas eleições, mas também o respeito às leis, a cobrança ética dos governantes, a defesa dos bens públicos e o respeito aos direitos alheios.",
+        "distractors": [
+          "Exclusivamente o pagamento de impostos sem jamais acompanhar o destino do dinheiro.",
+          "A obediência cega a ordens ilegais sem nenhum direito de contestação.",
+          "A busca de privilégios privados prejudicando o bem-estar coletivo."
+        ],
+        "explanation": "Cidadania ativa é uma prática cotidiana de direitos civis, políticos e sociais, conjugando participação solidária e fiscalização pública."
+      },
+      {
+        "text": "Em Ética e Filosofia Política, o conceito de 'bem comum' refere-se a:",
+        "correct": "O conjunto de condições sociais, econômicas e culturais que permitem a todos os membros de uma comunidade atingirem seu pleno desenvolvimento e dignidade.",
+        "distractors": [
+          "A soma das riquezas privadas de um único governante da nação.",
+          "A autorização para que o mais forte domine violentamente os vulneráveis.",
+          "A ausência total de hospitais, escolas e praças públicas na cidade."
+        ],
+        "explanation": "O bem comum ultrapassa o mero interesse particular: visa ao florescimento compartilhado e à justiça social para a coletividade."
+      }
+    ]
+  },
+  "redacao": {
+    "1": [
+      {
+        "text": "O gênero textual CRÔNICA NARRATIVA caracteriza-se primordialmente por:",
+        "correct": "Construir uma narrativa breve a partir de cenas comuns do dia a dia, combinando sensibilidade poética, humor e reflexão existencial com o leitor.",
+        "distractors": [
+          "Apresentar dados técnicos de engenharia em fórmulas matemáticas complexas.",
+          "Conter artigos de leis jurídicas que devem ser decorados obrigatoriamente.",
+          "Narrar a trajetória de impérios galácticos em dezenas de tomos enciclopédicos."
+        ],
+        "explanation": "A crônica narrativa parte do trivial (um diálogo na padaria, um pássaro na janela) para iluminar com lirismo e humor a experiência humana cotidiana."
+      },
+      {
+        "text": "Na estrutura do enredo de uma crônica ou narrativa curta, o momento de maior tensão dramática e suspense da história chama-se:",
+        "correct": "Clímax.",
+        "distractors": [
+          "Desfecho harmonioso.",
+          "Introdução expositiva.",
+          "Epígrafe inicial."
+        ],
+        "explanation": "O clímax é o ápice do conflito narrativo: o ponto crucial em que a história atinge sua intensidade máxima antes de caminhar para a resolução/desfecho."
+      },
+      {
+        "text": "Qual é o efeito de sentido gerado pelo uso de uma linguagem leve, próxima da oralidade e coloquial na crônica?",
+        "correct": "Estabelecer cumplicidade, afetividade e identificação imediata entre o cronista e o leitor, simulando uma conversa confidencial de amigos.",
+        "distractors": [
+          "Confundir o leitor para que ele não entenda o que está sendo dito.",
+          "Transformar a crônica em um relatório militar impessoal.",
+          "Proibir o leitor de refletir sobre as próprias experiências."
+        ],
+        "explanation": "A coloquialidade cuidada é a marca registrada do gênero crônica: um tom acolhedor de confidência sobre os episódios da vida comum."
+      },
+      {
+        "text": "O desfecho de uma crônica costuma surpreender o leitor muitas vezes por meio de:",
+        "correct": "Uma quebra de expectativa lírica ou bem-humorada que revela uma nova perspectiva sobre o episódio narrado.",
+        "distractors": [
+          "Uma equação física sobre o movimento retilíneo uniforme.",
+          "A repetição exata das primeiras dez palavras do texto sem sentido.",
+          "A assinatura formal de um juiz de direito autorizando a publicação."
+        ],
+        "explanation": "O final da crônica costuma ter um fecho reflexivo ou uma reviravolta sutil que resignifica toda a cena aos olhos do leitor."
+      }
+    ],
+    "2": [
+      {
+        "text": "No texto jornalístico do gênero NOTÍCIA, o relato de fatos deve primar pelo princípio da:",
+        "correct": "Veracidade, precisão factual e busca de objetividade, respondendo às perguntas do lide sem expressar ofensas ou opiniões pessoais do repórter.",
+        "distractors": [
+          "Invenção de personagens mágicos e monstros mitológicos nas ruas.",
+          "Defesa apaixonada do time de futebol favorito do jornalista.",
+          "Omissão de datas e locais para criar clima de suspense policial."
+        ],
+        "explanation": "O dever ético do jornalismo noticioso é apurar os fatos com fidelidade, checar fontes e informar a sociedade com clareza e impessoalidade."
+      },
+      {
+        "text": "Qual das opções exemplifica o LIDE correto e completo de uma notícia escolar?",
+        "correct": "'Na manhã desta quarta-feira (15), o Colégio Gammon inaugurou seu novo laboratório de ciências em Lavras para incentivar projetos de iniciação científica.'",
+        "distractors": [
+          "'Acho que o colégio ficou muito bonito com o prédio novo que pintaram de azul semana passada.'",
+          "'Eu fiquei com muita preguiça de assistir à palestra de ciências na biblioteca hoje cedo.'",
+          "'Era uma vez um laboratório antigo onde morava um cientista maluco com seus frascos coloridos.'"
+        ],
+        "explanation": "O lide responde objetivamente: quem (Colégio Gammon), o quê (inaugurou laboratório), quando (quarta-feira), onde (Lavras) e para que (projetos científicos)."
+      },
+      {
+        "text": "A diferença primordial entre o gênero NOTÍCIA e o gênero REPORTAGEM reside no fato de que:",
+        "correct": "A notícia foca no fato imediato e recente de forma mais curta; a reportagem aprofunda o tema com investigações, entrevistas, causas históricas e desdobramentos.",
+        "distractors": [
+          "A notícia é sempre mentirosa e a reportagem fala apenas de culinária.",
+          "A reportagem não tem texto, é formada exclusivamente por fotografias coloridas.",
+          "Ambos os formatos são exatamente iguais e não possuem nenhuma diferença de extensão."
+        ],
+        "explanation": "A notícia é factual, curta e rápida; a reportagem é uma grande matéria analítica que investiga as raízes e múltiplos ângulos de uma questão."
+      },
+      {
+        "text": "As falas e depoimentos de testemunhas ou especialistas em uma notícia devem vir destacados entre aspas para:",
+        "correct": "Indicar discurso direto, reproduzindo com fidelidade a voz do entrevistado sem misturar com as palavras do jornalista.",
+        "distractors": [
+          "Indicar que a declaração da testemunha é falsa e não merece crédito.",
+          "Avisar que o entrevistado estava cochichando durante a conversa.",
+          "Preencher espaço em branco na página do jornal."
+        ],
+        "explanation": "O uso das aspas no jornalismo marca as citações diretas atribuídas à respectiva fonte entrevistada."
+      }
+    ],
+    "3": [
+      {
+        "text": "Na estrutura do texto DISSERTATIVO-ARGUMENTATIVO, a INTRODUÇÃO deve conter fundamentalmente:",
+        "correct": "A contextualização do tema proposto e a formulação clara da Tese (posicionamento crítico do autor).",
+        "distractors": [
+          "O desfecho completo de todas as discussões com dados finais.",
+          "Apenas poemas rimados sem menção ao assunto da proposta.",
+          "A assinatura do corretor da prova e a nota estimada."
+        ],
+        "explanation": "O parágrafo inicial situa o leitor no tema e apresenta com clareza a tese a ser sustentada ao longo do texto."
+      },
+      {
+        "text": "Em um parágrafo de desenvolvimento de redação, o TÓPICO FRASAL corresponde a:",
+        "correct": "A frase-guia inicial que sintetiza a ideia central e o argumento específico que será desdobrado naquele parágrafo.",
+        "distractors": [
+          "A última palavra do texto escrita com caneta de cor diferente.",
+          "Uma pergunta retórica sem relação com a tese defendida.",
+          "O título da redação colocado no meio da página."
+        ],
+        "explanation": "O tópico frasal orienta o leitor sobre o argumento nuclear do parágrafo, servindo de base para o desdobramento de causas e exemplos."
+      },
+      {
+        "text": "Qual das seguintes estratégias argumentativas é considerada mais sólida e consistente para fundamentar uma tese?",
+        "correct": "Apresentar a relação de causa e efeito articulada a dados estatísticos de órgãos oficiais (como IBGE) e fatos históricos documentados.",
+        "distractors": [
+          "Dizer que 'todo mundo sabe disso' sem citar nenhum dado concreto.",
+          "Inventar pesquisas imaginárias atribuindo a cientistas anônimos.",
+          "Copiar palavra por palavra a coletânea de textos motivadores da prova."
+        ],
+        "explanation": "A argumentação consistente baseia-se na lógica de causa e consequência sustentada por repertório legítimo e evidências verificáveis."
+      },
+      {
+        "text": "Por que se deve evitar o uso da primeira pessoa do singular ('eu acho', 'no meu ponto de vista') em dissertações de concursos e vestibulares?",
+        "correct": "Porque a linguagem impessoal em 3ª pessoa confere maior distanciamento crítico, seriedade argumentativa e autoridade científica ao texto.",
+        "distractors": [
+          "Porque os corretores proíbem redações com mais de vinte verbos.",
+          "Porque a primeira pessoa só pode ser usada em línguas estrangeiras.",
+          "Porque escrever na primeira pessoa cancela o registro do estudante no colégio."
+        ],
+        "explanation": "A terceira pessoa ('constata-se que', 'é fundamental notar que') projeta objetividade e rigor conceitual, superando o viés do mero achismo particular."
+      }
+    ],
+    "4": [
+      {
+        "text": "Qual das seguintes características distingue formalmente o ARTIGO DE OPINIÃO de uma dissertação escolar tradicional?",
+        "correct": "O artigo de opinião é um gênero jornalístico assinado pelo autor, admite interlocução persuasiva direta e pode utilizar recursos retóricos mais livres.",
+        "distractors": [
+          "O artigo de opinião não pode ter nenhum parágrafo de introdução ou conclusão.",
+          "A dissertação escolar é sempre rimada em sonetos de estilo parnasiano.",
+          "Ambos os gêneros são exatamente iguais e não possuem nenhuma diferença prática."
+        ],
+        "explanation": "O artigo de opinião possui assinatura (articulista), diálogo mais próximo com o leitor e circulação pública em jornais e revistas."
+      },
+      {
+        "text": "No artigo de opinião, o recurso argumentativo da CONTRA-ARGUMENTAÇÃO consiste em:",
+        "correct": "Apresentar o ponto de vista contrário ao seu e, em seguida, refutá-lo com argumentos lógicos e provas superiores, desmontando a posição oposta.",
+        "distractors": [
+          "Concordar integralmente com o adversário e abandonar a própria tese.",
+          "Insultar os leitores que pensam de maneira diferente do autor.",
+          "Apagar todo o texto escrito e começar outra redação do zero."
+        ],
+        "explanation": "Refutar a contra-argumentação antecipada demonstra domínio do tema e fortalece enormemente o posicionamento defendido pelo autor."
+      },
+      {
+        "text": "Em uma CARTA ARGUMENTATIVA, quais elementos de cabeçalho e vocativo são obrigatórios na estrutura padrão do gênero?",
+        "correct": "Local e data no topo, vocativo identificando o destinatário com pronome de tratamento adequado, corpo da carta, despedida cordial e assinatura.",
+        "distractors": [
+          "Apenas o número do telefone do autor sem nenhuma mensagem escrita.",
+          "Um desenho geométrico colorido sem cabeçalho nem data.",
+          "O hino nacional impresso em letras maiúsculas sem destinatário."
+        ],
+        "explanation": "A carta argumentativa requer contextualização epistolar: data, tratamento ao destinatário específico, argumentação persuasiva e fechamento cortês."
+      },
+      {
+        "text": "Qual operador argumentativo é ideal para introduzir um contra-argumento com ressalva antes de demonstrar a posição do autor?",
+        "correct": "'Embora alguns defendam que X, a realidade demonstra que Y...'",
+        "distractors": [
+          "'Portanto todos concordam que...'",
+          "'Além disso é maravilhoso que...'",
+          "'Por conseguinte não há dúvidas de que...'"
+        ],
+        "explanation": "Conjunções concessivas ('embora', 'ainda que', 'apesar de') introduzem a visão adversária para rebatê-la com a tese principal."
+      }
+    ],
+    "5": [
+      {
+        "text": "A COESÃO TEXTUAL INTERPARÁGRAFOS é garantida quando o redator utiliza conectivos para ligar um parágrafo ao anterior. Qual conectivo inicia adequadamente um parágrafo de acréscimo de argumentos?",
+        "correct": "'Além disso, vale destacar que...'",
+        "distractors": [
+          "'Todavia não obstante...'",
+          "'Em conclusão finalizamos...'",
+          "'Porquanto haja dúvidas...'"
+        ],
+        "explanation": "'Além disso', 'ademais', 'outro aspecto relevante' expressam continuidade e acréscimo de argumentos em novos parágrafos."
+      },
+      {
+        "text": "Qual das seguintes frases apresenta uso CORRETO de conectivo conclusivo para amarrar uma linha de raciocínio?",
+        "correct": "'Os índices de vacinação infantil aumentaram consideravelmente; PORTANTO, a transmissão de doenças recuou na comunidade.'",
+        "distractors": [
+          "'Os índices de vacinação aumentaram; EMBORA a transmissão recuou.'",
+          "'Os índices de vacinação aumentaram; MAS a transmissão recuou muito.'",
+          "'Os índices de vacinação aumentaram; QUANDO a transmissão recuou.'"
+        ],
+        "explanation": "'Portanto' expressa o resultado ou efeito lógico da premissa anterior (vacinação alta resultou em recuo de doenças)."
+      },
+      {
+        "text": "Para evitar a repetição excessiva do termo 'escola' em uma redação, qual recurso de coesão lexical por SINONÍMIA e HIPERONÍMIA pode ser empregado?",
+        "correct": "Substituir alternadamente por termos como 'instituição de ensino', 'ambiente educacional', 'espaço pedagógico' ou 'colégio'.",
+        "distractors": [
+          "Repetir a palavra 'escola' dez vezes na mesma linha com aspas.",
+          "Substituir a palavra 'escola' pela palavra 'automóvel esportivo'.",
+          "Deixar o espaço em branco sem nenhuma palavra no lugar."
+        ],
+        "explanation": "A substituição lexical por sinônimos e hiperônimos enriquece o vocabulário e preserva a clareza e fluidez do texto."
+      },
+      {
+        "text": "Qual conectivo deve ser utilizado para estabelecer uma relação de CAUSA entre duas orações na redação?",
+        "correct": "'Visto que' ('Muitos rios transbordaram, visto que as chuvas de verão foram atipicamente intensas').",
+        "distractors": [
+          "'Portanto' em início de oração causal.",
+          "'Contudo' em oração explicativa de causa.",
+          "'Ou...ou' em oração de tempo pretérito."
+        ],
+        "explanation": "Conectivos causais ('visto que', 'já que', 'uma vez que', 'porque') introduzem a razão ou causa motivadora do fato principal."
+      }
+    ],
+    "6": [
+      {
+        "text": "No fechamento de uma dissertação escolar, qual é a função essencial do parágrafo de CONCLUSÃO?",
+        "correct": "Retomar a tese inicial de forma sintetizada, articulando os argumentos desenvolvidos e propondo uma reflexão ou encaminhamento construtivo sobre o problema.",
+        "distractors": [
+          "Inserir dezenas de novos argumentos que não foram citados no desenvolvimento.",
+          "Pedir desculpas ao corretor pelos erros gramaticais cometidos no texto.",
+          "Contar uma piada de humor para que o texto termine de forma alegre."
+        ],
+        "explanation": "A conclusão é a amarração final: confirma a tese sem introduzir argumentos novos inesperados e apresenta proposição de reflexão ou intervenção social."
+      },
+      {
+        "text": "O que caracteriza o uso de um REPERTÓRIO SOCIOCULTURAL PRODUTIVO e legítimo em uma redação?",
+        "correct": "A integração pertinente de conceitos de História, Filosofia, Literatura ou dados científicos contemporâneos que se conectam diretamente à argumentação da tese.",
+        "distractors": [
+          "A cópia de frases inteiras dos textos motivadores da proposta da prova.",
+          "A invenção de nomes de filósofos fictícios que nunca existiram.",
+          "A reprodução de slogans publicitários comerciais de refrigerantes."
+        ],
+        "explanation": "O repertório legítimo traz o conhecimento de mundo adquirido em outras disciplinas escolares para conferir densidade e valor à redação."
+      },
+      {
+        "text": "Uma proposta de intervenção social ou reflexão final de redação deve ser formulada garantindo que:",
+        "correct": "Respeite integralmente os Direitos Humanos, a dignidade dos cidadãos e a legalidade constitucional.",
+        "distractors": [
+          "Defenda castigos corporais e violência contra grupos minoritários.",
+          "Exija que o governo feche todas as escolas do país imediatamente.",
+          "Proponha leis absurdas que violem os tratados internacionais de paz."
+        ],
+        "explanation": "Qualquer proposta ou reflexão conclusiva em exames escolares e no ENEM deve respeitar rigorosamente os Direitos Humanos e a ética civilizatória."
+      },
+      {
+        "text": "Qual das seguintes frases encerra com elegância e coerência argumentativa uma redação sobre a importância da preservação ambiental?",
+        "correct": "'Torna-se imperativo, portanto, unir a conscientização cidadã a políticas públicas eficazes de fiscalização, garantindo às futuras gerações o direito a um planeta sustentável.'",
+        "distractors": [
+          "'E foi assim que a história terminou com todo mundo feliz para sempre.'",
+          "'Não sei o que mais dizer sobre isso, mas acho que o tema é legal.'",
+          "'O professor de biologia é quem deveria resolver esse problema sozinho.'"
+        ],
+        "explanation": "Um desfecho maduro retoma a responsabilidade coletiva e fecha a dissertação com clareza propositiva e estilo formal adequado."
+      }
+    ]
+  }
+};
+    const subjData = this.sasSubjectsData[subjectKey] || this.sasSubjectsData['matematica'];
+    const currentBook = (subjData.livros || []).find(b => b.id === bookId) || subjData.livros[0];
+    const currentCap = (currentBook.chapters || []).find(c => c.id === chapterId) || currentBook.chapters[0];
+    const capTitle = currentCap.title || 'Capítulo';
+
+    const subjPool = curriculumData[subjectKey] || curriculumData['matematica'];
+    const chapPool = subjPool[chapterId] || subjPool[1] || [];
+
+    const result = [];
+    let poolIdx = 0;
+
+    while (result.length < countNeeded && chapPool.length > 0) {
+      const raw = chapPool[poolIdx % chapPool.length];
+      const q = {
+        id: `curr_${subjectKey}_c${chapterId}_${result.length + 1}`,
+        subject: `${subjData.name} (Livro ${bookId} SAS)`,
+        topic: `${capTitle} [${difficulty.toUpperCase()}]`,
+        text: raw.text,
+        options: [
+          { text: raw.correct, correct: true },
+          { text: raw.distractors[0], correct: false },
+          { text: raw.distractors[1], correct: false },
+          { text: raw.distractors[2], correct: false }
+        ],
+        explanation: raw.explanation,
+        aiGuidance: `Material SAS Asas 2026 • ${capTitle}`
+      };
+
+      if (this.validateQuestionQuality(q)) {
+        result.push(q);
+      }
+      poolIdx++;
+      if (poolIdx > chapPool.length * 4) break; // Avoid infinite loop
+    }
+
+    return result;
+  }
+
   getQuestionsForChapter(subjectKey, bookId, chapterId, difficulty = 'dificil', count = 8) {
     const key = `${subjectKey}_${bookId}_${chapterId}`;
     const dailyInfo = this.getDailyQuizInfo();
@@ -8928,107 +12873,53 @@ class EstudePlusApp {
     const questionBank = this.getSasQuestionBank();
     let questionsList = [];
 
-    // Check curated questions
+    // 1. Prioridade absoluta: buscar no banco curado SAS para o nível solicitado
     if (questionBank[key]) {
       const bank = questionBank[key];
-      if (bank[difficulty] && bank[difficulty].length > 0) {
-        questionsList = [...bank[difficulty]];
-      } else if (bank['medio']) {
-        questionsList = [...bank['medio']];
+      const primaryPool = bank[difficulty] || [];
+      primaryPool.forEach(q => {
+        if (this.validateQuestionQuality(q)) {
+          questionsList.push(JSON.parse(JSON.stringify(q)));
+        }
+      });
+
+      // 2. Se faltam questões, buscar em outros níveis do MESMO capítulo (dificil -> medio -> facil)
+      if (questionsList.length < count) {
+        const fallbackDiffs = ['dificil', 'medio', 'facil'].filter(d => d !== difficulty);
+        for (const fd of fallbackDiffs) {
+          const pool = bank[fd] || [];
+          for (const q of pool) {
+            if (questionsList.length >= count) break;
+            if (!questionsList.some(item => item.id === q.id) && this.validateQuestionQuality(q)) {
+              questionsList.push(JSON.parse(JSON.stringify(q)));
+            }
+          }
+        }
       }
     }
 
-    // Procedural Generator for additional questions or for any chapter in any subject
-    const subjectData = this.sasSubjectsData[subjectKey] || this.sasSubjectsData['matematica'];
-    const currentBook = subjectData.livros.find(b => b.id === bookId) || subjectData.livros[0];
-    const currentCap = currentBook.chapters.find(c => c.id === chapterId) || currentBook.chapters[0];
-    const cleanCapName = currentCap.title.replace(/Capítulo\s*\d+\s*[–-]\s*/i, '');
-
-    // Dynamic question templates calibrated by difficulty with strict pedagogical accuracy
-    const templates = {
-      facil: [
-        {
-          text: `[AVALIAÇÃO OFICIAL SAS] No estudo de "${cleanCapName}", os estudantes do 7º ano analisaram o seguinte tópico curricular: "${currentCap.desc}". A respeito desse conteúdo, qual alternativa expressa a afirmação conceitualmente correta?`,
-          correct: `Em "${cleanCapName}", o princípio fundamental estabelece que os conceitos de ${currentCap.desc.slice(0, 90)} explicam os fenômenos estudados na prática.`,
-          distractors: [
-            `Em "${cleanCapName}", não há aplicação em situações cotidianas, tratando-se exclusivamente de conjecturas sem validação científica.`,
-            `Os conceitos de "${cleanCapName}" contrariam as leis naturais e foram descartados no currículo escolar moderno.`,
-            `As definições apresentadas no tema de "${cleanCapName}" dependem de opiniões individuais desprovidas de critérios teóricos.`
-          ],
-          explanation: `Conforme destacado na apostila SAS Asas 2026: "${currentCap.desc}".`
-        },
-        {
-          text: `[EXERCÍCIO DE FIXAÇÃO] Uma questão de prova sobre "${cleanCapName}" exige identificar o termo e a regra correta. Qual opção descreve com exatidão esse ponto curricular?`,
-          correct: `Analisar com rigor os elementos de "${cleanCapName}", relacionando causas, efeitos e definições estabelecidas no material didático.`,
-          distractors: [
-            `Desconsiderar os dados enunciados e supor respostas aleatórias sem base no conteúdo.`,
-            `Tratar termos opostos como se fossem sinônimos por mera aproximação fonética.`,
-            `Ignorar o contexto e assumir conclusões não respaldadas pelo material de estudo.`
-          ],
-          explanation: `A metodologia do SAS enfatiza a leitura atenta e aplicação das regras conceituais específicas de ${cleanCapName}.`
+    // 3. Se ainda faltam questões, consultar o repositório curricular real da disciplina e capítulo
+    if (questionsList.length < count) {
+      const curriculumQs = this.getCurriculumQuestionsForSubjectAndChapter(
+        subjectKey,
+        bookId,
+        chapterId,
+        difficulty,
+        count - questionsList.length
+      );
+      for (const q of curriculumQs) {
+        if (questionsList.length >= count) break;
+        if (!questionsList.some(item => item.id === q.id) && this.validateQuestionQuality(q)) {
+          questionsList.push(JSON.parse(JSON.stringify(q)));
         }
-      ],
-      medio: [
-        {
-          text: `[SIMULADO SAAS FORMATIVO] Em uma questão contextualizada de prova sobre "${cleanCapName}", o professor propõe analisar a seguinte situação: "${currentCap.desc}". Qual interpretação está em plena consonância com a matéria?`,
-          correct: `A resolução fundamenta-se nos princípios de "${cleanCapName}", articulando a fundamentação teórica aos dados concretos apresentados.`,
-          distractors: [
-            `Concluir a resposta sem relacionar o problema aos postulados de "${cleanCapName}".`,
-            `Assumir premissas falsas que desconsideram as evidências e regras do tema.`,
-            `Julgar desnecessária a aplicação dos critérios conceituais na avaliação dos resultados.`
-          ],
-          explanation: `Nas avaliações formativas do Colégio Gammon, a conexão entre teoria e aplicação prática é essencial para a pontuação total.`
-        }
-      ],
-      dificil: [
-        {
-          text: `[QUESTÃO DESAFIO SAS] Em uma pergunta de alta complexidade analítica sobre "${cleanCapName}" (${currentCap.desc}), qual dedução expressa o raciocínio mais consistente?`,
-          correct: `A interpretação deve considerar as restrições conceituais, as propriedades específicas e a relação de causa e efeito detalhada no capítulo.`,
-          distractors: [
-            `Extrapolar as premissas estabelecidas e formular conclusões contraditórias com o tema.`,
-            `Supor que as regras de "${cleanCapName}" se anulam diante de casos com múltiplas variáveis.`,
-            `Descartar conceitos centrais sob a alegação de que detalhes não afetam o resultado final.`
-          ],
-          explanation: `Questões desafiadoras exigem precisão absoluta em cada etapa dedutiva e domínio integral do Livro ${bookId} do SAS.`
-        }
-      ]
-    };
-
-    const diffTemplates = (templates[difficulty] && templates[difficulty].length > 0)
-      ? templates[difficulty]
-      : (templates['medio'] || templates['facil']);
-    let templateIdx = 0;
-
-    while (questionsList.length < count) {
-      const t = diffTemplates[templateIdx % diffTemplates.length];
-      const qId = `proc_${subjectKey}_${bookId}_${chapterId}_${difficulty}_${questionsList.length + 1}`;
-      
-      const newQ = {
-        id: qId,
-        subject: `${subjectData.name} (${currentBook.title} SAS)`,
-        topic: `${currentCap.title} [${difficulty.toUpperCase()}]`,
-        text: t.text,
-        options: [
-          { text: t.correct, correct: true },
-          { text: t.distractors[0], correct: false },
-          { text: t.distractors[1], correct: false },
-          { text: t.distractors[2], correct: false }
-        ],
-        explanation: t.explanation,
-        aiGuidance: `Material SAS Asas 2026 • ${currentCap.title}`
-      };
-
-      questionsList.push(newQ);
-      templateIdx++;
+      }
     }
 
-    // Shuffle questions with daily deterministic PRNG
+    // 4. Embaralhar ordem das questões determinísticamente com base na data
     questionsList = this.shuffleArrayWithPrng(questionsList, prng);
-
-    // Limit to exactly count questions
     const finalQuestions = questionsList.slice(0, count);
 
-    // Shuffle options of each question so correct answers aren't always in position A
+    // 5. Embaralhar alternativas determinísticamente para que a correta não fique sempre em A
     finalQuestions.forEach((q, idx) => {
       const qPrng = this.createPrng(`${seedStr}_q_${idx}`);
       q.options = this.shuffleArrayWithPrng(q.options, qPrng);
@@ -9036,7 +12927,6 @@ class EstudePlusApp {
 
     return finalQuestions;
   }
-
 
   startQuizExecution() {
     if (!this.isUserPro()) {
@@ -13387,7 +17277,7 @@ class EstudePlusApp {
       if (e.altKey && e.key === '1') { e.preventDefault(); this.switchTab('dashboard'); }
       if (e.altKey && e.key === '2') { e.preventDefault(); this.switchTab('gemini-chat'); }
       if (e.altKey && e.key === '3') { e.preventDefault(); this.switchTab('sas-eureka'); }
-      if (e.altKey && e.key === '4') { e.preventDefault(); this.switchTab('gammon-tpc'); }
+      if (e.altKey && e.key === '4') { e.preventDefault(); this.switchTab('trilhas'); }
     });
   }
 
@@ -13429,9 +17319,8 @@ class EstudePlusApp {
       { group: 'Navegação', title: 'Página Inicial (Dashboard)', icon: 'home', action: () => this.switchTab('dashboard'), shortcut: 'Alt 1' },
       { group: 'Navegação', title: 'Chatbot IA Inteligente', icon: 'bot', action: () => this.switchTab('gemini-chat'), shortcut: 'Alt 2' },
       { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => this.switchTab('sas-eureka'), shortcut: 'Alt 3' },
-      { group: 'Navegação', title: 'TPC Diário & Ocorrências Gammon+', icon: 'clipboard-list', action: () => this.switchTab('gammon-tpc'), shortcut: 'Alt 4' },
+      { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS (Apostilas 1 a 3)', icon: 'map', action: () => this.switchTab('trilhas'), shortcut: 'Alt 4' },
       { group: 'Navegação', title: 'Planos & Assinatura PRO', icon: 'crown', action: () => this.switchTab('plans-pricing'), shortcut: 'PRO' },
-      { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS (Apostilas 1 a 3)', icon: 'map', action: () => this.switchTab('trilhas') },
       { group: 'Navegação', title: 'Relatórios de Desempenho e Erros', icon: 'bar-chart-2', action: () => this.switchTab('review') },
       { group: 'Navegação', title: 'Quiz Diário de 15 Minutos', icon: 'zap', action: () => this.switchTab('quiz') },
 
@@ -13768,7 +17657,7 @@ class EstudePlusApp {
       if (amountDisplay) amountDisplay.innerText = '120,00';
       if (periodDisplay) periodDisplay.innerText = '/ ano (365 dias)';
       if (methodLabel) methodLabel.innerText = 'Escolha a Forma de Pagamento (R$ 120,00):';
-      if (pixPrompt) pixPrompt.innerHTML = 'Transfira <strong>R$ 120,00</strong> no app do seu banco usando a chave CPF abaixo:';
+      if (pixPrompt) pixPrompt.innerHTML = 'Para transferir <strong>R$ 120,00</strong> via Pix, solicite a chave diretamente com o Freddie na escola:';
       if (pixSummary) pixSummary.innerHTML = '💰 <strong>Valor:</strong> R$ 120,00 (Acesso Anual PRO - 365 dias)';
       if (cashPrompt) cashPrompt.innerHTML = '3. Você entrega o valor de <strong>R$ 120,00 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).';
     } else {
@@ -13785,28 +17674,14 @@ class EstudePlusApp {
       if (amountDisplay) amountDisplay.innerText = '10,00';
       if (periodDisplay) periodDisplay.innerText = '/ mês (30 dias)';
       if (methodLabel) methodLabel.innerText = 'Escolha a Forma de Pagamento (R$ 10,00):';
-      if (pixPrompt) pixPrompt.innerHTML = 'Transfira <strong>R$ 10,00</strong> no app do seu banco usando a chave CPF abaixo:';
+      if (pixPrompt) pixPrompt.innerHTML = 'Para transferir <strong>R$ 10,00</strong> via Pix, solicite a chave diretamente com o Freddie na escola:';
       if (pixSummary) pixSummary.innerHTML = '💰 <strong>Valor:</strong> R$ 10,00 (Acesso Mensal PRO - 30 dias)';
       if (cashPrompt) cashPrompt.innerHTML = '3. Você entrega o valor de <strong>R$ 10,00 em dinheiro vivo para o Freddie Pimentel Costa</strong> na escola (Gammon).';
     }
   }
 
   copyPixCpf() {
-    const cpf = '183.199.286.80';
-    const isAnual = this.selectedPlanId === 'pro_anual';
-    const amountStr = isAnual ? '120,00' : '10,00';
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(cpf).then(() => {
-        if (typeof confetti === 'function') {
-          confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-        }
-        alert(`✔ Chave PIX (CPF do Freddie: 183.199.286.80) copiada com sucesso!\n\nAbra o aplicativo do seu banco, escolha transferir por "Chave CPF", cole e confirme o envio de R$ ${amountStr}.`);
-      }).catch(() => {
-        prompt('Copie a chave Pix CPF abaixo:', cpf);
-      });
-    } else {
-      prompt('Copie a chave Pix CPF abaixo:', cpf);
-    }
+    alert('🏫 Por motivos de segurança e privacidade, a chave Pix não fica exposta no app.\n\nPeça a chave Pix diretamente ao Freddie Costa no Colégio Gammon ou combine durante o intervalo!');
   }
 
   copyPixCode() {
@@ -13838,7 +17713,7 @@ class EstudePlusApp {
     const planName = isAnual ? 'ESTUDE+ PRO Anual' : 'ESTUDE+ PRO Mensal';
     const orderId = 'PIX-' + Math.floor(1000 + Math.random() * 9000);
 
-    const note = `Pix de R$ ${amountStr} enviado para a chave CPF 183.199.286.80 de Freddie Pimentel Costa (${planName})`;
+    const note = `Pix de R$ ${amountStr} informado para Freddie Pimentel Costa (${planName}) - Chave solicitada na escola`;
 
     // Enviar solicitação ao backend (backend valida e fixa o preço oficial)
     try {

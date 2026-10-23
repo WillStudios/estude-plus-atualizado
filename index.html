@@ -52,10 +52,6 @@
         <i data-lucide="compass" style="width: 16px; height: 16px;"></i>
         <span>Eureka & Apostilas</span>
       </button>
-      <button class="sas-center-nav-btn" id="centerNavAtividades" onclick="app.switchTab('gammon-tpc')">
-        <i data-lucide="clipboard-list" style="width: 16px; height: 16px;"></i>
-        <span>TPC Diário</span>
-      </button>
       <button class="sas-center-nav-btn" id="centerNavPlanos" onclick="app.switchTab('plans-pricing')">
         <i data-lucide="crown" style="width: 16px; height: 16px;"></i>
         <span>Planos PRO</span>
@@ -158,11 +154,6 @@
           <i data-lucide="crown" style="color: #10b981;"></i>
           <span>💎 Planos & Assinatura</span>
           <span class="badge-accent" style="background: #ecfdf5; color: #047857;">R$ 10,00/mês</span>
-        </button>
-        <button class="nav-btn" data-tab="gammon-tpc" style="border-left: 3px solid #0284c7;">
-          <i data-lucide="clipboard-list" style="color: #0284c7;"></i>
-          <span>📋 TPC Diário (Ocorrências)</span>
-          <span class="badge-count" id="tpcPendingBadge" style="background:#e0f2fe; color:#0369a1;">4</span>
         </button>
         <button class="nav-btn" data-tab="timetable">
           <i data-lucide="clock-3"></i>
@@ -270,9 +261,9 @@
                     <div class="tile-icon-box" style="background: #e0f2fe; color: #0284c7;"><i data-lucide="bot"></i></div>
                     <span id="dashShortcutChatText" style="color: #0f172a; font-weight: 800;">Chatbot IA</span>
                   </button>
-                  <button class="sas-shortcut-tile" onclick="app.switchTab('gammon-tpc')" title="Tarefas Para Casa Diárias">
-                    <div class="tile-icon-box green"><i data-lucide="clipboard-list"></i></div>
-                    <span>TPC Diário</span>
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('trilhas')" title="Trilhas de Aprendizagem SAS">
+                    <div class="tile-icon-box" style="background: #fef3c7; color: #b45309;"><i data-lucide="map"></i></div>
+                    <span>Trilhas SAS</span>
                   </button>
                   <button class="sas-shortcut-tile" onclick="app.showSubscriptionModal()" title="Assinar Plano PRO">
                     <div class="tile-icon-box gold"><i data-lucide="crown"></i></div>
@@ -328,8 +319,8 @@
                   <div class="stat-kpi-lbl">Dias Seguidos</div>
                 </div>
                 <div class="stat-kpi-box">
-                  <div class="stat-kpi-val" id="statKpiTpcDone" style="color: #10b981;">0 / 0</div>
-                  <div class="stat-kpi-lbl">TPCs Concluídos</div>
+                  <div class="stat-kpi-val" id="statKpiTrilhasDone" style="color: #10b981;">0</div>
+                  <div class="stat-kpi-lbl">Fases Concluídas</div>
                 </div>
                 <div class="stat-kpi-box">
                   <div class="stat-kpi-val" id="statKpiMistakesReview" style="color: #ef4444;">0</div>
@@ -360,7 +351,7 @@
             <!-- Middle Row: Meus estudos & Universo Eureka Banner -->
             <div class="sas-studies-eureka-row" data-dash-card="studies-eureka">
               <!-- Meus estudos card matching image -->
-              <div class="sas-my-studies-card" onclick="app.switchTab('gammon-tpc')">
+              <div class="sas-my-studies-card" onclick="app.switchTab('trilhas')">
                 <div class="studies-head">
                   <h4>Meus estudos</h4>
                   <i data-lucide="arrow-right" style="width: 18px; height: 18px; color: #64748b;"></i>
@@ -447,70 +438,6 @@
 
 
 
-      <!-- ================= TAB: TPCS GAMMON+ (OCORRÊNCIAS / TPC DIÁRIO) ================= -->
-      <section id="tab-gammon-tpc" class="tab-pane">
-        <div class="tab-header">
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-              <span class="tpc-portal-pill"><i data-lucide="school"></i> GAMMON+ &bull; Aba Ocorrências</span>
-              <span style="font-size: 0.75rem; color: #0284c7; font-weight: 700; background: #e0f2fe; padding: 2px 8px; border-radius: 9999px;">TPC Diário dos Professores &bull; 7º Ano</span>
-            </div>
-            <h2>📋 Ocorrências & TPCs Diários (GAMMON+)</h2>
-            <p class="subtitle">Tarefas de casa lançadas pelos professores na aba Ocorrências do colégio. Marque como FEITO e gere treinos de apoio.</p>
-          </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="https://portal.gammon.br/framehtml/web/app/edu/portaleducacional/#/ocorrencias" target="_blank" rel="noopener noreferrer" class="btn-primary" style="background: #0284c7; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; padding: 9px 16px;">
-              <i data-lucide="external-link"></i> Abrir Ocorrências no Portal Gammon
-            </a>
-            <button class="btn-primary" onclick="app.showModal('importOccurrencesModal')" style="background: #0369a1;">
-              <i data-lucide="clipboard-paste"></i> Colar Ocorrências Gammon+
-            </button>
-            <button class="btn-outline" onclick="app.showModal('gammonSessionModal')" style="color: #0284c7; border-color: #bae6fd;">
-              <i data-lucide="shield-check"></i> Testar Conexão com Sessão
-            </button>
-            <button class="btn-primary" onclick="app.showModal('addTpcModal')">
-              <i data-lucide="plus-circle"></i> Novo TPC
-            </button>
-            <button class="btn-outline" onclick="app.resetTpcs()" style="color: #ef4444; border-color: #fca5a5;">
-              <i data-lucide="trash-2"></i> Limpar TPCs
-            </button>
-          </div>
-        </div>
-
-        <!-- TPC Stats & Quick Action Bar -->
-        <div class="tpc-summary-bar">
-          <div class="tpc-stat-card">
-            <span class="tpc-num text-danger" id="tpcPendingCount">3</span>
-            <span class="tpc-lbl">TPCs Pendentes (NÃO FEITO)</span>
-          </div>
-          <div class="tpc-stat-card">
-            <span class="tpc-num text-success" id="tpcCompletedCount">7</span>
-            <span class="tpc-lbl">TPCs Concluídos (FEITO)</span>
-          </div>
-          <div class="tpc-stat-card">
-            <span class="tpc-num text-accent" id="tpcTodayCount">2</span>
-            <span class="tpc-lbl">Para entregar amanhã</span>
-          </div>
-        </div>
-
-        <!-- TPC Filter Tabs -->
-        <div class="filter-bar">
-          <div class="filter-pills">
-            <button class="filter-chip active" data-tpc-filter="all">Todos os TPCs</button>
-            <button class="filter-chip" data-tpc-filter="pending">Apenas NÃO FEITOS</button>
-            <button class="filter-chip" data-tpc-filter="done">Apenas FEITOS</button>
-          </div>
-          <div class="search-box">
-            <i data-lucide="search"></i>
-            <input type="text" id="tpcSearchInput" placeholder="Buscar TPC por disciplina ou conteúdo...">
-          </div>
-        </div>
-
-        <!-- TPC List Feed -->
-        <div class="tpc-grid-container" id="tpcGridList">
-          <!-- Rendered dynamically -->
-        </div>
-      </section>
 
       <!-- ================= TAB: GRADE DE HORÁRIO SEMANAL ================= -->
       <section id="tab-timetable" class="tab-pane">
@@ -1458,18 +1385,22 @@
             <i data-lucide="smartphone" style="width: 28px; height: 28px;"></i>
           </div>
 
-          <h4 style="margin: 0 0 6px; font-size: 1.15rem; color: #0f172a;">Pagamento via PIX (Chave CPF)</h4>
+          <h4 style="margin: 0 0 6px; font-size: 1.15rem; color: #0f172a;">Pagamento via PIX</h4>
           <p style="margin: 0 0 16px; font-size: 0.84rem; color: #64748b;" id="subModalPixPrompt">
-            Transfira <strong>R$ 10,00</strong> no app do seu banco usando a chave CPF abaixo:
+            Para realizar a transferência de <strong>R$ 10,00</strong>, solicite a chave Pix pessoalmente na escola:
           </p>
 
-          <!-- Highlight Box: Chave Pix CPF Oficial -->
-          <div class="pix-cpf-highlight-box" style="padding: 18px 20px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 2px dashed #059669; border-radius: 16px;">
-            <span style="font-size: 0.78rem; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Chave PIX Oficial (CPF do Freddie):</span>
-            <span class="pix-cpf-val" id="pixCpfDisplay" style="font-size: 1.5rem; letter-spacing: 1px; color: #065f46; margin: 8px 0; display: block;">183.199.286.80</span>
-            <button type="button" class="btn-primary" onclick="app.copyPixCpf()" style="background: #059669; font-size: 0.95rem; font-weight: 800; padding: 12px 24px; margin: 6px auto 0; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
-              <i data-lucide="copy"></i> Copiar Chave CPF: 183.199.286.80
-            </button>
+          <!-- Highlight Box: Perguntar Pix na Escola -->
+          <div class="pix-cpf-highlight-box" style="padding: 22px 20px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 2px dashed #059669; border-radius: 16px; text-align: center;">
+            <div style="font-size: 2.2rem; margin-bottom: 6px;">🏫</div>
+            <span style="font-size: 1.05rem; font-weight: 800; color: #065f46; display: block; margin-bottom: 6px;">Pergunte a Chave Pix na Escola</span>
+            <p style="font-size: 0.85rem; color: #047857; margin: 0 0 12px; line-height: 1.55;">
+              Para sua segurança e privacidade, a chave Pix não fica exposta no aplicativo.<br>
+              <strong>Peça a chave Pix diretamente para o Freddie Costa no Colégio Gammon ou combine durante o intervalo!</strong>
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: #ffffff; padding: 8px 16px; border-radius: 999px; border: 1.5px solid #a7f3d0; font-size: 0.85rem; font-weight: 800; color: #065f46; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);">
+              <span>💬 Solicitar Chave com Freddie (Gammon)</span>
+            </div>
           </div>
 
           <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-top: 16px; text-align: left; font-size: 0.82rem; color: #334155; line-height: 1.7;">
@@ -3243,9 +3174,9 @@
       <i data-lucide="compass"></i>
       <span>Eureka & Apostilas</span>
     </button>
-    <button class="mobile-nav-btn" id="mobNavTpc" onclick="app.switchTab('gammon-tpc')">
-      <i data-lucide="clipboard-list"></i>
-      <span>TPC</span>
+    <button class="mobile-nav-btn" id="mobNavTrilhas" onclick="app.switchTab('trilhas')">
+      <i data-lucide="map"></i>
+      <span>Trilhas</span>
     </button>
     <button class="mobile-nav-btn" id="mobNavPlanos" onclick="app.switchTab('plans-pricing')">
       <i data-lucide="crown"></i>
