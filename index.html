@@ -165,11 +165,6 @@
           <span>Quiz Diário (15 min)</span>
           <span class="badge-accent" id="sidebarQuizBadge">Novo</span>
         </button>
-        <button class="nav-btn" data-tab="review">
-          <i data-lucide="rotate-ccw"></i>
-          <span>Aprender com os Erros</span>
-          <span class="badge-count" id="reviewCountBadge">2</span>
-        </button>
         <button class="nav-btn" data-tab="calendar">
           <i data-lucide="calendar"></i>
           <span>Calendário de Provas</span>
@@ -253,9 +248,9 @@
                     <div class="tile-icon-box" style="background: #fef3c7; color: #d97706;"><i data-lucide="zap"></i></div>
                     <span id="dashShortcutQuizText">Quiz Diário</span>
                   </button>
-                  <button class="sas-shortcut-tile" onclick="app.switchTab('review')" title="Relatórios e Erros">
-                    <div class="tile-icon-box purple"><i data-lucide="bar-chart-2"></i></div>
-                    <span>Relatórios</span>
+                  <button class="sas-shortcut-tile" onclick="app.switchTab('calendar')" title="Calendário de Provas & Avaliações">
+                    <div class="tile-icon-box purple"><i data-lucide="calendar"></i></div>
+                    <span>Provas</span>
                   </button>
                   <button class="sas-shortcut-tile" onclick="app.switchTab('gemini-chat')" title="Chatbot IA Inteligente">
                     <div class="tile-icon-box" style="background: #e0f2fe; color: #0284c7;"><i data-lucide="bot"></i></div>
@@ -303,8 +298,8 @@
                   <h4 style="margin: 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">Estatísticas Inteligentes & Metas</h4>
                 </div>
                 <div style="display: flex; gap: 6px;">
-                  <button type="button" class="btn-outline" onclick="app.switchTab('review')" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; color: #4f46e5; border-color: #c7d2fe; cursor: pointer;">
-                    Ver Relatórios &rarr;
+                  <button type="button" class="btn-outline" onclick="app.switchTab('trilhas')" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; color: #4f46e5; border-color: #c7d2fe; cursor: pointer;">
+                    Ver Trilhas &rarr;
                   </button>
                 </div>
               </div>
@@ -323,8 +318,8 @@
                   <div class="stat-kpi-lbl">Fases Concluídas</div>
                 </div>
                 <div class="stat-kpi-box">
-                  <div class="stat-kpi-val" id="statKpiMistakesReview" style="color: #ef4444;">0</div>
-                  <div class="stat-kpi-lbl">Erros a Revisar</div>
+                  <div class="stat-kpi-val" id="statKpiQuizzesDone" style="color: #0284c7;">0</div>
+                  <div class="stat-kpi-lbl">Quizzes Feitos</div>
                 </div>
               </div>
 
@@ -336,15 +331,6 @@
                 <div class="weekly-bars-chart" id="weeklyBarsChart">
                   <!-- Rendered dynamically -->
                 </div>
-              </div>
-
-              <!-- Assuntos a revisar alert / radar -->
-              <div id="statTopicsToReviewBox" style="margin-top: 12px; font-size: 0.78rem; padding: 10px 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span>🎯</span>
-                  <span id="statTopicsToReviewText">Nenhum erro pendente de revisão. Continue firme!</span>
-                </div>
-                <button type="button" class="btn-primary" onclick="app.switchTab('review')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; background: #4f46e5; cursor: pointer;">Revisar</button>
               </div>
             </div>
 
@@ -392,47 +378,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Right Column: Agenda Card matching image -->
-          <aside class="sas-agenda-col" data-dash-card="agenda">
-            <div class="sas-agenda-card">
-              <div class="agenda-top-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <i data-lucide="calendar" style="color: #0369a1; width: 18px; height: 18px;"></i>
-                  <h4>Agenda</h4>
-                </div>
-                <div class="agenda-header-tools">
-                  <button class="icon-tool-btn" title="Expandir"><i data-lucide="maximize-2" style="width: 15px; height: 15px;"></i></button>
-                  <button class="icon-tool-btn" title="Filtros"><i data-lucide="sliders-horizontal" style="width: 15px; height: 15px;"></i></button>
-                </div>
-              </div>
-
-              <div class="agenda-date-selector">
-                <div class="date-range-label" id="agendaRangeLabel">27 Set. - 3 Out.</div>
-                <div class="date-arrows">
-                  <button class="arrow-btn" onclick="app.changeAgendaWeek(-1)">&larr;</button>
-                  <button class="today-btn" onclick="app.setAgendaToday()">Hoje</button>
-                  <button class="arrow-btn" onclick="app.changeAgendaWeek(1)">&rarr;</button>
-                </div>
-              </div>
-
-              <!-- Week days row matching image -->
-              <div class="agenda-week-row" id="agendaWeekDaysRow">
-                <!-- Rendered dynamically -->
-              </div>
-
-              <!-- Events Feed -->
-              <div class="agenda-events-feed" id="agendaEventsFeed">
-                <!-- Rendered dynamically -->
-              </div>
-
-              <div class="agenda-footer">
-                <button class="btn-create-reminder" onclick="app.showModal('addTpcModal')">
-                  <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> + Criar lembrete / Novo TPC
-                </button>
-              </div>
-            </div>
-          </aside>
         </div>
       </section>
 
@@ -782,7 +727,7 @@
                 <li><i data-lucide="check" class="check"></i> 👑 <strong>Gemini 2.5 Flash Ilimitado:</strong> Resolução de dúvidas em segundos 24 horas</li>
                 <li><i data-lucide="check" class="check"></i> 📚 <strong>12 Apostilas SAS em PDF:</strong> Todas as apostilas autorizadas Asas 2026 completas</li>
                 <li><i data-lucide="check" class="check"></i> 🧭 <strong>Gabarito & Eureka Comentado:</strong> Resoluções passo a passo detalhadas</li>
-                <li><i data-lucide="check" class="check"></i> 🎯 <strong>Aprender com os Erros Turbo:</strong> Diagnóstico e correção de pontos fracos</li>
+                <li><i data-lucide="check" class="check"></i> 🎯 <strong>Simulados Oficiais SAS:</strong> Diagnóstico de desempenho por matéria e capítulo</li>
                 <li><i data-lucide="check" class="check"></i> 🤝 <strong>Pagamento Flexível:</strong> Pix direto ou <strong>Dinheiro Vivo na Escola</strong> com Freddie!</li>
               </ul>
             </div>
@@ -833,43 +778,6 @@
 
         <div id="quizContainer">
           <!-- Dynamically switches between: Intro / Question View / Results View -->
-        </div>
-      </section>
-
-      <!-- ================= TAB: REVISÃO DE ERROS ================= -->
-      <section id="tab-review" class="tab-pane">
-        <div class="tab-header">
-          <div>
-            <h2>🎯 Aprender com os Erros</h2>
-            <p class="subtitle">"Quando você erra, o sistema identifica aquela dificuldade e orienta seus próximos passos."</p>
-          </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-outline" onclick="app.resetMistakes()" style="color: #ef4444; border-color: #fca5a5;">
-              <i data-lucide="trash-2"></i> Limpar Erros
-            </button>
-            <button class="btn-primary" onclick="app.startReviewSession()">
-              <i data-lucide="rotate-ccw"></i> Treinar Todas as Pendências
-            </button>
-          </div>
-        </div>
-
-        <div class="review-stats-banner">
-          <div class="review-stat-item">
-            <span class="r-num" id="totalErrorsCount">2</span>
-            <span class="r-label">Questões para reforçar</span>
-          </div>
-          <div class="review-stat-item">
-            <span class="r-num text-success" id="resolvedErrorsCount">6</span>
-            <span class="r-label">Dificuldades superadas</span>
-          </div>
-          <div class="review-stat-item">
-            <span class="r-num text-accent">75%</span>
-            <span class="r-label">Taxa de recuperação</span>
-          </div>
-        </div>
-
-        <div class="error-feed" id="errorReviewFeed">
-          <!-- Rendered dynamically -->
         </div>
       </section>
 
@@ -1347,9 +1255,9 @@
           <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Gemini 2.5 Flash Ilimitado</div>
           <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> 12 Apostilas SAS em PDF</div>
           <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Gabarito Eureka Passo a Passo</div>
-          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Diagnóstico Turbo de Erros</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Trilhas Adaptativas SAS</div>
           <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Treinos Diários Ilimitados</div>
-          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> TPCs Gammon+ em Tempo Real</div>
+          <div><i data-lucide="check" style="width: 13px; height: 13px; color: #10b981; display: inline; vertical-align: middle;"></i> Simulados SAS 7º Ano</div>
         </div>
       </div>
 

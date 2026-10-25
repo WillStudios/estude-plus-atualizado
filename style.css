@@ -4053,7 +4053,7 @@ body {
    ========================================================================== */
 .sas-painel-grid {
   display: grid;
-  grid-template-columns: 1fr 310px;
+  grid-template-columns: 1fr;
   gap: 16px;
   align-items: start;
 }

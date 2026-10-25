@@ -1278,7 +1278,7 @@ class EstudePlusApp {
       }
     }
 
-    if (tabName === 'gammon-tpc') {
+    if (tabName === 'gammon-tpc' || tabName === 'review' || tabName === 'mistakes-review') {
       tabName = 'dashboard';
     }
     this.currentTab = tabName;
@@ -1463,16 +1463,9 @@ class EstudePlusApp {
     // 2. Update "Meus estudos" pill
     const studiesPill = document.getElementById('painelStudiesPill');
     if (studiesPill) {
-      const pendingTpcs = (this.state.tpcs || []).filter(t => t.status === 'pending' && !t.dismissed);
-      if (pendingTpcs.length === 0) {
-        studiesPill.innerText = 'Sem atividades pendentes';
-        studiesPill.style.background = '#f1f5f9';
-        studiesPill.style.color = '#64748b';
-      } else {
-        studiesPill.innerText = `${pendingTpcs.length} atividade${pendingTpcs.length > 1 ? 's' : ''} pendente${pendingTpcs.length > 1 ? 's' : ''}`;
-        studiesPill.style.background = '#fee2e2';
-        studiesPill.style.color = '#dc2626';
-      }
+      studiesPill.innerText = 'Trilhas SAS Liberadas';
+      studiesPill.style.background = '#ecfdf5';
+      studiesPill.style.color = '#047857';
     }
 
     // 3. Render Agenda Card (Days of the week row + events)
@@ -1491,9 +1484,10 @@ class EstudePlusApp {
   }
 
   renderAgendaCard() {
+    const feed = document.getElementById('agendaEventsFeed');
+    if (!feed) return;
     const rangeLabel = document.getElementById('agendaRangeLabel');
     const weekRow = document.getElementById('agendaWeekDaysRow');
-    const feed = document.getElementById('agendaEventsFeed');
 
     // Dynamic date in America/Sao_Paulo timezone
     const now = new Date();
@@ -13051,7 +13045,7 @@ class EstudePlusApp {
             </p>
             <div class="ai-learning-notice" style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #475569; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 8px;">
               <i data-lucide="brain-circuit" style="width: 16px; height: 16px; color: #4f46e5;"></i>
-              <span>${isCorrect ? 'A IA registrou seu domínio nesta habilidade curricular!' : 'Esta questão foi adicionada automaticamente à sua aba "Aprender com os Erros" para você refazer.'}</span>
+              <span>${isCorrect ? 'Excelente! Domínio comprovado nesta habilidade curricular!' : 'Veja a explicação detalhada do SAS acima para fixar o conceito.'}</span>
             </div>
           </div>
         ` : ''}
@@ -13241,15 +13235,15 @@ class EstudePlusApp {
         <p style="color: #64748b; font-size: 0.95rem; max-width: 480px; margin: 0 auto 24px; line-height: 1.5;">
           ${pct >= 75 
             ? `Você dominou as questões de nível ${diff.toUpperCase()} do capítulo do SAS. Continue mantendo sua meta diária de estudos!` 
-            : 'Cada questão errada foi catalogada automaticamente na aba "Aprender com os Erros" para você refazer e dominar a habilidade.'}
+            : 'Confira as resoluções detalhadas abaixo com a justificativa oficial do SAS para dominar cada conceito.'}
         </p>
 
         <div class="results-box-actions" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 28px;">
           <button class="btn-primary" onclick="app.renderQuizIntro()" style="background: #4f46e5; padding: 12px 24px;">
             <i data-lucide="repeat"></i> Escolher Outro Capítulo / Novo Quiz
           </button>
-          <button class="btn-outline" onclick="app.startReviewSession()" style="padding: 12px 20px;">
-            <i data-lucide="rotate-ccw"></i> Revisar Erros Pendentes
+          <button class="btn-outline" onclick="app.switchTab('trilhas')" style="padding: 12px 20px;">
+            <i data-lucide="map"></i> Praticar Trilhas SAS
           </button>
           <button class="btn-outline" onclick="app.switchTab('sas-books')" style="padding: 12px 20px;">
             <i data-lucide="book-open"></i> Ir para Apostilas SAS
@@ -13525,30 +13519,7 @@ class EstudePlusApp {
   }
 
   startReviewSession() {
-    const pending = (this.state.mistakes || []).filter(m => m.status === 'pending');
-    if (pending.length === 0) {
-      alert('Parabéns! Você não possui nenhum erro pendente para revisar. Todas as dificuldades foram superadas!');
-      return;
-    }
-
-    const reviewQuestions = pending.map((m, idx) => ({
-      id: 900 + idx,
-      subject: m.subject || 'Aprender com os Erros',
-      topic: m.topic || 'Revisão Guiada',
-      text: m.question,
-      options: [
-        { text: m.correctAnswer, correct: true },
-        { text: m.userWrongAnswer, correct: false },
-        { text: 'Apenas uma estimativa aproximada', correct: false },
-        { text: 'Não é possível determinar com os dados fornecidos', correct: false }
-      ].sort(() => Math.random() - 0.5),
-      explanation: m.explanation || 'Revisão detalhada com base no método oficial do SAS.',
-      aiGuidance: m.aiTip || 'Concentre-se nos pontos onde você teve dúvida anteriormente.'
-    }));
-
-    this.quizState.questions = reviewQuestions;
-    this.switchTab('quiz');
-    this.startQuizExecution();
+    this.switchTab('trilhas');
   }
 
   /* ================= EXAMS & CALENDAR (CENA 3) ================= */
@@ -13942,14 +13913,8 @@ class EstudePlusApp {
   }
 
   resetMistakes() {
-    if (confirm('Deseja realmente limpar/resetar todo o histórico de erros do "Aprender com os Erros"?')) {
-      this.state.mistakes = [];
-      this.saveState();
-      this.renderMistakesReview();
-      this.renderDashboard();
-      this.refreshBadges();
-      alert('Área "Aprender com os Erros" resetada com sucesso! Ela está pronta para receber suas próximas dificuldades.');
-    }
+    this.state.mistakes = [];
+    this.saveState();
   }
 
   /* ================= HELPERS ================= */
@@ -16833,9 +16798,10 @@ class EstudePlusApp {
         { id: 'focus-strip', label: '🎯 Foco de Estudos & Metas', visible: true },
         { id: 'smart-stats', label: '📊 Estatísticas Inteligentes & Metas', visible: true },
         { id: 'studies-eureka', label: '🧭 Meus Estudos & Universo Eureka', visible: true },
-        { id: 'news', label: '📰 Notícias & Atualizações', visible: true },
-        { id: 'agenda', label: '📅 Agenda Escolar Gammon+', visible: true }
+        { id: 'news', label: '📰 Notícias & Atualizações', visible: true }
       ];
+    } else {
+      user.dashboardCards = user.dashboardCards.filter(c => c && c.id !== 'agenda');
     }
     if (!user.scheduleWeekly) {
       user.scheduleWeekly = {
@@ -17321,7 +17287,7 @@ class EstudePlusApp {
       { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => this.switchTab('sas-eureka'), shortcut: 'Alt 3' },
       { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS (Apostilas 1 a 3)', icon: 'map', action: () => this.switchTab('trilhas'), shortcut: 'Alt 4' },
       { group: 'Navegação', title: 'Planos & Assinatura PRO', icon: 'crown', action: () => this.switchTab('plans-pricing'), shortcut: 'PRO' },
-      { group: 'Navegação', title: 'Relatórios de Desempenho e Erros', icon: 'bar-chart-2', action: () => this.switchTab('review') },
+      { group: 'Navegação', title: 'Calendário de Provas & Avaliações', icon: 'calendar', action: () => this.switchTab('calendar'), shortcut: 'Alt 5' },
       { group: 'Navegação', title: 'Quiz Diário de 15 Minutos', icon: 'zap', action: () => this.switchTab('quiz') },
 
       // Quick Actions
@@ -17479,8 +17445,7 @@ class EstudePlusApp {
       { id: 'focus-strip', label: '🎯 Foco de Estudos & Metas', visible: true },
       { id: 'smart-stats', label: '📊 Estatísticas Inteligentes & Metas', visible: true },
       { id: 'studies-eureka', label: '🧭 Meus Estudos & Universo Eureka', visible: true },
-      { id: 'news', label: '📰 Notícias & Atualizações', visible: true },
-      { id: 'agenda', label: '📅 Agenda Escolar Gammon+', visible: true }
+      { id: 'news', label: '📰 Notícias & Atualizações', visible: true }
     ];
     this.renderDashboardCustomizerList();
     this.saveDashboardLayout();
@@ -17508,28 +17473,22 @@ class EstudePlusApp {
   renderSmartStats() {
     const kpiToday = document.getElementById('statKpiTodayMinutes');
     const kpiStreak = document.getElementById('statKpiStreak');
-    const kpiTpc = document.getElementById('statKpiTpcDone');
-    const kpiMistakes = document.getElementById('statKpiMistakesReview');
+    const kpiTrilhas = document.getElementById('statKpiTrilhasDone');
+    const kpiQuizzes = document.getElementById('statKpiQuizzesDone');
     const weeklyChart = document.getElementById('weeklyBarsChart');
     const weeklyTotal = document.getElementById('weeklyTotalMinutesLabel');
-    const topicsReviewText = document.getElementById('statTopicsToReviewText');
 
     const todayMins = Number(this.state.todayMinutes || this.currentUser?.todayMinutes || 0);
     const goalMins = Number(this.currentUser?.dailyGoal || this.currentUser?.dailyGoalMinutes || 15);
     const streakDays = Number(this.currentUser?.streak || this.state.streak || 0);
 
-    const tpcs = this.state.tpcs || [];
-    const completedTpcIds = this.state.completedTpcIds || [];
-    const doneTpcsCount = tpcs.filter(t => t.status === 'done' || completedTpcIds.includes(t.id)).length;
-    const totalTpcs = tpcs.length;
-
-    const mistakes = this.state.mistakes || [];
-    const pendingMistakes = mistakes.filter(m => m.status === 'pending');
+    const completedTrilhas = Object.values(this.currentUser?.trilhasProgress || this.state?.trilhasProgress || {}).filter(p => p && p.completed).length;
+    const completedQuizzes = Number(this.currentUser?.quizzesCompleted || this.state?.completedQuizzesCount || (this.state?.quizHistory || []).length || 0);
 
     if (kpiToday) kpiToday.innerText = `${todayMins} / ${goalMins} min`;
     if (kpiStreak) kpiStreak.innerText = `🔥 ${streakDays} ${streakDays === 1 ? 'dia' : 'dias'}`;
-    if (kpiTpc) kpiTpc.innerText = `${doneTpcsCount} / ${totalTpcs}`;
-    if (kpiMistakes) kpiMistakes.innerText = `${pendingMistakes.length}`;
+    if (kpiTrilhas) kpiTrilhas.innerText = `${completedTrilhas}`;
+    if (kpiQuizzes) kpiQuizzes.innerText = `${completedQuizzes}`;
 
     // Calculate weekly activity bars
     const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -17573,15 +17532,6 @@ class EstudePlusApp {
 
     if (weeklyChart) weeklyChart.innerHTML = weekBarsHtml;
     if (weeklyTotal) weeklyTotal.innerText = `${totalWeekMins} min nesta semana`;
-
-    if (topicsReviewText) {
-      if (pendingMistakes.length > 0) {
-        const subjects = Array.from(new Set(pendingMistakes.map(m => m.subject || 'Geral')));
-        topicsReviewText.innerHTML = `⚠️ <strong>${pendingMistakes.length} erro(s) pendente(s)</strong> para revisar em: <span style="color:#ef4444; font-weight:700;">${subjects.join(', ')}</span>`;
-      } else {
-        topicsReviewText.innerText = '🎉 Nenhum erro pendente de revisão hoje. Parabéns pelo foco!';
-      }
-    }
   }
 
   formatAnswerByAiStyle(answer) {
