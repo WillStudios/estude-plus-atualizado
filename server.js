@@ -89,6 +89,36 @@ function readDb() {
       if (Array.isArray(parsed.users)) {
         parsed.users = parsed.users.filter(u => !isMockUser(u));
       }
+      if (!Array.isArray(parsed.deletedAccountTombstones)) parsed.deletedAccountTombstones = [];
+      if (!Array.isArray(parsed.aiConversations)) parsed.aiConversations = [];
+      if (!Array.isArray(parsed.connectedDevices)) parsed.connectedDevices = [];
+      if (!Array.isArray(parsed.payments)) parsed.payments = [];
+
+      // Integridade referencial: remove registros órfãos de contas excluídas
+      const validUserIds = new Set((parsed.users || []).map(u => String(u.id)));
+      validUserIds.add('admin_freddie');
+      validUserIds.add('usr-freddie');
+      if (Array.isArray(parsed.simulados)) {
+        parsed.simulados = parsed.simulados.filter(s => !s.userId || validUserIds.has(String(s.userId)));
+      }
+      if (Array.isArray(parsed.studentNotes)) {
+        parsed.studentNotes = parsed.studentNotes.filter(n => !n.userId || validUserIds.has(String(n.userId)));
+      }
+      if (Array.isArray(parsed.flashcards)) {
+        parsed.flashcards = parsed.flashcards.filter(f => !f.userId || validUserIds.has(String(f.userId)));
+      }
+      if (Array.isArray(parsed.mindmaps)) {
+        parsed.mindmaps = parsed.mindmaps.filter(m => !m.userId || validUserIds.has(String(m.userId)));
+      }
+      if (Array.isArray(parsed.aiConversations)) {
+        parsed.aiConversations = parsed.aiConversations.filter(c => !c.userId || validUserIds.has(String(c.userId)));
+      }
+      if (Array.isArray(parsed.trilhasProgress)) {
+        parsed.trilhasProgress = parsed.trilhasProgress.filter(t => !t.userId || validUserIds.has(String(t.userId)));
+      }
+      if (Array.isArray(parsed.sessions)) {
+        parsed.sessions = parsed.sessions.filter(s => validUserIds.has(String(s.userId)));
+      }
       return parsed;
     }
   } catch (e) {
@@ -724,9 +754,18 @@ function getAuthUser(req) {
         return null;
       }
 
-      session.lastHeartbeat = now;
+      const isTombstoned = (db.deletedAccountTombstones || []).some(t => String(t.id) === String(session.userId));
       const user = (db.users || []).find(u => String(u.id) === String(session.userId));
-      if (user) return { user, session };
+      if (!user || isTombstoned) {
+        activeSessions.delete(sessionId);
+        if (Array.isArray(db.sessions)) {
+          db.sessions = db.sessions.filter(s => s.sessionId !== sessionId);
+          writeDb(db);
+        }
+        return null;
+      }
+      session.lastHeartbeat = now;
+      return { user, session };
     }
   }
 
@@ -734,8 +773,13 @@ function getAuthUser(req) {
   if (bearerToken) {
     if (activeSessions.has(bearerToken)) {
       const session = activeSessions.get(bearerToken);
+      const isTombstoned = (db.deletedAccountTombstones || []).some(t => String(t.id) === String(session.userId));
       const user = (db.users || []).find(u => u.id === session.userId);
-      if (user) return { user, session };
+      if (!user || isTombstoned) {
+        activeSessions.delete(bearerToken);
+        return null;
+      }
+      return { user, session };
     }
     if (adminTokens.has(bearerToken)) {
       const admin = (db.users || []).find(u => u.role === 'admin') || {
@@ -1148,13 +1192,15 @@ const server = http.createServer((req, res) => {
     const auth = getAuthUser(req);
     const requestedUserId = req.headers['x-user-id'];
 
+    const db = readDb();
+    const isRequestedTombstoned = requestedUserId ? (db.deletedAccountTombstones || []).some(t => String(t.id) === String(requestedUserId)) : false;
+    const requestedUserExists = requestedUserId ? (db.users || []).some(u => String(u.id) === String(requestedUserId)) : false;
+
     if (!auth || !auth.user) {
-      const db = readDb();
-      const userExists = requestedUserId ? (db.users || []).some(u => String(u.id) === String(requestedUserId)) : false;
-      if (requestedUserId && !userExists) {
-        return sendJson({ error: 'Sua conta foi excluída ou desativada pelo administrador.', accountDeleted: true }, 401);
+      if (requestedUserId && (isRequestedTombstoned || !requestedUserExists)) {
+        return sendJson({ error: 'Sua conta foi permanentemente excluída pelo administrador.', accountDeleted: true }, 401);
       }
-      return sendJson({ error: 'Não autenticado. Faça login para acessar seus dados salvos.' }, 401);
+      return sendJson({ error: 'Não autenticado. Faça login para acessar seus dados salvos.', accountDeleted: isRequestedTombstoned }, 401);
     }
 
     // Regra de segurança: impede que usuário comum acesse dados de outra conta
@@ -1162,13 +1208,17 @@ const server = http.createServer((req, res) => {
       return sendJson({ error: 'Acesso negado. Você não tem permissão para acessar dados de outra conta.' }, 403);
     }
 
-    const db = readDb();
+    const isAuthTombstoned = (db.deletedAccountTombstones || []).some(t => String(t.id) === String(auth.user.id));
     const freshUser = (db.users || []).find(u => String(u.id) === String(auth.user.id));
-    if (!freshUser) {
+    if (!freshUser || isAuthTombstoned) {
       if (auth.session && auth.session.sessionId) {
         activeSessions.delete(auth.session.sessionId);
       }
-      return sendJson({ error: 'Sua conta foi excluída ou desativada pelo administrador.', accountDeleted: true }, 401);
+      return sendJson({ error: 'Sua conta foi permanentemente excluída pelo administrador.', accountDeleted: true }, 401);
+    }
+
+    if (freshUser.isSuspended) {
+      return sendJson({ error: 'Sua conta está suspensa pelo administrador.', isSuspended: true, reason: freshUser.suspendedReason }, 403);
     }
 
     const now = new Date();
@@ -1207,25 +1257,42 @@ const server = http.createServer((req, res) => {
   // POST /api/user/sync - Salva perfil, preferências, tarefas, trabalhos, anotações e provas no servidor
   if (req.method === 'POST' && pathname === '/api/user/sync') {
     const auth = getAuthUser(req);
-    if (!auth || !auth.user) {
-      return sendJson({ error: 'Não autenticado. Sessão inválida ou expirada. Faça login novamente.' }, 401);
+    const requestedUserId = req.headers['x-user-id'];
+    const db = readDb();
+
+    // Verificação anti-ressurreição: se o ID solicitado está nos tombstones de contas excluídas
+    const isRequestedTombstoned = requestedUserId ? (db.deletedAccountTombstones || []).some(t => String(t.id) === String(requestedUserId)) : false;
+    if (requestedUserId && isRequestedTombstoned) {
+      return sendJson({ error: 'Esta conta foi permanentemente excluída e não aceita mais sincronizações.', accountDeleted: true }, 401);
     }
 
-    const requestedUserId = req.headers['x-user-id'];
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado. Sessão inválida ou expirada. Faça login novamente.', accountDeleted: isRequestedTombstoned }, 401);
+    }
+
+    // Regra de segurança: impede que usuário comum altere dados de outra conta
     if (requestedUserId && String(requestedUserId) !== String(auth.user.id) && auth.user.role !== 'admin') {
       return sendJson({ error: 'Acesso negado. Você não tem permissão para alterar dados de outra conta.' }, 403);
+    }
+
+    const isAuthTombstoned = (db.deletedAccountTombstones || []).some(t => String(t.id) === String(auth.user.id));
+    if (isAuthTombstoned) {
+      return sendJson({ error: 'Esta conta foi permanentemente excluída do sistema e não aceita mais alterações.', accountDeleted: true }, 401);
     }
 
     parseBody((data) => {
       if (!data) return sendJson({ error: 'Dados inválidos para sincronização.' }, 400);
 
-      const db = readDb();
-      const uIndex = (db.users || []).findIndex(u => String(u.id) === String(auth.user.id));
+      const dbCurrent = readDb();
+      const uIndex = (dbCurrent.users || []).findIndex(u => String(u.id) === String(auth.user.id));
       if (uIndex === -1) {
-        return sendJson({ error: 'Usuário não encontrado no banco de dados.' }, 404);
+        return sendJson({ error: 'Usuário não encontrado no banco de dados oficial. A conta foi excluída.', accountDeleted: true }, 401);
       }
 
-      const u = db.users[uIndex];
+      const u = dbCurrent.users[uIndex];
+      if (u.isSuspended) {
+        return sendJson({ error: 'Sua conta está suspensa pelo administrador.', isSuspended: true, reason: u.suspendedReason }, 403);
+      }
 
       // 1. Perfil e Configurações Pessoais (Foto/Avatar, Nome, Apelido, Lema, Série, Turma, Foco, etc.)
       const profileData = data.profile || data.studentSettings || {};
@@ -1344,10 +1411,12 @@ const server = http.createServer((req, res) => {
   // GET /api/user/sync-status - Checagem leve de versão para detectar alterações em outros dispositivos
   if (req.method === 'GET' && pathname === '/api/user/sync-status') {
     const auth = getAuthUser(req);
-    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado', accountDeleted: true }, 401);
     const db = readDb();
+    const isTombstoned = (db.deletedAccountTombstones || []).some(t => String(t.id) === String(auth.user.id));
     const freshUser = (db.users || []).find(u => String(u.id) === String(auth.user.id));
-    if (!freshUser) return sendJson({ error: 'Usuário não encontrado' }, 404);
+    if (!freshUser || isTombstoned) return sendJson({ error: 'Conta excluída.', accountDeleted: true }, 401);
+    if (freshUser.isSuspended) return sendJson({ error: 'Conta suspensa.', isSuspended: true }, 403);
 
     return sendJson({
       success: true,
@@ -1359,14 +1428,16 @@ const server = http.createServer((req, res) => {
   // POST /api/user/sync-action - Ações atômicas (notas, flashcards, coleções, favoritos, atalhos)
   if (req.method === 'POST' && pathname === '/api/user/sync-action') {
     const auth = getAuthUser(req);
-    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado', accountDeleted: true }, 401);
 
     parseBody((payload) => {
       if (!payload || !payload.action) return sendJson({ error: 'Ação não informada.' }, 400);
       const db = readDb();
+      const isTombstoned = (db.deletedAccountTombstones || []).some(t => String(t.id) === String(auth.user.id));
       const uIndex = (db.users || []).findIndex(u => String(u.id) === String(auth.user.id));
-      if (uIndex === -1) return sendJson({ error: 'Usuário não encontrado.' }, 404);
+      if (uIndex === -1 || isTombstoned) return sendJson({ error: 'Conta excluída.', accountDeleted: true }, 401);
       const u = db.users[uIndex];
+      if (u.isSuspended) return sendJson({ error: 'Conta suspensa.', isSuspended: true }, 403);
 
       const action = payload.action;
       const nowIso = new Date().toISOString();
@@ -2917,6 +2988,18 @@ const server = http.createServer((req, res) => {
       const loginClean = (data.login || data.username || '').trim().toLowerCase();
       const passClean = (data.password || '').trim();
 
+      // Checagem anti-ressurreição: se a conta foi permanentemente excluída
+      const isTombstoned = (db.deletedAccountTombstones || []).some(t =>
+        (t.username && t.username.toLowerCase() === loginClean) ||
+        (t.email && t.email.toLowerCase() === loginClean)
+      );
+      if (isTombstoned) {
+        return sendJson({
+          error: 'Esta conta foi permanentemente excluída pelo administrador e não pode mais ser acessada.',
+          accountDeleted: true
+        }, 401);
+      }
+
       let user = (db.users || []).find(u =>
         (u.username && u.username.toLowerCase() === loginClean) ||
         (u.email && u.email.toLowerCase() === loginClean)
@@ -2955,6 +3038,13 @@ const server = http.createServer((req, res) => {
       if (!user) {
         checkRateLimit(clientIp, 'login_fail');
         return sendJson({ error: 'Nome de usuário ou senha incorretos.' }, 401);
+      }
+
+      if (user.isSuspended) {
+        return sendJson({
+          error: 'Sua conta foi suspensa pelo administrador.' + (user.suspendedReason ? (' Motivo: ' + user.suspendedReason) : ''),
+          isSuspended: true
+        }, 403);
       }
 
       const isAdminUser = (user.role === 'admin' || (user.username && user.username.toLowerCase() === 'freddie') || (user.email && user.email.toLowerCase() === 'freddie@gammon.com.br'));
@@ -3103,10 +3193,17 @@ const server = http.createServer((req, res) => {
 
       const db = readDb();
 
-      // 1. Validação de Unicidade: NENHUM outro usuário pode ter o mesmo username
+      // 1. Validação de Unicidade: NENHUM outro usuário ativo pode ter o mesmo username
       const existingUser = (db.users || []).find(u =>
         u.username && u.username.toLowerCase() === usernameClean
       );
+
+      // Limpa registro em tombstones se o mesmo username for recadastrado do zero
+      if (Array.isArray(db.deletedAccountTombstones)) {
+        db.deletedAccountTombstones = db.deletedAccountTombstones.filter(t =>
+          (!t.username || t.username.toLowerCase() !== usernameClean)
+        );
+      }
 
       if (existingUser) {
         return sendJson({
@@ -3944,6 +4041,7 @@ const server = http.createServer((req, res) => {
 
       writeDb(db);
       broadcastToAdmins('user_updated', { userId: user.id, isSuspended: user.isSuspended });
+      broadcastToUser(user.id, 'account_status_changed', { isSuspended: user.isSuspended, reason: user.suspendedReason });
 
       return sendJson({
         success: true,
@@ -4050,6 +4148,10 @@ const server = http.createServer((req, res) => {
       const db = readDb();
       const targetUser = (db.users || []).find(u => (targetId && String(u.id) === String(targetId)) || (u.email && targetEmail && u.email.toLowerCase() === String(targetEmail).toLowerCase()));
       if (!targetUser) {
+        const wasDeleted = (db.deletedAccountTombstones || []).some(t => (targetId && String(t.id) === String(targetId)) || (targetEmail && t.email && t.email.toLowerCase() === String(targetEmail).toLowerCase()));
+        if (wasDeleted) {
+          return sendJson({ success: true, message: 'Esta conta já foi permanentemente excluída do sistema.' });
+        }
         return sendJson({ error: 'Conta não encontrada para exclusão.' }, 404);
       }
 
@@ -4060,14 +4162,14 @@ const server = http.createServer((req, res) => {
       }
 
       // Proteger administrador mestre Freddie contra exclusão sem flag explícita
-      if ((targetUser.username === 'freddie' || targetUser.email === 'freddie@gammon.com.br') && !data.confirmMasterAdminDelete) {
+      if ((targetUser.username === 'freddie' || targetUser.email === 'freddie@gammon.com.br' || String(finalTargetId) === 'admin_freddie') && !data.confirmMasterAdminDelete) {
         return sendJson({ error: 'A conta do Administrador Mestre Freddie é protegida contra exclusão acidental.' }, 403);
       }
 
-      const beforeCount = db.users.length;
-      db.users = db.users.filter(u => String(u.id) !== String(finalTargetId));
+      // 1. Remover da lista principal de usuários
+      db.users = (db.users || []).filter(u => String(u.id) !== String(finalTargetId));
 
-      // 1. Invalidar todas as sessões ativas do usuário excluído em memória e no banco
+      // 2. Invalidar todas as sessões ativas do usuário excluído em memória e no banco
       for (const [sId, s] of activeSessions.entries()) {
         if (String(s.userId) === String(finalTargetId)) {
           activeSessions.delete(sId);
@@ -4076,14 +4178,72 @@ const server = http.createServer((req, res) => {
       if (Array.isArray(db.sessions)) {
         db.sessions = db.sessions.filter(s => String(s.userId) !== String(finalTargetId));
       }
-      broadcastToUser(finalTargetId, 'account_deleted', { message: 'Sua conta foi excluída definitivamente.' });
 
-      // 2. Limpar dados associados (solicitações de plano, tickets)
+      // 3. Notificar o usuário conectado via SSE que a conta foi excluída
+      broadcastToUser(finalTargetId, 'account_deleted', {
+        message: 'Sua conta foi permanentemente excluída pelo administrador.',
+        accountDeleted: true
+      });
+
+      // 4. Limpar dispositivos conectados
+      if (Array.isArray(db.connectedDevices)) {
+        db.connectedDevices = db.connectedDevices.filter(d => String(d.userId) !== String(finalTargetId));
+      }
+
+      // 5. Limpar dados associados: solicitações de plano e pagamentos
       if (Array.isArray(db.planRequests)) {
         db.planRequests = db.planRequests.filter(r => String(r.userId) !== String(finalTargetId) && (!r.email || !targetUser.email || r.email.toLowerCase() !== targetUser.email.toLowerCase()));
       }
+      if (Array.isArray(db.payments)) {
+        db.payments = db.payments.filter(p => String(p.userId) !== String(finalTargetId) && (!p.email || !targetUser.email || p.email.toLowerCase() !== targetUser.email.toLowerCase()));
+      }
 
-      // 3. Excluir do Supabase PostgreSQL
+      // 6. Limpar conteúdos educacionais e privados do aluno (LGPD / cascata completa)
+      if (Array.isArray(db.studentNotes)) {
+        db.studentNotes = db.studentNotes.filter(n => String(n.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.flashcards)) {
+        db.flashcards = db.flashcards.filter(f => String(f.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.simulados)) {
+        db.simulados = db.simulados.filter(s => String(s.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.mindmaps)) {
+        db.mindmaps = db.mindmaps.filter(m => String(m.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.materials)) {
+        db.materials = db.materials.filter(m => String(m.userId) !== String(finalTargetId) && String(m.uploadedByUserId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.aiConversations)) {
+        db.aiConversations = db.aiConversations.filter(c => String(c.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.trilhasProgress)) {
+        db.trilhasProgress = db.trilhasProgress.filter(t => String(t.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.adminNotifications)) {
+        db.adminNotifications = db.adminNotifications.filter(n => String(n.userId) !== String(finalTargetId) && (!n.meta || String(n.meta.userId) !== String(finalTargetId)));
+      }
+      if (Array.isArray(db.supportRequests)) {
+        db.supportRequests = db.supportRequests.filter(s => String(s.userId) !== String(finalTargetId));
+      }
+      if (Array.isArray(db.studyReports)) {
+        db.studyReports = db.studyReports.filter(r => String(r.userId) !== String(finalTargetId));
+      }
+
+      // 7. Registro de Tombstone Anti-Ressurreição (apenas metadados mínimos administrativos)
+      if (!Array.isArray(db.deletedAccountTombstones)) db.deletedAccountTombstones = [];
+      db.deletedAccountTombstones.push({
+        id: String(finalTargetId),
+        username: targetUser.username ? String(targetUser.username).toLowerCase() : null,
+        email: targetUser.email ? String(targetUser.email).toLowerCase() : null,
+        deletedAt: new Date().toISOString(),
+        deletedBy: auth?.user?.name || (isAdmin ? 'Admin' : 'Usuário')
+      });
+      if (db.deletedAccountTombstones.length > 1000) {
+        db.deletedAccountTombstones = db.deletedAccountTombstones.slice(-1000);
+      }
+
+      // 8. Excluir do Supabase PostgreSQL
       if (supabase && supabase.isConfigured) {
         try {
           await supabase.deleteUser(finalTargetId);
@@ -4092,7 +4252,7 @@ const server = http.createServer((req, res) => {
         }
       }
 
-      // 4. Gravar log de auditoria
+      // 9. Gravar log de auditoria
       if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
       db.auditLogs.unshift({
         id: 'log_' + Date.now(),
@@ -4100,18 +4260,19 @@ const server = http.createServer((req, res) => {
         type: 'user_deleted',
         ip: clientIp,
         userId: targetId,
-        details: `Conta "${targetUser.name || targetUser.username}" (${targetId}) excluída definitivamente do sistema por ${auth?.user?.name || (isAdmin ? 'Admin' : 'Usuário')}.`
+        details: `Conta "${targetUser.name || targetUser.username}" (${targetId}) excluída definitivamente do sistema por ${auth?.user?.name || (isAdmin ? 'Admin' : 'Usuário')}. Todas as dependências e sessões foram expurgadas.`
       });
 
       db.masterCommands = db.masterCommands || {};
       db.masterCommands.forceRefreshTimestamp = Date.now();
       writeDb(db);
 
-      broadcastToAdmins('user_deleted', { userId: targetId });
+      // 10. Notificar todos os painéis administrativos abertos
+      broadcastToAdmins('user_deleted', { userId: targetId, username: targetUser.username });
 
       return sendJson({
         success: true,
-        message: `Conta de "${targetUser.name || targetUser.username}" excluída definitivamente do sistema com sucesso!`
+        message: `Conta de "${targetUser.name || targetUser.username}" excluída definitivamente do sistema com sucesso! Todas as sessões e conteúdos foram expurgados.`
       });
     });
     return;
@@ -4137,6 +4298,7 @@ const server = http.createServer((req, res) => {
           planStatus: updatedUser.planStatus || 'base',
           planName: updatedUser.planName || (updatedUser.plan === 'pro' ? 'Plano PRO' : 'Plano Base')
         });
+        broadcastToUser(data.userId, 'user_updated', { user: buildSafeUser(updatedUser) });
         return sendJson({ success: true, user: updatedUser });
       }
       return sendJson({ error: 'Usuário não encontrado' }, 404);

@@ -632,7 +632,7 @@
   "masterCommands": {
     "broadcastNotice": "",
     "lockdownActive": false,
-    "forceRefreshTimestamp": 1792690816910
+    "forceRefreshTimestamp": 1793048789711
   },
   "connectedDevices": [],
   "planRequests": [],
@@ -653,6 +653,19 @@
     }
   ],
   "adminNotifications": [
+    {
+      "id": "notif_1793048752531_t0wf",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Consistência Administrativa (@aluno_consistencia_adm) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793048752525_6fc2",
+        "username": "aluno_consistencia_adm"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T21:05:52.531Z"
+    },
     {
       "id": "notif_1792973171222_1vtn",
       "type": "info",
@@ -1011,6 +1024,94 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "log_1793048789711",
+      "timestamp": "2026-10-26T21:06:29.711Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048789547_2hae",
+      "details": "Conta \"Aluno Consistência Administrativa\" (usr_1793048789547_2hae) excluída definitivamente do sistema por Freddie Pimentel Costa. Todas as dependências e sessões foram expurgadas."
+    },
+    {
+      "id": "log_1793048789649",
+      "timestamp": "2026-10-26T21:06:29.649Z",
+      "type": "user_reactivated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048789547_2hae",
+      "details": "Conta Aluno Consistência Administrativa (usr_1793048789547_2hae) foi reativada pelo administrador."
+    },
+    {
+      "id": "log_1793048789633",
+      "timestamp": "2026-10-26T21:06:29.633Z",
+      "type": "user_suspended",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048789547_2hae",
+      "details": "Conta Aluno Consistência Administrativa (usr_1793048789547_2hae) foi suspensa pelo administrador."
+    },
+    {
+      "id": "log_1793048789619",
+      "timestamp": "2026-10-26T21:06:29.619Z",
+      "type": "pro_cancelled",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048789547_2hae",
+      "details": "Plano PRO cancelado para Aluno Consistência Administrativa (usr_1793048789547_2hae). Retornado ao Plano Base."
+    },
+    {
+      "id": "log_1793048789607",
+      "timestamp": "2026-10-26T21:06:29.607Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048789547_2hae",
+      "details": "Plano PRO (Plano ESTUDE+ PRO Mensal) ativado para Aluno Consistência Administrativa (usr_1793048789547_2hae) até 2026-11-25T21:06:29.607Z"
+    },
+    {
+      "id": "log_1793048752612",
+      "timestamp": "2026-10-26T21:05:52.612Z",
+      "type": "user_suspended",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048752525_6fc2",
+      "details": "Conta Aluno Consistência Administrativa (usr_1793048752525_6fc2) foi suspensa pelo administrador."
+    },
+    {
+      "id": "log_1793048752599",
+      "timestamp": "2026-10-26T21:05:52.599Z",
+      "type": "pro_cancelled",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048752525_6fc2",
+      "details": "Plano PRO cancelado para Aluno Consistência Administrativa (usr_1793048752525_6fc2). Retornado ao Plano Base."
+    },
+    {
+      "id": "log_1793048752586",
+      "timestamp": "2026-10-26T21:05:52.585Z",
+      "type": "pro_activated",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048752525_6fc2",
+      "details": "Plano PRO (Plano ESTUDE+ PRO Mensal) ativado para Aluno Consistência Administrativa (usr_1793048752525_6fc2) até 2026-11-25T21:05:52.585Z"
+    },
+    {
+      "id": "log_1793048707767",
+      "timestamp": "2026-10-26T21:05:07.767Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048707702_ys7s",
+      "details": "Conta \"Aluno Multi Dispositivo\" (usr_1793048707702_ys7s) excluída definitivamente do sistema por Freddie Pimentel Costa. Todas as dependências e sessões foram expurgadas."
+    },
+    {
+      "id": "log_1793048707626",
+      "timestamp": "2026-10-26T21:05:07.626Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048707537_phif",
+      "details": "Conta \"Aluno Teste Para Exclusão\" (usr_1793048707537_phif) excluída definitivamente do sistema por Freddie Pimentel Costa. Todas as dependências e sessões foram expurgadas."
+    },
+    {
+      "id": "log_1793048664718",
+      "timestamp": "2026-10-26T21:04:24.718Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793048664630_95f4",
+      "details": "Conta \"Aluno Teste Para Exclusão\" (usr_1793048664630_95f4) excluída definitivamente do sistema por Freddie Pimentel Costa. Todas as dependências e sessões foram expurgadas."
+    },
     {
       "id": "log_1793047014787",
       "timestamp": "2026-10-26T20:36:54.787Z",
@@ -1373,6 +1474,21 @@
   ],
   "payments": [
     {
+      "id": "PAG_1793048752585",
+      "studentName": "Aluno Consistência Administrativa",
+      "email": "aluno_consistencia_adm@estude.app",
+      "userId": "usr_1793048752525_6fc2",
+      "planId": "pro_mensal",
+      "planPeriodicity": "mensal",
+      "method": "admin_manual",
+      "amount": 10,
+      "date": "2026-10-26",
+      "status": "cancelled",
+      "note": "Cancelado pelo administrador Freddie",
+      "confirmedBy": "Freddie Pimentel Costa",
+      "confirmedAt": "2026-10-26T21:05:52.585Z"
+    },
+    {
       "id": "PAG_1792690816873",
       "studentName": "Aluno Real Teste",
       "email": "aluno_real_6696@estude.app",
@@ -1390,40 +1506,7 @@
   ],
   "materials": [],
   "flashcards": [],
-  "simulados": [
-    {
-      "id": "sim_1792690816883_44sg",
-      "userId": "usr_1792690816743_mz03",
-      "userName": "Aluno Real Teste",
-      "mode": "simulado",
-      "subject": "Matemática",
-      "subjectKey": "matematica",
-      "chapterTitle": "Capítulo 1 – Divisibilidade",
-      "bookId": 1,
-      "chapterId": 1,
-      "difficulty": "misto",
-      "totalQuestions": 10,
-      "score": 8,
-      "percentage": 80,
-      "timeSpentSeconds": 420,
-      "completedAt": "2026-10-22T17:40:16.883Z",
-      "questions": [],
-      "answersRecord": [
-        {
-          "index": 0,
-          "chosen": "A",
-          "correctLetter": "A",
-          "isCorrect": true
-        },
-        {
-          "index": 1,
-          "chosen": "B",
-          "correctLetter": "B",
-          "isCorrect": true
-        }
-      ]
-    }
-  ],
+  "simulados": [],
   "mindmaps": [],
   "studentNotes": [],
   "trilhasProgress": [
@@ -1459,171 +1542,6 @@
       "lastCompletedAt": "2026-10-05T17:20:08.088Z"
     },
     {
-      "id": "trilha_usr_1791220436050_hi17_matematica_1_1",
-      "userId": "usr_1791220436050_hi17",
-      "subjectKey": "matematica",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 2,
-      "completedStages": [
-        "fundamentos",
-        "pratica_1"
-      ],
-      "stageResults": {
-        "fundamentos": {
-          "completedAt": "2026-10-05T17:13:56.068Z",
-          "score": 2,
-          "total": 2,
-          "percentage": 100
-        },
-        "pratica_1": {
-          "completedAt": "2026-10-05T17:13:56.154Z",
-          "score": 3,
-          "total": 3,
-          "percentage": 100
-        }
-      },
-      "masteryPercentage": 29,
-      "isCompleted": false,
-      "startedAt": "2026-10-05T17:13:56.068Z",
-      "lastCompletedAt": "2026-10-05T17:13:56.154Z"
-    },
-    {
-      "id": "trilha_usr_1791220436115_e2yo_portugues_1_1",
-      "userId": "usr_1791220436115_e2yo",
-      "subjectKey": "portugues",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 1,
-      "completedStages": [
-        "fundamentos"
-      ],
-      "stageResults": {
-        "fundamentos": {
-          "completedAt": "2026-10-05T17:13:56.130Z",
-          "score": 2,
-          "total": 2,
-          "percentage": 100
-        }
-      },
-      "masteryPercentage": 14,
-      "isCompleted": false,
-      "startedAt": "2026-10-05T17:13:56.130Z",
-      "lastCompletedAt": "2026-10-05T17:13:56.130Z"
-    },
-    {
-      "id": "trilha_usr_1791220624942_32dw_matematica_1_1",
-      "userId": "usr_1791220624942_32dw",
-      "subjectKey": "matematica",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 2,
-      "completedStages": [
-        "fundamentos",
-        "pratica_1"
-      ],
-      "stageResults": {
-        "fundamentos": {
-          "completedAt": "2026-10-05T17:17:04.958Z",
-          "score": 2,
-          "total": 2,
-          "percentage": 100
-        },
-        "pratica_1": {
-          "completedAt": "2026-10-05T17:17:05.042Z",
-          "score": 3,
-          "total": 3,
-          "percentage": 100
-        }
-      },
-      "masteryPercentage": 29,
-      "isCompleted": false,
-      "startedAt": "2026-10-05T17:17:04.958Z",
-      "lastCompletedAt": "2026-10-05T17:17:05.042Z"
-    },
-    {
-      "id": "trilha_usr_1791220625006_f7yv_portugues_1_1",
-      "userId": "usr_1791220625006_f7yv",
-      "subjectKey": "portugues",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 1,
-      "completedStages": [
-        "fundamentos"
-      ],
-      "stageResults": {
-        "fundamentos": {
-          "completedAt": "2026-10-05T17:17:05.019Z",
-          "score": 2,
-          "total": 2,
-          "percentage": 100
-        }
-      },
-      "masteryPercentage": 14,
-      "isCompleted": false,
-      "startedAt": "2026-10-05T17:17:05.019Z",
-      "lastCompletedAt": "2026-10-05T17:17:05.019Z"
-    },
-    {
-      "id": "trilha_usr_1791220808138_tqgq_matematica_1_1",
-      "userId": "usr_1791220808138_tqgq",
-      "subjectKey": "matematica",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 2,
-      "completedStages": [
-        "fundamentos",
-        "pratica_1"
-      ],
-      "stageResults": {
-        "fundamentos": {
-          "completedAt": "2026-10-05T17:20:08.158Z",
-          "score": 2,
-          "total": 2,
-          "percentage": 100
-        },
-        "pratica_1": {
-          "completedAt": "2026-10-05T17:20:08.248Z",
-          "score": 3,
-          "total": 3,
-          "percentage": 100
-        }
-      },
-      "masteryPercentage": 29,
-      "isCompleted": false,
-      "startedAt": "2026-10-05T17:20:08.158Z",
-      "lastCompletedAt": "2026-10-05T17:20:08.248Z"
-    },
-    {
-      "id": "trilha_usr_1791220808205_yn2z_portugues_1_1",
-      "userId": "usr_1791220808205_yn2z",
-      "subjectKey": "portugues",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 1,
-      "completedStages": [
-        "fundamentos"
-      ],
-      "stageResults": {
-        "fundamentos": {
-          "completedAt": "2026-10-05T17:20:08.221Z",
-          "score": 2,
-          "total": 2,
-          "percentage": 100
-        }
-      },
-      "masteryPercentage": 14,
-      "isCompleted": false,
-      "startedAt": "2026-10-05T17:20:08.221Z",
-      "lastCompletedAt": "2026-10-05T17:20:08.221Z"
-    },
-    {
       "id": "trilha_admin_freddie_historia_2_6",
       "userId": "admin_freddie",
       "subjectKey": "historia",
@@ -1646,31 +1564,6 @@
       "isCompleted": false,
       "startedAt": "2026-10-06T10:04:45.014Z",
       "lastCompletedAt": "2026-10-06T10:04:45.014Z"
-    },
-    {
-      "id": "trilha_usr_1792690816743_mz03_matematica_1_1",
-      "userId": "usr_1792690816743_mz03",
-      "subjectKey": "matematica",
-      "bookId": 1,
-      "chapterId": 1,
-      "chapterTitle": "Capítulo 1",
-      "currentStageIndex": 1,
-      "completedStages": [
-        "licao_guiada"
-      ],
-      "stageResults": {
-        "licao_guiada": {
-          "completedAt": "2026-10-22T17:40:16.901Z",
-          "score": 5,
-          "total": 8,
-          "percentage": 62.5,
-          "passed": true
-        }
-      },
-      "masteryPercentage": 13,
-      "isCompleted": false,
-      "startedAt": "2026-10-22T17:40:16.894Z",
-      "lastCompletedAt": "2026-10-22T17:40:16.901Z"
     }
   ],
   "sessions": [
@@ -1795,5 +1688,28 @@
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
     }
   ],
-  "aiConversations": []
+  "aiConversations": [],
+  "deletedAccountTombstones": [
+    {
+      "id": "usr_1793048707537_phif",
+      "username": "aluno_teste_exclusao",
+      "email": "aluno_exclusao@estude.app",
+      "deletedAt": "2026-10-26T21:05:07.626Z",
+      "deletedBy": "Freddie Pimentel Costa"
+    },
+    {
+      "id": "usr_1793048707702_ys7s",
+      "username": "aluno_multi_disp",
+      "email": "aluno_multi_disp@estude.app",
+      "deletedAt": "2026-10-26T21:05:07.767Z",
+      "deletedBy": "Freddie Pimentel Costa"
+    },
+    {
+      "id": "usr_1793048789547_2hae",
+      "username": "aluno_consist_mvpqycir",
+      "email": "aluno_consist_mvpqycir@estude.app",
+      "deletedAt": "2026-10-26T21:06:29.711Z",
+      "deletedBy": "Freddie Pimentel Costa"
+    }
+  ]
 }

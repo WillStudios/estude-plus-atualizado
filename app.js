@@ -15940,6 +15940,35 @@ class EstudePlusApp {
     } catch (e) {}
   }
 
+  purgeDeletedUserSession(message = '⚠️ Sua conta foi permanentemente excluída pelo administrador.') {
+    const deletedId = this.currentUser?.id;
+    if (deletedId) {
+      try {
+        localStorage.removeItem('estude_user_data_' + deletedId);
+        localStorage.removeItem('estude_offline_queue_' + deletedId);
+      } catch (e) {}
+      if (Array.isArray(this.users)) {
+        this.users = this.users.filter(u => String(u.id) !== String(deletedId));
+        this.saveUsers();
+      }
+    }
+    this.currentUser = null;
+    try {
+      localStorage.removeItem(this.currentUserStorageKey);
+      localStorage.removeItem('estude_session_id');
+      localStorage.removeItem('estude_current_user');
+      sessionStorage.clear();
+    } catch (e) {}
+    if (this.userEventSource) {
+      try { this.userEventSource.close(); } catch (err) {}
+      this.userEventSource = null;
+    }
+    if (this._syncTimeout) clearTimeout(this._syncTimeout);
+    alert(message);
+    this.showAuthOverlay();
+    this.updateUserHeaderUI();
+  }
+
   async restoreAuthSession() {
     try {
       const storedSessionId = localStorage.getItem('estude_session_id') || '';
@@ -15982,7 +16011,8 @@ class EstudePlusApp {
       } else if (resp.status === 401) {
         const data = await resp.json().catch(() => ({}));
         if (data && data.accountDeleted) {
-          alert('Sua conta foi desativada ou excluída.');
+          this.purgeDeletedUserSession('⚠️ Sua conta foi permanentemente excluída pelo administrador.');
+          return false;
         }
         if (this.currentUser) {
           this.currentUser = null;
@@ -16518,17 +16548,37 @@ class EstudePlusApp {
         } catch (err) {}
       });
 
-      this.userEventSource.addEventListener('account_deleted', () => {
-        alert('Sua conta foi excluída definitivamente.');
-        this.currentUser = null;
-        this.saveCurrentUser();
-        localStorage.removeItem('estude_session_id');
-        if (this.userEventSource) {
-          try { this.userEventSource.close(); } catch (err) {}
-          this.userEventSource = null;
+      this.userEventSource.addEventListener('account_deleted', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const msg = payload?.data?.message || 'Sua conta foi permanentemente excluída pelo administrador.';
+          this.purgeDeletedUserSession(msg);
+        } catch (err) {
+          this.purgeDeletedUserSession();
         }
-        this.showAuthOverlay();
-        this.updateUserHeaderUI();
+      });
+
+      this.userEventSource.addEventListener('account_status_changed', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const data = payload?.data || {};
+          if (data.isSuspended) {
+            this.purgeDeletedUserSession('⚠️ Sua conta foi suspensa pelo administrador.' + (data.reason ? ('\nMotivo: ' + data.reason) : ''));
+          }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('user_updated', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const data = payload?.data || {};
+          if (data.user && this.currentUser && String(this.currentUser.id) === String(data.user.id)) {
+            Object.assign(this.currentUser, data.user);
+            this.saveCurrentUser();
+            this.updateUserHeaderUI();
+            this.renderPlanStatus();
+          }
+        } catch (err) {}
       });
 
       this.userEventSource.onerror = () => {
@@ -17963,17 +18013,16 @@ class EstudePlusApp {
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           console.warn('[Sync pull failed]', res.status, errData);
+          if (errData.accountDeleted) {
+            this.purgeDeletedUserSession('⚠️ Sua conta foi permanentemente excluída pelo administrador.');
+            return;
+          }
+          if (res.status === 403 && errData.isSuspended) {
+            this.purgeDeletedUserSession('⚠️ Sua conta foi suspensa pelo administrador.');
+            return;
+          }
           if (res.status === 401) {
-            if (errData.accountDeleted && sessId && this.currentUser?.role !== 'admin') {
-              console.warn('[Sync] Conta desativada pelo administrador.');
-              this.currentUser = null;
-              try {
-                localStorage.removeItem(this.currentUserStorageKey);
-                localStorage.removeItem('estude_session_id');
-              } catch (e) {}
-              alert('⚠️ Sua conta foi desativada pelo administrador.');
-              return;
-            }
+            this.showSyncFeedback('error', 'Sessão expirada. Faça login novamente.');
           }
           return;
         }
@@ -18146,6 +18195,14 @@ class EstudePlusApp {
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           console.warn('[Sync push failed]', res.status, errData);
+          if (errData.accountDeleted) {
+            this.purgeDeletedUserSession('⚠️ Sua conta foi permanentemente excluída pelo administrador.');
+            return;
+          }
+          if (errData.isSuspended) {
+            this.purgeDeletedUserSession('⚠️ Sua conta foi suspensa pelo administrador.');
+            return;
+          }
           if (res.status === 401) {
             this.showSyncFeedback('error', 'Sessão expirada. Faça login novamente para salvar suas informações.');
           } else if (res.status === 403) {
@@ -18384,11 +18441,28 @@ class EstudePlusApp {
       });
 
       this.adminEventSource.addEventListener('user_updated', () => {
-        this.loadAdminOverview();
+        this.loadAdminOverview().then(() => {
+          this.renderAdminStudentsList();
+        });
       });
 
-      this.adminEventSource.addEventListener('user_deleted', () => {
-        this.loadAdminOverview();
+      this.adminEventSource.addEventListener('user_deleted', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const deletedId = payload?.data?.userId;
+          if (deletedId) {
+            this.users = (this.users || []).filter(u => String(u.id) !== String(deletedId));
+            this.saveUsers();
+            if (this.adminOverviewData?.users) {
+              this.adminOverviewData.users = this.adminOverviewData.users.filter(u => String(u.id) !== String(deletedId));
+            }
+          }
+          this.loadAdminOverview().then(() => {
+            this.renderAdminStudentsList();
+          });
+        } catch (err) {
+          this.loadAdminOverview();
+        }
       });
 
       this.adminEventSource.addEventListener('new_support_request', (e) => {
@@ -18790,7 +18864,7 @@ class EstudePlusApp {
       if (res.ok) {
         const data = await res.json();
         this.adminOverviewData = data;
-        if (Array.isArray(data.users) && data.users.length > 0) {
+        if (Array.isArray(data.users)) {
           this.users = data.users;
           this.saveUsers();
         }
@@ -19998,11 +20072,13 @@ class EstudePlusApp {
     if (!student) return;
 
     const isOwner = student.role === 'admin' || student.email === 'freddie@gammon.com.br' || student.username === 'freddie';
-    const name = student.name || student.username || 'Usuário';
+    const name = student.name || student.username || 'Aluno';
+    const username = student.username || student.email || 'sem_usuario';
+    const email = student.email || 'Sem e-mail cadastrado';
 
     const promptText = isOwner
-      ? `⚠️ ATENÇÃO CRÍTICA:\n\nVocê está prestes a EXCLUIR A CONTA DE ADMINISTRADOR de "${name}"!\nTodos os privilégios e dados serão permanentemente apagados.\n\nDeseja realmente excluir esta conta de Administrador?`
-      : `Deseja realmente remover a conta de "${name}" do sistema? Esta ação apagará definitivamente o cadastro no banco oficial e revogará todos os acessos.`;
+      ? `⚠️ ATENÇÃO CRÍTICA:\n\nVocê está prestes a EXCLUIR A CONTA DE ADMINISTRADOR MESTRE de "${name}" (@${username})!\nTodos os privilégios e dados serão permanentemente apagados do servidor.\n\nDeseja realmente excluir esta conta de Administrador?`
+      : `⚠️ CONFIRMAÇÃO DE EXCLUSÃO DEFINITIVA:\n\nVocê tem certeza de que deseja excluir permanentemente a conta:\n\n• Nome: ${name}\n• Usuário: @${username}\n• E-mail: ${email}\n• ID: ${student.id}\n\nEsta operação apagará definitivamente do servidor:\n- Perfil e configurações pessoais\n- Tarefas, trabalhos e anotações privadas\n- Flashcards e simulados personalizados\n- Histórico de conversas com a IA\n- Todas as sessões conectadas em celulares, tablets ou PCs\n\nEsta ação é IRREVERSÍVEL. Confirmar exclusão?`;
 
     if (confirm(promptText)) {
       const confirmFinal = isOwner ? confirm(`Confirmação final: digite OK para apagar definitivamente a conta de administrador "${name}".`) : true;
@@ -20017,18 +20093,26 @@ class EstudePlusApp {
         const res = await fetch('/api/admin/users/delete', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ userId: student.id, confirmMasterAdminDelete: isOwner })
+          body: JSON.stringify({ userId: student.id, userEmail: student.email, confirmMasterAdminDelete: isOwner })
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.success) {
-          alert('❌ Não foi possível excluir a conta: ' + (data.error || 'Erro no servidor.'));
+          alert('❌ Falha ao excluir conta no servidor: ' + (data.error || 'Erro inesperado no servidor. A conta foi mantida.'));
           return;
         }
 
-        // 1. Remove da lista local de usuários
+        // 1. Remove da lista local de usuários e limpa caches deste aluno
         this.users = (this.users || []).filter(u => String(u.id) !== String(userId));
         this.saveUsers();
+        if (this.adminOverviewData?.users) {
+          this.adminOverviewData.users = this.adminOverviewData.users.filter(u => String(u.id) !== String(userId));
+        }
+
+        try {
+          localStorage.removeItem('estude_user_data_' + userId);
+          localStorage.removeItem('estude_offline_queue_' + userId);
+        } catch (e) {}
 
         // 2. Se o usuário logado excluiu sua própria conta
         if (this.currentUser && (String(this.currentUser.id) === String(userId) || (this.currentUser.email && student.email && this.currentUser.email.toLowerCase() === student.email.toLowerCase()))) {
@@ -20049,7 +20133,7 @@ class EstudePlusApp {
         alert(data.message || `✔ Conta de "${name}" removida definitivamente com sucesso.`);
       } catch (err) {
         console.error('[Admin Delete Student Error]', err);
-        alert('❌ Erro de conexão com o servidor ao excluir a conta. Verifique sua conexão e tente novamente.');
+        alert('❌ Erro de conexão com o servidor ao excluir a conta. Nenhuma alteração foi realizada.');
       }
     }
   }
