@@ -13559,8 +13559,8 @@ class EstudePlusApp {
       { id: 10, subject: 'Educação Física', topics: 'Práticas Corporais de Aventura (Apostila 3, pág. 12 a 23)', date: '2026-10-09', priority: 'Baixa' }
     ];
 
-    // Se não houver exames ou se estiver usando modelo antigo genérico
-    if (!this.state.exams || this.state.exams.length === 0 || this.state.exams.length < 5) {
+    // Se não houver exames definidos
+    if (!Array.isArray(this.state.exams)) {
       this.state.exams = officialExams;
       this.saveState();
     }
@@ -13600,6 +13600,7 @@ class EstudePlusApp {
     if (confirm('Deseja realmente remover esta data de prova?')) {
       this.state.exams = this.state.exams.filter(e => e.id !== id);
       this.saveState();
+      this.syncUserData('push');
       this.renderExams();
       this.renderDashboard();
     }
@@ -13723,6 +13724,7 @@ class EstudePlusApp {
     });
 
     this.saveState();
+    this.syncUserData('push');
     this.renderExams();
     this.renderDashboard();
     this.closeModal('addExamModal');
@@ -14395,6 +14397,7 @@ class EstudePlusApp {
     });
 
     this.saveState();
+    this.syncUserData('push');
     this.renderTpcs();
     this.refreshBadges();
     this.closeModal('addTpcModal');
@@ -15944,6 +15947,8 @@ class EstudePlusApp {
             localStorage.setItem('estude_session_id', data.sessionId);
           }
           this.closeAuthOverlay();
+          await this.syncUserData('pull');
+          await this.loadMaterialsLibrary();
           this.updateUserHeaderUI();
           this.applyStudentSettingsToUI();
           this.renderPlanStatus();
@@ -16100,6 +16105,8 @@ class EstudePlusApp {
           localStorage.setItem('estude_session_id', data.sessionId);
         }
         this.closeAuthOverlay();
+        await this.syncUserData('pull');
+        await this.loadMaterialsLibrary();
         this.updateUserHeaderUI();
         this.applyStudentSettingsToUI();
         this.renderPlanStatus();
@@ -16389,8 +16396,23 @@ class EstudePlusApp {
       this.currentUser = null;
       this.saveCurrentUser();
       localStorage.removeItem('estude_session_id');
+      try {
+        localStorage.removeItem(this.storageKey);
+      } catch (e) {}
+
+      // Limpeza de estado para isolamento completo entre contas
+      this.state.tpcs = [];
+      this.state.completedTpcIds = [];
+      this.state.exams = [];
+      this.state.notes = [];
+      this.materialsList = [];
+      this.activeMaterial = null;
+
       this.showAuthOverlay();
       this.updateUserHeaderUI();
+      this.renderTpcs();
+      this.renderExams();
+      this.renderDashboard();
     }
   }
 
@@ -16796,12 +16818,11 @@ class EstudePlusApp {
       user.dashboardCards = [
         { id: 'profile-shortcuts', label: '👤 Perfil & Atalhos Rápidos', visible: true, locked: true },
         { id: 'focus-strip', label: '🎯 Foco de Estudos & Metas', visible: true },
-        { id: 'smart-stats', label: '📊 Estatísticas Inteligentes & Metas', visible: true },
         { id: 'studies-eureka', label: '🧭 Meus Estudos & Universo Eureka', visible: true },
         { id: 'news', label: '📰 Notícias & Atualizações', visible: true }
       ];
     } else {
-      user.dashboardCards = user.dashboardCards.filter(c => c && c.id !== 'agenda');
+      user.dashboardCards = user.dashboardCards.filter(c => c && c.id !== 'agenda' && c.id !== 'smart-stats');
     }
     if (!user.scheduleWeekly) {
       user.scheduleWeekly = {
@@ -16949,12 +16970,107 @@ class EstudePlusApp {
     }
   }
 
-  selectAvatar(emoji) {
+  showSyncFeedback(type, message, duration = 3500) {
+    let el = document.getElementById('estudeSyncToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'estudeSyncToast';
+      el.style.cssText = 'position:fixed;bottom:22px;right:22px;z-index:999999;display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;font-size:0.84rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.18);transition:all 0.3s ease;max-width:420px;';
+      document.body.appendChild(el);
+    }
+
+    if (type === 'error') {
+      el.style.background = '#fef2f2';
+      el.style.color = '#991b1b';
+      el.style.border = '1.5px solid #fecaca';
+      el.innerHTML = '<span style="font-size:1.1rem;">⚠️</span><span>' + (message || 'Falha ao sincronizar dados com o servidor.') + '</span>';
+    } else if (type === 'success') {
+      el.style.background = '#ecfdf5';
+      el.style.color = '#065f46';
+      el.style.border = '1.5px solid #a7f3d0';
+      el.innerHTML = '<span style="font-size:1.1rem;">☁️</span><span>' + (message || 'Tudo salvo e sincronizado na sua conta!') + '</span>';
+    } else if (type === 'warning') {
+      el.style.background = '#fffbeb';
+      el.style.color = '#92400e';
+      el.style.border = '1.5px solid #fde68a';
+      el.innerHTML = '<span style="font-size:1.1rem;">⏳</span><span>' + message + '</span>';
+    }
+
+    el.style.display = 'flex';
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+
+    if (this._syncToastTimeout) clearTimeout(this._syncToastTimeout);
+    this._syncToastTimeout = setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(10px)';
+      setTimeout(() => { if (el) el.style.display = 'none'; }, 300);
+    }, duration);
+  }
+
+  handleAvatarFileUpload(event) {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 128;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        this.selectAvatar(compressedDataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  setCustomAvatarUrl(url) {
+    const clean = (url || '').trim();
+    if (clean) {
+      this.selectAvatar(clean);
+    }
+  }
+
+  selectAvatar(avatarVal) {
     const hidden = document.getElementById('cfgSelectedAvatar');
-    if (hidden) hidden.value = emoji;
+    if (hidden) hidden.value = avatarVal;
+
+    const previewBox = document.getElementById('cfgAvatarPreviewBox');
+    const previewImg = document.getElementById('cfgAvatarPreviewImg');
+    const urlInput = document.getElementById('cfgAvatarCustomUrl');
+
+    const isImage = typeof avatarVal === 'string' && (avatarVal.startsWith('data:image') || avatarVal.startsWith('http://') || avatarVal.startsWith('https://'));
+
     document.querySelectorAll('.avatar-option-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.avatar === emoji);
+      btn.classList.toggle('active', !isImage && btn.dataset.avatar === avatarVal);
     });
+
+    if (isImage) {
+      if (previewBox && previewImg) {
+        previewBox.style.display = 'flex';
+        previewImg.src = avatarVal;
+      }
+      if (urlInput && avatarVal.startsWith('http')) {
+        urlInput.value = avatarVal;
+      }
+    } else {
+      if (previewBox) previewBox.style.display = 'none';
+      if (urlInput) urlInput.value = '';
+    }
   }
 
   selectAccentColor(color, name) {
@@ -17134,7 +17250,14 @@ class EstudePlusApp {
     const painelRole = document.getElementById('painelStudentRole');
     const painelClass = document.getElementById('painelStudentClass');
 
-    if (painelAvatar) painelAvatar.innerText = this.currentUser.avatar || '🦄';
+    if (painelAvatar) {
+      const av = this.currentUser.avatar || '🦄';
+      if (av.startsWith('data:image') || av.startsWith('http://') || av.startsWith('https://')) {
+        painelAvatar.innerHTML = `<img src="${av}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">`;
+      } else {
+        painelAvatar.innerText = av;
+      }
+    }
     if (painelName) painelName.innerText = this.currentUser.name || 'Freddie Pimentel Costa';
     if (painelRole) painelRole.innerText = this.currentUser.role === 'admin' ? 'Administrador & Aluno' : 'Estudante';
     if (painelClass) painelClass.innerHTML = `${this.currentUser.className || '7º ano B • Gammon 2'} &bull; <span style="color:#6366f1; font-weight:700;">${this.currentUser.grade || '7º Ano'}</span>`;
@@ -17143,8 +17266,11 @@ class EstudePlusApp {
     const headerAvatar = document.getElementById('userAvatarText');
     const headerName = document.getElementById('userNameHeaderDisplay');
     if (headerAvatar) {
-      if (this.currentUser.avatar && this.currentUser.avatar !== '🦄') {
-        headerAvatar.innerText = this.currentUser.avatar;
+      const av = this.currentUser.avatar || '🦄';
+      if (av.startsWith('data:image') || av.startsWith('http://') || av.startsWith('https://')) {
+        headerAvatar.innerHTML = `<img src="${av}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+      } else if (av && av !== '🦄') {
+        headerAvatar.innerText = av;
       } else {
         const initials = (this.currentUser.name || 'Freddie Costa').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
         headerAvatar.innerText = initials || 'FP';
@@ -17443,7 +17569,6 @@ class EstudePlusApp {
     this.currentUser.dashboardCards = [
       { id: 'profile-shortcuts', label: '👤 Perfil & Atalhos Rápidos', visible: true, locked: true },
       { id: 'focus-strip', label: '🎯 Foco de Estudos & Metas', visible: true },
-      { id: 'smart-stats', label: '📊 Estatísticas Inteligentes & Metas', visible: true },
       { id: 'studies-eureka', label: '🧭 Meus Estudos & Universo Eureka', visible: true },
       { id: 'news', label: '📰 Notícias & Atualizações', visible: true }
     ];
@@ -17471,11 +17596,13 @@ class EstudePlusApp {
      SMART STATISTICS CARD (EVOLUÇÃO, METAS E ERROS DO BANCO REAL)
      ========================================================================== */
   renderSmartStats() {
+    const weeklyChart = document.getElementById('weeklyBarsChart');
+    if (!weeklyChart) return;
+
     const kpiToday = document.getElementById('statKpiTodayMinutes');
     const kpiStreak = document.getElementById('statKpiStreak');
     const kpiTrilhas = document.getElementById('statKpiTrilhasDone');
     const kpiQuizzes = document.getElementById('statKpiQuizzesDone');
-    const weeklyChart = document.getElementById('weeklyBarsChart');
     const weeklyTotal = document.getElementById('weeklyTotalMinutesLabel');
 
     const todayMins = Number(this.state.todayMinutes || this.currentUser?.todayMinutes || 0);
@@ -17809,90 +17936,111 @@ class EstudePlusApp {
         if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
 
         const res = await fetch('/api/user/sync', { headers });
-        if (res.status === 401) {
+        if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          if (errData.accountDeleted && sessId && this.currentUser?.role !== 'admin') {
-            console.warn('[Sync] Conta excluída ou desativada pelo administrador.');
-            this.currentUser = null;
-            try {
-              localStorage.removeItem(this.currentUserStorageKey);
-              localStorage.removeItem('estude_session_id');
-            } catch (e) {}
-            alert('⚠️ Sua conta foi desativada pelo administrador.');
-            return;
+          console.warn('[Sync pull failed]', res.status, errData);
+          if (res.status === 401) {
+            if (errData.accountDeleted && sessId && this.currentUser?.role !== 'admin') {
+              console.warn('[Sync] Conta desativada pelo administrador.');
+              this.currentUser = null;
+              try {
+                localStorage.removeItem(this.currentUserStorageKey);
+                localStorage.removeItem('estude_session_id');
+              } catch (e) {}
+              alert('⚠️ Sua conta foi desativada pelo administrador.');
+              return;
+            }
           }
+          return;
         }
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.user) {
-            const u = data.user;
-            // Atualiza status do plano e perfil
-            this.currentUser.isSubscribed = Boolean(u.isSubscribed);
-            this.currentUser.plan = u.plan === 'pro' ? 'pro' : 'base';
-            this.currentUser.planStatus = u.plan === 'pro' ? (u.planStatus || 'pro_mensal_active') : 'base';
-            this.currentUser.planName = u.plan === 'pro' ? (u.planName || 'Plano PRO') : 'Plano Base';
-            this.currentUser.proExpiresAt = u.proExpiresAt;
-            this.state.isSubscribed = Boolean(u.isSubscribed);
-            if (!this.currentUser.isSubscribed) {
-              const proOnlyTabs = ['gemini-chat'];
-              if (proOnlyTabs.includes(this.currentTab)) {
-                this.switchTab('dashboard');
-              }
-            }
-            this.currentUser.streak = u.streak || 0;
-            this.currentUser.bestStreak = u.bestStreak || 0;
-            this.currentUser.dailyGoalMinutes = u.dailyGoalMinutes || 15;
-            this.currentUser.todayMinutes = u.todayMinutes || 0;
-            if (Array.isArray(u.studiedDays)) this.currentUser.studiedDays = u.studiedDays;
-            if (Array.isArray(u.achievements)) this.currentUser.achievements = u.achievements;
-            if (u.studentSettings) {
-              this.currentUser.studentSettings = { ...(this.currentUser.studentSettings || {}), ...u.studentSettings };
-            }
-            if (u.preferences) {
-              this.currentUser.preferences = { ...(this.currentUser.preferences || {}), ...u.preferences };
-              if (u.preferences.themeMode) this.currentUser.themeMode = u.preferences.themeMode;
-              if (u.preferences.fontSize) this.currentUser.fontSize = u.preferences.fontSize;
-              if (u.preferences.density) this.currentUser.density = u.preferences.density;
-              if (u.preferences.accentColor) this.currentUser.accentColor = u.preferences.accentColor;
-              if (u.preferences.accentName) this.currentUser.accentName = u.preferences.accentName;
-              if (u.preferences.reduceMotion !== undefined) this.currentUser.reduceMotion = u.preferences.reduceMotion;
-              if (Array.isArray(u.preferences.dashboardCards)) this.currentUser.dashboardCards = u.preferences.dashboardCards;
-            }
 
-            // Atualiza estado local sincronizado
-            this.state.streak = u.streak || 0;
-            this.state.todayMinutes = u.todayMinutes || 0;
-            if (Array.isArray(u.studiedDays)) this.state.studiedDays = u.studiedDays;
-            if (Array.isArray(u.achievements)) this.state.achievements = u.achievements;
-            if (Array.isArray(u.timetable) && u.timetable.length > 0) {
-              this.state.timetable = u.timetable;
-            }
-            if (u.tasks) {
-              if (Array.isArray(u.tasks.completedTpcIds)) this.state.completedTpcIds = u.tasks.completedTpcIds;
-              if (Array.isArray(u.tasks.userTpcs)) this.state.userTpcs = u.tasks.userTpcs;
-            }
-            if (Array.isArray(u.quizHistory)) {
-              this.currentUser.quizHistory = u.quizHistory;
-            }
-            if (u.activeQuizSession) {
-              this.currentUser.activeQuizSession = u.activeQuizSession;
-            }
+        const data = await res.json();
+        if (data.success && data.user) {
+          const u = data.user;
+          // Perfil e Configurações Pessoais
+          this.currentUser.name = u.name;
+          this.currentUser.nickname = u.nickname;
+          this.currentUser.avatar = u.avatar || '🦄';
+          this.currentUser.motto = u.motto || '';
+          this.currentUser.grade = u.grade;
+          this.currentUser.className = u.className;
+          if (Array.isArray(u.focusSubjects)) this.currentUser.focusSubjects = u.focusSubjects;
+          this.currentUser.dailyGoal = u.dailyGoal || 15;
+          this.currentUser.dailyGoalMinutes = u.dailyGoal || 15;
+          this.currentUser.studyShift = u.studyShift || 'tarde';
+          this.currentUser.tpcReminderTime = u.tpcReminderTime || '17:00';
+          this.currentUser.aiStyle = u.aiStyle || 'direto';
+          if (u.scheduleWeekly) this.currentUser.scheduleWeekly = u.scheduleWeekly;
+          if (u.studentSettings) this.currentUser.studentSettings = u.studentSettings;
 
-            this.activePlanRequest = data.activePlanRequest || null;
-
-            // Salva silenciosamente local
-            try {
-              localStorage.setItem(this.currentUserStorageKey, JSON.stringify(this.currentUser));
-              localStorage.setItem(this.storageKey, JSON.stringify(this.state));
-            } catch (e) {}
-
-            this.updateUserHeaderUI();
-            this.applyStudentSettingsToUI();
-            this.renderPlanStatus();
-            this.renderDashboard();
-            this.renderTimetable();
-            this.renderTpcs();
+          // Preferências de interface
+          this.currentUser.themeMode = u.themeMode || 'light';
+          this.currentUser.fontSize = u.fontSize || 'normal';
+          this.currentUser.density = u.density || 'comfortable';
+          this.currentUser.accentColor = u.accentColor || '#4f46e5';
+          this.currentUser.accentName = u.accentName || 'Índigo Estude+';
+          this.currentUser.reduceMotion = Boolean(u.reduceMotion);
+          if (Array.isArray(u.dashboardCards)) {
+            this.currentUser.dashboardCards = u.dashboardCards.filter(c => c && c.id !== 'agenda');
           }
+          if (u.preferences) this.currentUser.preferences = u.preferences;
+
+          // Plano Base ou PRO e permissões
+          this.currentUser.isSubscribed = Boolean(u.isSubscribed);
+          this.currentUser.plan = u.plan === 'pro' ? 'pro' : 'base';
+          this.currentUser.planStatus = u.planStatus || 'base';
+          this.currentUser.planName = u.planName || (u.plan === 'pro' ? 'Plano PRO' : 'Plano Base');
+          this.currentUser.proExpiresAt = u.proExpiresAt || null;
+          this.state.isSubscribed = Boolean(u.isSubscribed);
+          if (!this.currentUser.isSubscribed) {
+            const proOnlyTabs = ['gemini-chat'];
+            if (proOnlyTabs.includes(this.currentTab)) {
+              this.switchTab('dashboard');
+            }
+          }
+
+          // Tarefas, Trabalhos e TPCs
+          if (Array.isArray(u.tpcs)) {
+            this.state.tpcs = u.tpcs;
+          } else if (u.tasks && Array.isArray(u.tasks.userTpcs)) {
+            this.state.tpcs = u.tasks.userTpcs;
+          }
+          if (Array.isArray(u.completedTpcIds)) {
+            this.state.completedTpcIds = u.completedTpcIds;
+          } else if (u.tasks && Array.isArray(u.tasks.completedTpcIds)) {
+            this.state.completedTpcIds = u.tasks.completedTpcIds;
+          }
+
+          // Provas e Avaliações Agendadas
+          if (Array.isArray(u.exams)) {
+            this.state.exams = u.exams;
+          }
+
+          // Anotações
+          if (Array.isArray(u.notes)) {
+            this.state.notes = u.notes;
+          }
+
+          // Grade Horária
+          if (Array.isArray(u.timetable)) {
+            this.state.timetable = u.timetable;
+          }
+
+          this.activePlanRequest = data.activePlanRequest || null;
+
+          // Salva silenciosamente local
+          try {
+            localStorage.setItem(this.currentUserStorageKey, JSON.stringify(this.currentUser));
+            localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+          } catch (e) {}
+
+          this.updateUserHeaderUI();
+          this.applyStudentSettingsToUI();
+          this.renderPlanStatus();
+          this.renderDashboard();
+          this.renderTimetable();
+          this.renderTpcs();
+          this.renderExams();
         }
       } catch (e) {
         console.warn('[Sync pull failed]', e);
@@ -17903,40 +18051,73 @@ class EstudePlusApp {
         if (sessId) headers['x-session-id'] = sessId;
         if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
 
+        const profile = {
+          name: this.currentUser.name,
+          nickname: this.currentUser.nickname,
+          avatar: this.currentUser.avatar || '🦄',
+          motto: this.currentUser.motto || '',
+          grade: this.currentUser.grade,
+          className: this.currentUser.className,
+          focusSubjects: this.currentUser.focusSubjects || ['matematica', 'portugues'],
+          dailyGoal: this.currentUser.dailyGoal || this.currentUser.dailyGoalMinutes || 15,
+          studyShift: this.currentUser.studyShift || 'tarde',
+          tpcReminderTime: this.currentUser.tpcReminderTime || '17:00',
+          aiStyle: this.currentUser.aiStyle || 'direto',
+          scheduleWeekly: this.currentUser.scheduleWeekly
+        };
+
+        const preferences = {
+          themeMode: this.currentUser.themeMode || 'light',
+          fontSize: this.currentUser.fontSize || 'normal',
+          density: this.currentUser.density || 'comfortable',
+          accentColor: this.currentUser.accentColor || '#4f46e5',
+          accentName: this.currentUser.accentName || 'Índigo Estude+',
+          reduceMotion: Boolean(this.currentUser.reduceMotion),
+          dashboardCards: this.currentUser.dashboardCards || null
+        };
+
+        const tpcsList = this.state.tpcs || [];
+        const completedTpcs = this.state.completedTpcIds || [];
+        const examsList = this.state.exams || [];
+        const notesList = this.state.notes || [];
+        const timetableList = this.state.timetable || [];
+
         const payload = {
-          studentSettings: this.currentUser.studentSettings || {},
-          preferences: this.currentUser.preferences || {
-            themeMode: this.currentUser.themeMode,
-            fontSize: this.currentUser.fontSize,
-            density: this.currentUser.density,
-            accentColor: this.currentUser.accentColor,
-            accentName: this.currentUser.accentName,
-            reduceMotion: this.currentUser.reduceMotion,
-            dashboardCards: this.currentUser.dashboardCards
-          },
-          progress: {
-            streak: this.state.streak || this.currentUser.streak || 0,
-            bestStreak: this.currentUser.bestStreak || 0,
-            dailyGoalMinutes: this.currentUser.dailyGoalMinutes || 15,
-            todayMinutes: this.state.todayMinutes || 0,
-            studiedDays: this.state.studiedDays || [],
-            achievements: this.state.achievements || []
-          },
-          timetable: this.state.timetable || [],
+          profile,
+          studentSettings: profile,
+          preferences,
+          tpcs: tpcsList,
+          completedTpcIds: completedTpcs,
           tasks: {
-            completedTpcIds: this.state.completedTpcIds || [],
-            userTpcs: this.state.userTpcs || []
+            completedTpcIds: completedTpcs,
+            userTpcs: tpcsList
           },
+          exams: examsList,
+          notes: notesList,
+          timetable: timetableList,
           deviceType: window.innerWidth < 768 ? 'Celular' : (window.innerWidth < 1024 ? 'Tablet' : 'Computador / PC')
         };
 
-        await fetch('/api/user/sync', {
+        const res = await fetch('/api/user/sync', {
           method: 'POST',
           headers,
           body: JSON.stringify(payload)
         });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.warn('[Sync push failed]', res.status, errData);
+          if (res.status === 401) {
+            this.showSyncFeedback('error', 'Sessão expirada. Faça login novamente para salvar suas informações.');
+          } else if (res.status === 403) {
+            this.showSyncFeedback('error', 'Acesso negado: dados pertencem a outro usuário.');
+          } else {
+            this.showSyncFeedback('warning', 'Aviso: Falha temporária ao sincronizar com o servidor.');
+          }
+        }
       } catch (e) {
         console.warn('[Sync push failed]', e);
+        this.showSyncFeedback('warning', 'Sem conexão com o servidor. Dados salvos localmente.');
       }
     }
   }

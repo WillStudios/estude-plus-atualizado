@@ -290,50 +290,6 @@
               </div>
             </div>
 
-            <!-- Smart Statistics & Evolution Card -->
-            <div class="smart-stats-card" data-dash-card="smart-stats">
-              <div class="smart-stats-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <i data-lucide="bar-chart-2" style="width: 20px; height: 20px; color: #4f46e5;"></i>
-                  <h4 style="margin: 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">Estatísticas Inteligentes & Metas</h4>
-                </div>
-                <div style="display: flex; gap: 6px;">
-                  <button type="button" class="btn-outline" onclick="app.switchTab('trilhas')" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; color: #4f46e5; border-color: #c7d2fe; cursor: pointer;">
-                    Ver Trilhas &rarr;
-                  </button>
-                </div>
-              </div>
-
-              <div class="stats-kpi-grid">
-                <div class="stat-kpi-box">
-                  <div class="stat-kpi-val" id="statKpiTodayMinutes" style="color: #4f46e5;">0 min</div>
-                  <div class="stat-kpi-lbl">Estudo Hoje</div>
-                </div>
-                <div class="stat-kpi-box">
-                  <div class="stat-kpi-val" id="statKpiStreak" style="color: #ea580c;">🔥 0</div>
-                  <div class="stat-kpi-lbl">Dias Seguidos</div>
-                </div>
-                <div class="stat-kpi-box">
-                  <div class="stat-kpi-val" id="statKpiTrilhasDone" style="color: #10b981;">0</div>
-                  <div class="stat-kpi-lbl">Fases Concluídas</div>
-                </div>
-                <div class="stat-kpi-box">
-                  <div class="stat-kpi-val" id="statKpiQuizzesDone" style="color: #0284c7;">0</div>
-                  <div class="stat-kpi-lbl">Quizzes Feitos</div>
-                </div>
-              </div>
-
-              <div class="weekly-bars-wrapper">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <strong style="font-size: 0.8rem; color: #334155;">Atividade da Semana (Minutos Dedicados)</strong>
-                  <span style="font-size: 0.75rem; color: #64748b;" id="weeklyTotalMinutesLabel">0 min no total</span>
-                </div>
-                <div class="weekly-bars-chart" id="weeklyBarsChart">
-                  <!-- Rendered dynamically -->
-                </div>
-              </div>
-            </div>
-
             <!-- Middle Row: Meus estudos & Universo Eureka Banner -->
             <div class="sas-studies-eureka-row" data-dash-card="studies-eureka">
               <!-- Meus estudos card matching image -->
@@ -2539,7 +2495,7 @@
             </div>
 
             <div class="form-group">
-              <label>Escolha o Emoji do seu Avatar:</label>
+              <label>Escolha o Emoji ou Foto do seu Avatar:</label>
               <div class="avatar-selection-grid" id="cfgAvatarSelectionGrid">
                 <button type="button" class="avatar-option-btn active" data-avatar="🦄" onclick="app.selectAvatar('🦄')">🦄</button>
                 <button type="button" class="avatar-option-btn" data-avatar="🦁" onclick="app.selectAvatar('🦁')">🦁</button>
@@ -2551,6 +2507,17 @@
                 <button type="button" class="avatar-option-btn" data-avatar="🦉" onclick="app.selectAvatar('🦉')">🦉</button>
                 <button type="button" class="avatar-option-btn" data-avatar="🎓" onclick="app.selectAvatar('🎓')">🎓</button>
                 <button type="button" class="avatar-option-btn" data-avatar="👑" onclick="app.selectAvatar('👑')">👑</button>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="cfgAvatarCustomUrl" class="form-input" style="flex: 1; min-width: 200px; font-size: 0.82rem;" placeholder="Ou cole a URL da sua foto de perfil..." onchange="app.setCustomAvatarUrl(this.value)">
+                <label class="btn-outline" style="cursor: pointer; font-size: 0.8rem; padding: 7px 12px; display: inline-flex; align-items: center; gap: 6px; border-color: #cbd5e1; background: #f8fafc; border-radius: 8px;">
+                  <i data-lucide="upload" style="width: 14px; height: 14px;"></i> Carregar Foto
+                  <input type="file" id="cfgAvatarFileInput" accept="image/*" style="display:none;" onchange="app.handleAvatarFileUpload(event)">
+                </label>
+              </div>
+              <div id="cfgAvatarPreviewBox" style="display: none; margin-top: 8px; align-items: center; gap: 10px; font-size: 0.8rem; color: #475569;">
+                <img id="cfgAvatarPreviewImg" src="" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #4f46e5;">
+                <span id="cfgAvatarPreviewText">Foto personalizada ativa</span>
               </div>
               <input type="hidden" id="cfgSelectedAvatar" value="🦄">
             </div>

@@ -584,6 +584,104 @@ function checkUserTrilhasAccess(user) {
   };
 }
 
+function buildSafeUser(u, extra = {}) {
+  if (!u) return null;
+  const isProUser = Boolean(u.isSubscribed) || u.plan === 'pro' || u.planStatus === 'active' || u.planStatus === 'pro_mensal_active' || u.planStatus === 'pro_anual_active';
+
+  const preferences = {
+    themeMode: u.themeMode || u.preferences?.themeMode || 'light',
+    fontSize: u.fontSize || u.preferences?.fontSize || 'normal',
+    density: u.density || u.preferences?.density || 'comfortable',
+    accentColor: u.accentColor || u.preferences?.accentColor || '#4f46e5',
+    accentName: u.accentName || u.preferences?.accentName || 'Índigo Estude+',
+    reduceMotion: u.reduceMotion !== undefined ? Boolean(u.reduceMotion) : Boolean(u.preferences?.reduceMotion),
+    dashboardCards: (Array.isArray(u.dashboardCards) ? u.dashboardCards : (Array.isArray(u.preferences?.dashboardCards) ? u.preferences.dashboardCards : null))?.filter(c => c && c.id !== 'smart-stats') || null
+  };
+
+  const studentSettings = {
+    name: u.name || u.username,
+    nickname: u.nickname || (u.name ? u.name.split(' ')[0] : u.username),
+    avatar: u.avatar || '🦄',
+    motto: u.motto !== undefined ? u.motto : 'Foco todo dia para mandar bem nas provas do SAS!',
+    grade: u.grade || '7º Ano EF',
+    className: u.className || '7º ano B • Gammon 2',
+    focusSubjects: Array.isArray(u.focusSubjects) && u.focusSubjects.length > 0 ? u.focusSubjects : ['matematica', 'portugues', 'ciencias'],
+    dailyGoal: Number(u.dailyGoal || u.dailyGoalMinutes) || 15,
+    studyShift: u.studyShift || 'tarde',
+    tpcReminderTime: u.tpcReminderTime || '17:00',
+    aiStyle: u.aiStyle || 'direto',
+    scheduleWeekly: u.scheduleWeekly || {
+      seg: 'Matemática, Português, Geografia, Inglês',
+      ter: 'Ciências, Matemática, História, Artes',
+      qua: 'Português, Redação, Física, Filosofia',
+      qui: 'Matemática, Geografia, Química, Inglês',
+      sex: 'História, Português, Biologia, Ed. Física'
+    }
+  };
+
+  const tpcsList = Array.isArray(u.userTpcs) ? u.userTpcs : (Array.isArray(u.tpcs) ? u.tpcs : (u.tasks?.userTpcs || []));
+  const completedTpcs = Array.isArray(u.completedTpcIds) ? u.completedTpcIds : (u.tasks?.completedTpcIds || []);
+
+  return {
+    id: u.id,
+    name: u.name || u.username,
+    username: u.username,
+    email: u.email,
+    role: u.role || 'student',
+    emailVerified: u.emailVerified !== false,
+
+    // Foto, nome e configurações pessoais
+    avatar: studentSettings.avatar,
+    nickname: studentSettings.nickname,
+    motto: studentSettings.motto,
+    grade: studentSettings.grade,
+    className: studentSettings.className,
+    focusSubjects: studentSettings.focusSubjects,
+    dailyGoal: studentSettings.dailyGoal,
+    dailyGoalMinutes: studentSettings.dailyGoal,
+    studyShift: studentSettings.studyShift,
+    tpcReminderTime: studentSettings.tpcReminderTime,
+    aiStyle: studentSettings.aiStyle,
+    scheduleWeekly: studentSettings.scheduleWeekly,
+    studentSettings,
+
+    // Preferências e interface
+    themeMode: preferences.themeMode,
+    fontSize: preferences.fontSize,
+    density: preferences.density,
+    accentColor: preferences.accentColor,
+    accentName: preferences.accentName,
+    reduceMotion: preferences.reduceMotion,
+    dashboardCards: preferences.dashboardCards,
+    preferences,
+
+    // Plano e permissões
+    isSubscribed: isProUser,
+    plan: isProUser ? 'pro' : 'base',
+    planStatus: isProUser ? (u.planStatus || 'pro_mensal_active') : (u.planStatus === 'expired' ? 'expired' : 'base'),
+    planType: isProUser ? (u.planType || 'pro_mensal') : 'base',
+    planPeriodicity: isProUser ? (u.planPeriodicity || 'mensal') : 'gratuito',
+    planName: isProUser ? (u.planName || 'Plano PRO') : 'Plano Base',
+    proActivatedAt: u.proActivatedAt || null,
+    proExpiresAt: u.proExpiresAt || null,
+    trialExpiresAt: u.trialExpiresAt || null,
+
+    // Tarefas, trabalhos, provas e anotações
+    timetable: Array.isArray(u.timetable) ? u.timetable : null,
+    tasks: {
+      completedTpcIds: completedTpcs,
+      userTpcs: tpcsList
+    },
+    tpcs: tpcsList,
+    completedTpcIds: completedTpcs,
+    exams: Array.isArray(u.exams) ? u.exams : [],
+    notes: Array.isArray(u.notes) ? u.notes : [],
+
+    lastSync: u.lastSync || new Date().toISOString(),
+    ...extra
+  };
+}
+
 function getAuthUser(req) {
   const cookies = parseCookies(req);
   const cookieSessionId = cookies['estude_session'];
@@ -640,16 +738,18 @@ function getAuthUser(req) {
     }
   }
 
-  // Suporte a identificação de dispositivo autenticado por x-user-id
+  // Suporte a identificação de dispositivo somente com sessão ativa comprovada
   const headerUserId = req.headers['x-user-id'];
   if (headerUserId) {
-    let session = Array.from(activeSessions.values()).find(s => s.userId === headerUserId && (!s.expiresAt || s.expiresAt > now));
+    let session = Array.from(activeSessions.values()).find(s => String(s.userId) === String(headerUserId) && (!s.expiresAt || s.expiresAt > now));
     if (!session && Array.isArray(db.sessions)) {
-      session = db.sessions.find(s => s.userId === headerUserId && (!s.expiresAt || s.expiresAt > now));
+      session = db.sessions.find(s => String(s.userId) === String(headerUserId) && (!s.expiresAt || s.expiresAt > now));
     }
-    const user = (db.users || []).find(u => u.id === headerUserId);
-    if (user) {
-      return { user, session: session || { sessionId: 'fallback_' + user.id, userId: user.id, userRole: user.role, userName: user.name } };
+    if (session) {
+      const user = (db.users || []).find(u => String(u.id) === String(headerUserId));
+      if (user) {
+        return { user, session };
+      }
     }
   }
 
@@ -942,6 +1042,24 @@ const server = http.createServer((req, res) => {
       if (data.content) mat.content = data.content.trim();
       if (data.summary !== undefined) mat.summary = data.summary;
       if (data.resourcesCount) mat.resourcesCount = { ...mat.resourcesCount, ...data.resourcesCount };
+      if (data.studentNotes !== undefined) {
+        mat.studentNotes = data.studentNotes;
+        if (!Array.isArray(db.studentNotes)) db.studentNotes = [];
+        const noteIdx = db.studentNotes.findIndex(n => String(n.materialId) === String(materialId) && String(n.userId) === String(auth.user.id));
+        if (noteIdx !== -1) {
+          db.studentNotes[noteIdx].content = data.studentNotes;
+          db.studentNotes[noteIdx].updatedAt = new Date().toISOString();
+        } else {
+          db.studentNotes.push({
+            id: 'note_' + Date.now(),
+            materialId,
+            userId: auth.user.id,
+            content: data.studentNotes,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
       mat.updatedAt = new Date().toISOString();
 
       writeDb(db);
@@ -1015,7 +1133,7 @@ const server = http.createServer((req, res) => {
      SINCRONIZAÇÃO ENTRE DISPOSITIVOS (CELULAR, TABLET, PC)
      ========================================================================== */
 
-  // GET /api/user/sync ou GET /api/auth/me - Baixa os dados completos e atualizados do usuário autenticado
+    // GET /api/user/sync ou GET /api/auth/me - Baixa os dados completos e atualizados do usuário autenticado
   if (req.method === 'GET' && (pathname === '/api/user/sync' || pathname === '/api/auth/me')) {
     const auth = getAuthUser(req);
     const requestedUserId = req.headers['x-user-id'];
@@ -1026,7 +1144,12 @@ const server = http.createServer((req, res) => {
       if (requestedUserId && !userExists) {
         return sendJson({ error: 'Sua conta foi excluída ou desativada pelo administrador.', accountDeleted: true }, 401);
       }
-      return sendJson({ error: 'Não autenticado. Faça login para sincronizar seus dados entre dispositivos.' }, 401);
+      return sendJson({ error: 'Não autenticado. Faça login para acessar seus dados salvos.' }, 401);
+    }
+
+    // Regra de segurança: impede que usuário comum acesse dados de outra conta
+    if (requestedUserId && String(requestedUserId) !== String(auth.user.id) && auth.user.role !== 'admin') {
+      return sendJson({ error: 'Acesso negado. Você não tem permissão para acessar dados de outra conta.' }, 403);
     }
 
     const db = readDb();
@@ -1047,8 +1170,6 @@ const server = http.createServer((req, res) => {
       writeDb(db);
     }
 
-    const todayActive = (freshUser.studiedDays || []).includes(todayStr);
-
     // Busca a solicitação de plano mais recente deste usuário
     const activeReq = (db.planRequests || [])
       .filter(r => r.userId === freshUser.id)
@@ -1063,102 +1184,106 @@ const server = http.createServer((req, res) => {
       writeDb(db);
     }
 
-    const isProUser = Boolean(freshUser.isSubscribed) || freshUser.plan === 'pro' || freshUser.planStatus === 'active' || freshUser.planStatus === 'pro_mensal_active' || freshUser.planStatus === 'pro_anual_active';
+    const safeUser = buildSafeUser(freshUser);
 
     return sendJson({
       success: true,
-      user: {
-        id: freshUser.id,
-        name: freshUser.name,
-        username: freshUser.username,
-        email: freshUser.email,
-        role: freshUser.role,
-        grade: freshUser.grade,
-        isSubscribed: isProUser,
-        plan: isProUser ? 'pro' : 'base',
-        planStatus: isProUser ? (freshUser.planStatus || 'pro_mensal_active') : (freshUser.planStatus === 'expired' ? 'expired' : 'base'),
-        planType: isProUser ? (freshUser.planType || 'pro_mensal') : 'base',
-        planPeriodicity: isProUser ? (freshUser.planPeriodicity || 'mensal') : 'gratuito',
-        planName: isProUser ? (freshUser.planName || 'Plano PRO') : 'Plano Base',
-        proActivatedAt: freshUser.proActivatedAt || null,
-        proExpiresAt: freshUser.proExpiresAt || null,
-        trialExpiresAt: freshUser.trialExpiresAt || null,
-        streak: Number(freshUser.streak) || 0,
-        bestStreak: Number(freshUser.bestStreak) || 0,
-        dailyGoalMinutes: Number(freshUser.dailyGoalMinutes) || 15,
-        todayMinutes: Number(freshUser.todayMinutes) || 0,
-        studiedDays: Array.isArray(freshUser.studiedDays) ? freshUser.studiedDays : [],
-        loginDays: Array.isArray(freshUser.loginDays) ? freshUser.loginDays : [],
-        quizHistory: Array.isArray(freshUser.quizHistory) ? freshUser.quizHistory : [],
-        activeQuizSession: freshUser.activeQuizSession || null,
-        todayActive,
-        lastVisitDate: freshUser.lastVisitDate || null,
-        achievements: Array.isArray(freshUser.achievements) ? freshUser.achievements : [],
-        studentSettings: freshUser.studentSettings || freshUser.preferences || {},
-        preferences: freshUser.preferences || freshUser.studentSettings || {},
-        timetable: Array.isArray(freshUser.timetable) ? freshUser.timetable : null,
-        tasks: freshUser.tasks || {
-          completedTpcIds: freshUser.completedTpcIds || [],
-          userTpcs: freshUser.userTpcs || []
-        },
-        lastSync: freshUser.lastSync || new Date().toISOString()
-      },
-      activePlanRequest: activeReq
+      user: safeUser,
+      activePlanRequest: activeReq,
+      sessionId: auth.session?.sessionId || null
     });
   }
 
-  // POST /api/user/sync - Salva progresso, preferências, agenda e tarefas no servidor
+  // POST /api/user/sync - Salva perfil, preferências, tarefas, trabalhos, anotações e provas no servidor
   if (req.method === 'POST' && pathname === '/api/user/sync') {
     const auth = getAuthUser(req);
     if (!auth || !auth.user) {
-      return sendJson({ error: 'Não autenticado. Sessão inválida ou expirada.' }, 401);
+      return sendJson({ error: 'Não autenticado. Sessão inválida ou expirada. Faça login novamente.' }, 401);
+    }
+
+    const requestedUserId = req.headers['x-user-id'];
+    if (requestedUserId && String(requestedUserId) !== String(auth.user.id) && auth.user.role !== 'admin') {
+      return sendJson({ error: 'Acesso negado. Você não tem permissão para alterar dados de outra conta.' }, 403);
     }
 
     parseBody((data) => {
       if (!data) return sendJson({ error: 'Dados inválidos para sincronização.' }, 400);
 
       const db = readDb();
-      const uIndex = (db.users || []).findIndex(u => u.id === auth.user.id);
+      const uIndex = (db.users || []).findIndex(u => String(u.id) === String(auth.user.id));
       if (uIndex === -1) {
         return sendJson({ error: 'Usuário não encontrado no banco de dados.' }, 404);
       }
 
       const u = db.users[uIndex];
 
-      // Atualiza preferências e configurações do estudante
-      if (data.studentSettings && typeof data.studentSettings === 'object') {
-        u.studentSettings = { ...(u.studentSettings || {}), ...data.studentSettings };
+      // 1. Perfil e Configurações Pessoais (Foto/Avatar, Nome, Apelido, Lema, Série, Turma, Foco, etc.)
+      const profileData = data.profile || data.studentSettings || {};
+      if (typeof profileData === 'object') {
+        if (profileData.name && String(profileData.name).trim()) u.name = String(profileData.name).trim();
+        if (profileData.nickname && String(profileData.nickname).trim()) u.nickname = String(profileData.nickname).trim();
+        if (profileData.avatar && String(profileData.avatar).trim()) u.avatar = String(profileData.avatar).trim();
+        if (profileData.motto !== undefined) u.motto = String(profileData.motto).trim();
+        if (profileData.grade && String(profileData.grade).trim()) u.grade = String(profileData.grade).trim();
+        if (profileData.className && String(profileData.className).trim()) u.className = String(profileData.className).trim();
+        if (Array.isArray(profileData.focusSubjects)) u.focusSubjects = profileData.focusSubjects;
+        if (profileData.dailyGoal !== undefined) {
+          u.dailyGoal = Number(profileData.dailyGoal) || 15;
+          u.dailyGoalMinutes = u.dailyGoal;
+        }
+        if (profileData.studyShift) u.studyShift = profileData.studyShift;
+        if (profileData.tpcReminderTime) u.tpcReminderTime = profileData.tpcReminderTime;
+        if (profileData.aiStyle) u.aiStyle = profileData.aiStyle;
+        if (profileData.scheduleWeekly && typeof profileData.scheduleWeekly === 'object') {
+          u.scheduleWeekly = { ...(u.scheduleWeekly || {}), ...profileData.scheduleWeekly };
+        }
+        u.studentSettings = {
+          ...(u.studentSettings || {}),
+          ...profileData
+        };
       }
+
+      // 2. Preferências e Personalização da Interface (Tema, Fonte, Densidade, Cores, Cards)
       if (data.preferences && typeof data.preferences === 'object') {
         u.preferences = { ...(u.preferences || {}), ...data.preferences };
+        if (data.preferences.themeMode) u.themeMode = data.preferences.themeMode;
+        if (data.preferences.fontSize) u.fontSize = data.preferences.fontSize;
+        if (data.preferences.density) u.density = data.preferences.density;
+        if (data.preferences.accentColor) u.accentColor = data.preferences.accentColor;
+        if (data.preferences.accentName) u.accentName = data.preferences.accentName;
+        if (data.preferences.reduceMotion !== undefined) u.reduceMotion = Boolean(data.preferences.reduceMotion);
+        if (Array.isArray(data.preferences.dashboardCards)) u.dashboardCards = data.preferences.dashboardCards;
       }
 
-      // Atualiza progresso de estudos
-      if (data.progress && typeof data.progress === 'object') {
-        if (typeof data.progress.streak === 'number') u.streak = data.progress.streak;
-        if (typeof data.progress.bestStreak === 'number') u.bestStreak = data.progress.bestStreak;
-        if (typeof data.progress.dailyGoalMinutes === 'number') u.dailyGoalMinutes = data.progress.dailyGoalMinutes;
-        if (typeof data.progress.todayMinutes === 'number') u.todayMinutes = data.progress.todayMinutes;
-        if (Array.isArray(data.progress.studiedDays)) u.studiedDays = data.progress.studiedDays;
-        if (Array.isArray(data.progress.loginDays)) u.loginDays = data.progress.loginDays;
-        if (data.progress.lastVisitDate) u.lastVisitDate = data.progress.lastVisitDate;
-        if (Array.isArray(data.progress.achievements)) u.achievements = data.progress.achievements;
+      // 3. Tarefas, Trabalhos e TPCs
+      if (Array.isArray(data.tpcs)) {
+        u.userTpcs = data.tpcs;
+      } else if (data.tasks && Array.isArray(data.tasks.userTpcs)) {
+        u.userTpcs = data.tasks.userTpcs;
+      }
+      if (Array.isArray(data.completedTpcIds)) {
+        u.completedTpcIds = data.completedTpcIds;
+      } else if (data.tasks && Array.isArray(data.tasks.completedTpcIds)) {
+        u.completedTpcIds = data.tasks.completedTpcIds;
+      }
+      u.tasks = {
+        completedTpcIds: u.completedTpcIds || [],
+        userTpcs: u.userTpcs || []
+      };
+
+      // 4. Provas e Avaliações Agendadas (Calendário)
+      if (Array.isArray(data.exams)) {
+        u.exams = data.exams;
       }
 
-      // Atualiza grade de horários / agenda semanal (timetable)
+      // 5. Anotações (Caderno Digital)
+      if (Array.isArray(data.notes)) {
+        u.notes = data.notes;
+      }
+
+      // 6. Grade de Horários (Timetable)
       if (Array.isArray(data.timetable)) {
         u.timetable = data.timetable;
-      }
-
-      // Atualiza tarefas e TPCs concluídos pelo usuário
-      if (data.tasks && typeof data.tasks === 'object') {
-        u.tasks = { ...(u.tasks || {}), ...data.tasks };
-        if (Array.isArray(data.tasks.completedTpcIds)) {
-          u.completedTpcIds = data.tasks.completedTpcIds;
-        }
-        if (Array.isArray(data.tasks.userTpcs)) {
-          u.userTpcs = data.tasks.userTpcs;
-        }
       }
 
       if (data.deviceType) {
@@ -1168,9 +1293,11 @@ const server = http.createServer((req, res) => {
       u.lastSync = new Date().toISOString();
       writeDb(db);
 
+      const safeUser = buildSafeUser(u);
       return sendJson({
         success: true,
-        message: 'Dados salvos e sincronizados com sucesso no servidor!',
+        message: 'Todos os dados foram salvos e sincronizados com sucesso no servidor!',
+        user: safeUser,
         lastSync: u.lastSync
       });
     });
@@ -2786,23 +2913,7 @@ const server = http.createServer((req, res) => {
       });
 
       // Retornar usuário seguro (SEM hash de senha nem campos sensíveis)
-      const safeUser = {
-        id: user.id,
-        name: user.name || user.username,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        isSubscribed: Boolean(user.isSubscribed) || user.plan === 'pro',
-        plan: (Boolean(user.isSubscribed) || user.plan === 'pro') ? 'pro' : 'base',
-        planStatus: (Boolean(user.isSubscribed) || user.plan === 'pro') ? (user.planStatus || 'pro_mensal_active') : 'base',
-        planName: (Boolean(user.isSubscribed) || user.plan === 'pro') ? (user.planName || 'Plano PRO') : 'Plano Base',
-        emailVerified: user.emailVerified !== false,
-        streak: user.streak || 0,
-        bestStreak: user.bestStreak || 0,
-        sessionId,
-        adminToken,
-        rememberMe
-      };
+      const safeUser = buildSafeUser(user, { sessionId, adminToken, rememberMe });
 
       const isSecure = Boolean(req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https');
       const cookieHeader = createSessionCookieHeader(sessionId, maxAge, isSecure);
@@ -2956,22 +3067,7 @@ const server = http.createServer((req, res) => {
         status: 'online'
       });
 
-      const safeUser = {
-        id: newUser.id,
-        name: newUser.name,
-        username: newUser.username,
-        email: newUser.email,
-        role: newUser.role,
-        isSubscribed: false,
-        plan: 'base',
-        planStatus: 'base',
-        planName: 'Plano Base',
-        streak: 0,
-        bestStreak: 0,
-        sessionId,
-        adminToken: null,
-        rememberMe
-      };
+      const safeUser = buildSafeUser(newUser, { sessionId, adminToken: null, rememberMe });
 
       const isSecure = Boolean(req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https');
       const cookieHeader = createSessionCookieHeader(sessionId, maxAge, isSecure);

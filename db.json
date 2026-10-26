@@ -15,7 +15,7 @@
       "streak": 3,
       "bestStreak": 3,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-22T17:40:16.651Z",
+      "lastLogin": "2026-10-26T00:06:11.484Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
       "lastDeviceType": "Computador / Desktop",
@@ -23,14 +23,16 @@
         "2026-10-04",
         "2026-10-05",
         "2026-10-06",
-        "2026-10-22"
+        "2026-10-22",
+        "2026-10-26",
+        "2026-10-25"
       ],
       "studiedDays": [
         "2026-10-04",
         "2026-10-05",
         "2026-10-06"
       ],
-      "lastVisitDate": "2026-10-22",
+      "lastVisitDate": "2026-10-26",
       "studentSettings": {},
       "preferences": {
         "themeMode": "light",
@@ -543,6 +545,129 @@
       "proActivatedAt": "2026-10-05T17:29:27.946Z",
       "proExpiresAt": "2026-11-04T17:29:27.946Z",
       "lastBillingDate": "2026-10-05T17:29:27.946Z"
+    },
+    {
+      "id": "usr_1793036074573_fri1",
+      "name": "Aluno Teste",
+      "username": "testuser_1793036074476",
+      "email": "testuser_1793036074476@example.com",
+      "passwordHash": "c78eb30daeca62268078391a6d12d8e2f766cd23f4a28522ad945fbcab0938f4d2f3cde8a5201c017cbccbd3a607d2ec45cc9c1c96bf5808c4e4ffb1d5d0cd13",
+      "passwordSalt": "c15ab0db8dbebc36f66ed07bf6bffe08",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "base",
+      "planStatus": "base",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-26T17:34:34.573Z",
+      "lastLogin": "2026-10-26T17:34:34.575Z",
+      "lastDeviceType": "Computador / Desktop"
+    },
+    {
+      "id": "usr_1793036136002_xavj",
+      "name": "Aluno Teste",
+      "username": "testuser_1793036135906",
+      "email": "testuser_1793036135906@example.com",
+      "passwordHash": "3603c01752842176310ee7f719bdb55b0fe60f57708e8fd1c23ed69c266c5497cbfa49b876d8dbd6d4dfc3ab0260d20b0c2e9365733478c9a5fdaba69e2928a3",
+      "passwordSalt": "e633a99bdc285145adce87d81c72cef0",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "base",
+      "planStatus": "base",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-26T17:35:36.002Z",
+      "lastLogin": "2026-10-26T17:35:36.135Z",
+      "lastDeviceType": "Computador / Desktop",
+      "nickname": "Pedrinho",
+      "avatar": "https://example.com/avatar.jpg",
+      "motto": "Rumo a nota 10 no SAS!",
+      "grade": "8º Ano EF",
+      "className": "8º ano A",
+      "studentSettings": {
+        "nickname": "Pedrinho",
+        "avatar": "https://example.com/avatar.jpg",
+        "motto": "Rumo a nota 10 no SAS!",
+        "grade": "8º Ano EF",
+        "className": "8º ano A"
+      },
+      "preferences": {
+        "themeMode": "dark",
+        "fontSize": "large",
+        "density": "compact",
+        "accentColor": "#10b981",
+        "accentName": "Esmeralda",
+        "reduceMotion": true
+      },
+      "themeMode": "dark",
+      "fontSize": "large",
+      "density": "compact",
+      "accentColor": "#10b981",
+      "accentName": "Esmeralda",
+      "reduceMotion": true,
+      "userTpcs": [
+        {
+          "id": "tpc_1",
+          "subject": "Matemática",
+          "title": "Exercícios 1 a 10 pág. 45",
+          "dueDate": "2026-10-30",
+          "completed": false
+        }
+      ],
+      "completedTpcIds": [
+        "tpc_legacy_0"
+      ],
+      "tasks": {
+        "completedTpcIds": [
+          "tpc_legacy_0"
+        ],
+        "userTpcs": [
+          {
+            "id": "tpc_1",
+            "subject": "Matemática",
+            "title": "Exercícios 1 a 10 pág. 45",
+            "dueDate": "2026-10-30",
+            "completed": false
+          }
+        ]
+      },
+      "exams": [
+        {
+          "id": "exam_1",
+          "title": "Simulado SAS 1",
+          "subject": "Português",
+          "date": "2026-11-05",
+          "time": "08:00",
+          "weight": 10
+        }
+      ],
+      "notes": [
+        {
+          "id": "note_1",
+          "title": "Resumo Biologia",
+          "content": "Células vegetais possuem cloroplastos e parede celular.",
+          "updatedAt": "2026-10-26"
+        }
+      ],
+      "lastSync": "2026-10-26T17:35:36.065Z",
+      "loginDays": [
+        "2026-10-26"
+      ],
+      "lastVisitDate": "2026-10-26"
     }
   ],
   "tpcs": [
@@ -692,6 +817,45 @@
     }
   ],
   "adminNotifications": [
+    {
+      "id": "notif_1793036136009_7xoz",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste (@testuser_1793036135906) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793036136002_xavj",
+        "username": "testuser_1793036135906"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T17:35:36.009Z"
+    },
+    {
+      "id": "notif_1793036074580_nlu5",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste (@testuser_1793036074476) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793036074573_fri1",
+        "username": "testuser_1793036074476"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T17:34:34.580Z"
+    },
+    {
+      "id": "notif_1792973171222_1vtn",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste da Silva (@aluno_teste_1792973171144) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1792973171214_lihk",
+        "username": "aluno_teste_1792973171144"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T00:06:11.223Z"
+    },
     {
       "id": "notif_1792690816867_bjaq",
       "type": "warning",
@@ -1735,6 +1899,66 @@
     }
   ],
   "sessions": [
+    {
+      "sessionId": "sess_c5131db29ee4d20cf45dce0bbe82080b",
+      "userId": "usr_1793036136002_xavj",
+      "userName": "Aluno Teste",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T17:35:36.135Z",
+      "createdAt": "2026-10-26T17:35:36.135Z",
+      "lastHeartbeat": 1793036136135,
+      "expiresAt": 1795628136135,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
+      "sessionId": "sess_688c8d070536b07334eab1d016adab00",
+      "userId": "usr_1793036136002_xavj",
+      "userName": "Aluno Teste",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T17:35:36.003Z",
+      "createdAt": "2026-10-26T17:35:36.003Z",
+      "lastHeartbeat": 1793036136005,
+      "expiresAt": 1795628136005,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
+      "sessionId": "sess_0d3cec0ea924a75c6cc3b38e9092a1ef",
+      "userId": "usr_1793036074573_fri1",
+      "userName": "Aluno Teste",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T17:34:34.575Z",
+      "createdAt": "2026-10-26T17:34:34.575Z",
+      "lastHeartbeat": 1793036074577,
+      "expiresAt": 1795628074576,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
+      "sessionId": "sess_614a5d1449c1715cbb9240f14b55fd43",
+      "userId": "admin_freddie",
+      "userName": "Freddie Pimentel Costa",
+      "userRole": "admin",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T00:06:11.484Z",
+      "createdAt": "2026-10-26T00:06:11.484Z",
+      "lastHeartbeat": 1792973171484,
+      "expiresAt": 1795565171484,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
     {
       "sessionId": "sess_2dde478970396512aaffb6b44184d415",
       "userId": "admin_freddie",
