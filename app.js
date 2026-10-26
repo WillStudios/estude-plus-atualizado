@@ -20029,7 +20029,10 @@ class EstudePlusApp {
         try {
           const headers = { 'Content-Type': 'application/json' };
           const sessId = localStorage.getItem('estude_session_id');
-          if (sessId) headers['x-session-id'] = sessId;
+          if (sessId) {
+            headers['x-session-id'] = sessId;
+            headers['authorization'] = `Bearer ${sessId}`;
+          }
           headers['x-admin-token'] = 'admin_master_freddie_token_2026';
 
           const res = await fetch('/api/admin/users/delete', {
