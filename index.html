@@ -63,21 +63,15 @@
     
     <div class="user-meta">
       <!-- Universal Search Button (Ctrl + K) -->
-      <button class="sas-top-btn" onclick="app.openCommandPalette()" title="Busca Universal (Ctrl + K)" style="background: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-        <i data-lucide="search" style="width: 14px; height: 14px; color: #475569;"></i>
+      <button class="sas-top-btn sas-search-btn" onclick="app.openCommandPalette()" title="Busca Universal (Ctrl + K)">
+        <i data-lucide="search" style="width: 14px; height: 14px; color: #64748b;"></i>
         <span>Buscar</span>
-        <span class="shortcut-kbd" style="font-size: 9px; padding: 1px 5px;">Ctrl K</span>
-      </button>
-
-
-      <!-- Guia de Atalhos do Teclado -->
-      <button class="sas-top-btn" onclick="app.openShortcutsGuideModal()" title="Atalhos do Teclado (?)" style="background: #f8fafc; color: #475569; border: 1.5px solid #cbd5e1; padding: 6px 9px; border-radius: 999px; font-weight: 700; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center;" aria-label="Atalhos do Teclado">
-        <i data-lucide="keyboard" style="width: 14px; height: 14px;"></i>
+        <span class="shortcut-kbd">Ctrl K</span>
       </button>
 
       <!-- Admin Central Management Button (Visible to Freddie Costa) -->
       <button class="sas-top-btn admin-btn" id="adminPaymentsBtn" onclick="app.showAdminModal()" title="Central Única de Gerenciamento do Administrador" style="display: none;">
-        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+        <i data-lucide="shield-check" style="width: 15px; height: 15px;"></i>
         <span>Painel Admin</span>
         <span class="badge-count" id="adminPendingCountBadge">0</span>
       </button>
@@ -85,24 +79,14 @@
       <!-- Notification Bell with real-time counter & Gammon+ Sync Modal -->
       <div class="sas-top-icon-btn" onclick="app.openGammonNotificationsModal()" title="Central de Notificações GAMMON+ (Ocorrências, TPCs & Provas)" style="position: relative; cursor: pointer;">
         <i data-lucide="bell" style="width: 18px; height: 18px; color: #64748b;"></i>
-        <span class="bell-badge" id="topBellBadgeCount">5</span>
+        <span class="bell-badge" id="topBellBadgeCount">0</span>
       </div>
 
-      <!-- Help Icon (?) matching screenshot -->
-      <div class="sas-top-icon-btn" onclick="app.switchTab('gemini-chat')" title="ChatGPT IA Inteligente">
-        <i data-lucide="help-circle" style="width: 18px; height: 18px; color: #64748b;"></i>
-      </div>
-
-      <div class="trial-pill" id="trialPill" onclick="app.showSubscriptionModal()">
+      <!-- Plan Status Pill (Base / PRO) -->
+      <div class="trial-pill" id="trialPill" onclick="app.showSubscriptionModal()" title="Status da Assinatura (Clique para ver planos)">
         <i data-lucide="crown" class="crown-icon"></i>
         <span id="planStatusText">Plano Base</span>
       </div>
-
-      <!-- Student Personal Settings Button -->
-      <button class="sas-top-btn" onclick="app.openStudentSettingsModal()" title="Personalizar Meu Estudo & Preferências" style="border: 1px solid #c7d2fe; background: #eef2ff; color: #4338ca;">
-        <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
-        <span>Preferências</span>
-      </button>
 
       <!-- Current User Profile & Logout -->
       <div class="user-profile-pill" id="userProfileHeaderPill" onclick="app.openStudentSettingsModal()" title="Meu Perfil & Preferências (Clique para configurar)">
@@ -111,7 +95,7 @@
           <span class="user-name-label" id="userNameHeaderDisplay">Freddie Costa</span>
           <span class="user-status-role" id="userRoleHeaderDisplay">Admin</span>
         </div>
-        <button class="chat-btn-icon" onclick="event.stopPropagation(); app.handleLogout();" title="Sair da Conta" style="margin-left: 4px; padding: 2px; border: none; background: transparent; cursor: pointer;">
+        <button class="btn-logout-header" onclick="event.stopPropagation(); app.handleLogout();" title="Sair da Conta">
           <i data-lucide="log-out" style="width: 13px; height: 13px; color: #ef4444;"></i>
         </button>
       </div>
@@ -124,54 +108,65 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <nav class="nav-links">
-        <button class="nav-btn active" data-tab="dashboard">
-          <i data-lucide="layout-dashboard"></i>
-          <span>Início & Treino</span>
-        </button>
-        <button class="nav-btn" data-tab="materials" style="border-left: 3px solid #6366f1;">
-          <i data-lucide="book-marked" style="color: #6366f1;"></i>
-          <span>📚 Materiais & Workspace</span>
-          <span class="badge-accent" style="background: #eef2ff; color: #4338ca;">All-in-One</span>
-        </button>
-        <button class="nav-btn" onclick="app.openStudentSettingsModal()" style="border-left: 3px solid #8b5cf6;">
-          <i data-lucide="sliders" style="color: #8b5cf6;"></i>
-          <span>⚙️ Minhas Preferências</span>
-          <span class="badge-accent" style="background: #f3e8ff; color: #7c3aed;">Personalizar</span>
-        </button>
-        <button class="nav-btn" data-tab="gemini-chat" style="border-left: 3px solid #0284c7;">
-          <i data-lucide="bot" style="color: #0284c7;"></i>
-          <span>🤖 Chat IA</span>
-          <span class="badge-accent" id="sidebarChatBadge" style="background: #e0f2fe; color: #0369a1;">Direto</span>
-        </button>
-        <button class="nav-btn" data-tab="sas-eureka" style="border-left: 3px solid #ff7a00;">
-          <i data-lucide="compass" style="color: #ff7a00;"></i>
-          <span>🧭 Eureka & Apostilas SAS</span>
-          <span class="badge-accent" id="sidebarBooksBadge" style="background: #fff7ed; color: #ea580c;">Asas 2026</span>
-        </button>
-        <button class="nav-btn" data-tab="trilhas" style="border-left: 3px solid #f59e0b;">
-          <i data-lucide="map" style="color: #f59e0b;"></i>
-          <span>🗺️ Trilhas SAS</span>
-          <span class="badge-accent" id="sidebarTrilhasBadge" style="background: #fef3c7; color: #b45309;">Apostilas 1-3</span>
-        </button>
-        <button class="nav-btn" data-tab="plans-pricing" style="border-left: 3px solid #10b981;">
-          <i data-lucide="crown" style="color: #10b981;"></i>
-          <span>💎 Planos & Assinatura</span>
-          <span class="badge-accent" style="background: #ecfdf5; color: #047857;">R$ 10,00/mês</span>
-        </button>
-        <button class="nav-btn" data-tab="timetable">
-          <i data-lucide="clock-3"></i>
-          <span>Grade de Aulas</span>
-          <span class="badge">Semanal</span>
-        </button>
-        <button class="nav-btn" data-tab="quiz">
-          <i data-lucide="check-circle-2"></i>
-          <span>Quiz Diário (15 min)</span>
-          <span class="badge-accent" id="sidebarQuizBadge">Novo</span>
-        </button>
-        <button class="nav-btn" data-tab="calendar">
-          <i data-lucide="calendar"></i>
-          <span>Calendário de Provas</span>
-        </button>
+        
+        <!-- Grupo 1: PRINCIPAL -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Principal</div>
+          <button class="nav-btn active" data-tab="dashboard">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Início & Treino</span>
+          </button>
+          <button class="nav-btn" data-tab="materials">
+            <i data-lucide="book-open"></i>
+            <span>Materiais & IA</span>
+          </button>
+          <button class="nav-btn" data-tab="gemini-chat">
+            <i data-lucide="bot"></i>
+            <span>Chatbot IA 3.0</span>
+            <span class="badge-accent" id="sidebarChatBadge">PRO</span>
+          </button>
+          <button class="nav-btn" data-tab="sas-eureka">
+            <i data-lucide="compass"></i>
+            <span>Eureka & Apostilas</span>
+            <span class="badge" id="sidebarBooksBadge">SAS</span>
+          </button>
+        </div>
+
+        <!-- Grupo 2: ROTINA ESCOLAR -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Rotina Escolar</div>
+          <button class="nav-btn" data-tab="trilhas">
+            <i data-lucide="map"></i>
+            <span>Trilhas SAS</span>
+            <span class="badge" id="sidebarTrilhasBadge">Ativo</span>
+          </button>
+          <button class="nav-btn" data-tab="timetable">
+            <i data-lucide="clock-3"></i>
+            <span>Grade de Aulas</span>
+          </button>
+          <button class="nav-btn" data-tab="quiz">
+            <i data-lucide="zap"></i>
+            <span>Quiz Diário</span>
+            <span class="badge-accent" id="sidebarQuizBadge">15m</span>
+          </button>
+          <button class="nav-btn" data-tab="calendar">
+            <i data-lucide="calendar"></i>
+            <span>Calendário de Provas</span>
+          </button>
+        </div>
+
+        <!-- Grupo 3: CONFIGURAÇÕES -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Configurações</div>
+          <button class="nav-btn" data-tab="plans-pricing">
+            <i data-lucide="crown"></i>
+            <span>Planos & Assinatura</span>
+          </button>
+          <button class="nav-btn" onclick="app.openStudentSettingsModal()">
+            <i data-lucide="sliders"></i>
+            <span>Minhas Preferências</span>
+          </button>
+        </div>
 
       </nav>
 
@@ -180,7 +175,7 @@
           <span class="sparkle-tag">PLANO PRO</span>
           <h4>Desbloqueie todo o poder</h4>
         </div>
-        <p>Experimente <strong>5 dias grátis</strong> ou assine por <strong>R$ 10,00/mês</strong> ou <strong>R$ 120,00/ano</strong>.</p>
+        <p>Acesse o <strong>Estude+ IA 3.0</strong>, Apostilas SAS e Trilhas completas por <strong>R$ 10,00/mês</strong>.</p>
         <button class="btn-upgrade">Ver Detalhes do Plano</button>
       </div>
 
@@ -202,7 +197,7 @@
         <div class="dashboard-custom-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">Visão Geral do Aluno</span>
-            <span style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-weight: 700;">Estude+ 2.5</span>
+            <span style="font-size: 0.72rem; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-weight: 700;">Estude+ 3.0</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <button type="button" class="btn-outline" onclick="app.openNewsCenterModal()" style="font-size: 0.76rem; padding: 5px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; color: #0284c7; border-color: #bae6fd; cursor: pointer;">
@@ -221,18 +216,25 @@
             
             <!-- Top Row: Student Profile Card + Atalhos Rápidos -->
             <div class="sas-profile-shortcuts-row" data-dash-card="profile-shortcuts">
-              <!-- 1. Student Profile Card matching image -->
+              <!-- 1. Student Profile Card -->
               <div class="sas-student-card" onclick="app.openStudentSettingsModal()" style="cursor: pointer;" title="Clique para personalizar suas preferências de estudo">
                 <div class="sas-student-art" id="painelStudentAvatar">
                   🦄
                 </div>
                 <div class="sas-student-info">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <h3 class="sas-student-name" id="painelStudentName">Freddie Pimentel Costa</h3>
-                    <span style="font-size: 11px; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; padding: 2px 7px; border-radius: 999px; font-weight: 700;">⚙️ Configurar</span>
+                  <div class="sas-student-card-header">
+                    <h3 class="sas-student-name" id="painelStudentName" title="Freddie Pimentel Costa">Freddie Pimentel Costa</h3>
+                    <span class="sas-student-badge" id="painelStudentRoleBadge">PRO</span>
                   </div>
-                  <span class="sas-student-role" id="painelStudentRole">Estudante</span>
-                  <span class="sas-student-class" id="painelStudentClass">7º ano B &bull; Gammon 2</span>
+                  <div class="sas-student-subinfo">
+                    <span class="sas-student-role" id="painelStudentRole">Administrador &amp; Aluno</span>
+                    <span class="sas-student-dot">&bull;</span>
+                    <span class="sas-student-class" id="painelStudentClass">7º ano B &bull; Gammon</span>
+                  </div>
+                  <div class="sas-student-footer-action">
+                    <i data-lucide="sliders" style="width: 12px; height: 12px;"></i>
+                    <span>Personalizar Perfil &amp; Estudos</span>
+                  </div>
                 </div>
               </div>
 
@@ -422,11 +424,10 @@
 
             <!-- Rodapé da Sidebar com Status e Limpeza -->
             <div class="chatgpt-sidebar-footer">
-              <div class="chatgpt-model-info-pill" onclick="app.openAiConfigModal()" style="cursor: pointer;" title="Configurar modelo e chave do Gemini">
-                <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #6366f1;"></i>
-                <span id="chatgptModelNameDisplay">Gemini 2.5 Flash</span>
-                <i data-lucide="chevron-right" style="width: 12px; height: 12px; opacity: 0.6; margin-left: 2px;"></i>
-              </div>
+              <div class="chatgpt-model-info-pill">
+    <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #6366f1;"></i>
+    <span id="chatgptModelNameDisplay">Estude+ AI 3.0</span>
+  </div>
               <button type="button" class="chatgpt-btn-clear-history" onclick="app.clearAllAiConversations()" title="Limpar todas as conversas">
                 <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
                 <span>Limpar histórico</span>
@@ -452,10 +453,6 @@
               </div>
 
               <div class="chatgpt-topbar-right">
-                <button type="button" class="btn-topbar-new" onclick="app.openAiConfigModal()" title="Configurações e Chave da IA" style="background: rgba(99,102,241,0.08); color: #4f46e5; border-color: rgba(99,102,241,0.25);">
-                  <i data-lucide="key" style="width: 15px; height: 15px;"></i>
-                  <span class="hide-mobile">Chave IA</span>
-                </button>
                 <button type="button" class="btn-topbar-new" onclick="app.startNewAiChat()" title="Nova Conversa">
                   <i data-lucide="square-pen" style="width: 16px; height: 16px;"></i>
                   <span class="hide-mobile">Nova Conversa</span>
@@ -1262,92 +1259,6 @@
           <button type="button" onclick="app.toggleAuthMode('login')" style="background: none; border: none; color: #64748b; font-size: 0.85rem; cursor: pointer;">Já tem uma conta? Fazer login</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- MODAL: CONFIGURAÇÃO DA CHAVE DO GOOGLE GEMINI -->
-  <div class="modal-overlay" id="aiApiKeyModal" style="display: none;">
-    <div class="modal-box" style="max-width: 540px; padding: 24px; border-radius: 18px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);">
-      <button class="modal-close" onclick="app.closeAiConfigModal()" aria-label="Fechar" title="Fechar Janela">&times;</button>
-      
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-        <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
-          <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
-        </div>
-        <div>
-          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">Configurar Assistente IA</h3>
-          <span style="font-size: 0.78rem; color: #64748b;">Google Gemini API • Raciocínio & Visão Computacional</span>
-        </div>
-      </div>
-
-      <!-- Card de Status Atual -->
-      <div id="modalAiStatusBanner" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span id="modalAiStatusDot" style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
-            <span id="modalAiStatusText" style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">Verificando conexão com o servidor...</span>
-          </div>
-          <button type="button" class="btn-outline" onclick="app.testModalGeminiConnection()" style="font-size: 0.74rem; padding: 4px 10px; border-radius: 6px; white-space: nowrap;">
-            <i data-lucide="zap" style="width: 12px; height: 12px;"></i> Testar Agora
-          </button>
-        </div>
-        <div id="modalAiStatusDetail" style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">
-          Verificando se o servidor já possui uma chave configurada.
-        </div>
-      </div>
-
-      <!-- Formulário de Configuração -->
-      <form onsubmit="app.saveModalAiConfig(event)">
-        <div style="margin-bottom: 14px;">
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
-            Chave de API do Google Gemini (API Key)
-          </label>
-          <div style="display: flex; gap: 8px;">
-            <input type="password" id="modalAiApiKeyInput" class="form-input" placeholder="Cole sua chave AIzaSy..." style="flex: 1; font-family: monospace; font-size: 0.85rem;" autocomplete="off">
-            <button type="button" class="btn-outline" onclick="app.toggleModalAiKeyVisibility()" style="padding: 0 12px;" title="Mostrar/Ocultar Chave">
-              <i data-lucide="eye" id="modalAiKeyEyeIcon" style="width: 16px; height: 16px;"></i>
-            </button>
-          </div>
-          <div style="margin-top: 6px; font-size: 0.74rem; color: #64748b; line-height: 1.45;">
-            👉 <strong>Como obter:</strong> Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #4f46e5; font-weight: 700; text-decoration: underline;">aistudio.google.com/app/apikey</a> com sua conta Google e clique em <em>"Create API key"</em>. É 100% gratuito.
-          </div>
-        </div>
-
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
-            Modelo Principal do Google Gemini
-          </label>
-          <select id="modalAiModelSelect" class="form-select" style="width: 100%; font-size: 0.85rem; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 600;">
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão Recomendado • Raciocínio & Visão Multimodal)</option>
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Ultra-rápido para chat)</option>
-            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Multimodal estável)</option>
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Econômico e ágil)</option>
-          </select>
-        </div>
-
-        <!-- Feedback de Teste em Tempo Real -->
-        <div id="modalAiTestResult" style="display: none; padding: 10px 12px; border-radius: 8px; font-size: 0.78rem; margin-bottom: 14px; line-height: 1.45;"></div>
-
-        <!-- Botões de Ação -->
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn-outline" onclick="app.clearModalAiConfig()" style="font-size: 0.78rem; padding: 8px 14px; color: #dc2626; border-color: #fecdd3;">
-            Remover Chave
-          </button>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-outline" onclick="app.closeAiConfigModal()" style="font-size: 0.82rem; padding: 8px 16px;">
-              Cancelar
-            </button>
-            <button type="submit" id="btnSaveModalAiConfig" class="btn-primary" style="background: #4f46e5; font-size: 0.82rem; padding: 8px 20px; font-weight: 700;">
-              <i data-lucide="check" style="width: 15px; height: 15px;"></i> Salvar no Servidor
-            </button>
-          </div>
-        </div>
-      </form>
-
-      <!-- Dica para Hospedagem Render -->
-      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e2e8f0; font-size: 0.74rem; color: #64748b; line-height: 1.5;">
-        ☁️ <strong>Hospedado no Render:</strong> Você também pode definir a variável de ambiente <code>GEMINI_API_KEY</code> diretamente no painel da sua hospedagem (<a href="https://dashboard.render.com" target="_blank" rel="noopener noreferrer" style="color: #4f46e5;">dashboard.render.com</a> &rarr; <em>estudeplus</em> &rarr; <strong>Environment</strong>).
-      </div>
     </div>
   </div>
 

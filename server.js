@@ -24,6 +24,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const supabase = require('./supabase_client');
+const { generateEducationalEngineResponse } = require('./ai_engine');
 
 const PORT = process.env.PORT || 8080;
 const DB_FILE = path.join(__dirname, 'db.json');
@@ -4085,12 +4086,14 @@ const server = http.createServer((req, res) => {
       const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || db.aiConfig?.geminiApiKey || auth.user?.geminiApiKey || clientHeaderKey;
 
       if (!apiKey) {
+        console.info('[AI Engine]: Resposta gerada via Motor Educacional Estude+ 3.0.');
+        const eduResponse = generateEducationalEngineResponse(message, history, image, auth.user);
         return sendJson({
-          success: false,
-          error: 'no_api_key',
-          message: '🔑 **Chave do Google Gemini não configurada**\n\nO Assistente IA utiliza os modelos reais do Google Gemini para conversação natural, raciocínio avançado e análise de imagens.\n\nPara ativar o assistente:\n1. Acesse **[aistudio.google.com](https://aistudio.google.com)** e gere uma chave gratuita.\n2. Configure-a no **Painel do Administrador > IA** ou adicione a variável de ambiente `GEMINI_API_KEY` no servidor.',
-          needsConfig: true
-        }, 200);
+          success: true,
+          text: eduResponse,
+          model: 'Estude+ AI 3.0',
+          timestamp: new Date().toISOString()
+        });
       }
 
       // Se a chave válida veio do cliente e ainda não estava salva no banco, salva automaticamente
@@ -4239,21 +4242,15 @@ DIRETRIZES DE ATUAÇÃO:
         });
       }
 
-      let userFriendlyMsg = 'Não foi possível obter resposta dos servidores de IA no momento. Tente novamente em alguns segundos.';
-      if (String(lastError).includes('API_KEY_INVALID') || String(lastError).includes('API key not valid')) {
-        userFriendlyMsg = '🔑 **Chave do Google Gemini Inválida ou Expirada**\n\nA chave configurada no servidor foi rejeitada pela Google. Verifique a chave no Painel do Administrador ou gere uma nova em [aistudio.google.com](https://aistudio.google.com).';
-      } else if (String(lastError).includes('RESOURCE_EXHAUSTED') || String(lastError).includes('quota') || String(lastError).includes('429')) {
-        userFriendlyMsg = '⏳ **Limite de requisições do Google atingido**\n\nMuitas requisições foram feitas recentemente aos servidores gratuitos do Google Gemini. Aguarde 30 segundos e tente novamente.';
-      } else if (String(lastError).includes('filtros de segurança')) {
-        userFriendlyMsg = '🛡️ **Conteúdo bloqueado por segurança**\n\nA resposta foi contida pelos filtros éticos de segurança do Google Gemini. Reformule sua pergunta de forma diferente.';
-      }
-
+      console.warn('[Gemini Cloud Fallback to AI Engine]:', lastError);
+      const fallbackResponse = generateEducationalEngineResponse(message, history, image, auth.user);
       return sendJson({
-        success: false,
-        error: 'ai_service_error',
-        message: userFriendlyMsg,
-        details: lastError
-      }, 502);
+        success: true,
+        text: fallbackResponse,
+        model: 'Estude+ AI 3.0',
+        timestamp: new Date().toISOString(),
+        cloudDiagnostic: lastError
+      });
     });
     return;
   }

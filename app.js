@@ -1298,6 +1298,7 @@ class EstudePlusApp {
     // Sync ESTUDE+ center top navigation buttons
     const centerNavMap = {
       'dashboard': 'centerNavInicio',
+      'materials': 'centerNavMaterials',
       'gemini-chat': 'centerNavChat',
       'sas-eureka': 'centerNavLivros',
       'sas-books': 'centerNavLivros',
@@ -1601,8 +1602,11 @@ class EstudePlusApp {
   updateCenterNavActive() {
     const navMap = {
       'dashboard': 'centerNavInicio',
-      'timetable': 'centerNavSala',
-      'review': 'centerNavRelatorios'
+      'materials': 'centerNavMaterials',
+      'gemini-chat': 'centerNavChat',
+      'sas-eureka': 'centerNavLivros',
+      'sas-books': 'centerNavLivros',
+      'plans-pricing': 'centerNavPlanos'
     };
 
     document.querySelectorAll('.sas-center-nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -17261,6 +17265,11 @@ class EstudePlusApp {
     if (painelName) painelName.innerText = this.currentUser.name || 'Freddie Pimentel Costa';
     if (painelRole) painelRole.innerText = this.currentUser.role === 'admin' ? 'Administrador & Aluno' : 'Estudante';
     if (painelClass) painelClass.innerHTML = `${this.currentUser.className || '7º ano B • Gammon 2'} &bull; <span style="color:#6366f1; font-weight:700;">${this.currentUser.grade || '7º Ano'}</span>`;
+    const painelBadge = document.getElementById('painelStudentRoleBadge');
+    if (painelBadge) {
+      painelBadge.innerText = this.isUserPro() ? 'PRO' : 'BASE';
+      painelBadge.style.background = this.isUserPro() ? 'linear-gradient(135deg, #f59e0b, #d97706)' : '#64748b';
+    }
 
     // 7. Header Profile Pill
     const headerAvatar = document.getElementById('userAvatarText');
@@ -21830,47 +21839,6 @@ startxref
         `;
       } else {
         const text = m.text || m.content || '';
-        const isKeyMissing = text.includes('Chave do Google Gemini não configurada') || text.includes('no_api_key');
-        const isKeyInvalid = text.includes('Chave do Google Gemini Inválida') || text.includes('API_KEY_INVALID');
-
-        let specialCardHtml = '';
-        if (isKeyMissing) {
-          specialCardHtml = '<div style="background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1.5px solid #fed7aa; border-radius: 12px; padding: 14px 16px; margin-top: 10px;">' +
-            '<div style="display: flex; align-items: flex-start; gap: 10px;">' +
-              '<span style="font-size: 1.4rem; line-height: 1;">🔑</span>' +
-              '<div style="flex: 1;">' +
-                '<strong style="color: #9a3412; font-size: 0.88rem; display: block; margin-bottom: 4px;">Configuração Rápida da Chave IA</strong>' +
-                '<p style="color: #7c2d12; font-size: 0.8rem; margin: 0 0 10px; line-height: 1.45;">' +
-                  'Para começar a conversar com IA real e enviar fotos de questões escolares, insira a chave gratuita do Google Gemini:' +
-                '</p>' +
-                '<div style="display: flex; gap: 8px; flex-wrap: wrap;">' +
-                  '<button type="button" class="btn-primary" onclick="app.openAiConfigModal()" style="background: #ea580c; border: none; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;">' +
-                    '<i data-lucide="key" style="width: 14px; height: 14px;"></i> Inserir Chave Agora' +
-                  '</button>' +
-                  '<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #c2410c; font-size: 0.8rem; font-weight: 700; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px; padding: 7px 10px;">' +
-                    'Criar chave grátis no Google AI Studio <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>' +
-                  '</a>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        } else if (isKeyInvalid) {
-          specialCardHtml = '<div style="background: #fef2f2; border: 1.5px solid #fecdd3; border-radius: 12px; padding: 14px 16px; margin-top: 10px;">' +
-            '<div style="display: flex; align-items: flex-start; gap: 10px;">' +
-              '<span style="font-size: 1.4rem; line-height: 1;">⚠️</span>' +
-              '<div style="flex: 1;">' +
-                '<strong style="color: #991b1b; font-size: 0.88rem; display: block; margin-bottom: 4px;">Chave Rejeitada pelo Google</strong>' +
-                '<p style="color: #7f1d1d; font-size: 0.8rem; margin: 0 0 10px; line-height: 1.45;">' +
-                  'A chave fornecida foi recusada pelos servidores da Google (API Key not valid). Verifique se copiou a chave completa ou gere uma nova no Google AI Studio.' +
-                '</p>' +
-                '<button type="button" class="btn-primary" onclick="app.openAiConfigModal()" style="background: #dc2626; border: none; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; cursor: pointer; color: white;">' +
-                  'Atualizar Chave' +
-                '</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }
-
         const renderedHtml = this.renderMarkdown(text);
         return `
           <div class="chatgpt-msg-row assistant">
@@ -21880,7 +21848,6 @@ startxref
             <div class="chatgpt-msg-content-box" style="flex:1;">
               <div class="chatgpt-msg-bubble">
                 ${renderedHtml}
-                ${specialCardHtml}
               </div>
               <div class="chatgpt-msg-actions-bar">
                 <button type="button" class="chatgpt-btn-copy-msg" onclick="app.copyAiMessage(this, ${idx})" title="Copiar resposta">
