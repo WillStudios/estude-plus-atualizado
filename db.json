@@ -266,7 +266,7 @@
         "gammon_110651"
       ],
       "userTpcs": [],
-      "lastSync": "2026-10-06T10:06:55.115Z",
+      "lastSync": "2026-10-26T20:51:53.691Z",
       "activityLog": [
         {
           "id": "act_1791281085014_od5t9",
@@ -515,7 +515,18 @@
           }
         }
       ],
-      "lastActiveDate": "2026-10-06"
+      "lastActiveDate": "2026-10-06",
+      "notes": [],
+      "flashcards": [],
+      "dashboardShortcuts": [
+        "gemini-chat",
+        "flashcards",
+        "notes",
+        "simulado",
+        "sas-eureka",
+        "trilhas"
+      ],
+      "syncVersion": 2
     }
   ],
   "tpcs": [

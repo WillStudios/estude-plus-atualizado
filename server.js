@@ -680,6 +680,12 @@ function buildSafeUser(u, extra = {}) {
     completedTpcIds: completedTpcs,
     exams: Array.isArray(u.exams) ? u.exams : [],
     notes: Array.isArray(u.notes) ? u.notes : [],
+    flashcards: Array.isArray(u.flashcards) ? u.flashcards : [],
+    collections: Array.isArray(u.collections) ? u.collections : [],
+    favorites: Array.isArray(u.favorites) ? u.favorites : [],
+    customSimulados: Array.isArray(u.customSimulados) ? u.customSimulados : [],
+    dashboardShortcuts: Array.isArray(u.dashboardShortcuts) ? u.dashboardShortcuts : ['gemini-chat', 'flashcards', 'notes', 'simulado', 'sas-eureka', 'trilhas'],
+    syncVersion: Number(u.syncVersion) || 1,
 
     lastSync: u.lastSync || new Date().toISOString(),
     ...extra
@@ -1290,10 +1296,36 @@ const server = http.createServer((req, res) => {
         u.timetable = data.timetable;
       }
 
+      // 7. Cartões de Memorização (Flashcards)
+      if (Array.isArray(data.flashcards)) {
+        u.flashcards = data.flashcards;
+      }
+
+      // 8. Coleções Personalizadas
+      if (Array.isArray(data.collections)) {
+        u.collections = data.collections;
+      }
+
+      // 9. Favoritos (Respostas IA, Materiais, Conteúdos)
+      if (Array.isArray(data.favorites)) {
+        u.favorites = data.favorites;
+      }
+
+      // 10. Simulados Personalizados
+      if (Array.isArray(data.customSimulados)) {
+        u.customSimulados = data.customSimulados;
+      }
+
+      // 11. Atalhos Personalizados do Início
+      if (Array.isArray(data.dashboardShortcuts)) {
+        u.dashboardShortcuts = data.dashboardShortcuts;
+      }
+
       if (data.deviceType) {
         u.lastDeviceType = data.deviceType;
       }
 
+      u.syncVersion = (Number(u.syncVersion) || 0) + 1;
       u.lastSync = new Date().toISOString();
       writeDb(db);
 
@@ -1303,6 +1335,114 @@ const server = http.createServer((req, res) => {
         message: 'Todos os dados foram salvos e sincronizados com sucesso no servidor!',
         user: safeUser,
         lastSync: u.lastSync
+      });
+    });
+    return;
+  }
+
+  
+  // GET /api/user/sync-status - Checagem leve de versão para detectar alterações em outros dispositivos
+  if (req.method === 'GET' && pathname === '/api/user/sync-status') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+    const db = readDb();
+    const freshUser = (db.users || []).find(u => String(u.id) === String(auth.user.id));
+    if (!freshUser) return sendJson({ error: 'Usuário não encontrado' }, 404);
+
+    return sendJson({
+      success: true,
+      syncVersion: Number(freshUser.syncVersion) || 1,
+      lastSync: freshUser.lastSync || null
+    });
+  }
+
+  // POST /api/user/sync-action - Ações atômicas (notas, flashcards, coleções, favoritos, atalhos)
+  if (req.method === 'POST' && pathname === '/api/user/sync-action') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+
+    parseBody((payload) => {
+      if (!payload || !payload.action) return sendJson({ error: 'Ação não informada.' }, 400);
+      const db = readDb();
+      const uIndex = (db.users || []).findIndex(u => String(u.id) === String(auth.user.id));
+      if (uIndex === -1) return sendJson({ error: 'Usuário não encontrado.' }, 404);
+      const u = db.users[uIndex];
+
+      const action = payload.action;
+      const nowIso = new Date().toISOString();
+
+      if (action === 'save_note') {
+        if (!Array.isArray(u.notes)) u.notes = [];
+        const note = payload.note;
+        if (!note || !note.id) return sendJson({ error: 'Nota inválida.' }, 400);
+        note.updatedAt = nowIso;
+        const idx = u.notes.findIndex(n => n.id === note.id);
+        if (idx >= 0) u.notes[idx] = { ...u.notes[idx], ...note };
+        else u.notes.unshift({ ...note, createdAt: note.createdAt || nowIso });
+      } else if (action === 'delete_note') {
+        if (Array.isArray(u.notes)) {
+          u.notes = u.notes.filter(n => n.id !== payload.noteId);
+        }
+      } else if (action === 'save_flashcard') {
+        if (!Array.isArray(u.flashcards)) u.flashcards = [];
+        const card = payload.flashcard;
+        if (!card || !card.id) return sendJson({ error: 'Flashcard inválido.' }, 400);
+        card.updatedAt = nowIso;
+        const idx = u.flashcards.findIndex(f => f.id === card.id);
+        if (idx >= 0) u.flashcards[idx] = { ...u.flashcards[idx], ...card };
+        else u.flashcards.unshift({ ...card, createdAt: card.createdAt || nowIso });
+      } else if (action === 'delete_flashcard') {
+        if (Array.isArray(u.flashcards)) {
+          u.flashcards = u.flashcards.filter(f => f.id !== payload.flashcardId);
+        }
+      } else if (action === 'toggle_favorite') {
+        if (!Array.isArray(u.favorites)) u.favorites = [];
+        const fav = payload.favorite;
+        if (!fav || !fav.id) return sendJson({ error: 'Favorito inválido.' }, 400);
+        const idx = u.favorites.findIndex(f => f.id === fav.id);
+        if (idx >= 0) {
+          u.favorites.splice(idx, 1);
+        } else {
+          u.favorites.unshift({ ...fav, createdAt: fav.createdAt || nowIso });
+        }
+      } else if (action === 'save_collection') {
+        if (!Array.isArray(u.collections)) u.collections = [];
+        const col = payload.collection;
+        if (!col || !col.id) return sendJson({ error: 'Coleção inválida.' }, 400);
+        col.updatedAt = nowIso;
+        const idx = u.collections.findIndex(c => c.id === col.id);
+        if (idx >= 0) u.collections[idx] = { ...u.collections[idx], ...col };
+        else u.collections.push({ ...col, createdAt: col.createdAt || nowIso });
+      } else if (action === 'delete_collection') {
+        if (Array.isArray(u.collections)) {
+          u.collections = u.collections.filter(c => c.id !== payload.collectionId);
+        }
+      } else if (action === 'save_shortcuts') {
+        if (Array.isArray(payload.shortcuts)) {
+          u.dashboardShortcuts = payload.shortcuts;
+        }
+      } else if (action === 'save_custom_simulado') {
+        if (!Array.isArray(u.customSimulados)) u.customSimulados = [];
+        const sim = payload.simulado;
+        if (sim && sim.id) {
+          sim.updatedAt = nowIso;
+          const idx = u.customSimulados.findIndex(s => s.id === sim.id);
+          if (idx >= 0) u.customSimulados[idx] = { ...u.customSimulados[idx], ...sim };
+          else u.customSimulados.unshift({ ...sim, createdAt: sim.createdAt || nowIso });
+        }
+      }
+
+      u.syncVersion = (Number(u.syncVersion) || 0) + 1;
+      u.lastSync = nowIso;
+      writeDb(db);
+
+      const safeUser = buildSafeUser(u);
+      return sendJson({
+        success: true,
+        action,
+        syncVersion: u.syncVersion,
+        lastSync: u.lastSync,
+        user: safeUser
       });
     });
     return;
@@ -4076,6 +4216,8 @@ const server = http.createServer((req, res) => {
       const message = (data?.message || '').trim();
       const image = data?.image || null; // { data: base64, mimeType: 'image/jpeg' }
       const history = Array.isArray(data?.history) ? data.history : [];
+      const mode = data?.mode || 'default'; // 'default', 'professor', 'challenge', 'review'
+      const difficulty = data?.difficulty || 'medium';
 
       if (!message && !image) {
         return sendJson({ error: 'Envie uma mensagem de texto ou uma imagem para o assistente.' }, 400);
@@ -4087,7 +4229,7 @@ const server = http.createServer((req, res) => {
 
       if (!apiKey) {
         console.info('[AI Engine]: Resposta gerada via Motor Educacional Estude+ 3.0.');
-        const eduResponse = generateEducationalEngineResponse(message, history, image, auth.user);
+        const eduResponse = generateEducationalEngineResponse(message, history, image, auth.user, { mode, difficulty });
         return sendJson({
           success: true,
           text: eduResponse,

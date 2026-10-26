@@ -327,16 +327,93 @@ function tryConversationalChat(prompt, history, user) {
 /**
  * Função principal do motor educacional
  */
-function generateEducationalEngineResponse(message, history, image, user) {
+
+/**
+ * Gerador de Questões Interativas para o MODO DESAFIO
+ */
+function generateChallengeQuestion(prompt, difficulty = 'medium') {
+  const norm = normalizePrompt(prompt);
+  const diffLabel = difficulty === 'hard' ? 'Avançado / Prova' : (difficulty === 'easy' ? 'Conceitual / Fácil' : 'Médio / Aplicação');
+
+  if (norm.includes('vegetal') || norm.includes('briofita') || norm.includes('pteridofita') || norm.includes('planta') || norm.includes('ciencia')) {
+    return `🎯 **Modo Desafio — Ciências da Natureza (${diffLabel})**\n\n` +
+      `**Questão Desafio:**\n` +
+      `Um grupo de estudantes encontrou em uma floresta úmida dois tipos de vegetais: o primeiro apresentava pequeno porte (menos de 3 cm), não possuía raízes verdadeiras e vivia aderido a pedras úmidas; o segundo atingia 1,5 metro de altura e possuía tecidos condutores bem desenvolvidos (xilema e floema), porém não apresentava flores ou sementes visíveis.\n\n` +
+      `Com base nas características evolutivas dos vegetais, esses dois espécimes pertencem, respectivamente, a quais grupos?\n\n` +
+      `A) Briófitas e Pteridófitas\n` +
+      `B) Pteridófitas e Gimnospermas\n` +
+      `C) Briófitas e Angiospermas\n` +
+      `D) Gimnospermas e Pteridófitas\n\n` +
+      `💬 *Digite qual alternativa você considera correta (A, B, C ou D) e eu te explicarei o raciocínio na hora!*`;
+  }
+
+  if (norm.includes('newton') || norm.includes('fisica') || norm.includes('forca') || norm.includes('velocidade')) {
+    return `🎯 **Modo Desafio — Física Geral (${diffLabel})**\n\n` +
+      `**Questão Desafio:**\n` +
+      `Um astronauta no espaço sideral, longe da atração gravitacional significativa de qualquer planeta, empurra uma caixa com uma força constante de 50 N durante 4 segundos. Após esses 4 segundos, o astronauta solta a caixa completamente.\n\n` +
+      `De acordo com a 1ª Lei de Newton (Princípio da Inércia), qual será o comportamento da caixa após ser solta?\n\n` +
+      `A) A caixa irá parar imediatamente, pois a força cessou.\n` +
+      `B) A caixa continuará em movimento retilíneo uniforme com velocidade constante indefinidamente.\n` +
+      `C) A caixa irá desacelerar gradativamente até atingir o repouso natural.\n` +
+      `D) A caixa mudará de direção espontaneamente procurando um ponto de apoio.\n\n` +
+      `💬 *Qual é a sua resposta? Digite a letra para validarmos o conceito juntos!*`;
+  }
+
+  // Desafio Geral de Matemática
+  return `🎯 **Modo Desafio — Matemática Rápida (${diffLabel})**\n\n` +
+    `**Questão Desafio:**\n` +
+    `Em uma liquidação escolar do material SAS, uma calculadora científica que custava R$ 120,00 recebeu um desconto sucessivo: primeiro de 10%, e logo em seguida um desconto adicional de 20% sobre o novo valor.\n\n` +
+    `Qual é o valor final pago pelo aluno?\n\n` +
+    `A) R$ 84,00\n` +
+    `B) R$ 86,40\n` +
+    `C) R$ 90,00\n` +
+    `D) R$ 92,20\n\n` +
+    `💬 *Pense no cálculo e responda com a alternativa que julgar correta!*`;
+}
+
+/**
+ * Gerador de Resumos Objetivos para a REVISÃO RÁPIDA
+ */
+function generateQuickReview(prompt) {
+  const norm = normalizePrompt(prompt);
+
+  return `⚡ **Revisão Rápida em Tópicos:**\n\n` +
+    `### 📌 Ideias Centrais para Memorizar:\n` +
+    `• **Conceito Chave:** O tema central deve ser compreendido pela sua definição e pelo seu propósito prático no currículo.\n` +
+    `• **Relações de Causa e Efeito:** Entenda o que origina o fenômeno e quais são as consequências diretas avaliadas em provas.\n` +
+    `• **Pegadinhas Comuns:** Fique atento aos termos absolutos ("sempre", "nunca") e termos com grafia parecida.\n\n` +
+    `### ❓ 3 Perguntas Rápidas de Auto-Teste:\n` +
+    `1. Qual é a definição exata desse conceito em uma única frase?\n` +
+    `2. Como você explicaria esse tema para um colega sem usar jargões difíceis?\n` +
+    `3. Qual fórmula, regra gramatical ou fator histórico é indispensável lembrar na hora da avaliação?\n\n` +
+    `💡 *Dica:* Crie um flashcard com essas 3 perguntas para fixação permanente!`;
+}
+
+function generateEducationalEngineResponse(message, history, image, user, extraOptions = {}) {
+  let mode = extraOptions?.mode || 'default';
+  let difficulty = extraOptions?.difficulty || 'medium';
+
   if (typeof message === 'object' && message !== null && !Array.isArray(message)) {
     const opts = message;
     message = opts.message || opts.prompt || '';
     history = opts.history || [];
     image = opts.image || null;
     user = opts.user || null;
+    mode = opts.mode || mode;
+    difficulty = opts.difficulty || difficulty;
   }
   message = typeof message === 'string' ? message : (message ? String(message) : '');
   history = Array.isArray(history) ? history : [];
+
+  // MODO DESAFIO
+  if (mode === 'challenge') {
+    return generateChallengeQuestion(message, difficulty);
+  }
+
+  // REVISÃO RÁPIDA
+  if (mode === 'review') {
+    return generateQuickReview(message);
+  }
   // 1. Se veio imagem, acknowledge e orienta resolução de questões
   if (image && image.data) {
     return `📷 **Foto de Questão Recebida com Sucesso!**\n\n` +
@@ -359,7 +436,13 @@ function generateEducationalEngineResponse(message, history, image, user) {
   if (subjectAnswer) return subjectAnswer;
 
   // 4. Conversação natural, contexto e tutoria
-  return tryConversationalChat(message, history, user);
+  const defaultAnswer = tryConversationalChat(message, history, user);
+  if (mode === 'professor') {
+    return `👨‍🏫 **Modo Professor — Explicação Didática Passo a Passo**\n\n` +
+      defaultAnswer +
+      `\n\n💡 **Dica Pedagógica:** Para dominar esse conteúdo, tente resolver um exercício ou criar um cartão de memorização agora mesmo!`;
+  }
+  return defaultAnswer;
 }
 
 module.exports = {

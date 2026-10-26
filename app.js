@@ -29,6 +29,19 @@ class EstudePlusApp {
     this.materialsList = [];
     this.activeMaterial = null;
     this.activeWorkspaceTab = 'summary';
+    this.flashcardsList = [];
+    this.notesList = [];
+    this.collectionsList = [];
+    this.favoritesList = [];
+    this.customSimuladosList = [];
+    this.dashboardShortcuts = ['gemini-chat', 'flashcards', 'notes', 'simulado', 'sas-eureka', 'trilhas'];
+    this.activeMaterialsSubtab = 'library';
+    this.aiChatMode = 'default';
+    this.syncStatus = 'saved';
+    this.localSyncVersion = 1;
+    this.offlineSyncQueue = [];
+    this.lastDeletedItem = null;
+    this.undoTimeout = null;
 
     // Estrutura Completa de Livros e Capítulos SAS - Coleção Asas 2026 (7º Ano)
     this.sasSubjectsData = {
@@ -772,6 +785,8 @@ class EstudePlusApp {
   init() {
     this.setupNavigation();
     this.initPwa();
+    this.initSyncSystem();
+    this.renderDashboardShortcuts();
     this.setupKeyboardShortcuts();
     this.setupThemeWatcher();
     this.renderDashboard();
@@ -18028,7 +18043,17 @@ class EstudePlusApp {
           // Anotações
           if (Array.isArray(u.notes)) {
             this.state.notes = u.notes;
+            this.notesList = u.notes;
           }
+          if (Array.isArray(u.flashcards)) this.flashcardsList = u.flashcards;
+          if (Array.isArray(u.collections)) this.collectionsList = u.collections;
+          if (Array.isArray(u.favorites)) this.favoritesList = u.favorites;
+          if (Array.isArray(u.customSimulados)) this.customSimuladosList = u.customSimulados;
+          if (Array.isArray(u.dashboardShortcuts) && u.dashboardShortcuts.length > 0) this.dashboardShortcuts = u.dashboardShortcuts;
+          if (u.syncVersion) this.localSyncVersion = Number(u.syncVersion);
+          this.updateSyncIndicator('saved', 'Salvo');
+          this.renderDashboardShortcuts();
+          if (this.currentTab === 'materials') this.refreshActiveMaterialsSubtab();
 
           // Grade Horária
           if (Array.isArray(u.timetable)) {
@@ -18102,7 +18127,12 @@ class EstudePlusApp {
             userTpcs: tpcsList
           },
           exams: examsList,
-          notes: notesList,
+          notes: this.notesList || notesList,
+          flashcards: this.flashcardsList || [],
+          collections: this.collectionsList || [],
+          favorites: this.favoritesList || [],
+          customSimulados: this.customSimuladosList || [],
+          dashboardShortcuts: this.dashboardShortcuts || [],
           timetable: timetableList,
           deviceType: window.innerWidth < 768 ? 'Celular' : (window.innerWidth < 1024 ? 'Tablet' : 'Computador / PC')
         };
@@ -21939,7 +21969,9 @@ startxref
           message: text,
           history: historyToSend,
           image: imagePayload ? { data: imagePayload.base64, mimeType: imagePayload.mimeType } : null,
-          conversationId: this.activeConversationId
+          conversationId: this.activeConversationId,
+          mode: this.aiChatMode || 'default',
+          difficulty: 'medium'
         }),
         signal: this.aiAbortController.signal
       });
@@ -23127,6 +23159,970 @@ startxref
       `;
     }
   }
+
+  /* ==========================================================================
+     SINCRONIZAÇÃO EM TEMPO REAL MULTIDISPOSITIVO (CELULAR, TABLET, PC)
+     ========================================================================== */
+  initSyncSystem() {
+    // 1. Ouvintes de Conexão Online/Offline
+    window.addEventListener('online', () => {
+      this.updateSyncIndicator('syncing', 'Reconectado! Sincronizando...');
+      this.flushOfflineQueue();
+    });
+
+    window.addEventListener('offline', () => {
+      this.updateSyncIndicator('offline', 'Modo Offline (Salvo Local)');
+    });
+
+    // 2. Ouvinte de retorno à aba para detecção de alterações em outros dispositivos
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && this.currentUser) {
+        this.checkRemoteSyncStatus();
+      }
+    });
+
+    // 3. Checagem periódica a cada 20 segundos
+    if (this._syncInterval) clearInterval(this._syncInterval);
+    this._syncInterval = setInterval(() => {
+      if (this.currentUser && !document.hidden && navigator.onLine) {
+        this.checkRemoteSyncStatus();
+      }
+    }, 20000);
+
+    // 4. Restaurar fila offline pendente se houver
+    if (this.currentUser) {
+      try {
+        const queueKey = 'estude_offline_queue_' + this.currentUser.id;
+        const savedQueue = localStorage.getItem(queueKey);
+        if (savedQueue) {
+          this.offlineSyncQueue = JSON.parse(savedQueue) || [];
+          if (this.offlineSyncQueue.length > 0 && navigator.onLine) {
+            this.flushOfflineQueue();
+          }
+        }
+      } catch (e) {}
+    }
+
+    this.updateSyncIndicator('saved', 'Salvo na Nuvem');
+  }
+
+  updateSyncIndicator(status, text) {
+    this.syncStatus = status;
+    const dot = document.getElementById('syncStatusDot');
+    const textEl = document.getElementById('syncStatusText');
+    if (dot) {
+      dot.className = 'sync-dot status-' + status;
+    }
+    if (textEl) {
+      textEl.innerText = text || (status === 'saved' ? 'Salvo' : (status === 'syncing' ? 'Sincronizando...' : (status === 'offline' ? 'Offline' : 'Erro')));
+    }
+  }
+
+  async triggerManualSync() {
+    if (!this.currentUser) return;
+    this.updateSyncIndicator('syncing', 'Sincronizando...');
+    await this.flushOfflineQueue();
+    await this.syncUserData('pull');
+    await this.syncUserData('push');
+    this.updateSyncIndicator('saved', 'Sincronizado na Nuvem!');
+    setTimeout(() => this.updateSyncIndicator('saved', 'Salvo'), 2500);
+  }
+
+  async checkRemoteSyncStatus() {
+    if (!this.currentUser || !navigator.onLine) return;
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
+
+      const res = await fetch('/api/user/sync-status', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.syncVersion > this.localSyncVersion) {
+          console.info('[Cross-Device Sync] Nova versão detectada na nuvem:', data.syncVersion, '(local:', this.localSyncVersion, '). Atualizando...');
+          await this.syncUserData('pull');
+        }
+      }
+    } catch (e) {
+      console.warn('[Sync Status Check Error]', e.message);
+    }
+  }
+
+  async saveSyncAction(action, payload) {
+    if (!this.currentUser) return;
+    this.localSyncVersion = (this.localSyncVersion || 0) + 1;
+
+    // Cache local imediato para máxima responsividade
+    try {
+      const cacheKey = 'estude_user_data_' + this.currentUser.id;
+      localStorage.setItem(cacheKey, JSON.stringify({
+        notes: this.notesList,
+        flashcards: this.flashcardsList,
+        collections: this.collectionsList,
+        favorites: this.favoritesList,
+        customSimulados: this.customSimuladosList,
+        dashboardShortcuts: this.dashboardShortcuts,
+        version: this.localSyncVersion
+      }));
+    } catch (e) {}
+
+    if (!navigator.onLine) {
+      this.updateSyncIndicator('offline', 'Salvo Localmente (Offline)');
+      this.offlineSyncQueue.push({ action, payload, timestamp: Date.now() });
+      try {
+        localStorage.setItem('estude_offline_queue_' + this.currentUser.id, JSON.stringify(this.offlineSyncQueue));
+      } catch (e) {}
+      return;
+    }
+
+    this.updateSyncIndicator('syncing', 'Sincronizando...');
+    try {
+      const sessId = localStorage.getItem('estude_session_id');
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessId) headers['x-session-id'] = sessId;
+      if (this.currentUser.id) headers['x-user-id'] = this.currentUser.id;
+
+      const res = await fetch('/api/user/sync-action', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action, ...payload })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.syncVersion) this.localSyncVersion = data.syncVersion;
+        this.updateSyncIndicator('saved', 'Salvo na Nuvem');
+      } else {
+        throw new Error('Servidor retornou status ' + res.status);
+      }
+    } catch (err) {
+      console.warn('[Sync Action Warning]', err.message);
+      this.updateSyncIndicator('offline', 'Salvo Localmente (Offline)');
+      this.offlineSyncQueue.push({ action, payload, timestamp: Date.now() });
+      try {
+        localStorage.setItem('estude_offline_queue_' + this.currentUser.id, JSON.stringify(this.offlineSyncQueue));
+      } catch (e) {}
+    }
+  }
+
+  async flushOfflineQueue() {
+    if (!this.currentUser || this.offlineSyncQueue.length === 0 || !navigator.onLine) return;
+    try {
+      this.updateSyncIndicator('syncing', 'Enviando alterações...');
+      await this.syncUserData('push');
+      this.offlineSyncQueue = [];
+      localStorage.removeItem('estude_offline_queue_' + this.currentUser.id);
+      this.updateSyncIndicator('saved', 'Sincronizado na Nuvem');
+    } catch (e) {
+      this.updateSyncIndicator('offline', 'Pendente (Tentando novamente...)');
+    }
+  }
+
+  /* ==========================================================================
+     TOAST, UNDO, COPIAR & COMPARTILHAR
+     ========================================================================== */
+  showUndoToast(message, itemType, itemData) {
+    this.lastDeletedItem = { type: itemType, data: itemData };
+    const toast = document.getElementById('undoToast');
+    const msgEl = document.getElementById('undoToastMessage');
+    if (!toast || !msgEl) return;
+
+    msgEl.innerText = message;
+    toast.style.display = 'flex';
+
+    if (this.undoTimeout) clearTimeout(this.undoTimeout);
+    this.undoTimeout = setTimeout(() => {
+      toast.style.display = 'none';
+      this.lastDeletedItem = null;
+    }, 6000);
+  }
+
+  undoLastDeletedItem() {
+    const toast = document.getElementById('undoToast');
+    if (toast) toast.style.display = 'none';
+    if (!this.lastDeletedItem) return;
+
+    const { type, data } = this.lastDeletedItem;
+    if (type === 'flashcard') {
+      this.flashcardsList.unshift(data);
+      this.saveSyncAction('save_flashcard', { flashcard: data });
+      this.renderFlashcardsView();
+    } else if (type === 'note') {
+      this.notesList.unshift(data);
+      this.saveSyncAction('save_note', { note: data });
+      this.renderNotesView();
+    }
+    this.lastDeletedItem = null;
+    this.updateSyncIndicator('saved', 'Ação desfeita!');
+  }
+
+  async copyToClipboard(text, successMessage = 'Copiado para a área de transferência!') {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      this.showSyncFeedback('success', successMessage);
+    } catch (e) {
+      alert('Não foi possível copiar automaticamente.');
+    }
+  }
+
+  async shareContent(title, text, url = window.location.href) {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch (e) {
+        if (e.name !== 'AbortError') console.warn('Erro ao compartilhar:', e);
+      }
+    }
+    this.copyToClipboard(`${title}\n\n${text}`, 'Conteúdo copiado! Cole no seu aplicativo de mensagens.');
+  }
+
+  /* ==========================================================================
+     CHAT IA: MODOS & FAVORITOS
+     ========================================================================== */
+  setAiChatMode(mode) {
+    this.aiChatMode = mode;
+    ['Default', 'Professor', 'Challenge'].forEach(m => {
+      const btn = document.getElementById('chatModeBtn' + m);
+      if (btn) btn.classList.toggle('active', m.toLowerCase() === mode.toLowerCase());
+    });
+  }
+
+  toggleFavoriteAiMessage(idx) {
+    const m = (this.currentAiMessages || [])[idx];
+    if (!m) return;
+    const text = m.text || m.content || '';
+    const favId = 'fav_ai_' + (m.id || idx);
+
+    const existingIdx = (this.favoritesList || []).findIndex(f => f.id === favId);
+    if (existingIdx >= 0) {
+      this.favoritesList.splice(existingIdx, 1);
+      this.saveSyncAction('toggle_favorite', { favorite: { id: favId } });
+      this.showSyncFeedback('info', 'Removido dos Favoritos.');
+    } else {
+      const favItem = {
+        id: favId,
+        type: 'ai_response',
+        title: text.substring(0, 45).replace(/[#*]/g, '') + '...',
+        content: text,
+        subject: 'Assistente IA',
+        createdAt: new Date().toISOString()
+      };
+      this.favoritesList.unshift(favItem);
+      this.saveSyncAction('toggle_favorite', { favorite: favItem });
+      this.showSyncFeedback('success', '⭐ Resposta salva nos seus Favoritos!');
+    }
+  }
+
+  shareAiMessage(idx) {
+    const m = (this.currentAiMessages || [])[idx];
+    if (!m) return;
+    const text = m.text || m.content || '';
+    this.shareContent('Estude+ IA: Resposta de Estudo', text);
+  }
+
+  /* ==========================================================================
+     HUB DE ESTUDOS & SUBABAS
+     ========================================================================== */
+  switchMaterialsSubtab(subtab) {
+    this.activeMaterialsSubtab = subtab;
+    const tabs = ['lib', 'flashcards', 'notes', 'simulados', 'review', 'favorites'];
+    tabs.forEach(t => {
+      const cap = t.charAt(0).toUpperCase() + t.slice(1);
+      const btn = document.getElementById('subnavBtn' + cap);
+      if (btn) btn.classList.toggle('active', t === subtab || (t === 'lib' && subtab === 'library'));
+    });
+
+    const views = {
+      'library': 'materialsSubviewLib',
+      'flashcards': 'materialsSubviewFlashcards',
+      'notes': 'materialsSubviewNotes',
+      'simulados': 'materialsSubviewSimulados',
+      'review': 'materialsSubviewReview',
+      'favorites': 'materialsSubviewFavorites'
+    };
+
+    Object.values(views).forEach(vId => {
+      const el = document.getElementById(vId);
+      if (el) el.style.display = 'none';
+    });
+
+    const activeView = document.getElementById(views[subtab] || views['library']);
+    if (activeView) activeView.style.display = 'block';
+
+    this.refreshActiveMaterialsSubtab();
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  refreshActiveMaterialsSubtab() {
+    const sub = this.activeMaterialsSubtab || 'library';
+    if (sub === 'library') this.renderMaterialsLibrary();
+    else if (sub === 'flashcards') this.renderFlashcardsView();
+    else if (sub === 'notes') this.renderNotesView();
+    else if (sub === 'simulados') this.renderSimuladosView();
+    else if (sub === 'review') this.renderQuickReviewView();
+    else if (sub === 'favorites') this.renderFavoritesView();
+
+    const bf = document.getElementById('badgeFlashcardsCount');
+    if (bf) bf.innerText = (this.flashcardsList || []).length;
+    const bn = document.getElementById('badgeNotesCount');
+    if (bn) bn.innerText = (this.notesList || []).length;
+    const bfav = document.getElementById('badgeFavoritesCount');
+    if (bfav) bfav.innerText = (this.favoritesList || []).length;
+  }
+
+  /* ==========================================================================
+     MECÂNICA: CARTÕES DE MEMORIZAÇÃO (FLASHCARDS)
+     ========================================================================== */
+  renderFlashcardsView() {
+    const container = document.getElementById('flashcardsContainer');
+    if (!container) return;
+
+    const searchVal = document.getElementById('flashcardsSearchInput')?.value.toLowerCase().trim() || '';
+    const subjectVal = document.getElementById('flashcardsSubjectFilter')?.value || 'all';
+
+    let cards = this.flashcardsList || [];
+    if (subjectVal !== 'all') {
+      cards = cards.filter(c => c.subject && c.subject.toLowerCase() === subjectVal.toLowerCase());
+    }
+    if (searchVal) {
+      cards = cards.filter(c => (c.front && c.front.toLowerCase().includes(searchVal)) || (c.back && c.back.toLowerCase().includes(searchVal)));
+    }
+
+    if (cards.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 20px;">
+          <div style="font-size: 2.2rem; margin-bottom: 12px;">🗂️</div>
+          <h4 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Seus Cartões de Memorização</h4>
+          <p style="margin: 0 0 20px; color: #64748b; font-size: 0.9rem; max-width: 440px; margin-left: auto; margin-right: auto;">
+            Crie cartões com perguntas na frente e respostas explicadas no verso para fixar fórmulas, conceitos e regras sem precisar de decoreba.
+          </p>
+          <button type="button" class="btn-primary" onclick="app.openAddFlashcardModal()" style="padding: 10px 22px; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="plus"></i> Criar Primeiro Cartão
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    container.innerHTML = cards.map(c => {
+      const isKnown = c.knownState === 'known';
+      return `
+        <div class="flashcard-card" id="fcard_${c.id}" onclick="app.toggleFlipFlashcard('${c.id}')">
+          <div class="flashcard-inner">
+            <!-- FRENTE -->
+            <div class="flashcard-front">
+              <div class="flashcard-meta-top">
+                <span style="background: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 999px;">${c.subject || 'Geral'}</span>
+                <span style="color: #64748b; font-size: 0.72rem;">🔄 Clique para virar</span>
+              </div>
+              <div class="flashcard-body-text">
+                ${c.front}
+              </div>
+              <div class="flashcard-actions-bar" onclick="event.stopPropagation()">
+                <span style="font-size: 0.72rem; color: ${isKnown ? '#059669' : '#d97706'}; font-weight: 700;">
+                  ${isKnown ? '✔ Memorizado' : '⏳ Em Aprendizado'}
+                </span>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="chatgpt-btn-copy-msg" onclick="app.editFlashcard('${c.id}')" title="Editar"><i data-lucide="edit-2" style="width: 13px; height: 13px;"></i></button>
+                  <button type="button" class="chatgpt-btn-copy-msg" onclick="app.deleteFlashcard('${c.id}')" title="Excluir"><i data-lucide="trash-2" style="width: 13px; height: 13px; color: #ef4444;"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- VERSO -->
+            <div class="flashcard-back">
+              <div class="flashcard-meta-top">
+                <span style="background: rgba(255,255,255,0.2); color: #fff; padding: 2px 8px; border-radius: 999px;">Resposta</span>
+                <span style="color: #cbd5e1; font-size: 0.72rem;">🔄 Voltar à pergunta</span>
+              </div>
+              <div class="flashcard-body-text" style="color: #e0e7ff;">
+                ${c.back}
+              </div>
+              <div class="flashcard-actions-bar" onclick="event.stopPropagation()">
+                <button type="button" onclick="app.markFlashcardLearned('${c.id}', true)" style="background: #059669; color: #fff; border: none; padding: 5px 10px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; cursor: pointer;">
+                  ✔ Já Memorizei
+                </button>
+                <button type="button" onclick="app.markFlashcardLearned('${c.id}', false)" style="background: rgba(255,255,255,0.2); color: #fff; border: none; padding: 5px 10px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; cursor: pointer;">
+                  Revisar Depois
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  toggleFlipFlashcard(cardId) {
+    const cardEl = document.getElementById('fcard_' + cardId);
+    if (cardEl) cardEl.classList.toggle('flipped');
+  }
+
+  markFlashcardLearned(cardId, isLearned) {
+    const card = (this.flashcardsList || []).find(c => c.id === cardId);
+    if (!card) return;
+    card.knownState = isLearned ? 'known' : 'learning';
+    this.saveSyncAction('save_flashcard', { flashcard: card });
+    this.renderFlashcardsView();
+  }
+
+  openAddFlashcardModal(cardId = null) {
+    const modal = document.getElementById('addFlashcardModal');
+    if (!modal) return;
+    const form = document.getElementById('addFlashcardForm');
+    if (form) form.reset();
+    document.getElementById('flashcardEditId').value = cardId || '';
+
+    if (cardId) {
+      const c = (this.flashcardsList || []).find(item => item.id === cardId);
+      if (c) {
+        document.getElementById('flashcardModalTitle').innerText = 'Editar Cartão';
+        document.getElementById('flashcardSubject').value = c.subject || 'Ciências';
+        document.getElementById('flashcardFront').value = c.front || '';
+        document.getElementById('flashcardBack').value = c.back || '';
+      }
+    } else {
+      document.getElementById('flashcardModalTitle').innerText = 'Novo Cartão de Memorização';
+    }
+    this.showModal('addFlashcardModal');
+  }
+
+  handleSaveFlashcard(e) {
+    if (e) e.preventDefault();
+    const editId = document.getElementById('flashcardEditId')?.value;
+    const subject = document.getElementById('flashcardSubject')?.value || 'Geral';
+    const front = document.getElementById('flashcardFront')?.value.trim();
+    const back = document.getElementById('flashcardBack')?.value.trim();
+
+    if (!front || !back) {
+      alert('Preencha a pergunta na frente e a resposta no verso.');
+      return;
+    }
+
+    const card = {
+      id: editId || ('fc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+      subject,
+      front,
+      back,
+      knownState: 'learning',
+      createdAt: new Date().toISOString()
+    };
+
+    if (editId) {
+      const idx = this.flashcardsList.findIndex(c => c.id === editId);
+      if (idx >= 0) this.flashcardsList[idx] = { ...this.flashcardsList[idx], ...card };
+    } else {
+      this.flashcardsList.unshift(card);
+    }
+
+    this.saveSyncAction('save_flashcard', { flashcard: card });
+    this.closeModal('addFlashcardModal');
+    this.renderFlashcardsView();
+    this.showSyncFeedback('success', 'Cartão salvo e sincronizado na nuvem!');
+  }
+
+  editFlashcard(cardId) {
+    this.openAddFlashcardModal(cardId);
+  }
+
+  deleteFlashcard(cardId) {
+    const card = (this.flashcardsList || []).find(c => c.id === cardId);
+    if (!card) return;
+    this.flashcardsList = this.flashcardsList.filter(c => c.id !== cardId);
+    this.saveSyncAction('delete_flashcard', { flashcardId: cardId });
+    this.renderFlashcardsView();
+    this.showUndoToast('Cartão de memorização excluído.', 'flashcard', card);
+  }
+
+  /* ==========================================================================
+     MECÂNICA: MINHAS ANOTAÇÕES (NOTES)
+     ========================================================================== */
+  renderNotesView() {
+    const container = document.getElementById('notesContainer');
+    if (!container) return;
+
+    const searchVal = document.getElementById('notesSearchInput')?.value.toLowerCase().trim() || '';
+    const subjectVal = document.getElementById('notesSubjectFilter')?.value || 'all';
+
+    let notes = this.notesList || [];
+    if (subjectVal !== 'all') {
+      notes = notes.filter(n => n.subject && n.subject.toLowerCase() === subjectVal.toLowerCase());
+    }
+    if (searchVal) {
+      notes = notes.filter(n => (n.title && n.title.toLowerCase().includes(searchVal)) || (n.content && n.content.toLowerCase().includes(searchVal)));
+    }
+
+    if (notes.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 20px;">
+          <div style="font-size: 2.2rem; margin-bottom: 12px;">📝</div>
+          <h4 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Caderno de Anotações Pessoais</h4>
+          <p style="margin: 0 0 20px; color: #64748b; font-size: 0.9rem; max-width: 440px; margin-left: auto; margin-right: auto;">
+            Guarde anotações de sala de aula, fórmulas e ideias. Tudo sincroniza instantaneamente entre o computador, celular e tablet.
+          </p>
+          <button type="button" class="btn-primary" onclick="app.openAddNoteModal()" style="padding: 10px 22px; font-weight: 800; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="plus"></i> Criar Primeira Anotação
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    container.innerHTML = notes.map(n => {
+      const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleDateString('pt-BR') : 'Hoje';
+      return `
+        <div class="note-card">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="background: #fdf2f8; color: #db2777; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px;">
+                ${n.subject || 'Geral'}
+              </span>
+              <span style="font-size: 0.74rem; color: #94a3b8;">${dateStr}</span>
+            </div>
+            <h4 class="note-card-title">${n.title}</h4>
+            <div class="note-card-content">${(n.content || '').replace(/\n/g, '<br>')}</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: 10px;">
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="chatgpt-btn-copy-msg" onclick="app.copyNoteContent('${n.id}')" title="Copiar"><i data-lucide="copy" style="width: 13px; height: 13px;"></i></button>
+              <button type="button" class="chatgpt-btn-copy-msg" onclick="app.shareNoteContent('${n.id}')" title="Compartilhar"><i data-lucide="share-2" style="width: 13px; height: 13px;"></i></button>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="chatgpt-btn-copy-msg" onclick="app.editNote('${n.id}')" title="Editar"><i data-lucide="edit-3" style="width: 13px; height: 13px;"></i></button>
+              <button type="button" class="chatgpt-btn-copy-msg" onclick="app.deleteNote('${n.id}')" title="Excluir"><i data-lucide="trash-2" style="width: 13px; height: 13px; color: #ef4444;"></i></button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  openAddNoteModal(noteId = null) {
+    const modal = document.getElementById('addNoteModal');
+    if (!modal) return;
+    const form = document.getElementById('addNoteForm');
+    if (form) form.reset();
+    document.getElementById('noteEditId').value = noteId || '';
+
+    if (noteId) {
+      const n = (this.notesList || []).find(item => item.id === noteId);
+      if (n) {
+        document.getElementById('noteModalTitle').innerText = 'Editar Anotação';
+        document.getElementById('noteTitle').value = n.title || '';
+        document.getElementById('noteSubject').value = n.subject || 'Ciências';
+        document.getElementById('noteContent').value = n.content || '';
+      }
+    } else {
+      document.getElementById('noteModalTitle').innerText = 'Nova Anotação Pessoal';
+    }
+    this.showModal('addNoteModal');
+  }
+
+  handleSaveNote(e) {
+    if (e) e.preventDefault();
+    const editId = document.getElementById('noteEditId')?.value;
+    const title = document.getElementById('noteTitle')?.value.trim();
+    const subject = document.getElementById('noteSubject')?.value || 'Geral';
+    const content = document.getElementById('noteContent')?.value.trim();
+
+    if (!title || !content) {
+      alert('Preencha o título e o conteúdo da anotação.');
+      return;
+    }
+
+    const note = {
+      id: editId || ('note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+      title,
+      subject,
+      content,
+      createdAt: new Date().toISOString()
+    };
+
+    if (editId) {
+      const idx = this.notesList.findIndex(n => n.id === editId);
+      if (idx >= 0) this.notesList[idx] = { ...this.notesList[idx], ...note };
+    } else {
+      this.notesList.unshift(note);
+    }
+
+    this.saveSyncAction('save_note', { note });
+    this.closeModal('addNoteModal');
+    this.renderNotesView();
+    this.showSyncFeedback('success', 'Anotação salva e sincronizada na nuvem!');
+  }
+
+  copyNoteContent(noteId) {
+    const n = (this.notesList || []).find(item => item.id === noteId);
+    if (!n) return;
+    this.copyToClipboard(`${n.title}\n\n${n.content}`, 'Anotação copiada com sucesso!');
+  }
+
+  shareNoteContent(noteId) {
+    const n = (this.notesList || []).find(item => item.id === noteId);
+    if (!n) return;
+    this.shareContent(n.title, n.content);
+  }
+
+  editNote(noteId) {
+    this.openAddNoteModal(noteId);
+  }
+
+  deleteNote(noteId) {
+    const note = (this.notesList || []).find(n => n.id === noteId);
+    if (!note) return;
+    this.notesList = this.notesList.filter(n => n.id !== noteId);
+    this.saveSyncAction('delete_note', { noteId });
+    this.renderNotesView();
+    this.showUndoToast('Anotação excluída.', 'note', note);
+  }
+
+  /* ==========================================================================
+     MECÂNICA: MONTAR SIMULADO PERSONALIZADO
+     ========================================================================== */
+  renderSimuladosView() {
+    const runner = document.getElementById('simuladoActiveRunner');
+    const builder = document.getElementById('simuladoBuilderBox');
+    if (runner && builder) {
+      runner.style.display = 'none';
+      builder.style.display = 'block';
+    }
+  }
+
+  startCustomSimulado() {
+    const subject = document.getElementById('simBuilderSubject')?.value || 'Ciências';
+    const difficulty = document.getElementById('simBuilderDifficulty')?.value || 'medio';
+    const count = parseInt(document.getElementById('simBuilderCount')?.value, 10) || 5;
+
+    // Perguntas curriculares BNCC / SAS
+    const bank = [
+      { q: 'Qual característica evolutiva diferencia diretamente as briófitas das pteridófitas?', options: ['A) As pteridófitas possuem vasos condutores de seiva (xilema e floema), enquanto as briófitas são avasculares.', 'B) As briófitas produzem flores vistosas para polinização.', 'C) As pteridófitas produzem sementes protegidas por frutos.', 'D) As briófitas possuem raízes profundas de fixação.'], correct: 0, explanation: 'As pteridófitas foram os primeiros vegetais vasculares a desenvolver xilema e floema para conduzir seiva pelo corpo.' },
+      { q: 'De acordo com a 1ª Lei de Newton (Princípio da Inércia), um corpo em movimento retilíneo uniforme permanece nessa condição a menos que:', options: ['A) Seja freado pela inércia própria.', 'B) Uma força resultante externa atue sobre ele.', 'C) A velocidade atinja a aceleração zero.', 'D) O atrito da gravidade cesse.'], correct: 1, explanation: 'A inércia mantém o estado de repouso ou de MRU até que uma força resultante modifique esse estado.' },
+      { q: 'Em uma promoção com desconto sucessivo, um artigo de R$ 100,00 tem 10% de desconto e depois mais 10% sobre o novo valor. O valor final é:', options: ['A) R$ 80,00', 'B) R$ 81,00', 'C) R$ 82,00', 'D) R$ 85,00'], correct: 1, explanation: '100 - 10% = 90. Em seguida, 90 - 10% (9,00) = R$ 81,00.' },
+      { q: 'Qual é a regra gramatical fundamental do uso do acento indicativo de crase?', options: ['A) Ocorre sempre antes de qualquer palavra masculina.', 'B) É a fusão da preposição "a" com o artigo definido feminino "a" (ou pronomes aquele/aquela).', 'C) Deve ser usada obrigatoriamente antes de verbos no infinitivo.', 'D) Nunca pode ser utilizada diante de substantivos femininos.'], correct: 1, explanation: 'A crase resulta da contração da preposição "a" exigida pelo termo regente com o artigo feminino "a" do termo regido.' },
+      { q: 'Qual das alternativas descreve uma causa essencial para o pioneirismo inglês na Primeira Revolução Industrial?', options: ['A) Descoberta de ricas minas de ouro no rio Tâmisa.', 'B) Abundância de carvão mineral, ferro, frota naval poderosa e mão de obra dos cercamentos.', 'C) Aliança militar exclusiva com o Império Napoleônico.', 'D) Fim imediato de todas as fábricas têxteis tradicionais.'], correct: 1, explanation: 'A Inglaterra reunia jazidas de carvão mineral, matéria-prima, capital acumulado e mão de obra urbana abundante.' }
+    ];
+
+    this.activeSimulado = {
+      subject,
+      difficulty,
+      questions: bank.slice(0, count),
+      answers: {},
+      startedAt: Date.now()
+    };
+
+    const runner = document.getElementById('simuladoActiveRunner');
+    const builder = document.getElementById('simuladoBuilderBox');
+    if (builder) builder.style.display = 'none';
+    if (!runner) return;
+
+    runner.style.display = 'block';
+    runner.innerHTML = `
+      <div class="simulado-builder-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+          <div>
+            <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">Simulado em Andamento: ${subject}</h4>
+            <span style="font-size: 0.8rem; color: #64748b;">${count} Questões • Dificuldade: ${difficulty}</span>
+          </div>
+          <button type="button" class="btn-outline" onclick="app.renderSimuladosView()" style="font-size: 0.8rem; padding: 6px 12px;">Cancelar</button>
+        </div>
+
+        ${this.activeSimulado.questions.map((q, idx) => `
+          <div style="margin-bottom: 24px; padding: 18px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px;">
+            <p style="font-weight: 800; font-size: 0.95rem; color: #0f172a; margin: 0 0 14px;">
+              <strong>Questão ${idx + 1}:</strong> ${q.q}
+            </p>
+            <div>
+              ${q.options.map((opt, oIdx) => `
+                <button type="button" class="simulado-option-btn" id="simOpt_${idx}_${oIdx}" onclick="app.submitSimuladoAnswer(${idx}, ${oIdx})">
+                  ${opt}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+
+        <button type="button" class="btn-primary" onclick="app.finishCustomSimulado()" style="padding: 12px 28px; font-weight: 800; border-radius: 12px; font-size: 0.95rem;">
+          Finalizar Simulado e Ver Gabarito
+        </button>
+      </div>
+    `;
+  }
+
+  submitSimuladoAnswer(qIdx, optIdx) {
+    if (!this.activeSimulado) return;
+    this.activeSimulado.answers[qIdx] = optIdx;
+
+    const q = this.activeSimulado.questions[qIdx];
+    q.options.forEach((_, idx) => {
+      const btn = document.getElementById(`simOpt_${qIdx}_${idx}`);
+      if (btn) btn.classList.toggle('selected', idx === optIdx);
+    });
+  }
+
+  finishCustomSimulado() {
+    if (!this.activeSimulado) return;
+    let correctCount = 0;
+    const total = this.activeSimulado.questions.length;
+
+    this.activeSimulado.questions.forEach((q, idx) => {
+      const chosen = this.activeSimulado.answers[idx];
+      const isCorrect = chosen === q.correct;
+      if (isCorrect) correctCount++;
+
+      q.options.forEach((_, oIdx) => {
+        const btn = document.getElementById(`simOpt_${idx}_${oIdx}`);
+        if (btn) {
+          if (oIdx === q.correct) btn.classList.add('correct');
+          else if (oIdx === chosen && !isCorrect) btn.classList.add('wrong');
+        }
+      });
+    });
+
+    const pct = Math.round((correctCount / total) * 100);
+    const simRecord = {
+      id: 'sim_' + Date.now(),
+      subject: this.activeSimulado.subject,
+      total,
+      score: correctCount,
+      percentage: pct,
+      completedAt: new Date().toISOString()
+    };
+    if (!Array.isArray(this.customSimuladosList)) this.customSimuladosList = [];
+    this.customSimuladosList.unshift(simRecord);
+    this.saveSyncAction('save_custom_simulado', { simulado: simRecord });
+
+    alert(`🎯 Simulado Concluído!\n\nVocê acertou ${correctCount} de ${total} questões (${pct}% de aproveitamento).\n\nConfira na tela as alternativas corretas e explicações!`);
+  }
+
+  /* ==========================================================================
+     MECÂNICA: REVISÃO RÁPIDA
+     ========================================================================== */
+  renderQuickReviewView() {
+    const area = document.getElementById('quickReviewContentArea');
+    if (area && !area.innerHTML.trim()) {
+      area.innerHTML = `
+        <div style="padding: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; text-align: center; color: #64748b;">
+          Selecione a matéria acima e clique em <strong>"Gerar Resumo & Perguntas"</strong> para estudar os pontos mais cobrados.
+        </div>
+      `;
+    }
+  }
+
+  generateQuickReviewAction() {
+    const subj = document.getElementById('quickReviewSubject')?.value || 'Reino Vegetal e Plantas';
+    const area = document.getElementById('quickReviewContentArea');
+    if (!area) return;
+
+    area.innerHTML = `
+      <div style="padding: 20px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 14px; margin-top: 14px;">
+        <h4 style="margin: 0 0 10px; color: #4338ca; font-size: 1.15rem; font-weight: 800;">⚡ Síntese: ${subj}</h4>
+        <ul style="padding-left: 20px; color: #334155; line-height: 1.6; font-size: 0.92rem;">
+          <li><strong>Conceito Primário:</strong> Entenda a lógica de funcionamento e classificação antes de tentar memorizar nomes.</li>
+          <li><strong>Aplicações Práticas:</strong> Relacione o tema com situações reais e fenômenos do cotidiano escolar.</li>
+          <li><strong>Diferenciações Críticas:</strong> Atente-se às comparações entre grupos (ex: avasculares vs vasculares, repouso vs movimento).</li>
+        </ul>
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+          <strong style="color: #0f172a; font-size: 0.88rem; display: block; margin-bottom: 6px;">Perguntas de Fixação Imediata:</strong>
+          <p style="margin: 4px 0; font-size: 0.86rem; color: #475569;">1. Como você explicaria a importância desse tema para um colega?</p>
+          <p style="margin: 4px 0; font-size: 0.86rem; color: #475569;">2. Qual detalhe geralmente gera confusão nas questões de prova?</p>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ==========================================================================
+     MECÂNICA: FAVORITOS & COLEÇÕES
+     ========================================================================== */
+  renderFavoritesView() {
+    const container = document.getElementById('favoritesListContainer');
+    if (!container) return;
+
+    const list = this.favoritesList || [];
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 48px 20px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 20px;">
+          <div style="font-size: 2.2rem; margin-bottom: 12px;">⭐</div>
+          <h4 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Seus Conteúdos Favoritos</h4>
+          <p style="margin: 0; color: #64748b; font-size: 0.9rem;">
+            Ao conversar com o Chatbot IA ou consultar materiais, clique no botão <strong>"Favoritar" ⭐</strong> para salvar respostas importantes aqui.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(f => `
+      <div class="favorite-item-card">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.72rem; padding: 2px 7px; border-radius: 999px;">⭐ ${f.subject || 'Favorito'}</span>
+            <strong style="font-size: 0.95rem; color: #0f172a;">${f.title}</strong>
+          </div>
+          <div style="font-size: 0.86rem; color: #475569; line-height: 1.5; max-height: 80px; overflow: hidden; text-overflow: ellipsis;">
+            ${f.content}
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-shrink: 0;">
+          <button type="button" class="chatgpt-btn-copy-msg" onclick="app.copyToClipboard('${(f.content || '').replace(/'/g, "\\'")}', 'Favorito copiado!')" title="Copiar"><i data-lucide="copy" style="width: 13px; height: 13px;"></i></button>
+          <button type="button" class="chatgpt-btn-copy-msg" onclick="app.removeFavorite('${f.id}')" title="Remover dos favoritos"><i data-lucide="trash-2" style="width: 13px; height: 13px; color: #ef4444;"></i></button>
+        </div>
+      </div>
+    `).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  removeFavorite(favId) {
+    this.favoritesList = (this.favoritesList || []).filter(f => f.id !== favId);
+    this.saveSyncAction('toggle_favorite', { favorite: { id: favId } });
+    this.renderFavoritesView();
+  }
+
+  openAddCollectionModal() {
+    this.showModal('addCollectionModal');
+  }
+
+  handleSaveCollection(e) {
+    if (e) e.preventDefault();
+    const name = document.getElementById('collectionName')?.value.trim();
+    const desc = document.getElementById('collectionDesc')?.value.trim() || '';
+    if (!name) return;
+
+    const col = {
+      id: 'col_' + Date.now(),
+      name,
+      description: desc,
+      createdAt: new Date().toISOString()
+    };
+    if (!Array.isArray(this.collectionsList)) this.collectionsList = [];
+    this.collectionsList.push(col);
+    this.saveSyncAction('save_collection', { collection: col });
+    this.closeModal('addCollectionModal');
+    this.showSyncFeedback('success', 'Coleção criada com sucesso!');
+  }
+
+  /* ==========================================================================
+     PERSONALIZAÇÃO DOS ATALHOS DO DASHBOARD
+     ========================================================================== */
+  renderDashboardShortcuts() {
+    const grid = document.querySelector('.sas-shortcuts-grid');
+    if (!grid) return;
+
+    const catalog = {
+      'gemini-chat': { title: 'Chatbot IA', icon: 'bot', colorBox: 'gemini', action: "app.switchTab('gemini-chat')" },
+      'flashcards': { title: 'Flashcards', icon: 'layers', colorBox: 'purple', action: "app.switchTab('materials'); app.switchMaterialsSubtab('flashcards');" },
+      'notes': { title: 'Anotações', icon: 'file-text', colorBox: 'blue', action: "app.switchTab('materials'); app.switchMaterialsSubtab('notes');" },
+      'simulado': { title: 'Simulados', icon: 'target', colorBox: 'green', action: "app.switchTab('materials'); app.switchMaterialsSubtab('simulados');" },
+      'review': { title: 'Revisão Rápida', icon: 'zap', colorBox: 'gold', action: "app.switchTab('materials'); app.switchMaterialsSubtab('review');" },
+      'materials': { title: 'Biblioteca', icon: 'book-marked', colorBox: 'blue', action: "app.switchTab('materials')" },
+      'sas-eureka': { title: 'Eureka & Apostilas', icon: 'compass', colorBox: 'cyan', action: "app.switchTab('sas-eureka')" },
+      'trilhas': { title: 'Trilhas SAS', icon: 'map', colorBox: 'gold', action: "app.switchTab('trilhas')" },
+      'timetable': { title: 'Grade de Aulas', icon: 'clock', colorBox: 'blue', action: "app.switchTab('timetable')" },
+      'calendar': { title: 'Provas', icon: 'calendar', colorBox: 'purple', action: "app.switchTab('calendar')" },
+      'quiz': { title: 'Quiz Diário', icon: 'zap', colorBox: 'gold', action: "app.switchTab('quiz')" },
+      'plans-pricing': { title: 'Plano PRO', icon: 'crown', colorBox: 'gold', action: "app.showSubscriptionModal()" }
+    };
+
+    const activeKeys = (this.dashboardShortcuts && this.dashboardShortcuts.length === 6)
+      ? this.dashboardShortcuts
+      : ['sas-eureka', 'quiz', 'calendar', 'gemini-chat', 'trilhas', 'plans-pricing'];
+
+    grid.innerHTML = activeKeys.map(key => {
+      const item = catalog[key] || catalog['gemini-chat'];
+      return `
+        <button class="sas-shortcut-tile" onclick="${item.action}" title="${item.title}">
+          <div class="tile-icon-box ${item.colorBox}"><i data-lucide="${item.icon}"></i></div>
+          <span>${item.title}</span>
+        </button>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  openCustomizeShortcutsModal() {
+    const grid = document.getElementById('shortcutsOptionsGrid');
+    if (!grid) return;
+
+    const catalog = [
+      { id: 'gemini-chat', title: 'Chatbot IA 3.0', desc: 'Assistente e Modo Professor' },
+      { id: 'flashcards', title: 'Cartões de Memorização', desc: 'Treino com flip 3D' },
+      { id: 'notes', title: 'Minhas Anotações', desc: 'Caderno digital sincronizado' },
+      { id: 'simulado', title: 'Montar Simulado', desc: 'Conjunto de questões interativas' },
+      { id: 'review', title: 'Revisão Rápida', desc: 'Resumos e auto-teste' },
+      { id: 'materials', title: 'Biblioteca de Materiais', desc: 'Apostilas e arquivos' },
+      { id: 'sas-eureka', title: 'Eureka & Apostilas SAS', desc: 'Portal oficial SAS' },
+      { id: 'trilhas', title: 'Trilhas SAS', desc: 'Apostilas 1, 2 e 3' },
+      { id: 'timetable', title: 'Grade de Aulas', desc: 'Horários semanais' },
+      { id: 'calendar', title: 'Calendário de Provas', desc: 'Avaliações agendadas' },
+      { id: 'quiz', title: 'Quiz Diário', desc: 'Fixação de 15 minutos' },
+      { id: 'plans-pricing', title: 'Plano PRO', desc: 'Assinatura e benefícios' }
+    ];
+
+    const currentSelected = new Set(this.dashboardShortcuts || ['sas-eureka', 'quiz', 'calendar', 'gemini-chat', 'trilhas', 'plans-pricing']);
+
+    grid.innerHTML = catalog.map(item => {
+      const isChecked = currentSelected.has(item.id);
+      return `
+        <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #f8fafc; border: 1.5px solid ${isChecked ? '#4f46e5' : '#e2e8f0'}; border-radius: 12px; cursor: pointer;">
+          <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="app.handleShortcutCheckboxChange(this)" style="margin-top: 3px; accent-color: #4f46e5;">
+          <div>
+            <strong style="font-size: 0.88rem; color: #0f172a; display: block;">${item.title}</strong>
+            <span style="font-size: 0.74rem; color: #64748b;">${item.desc}</span>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    this.updateShortcutsCountText();
+    this.showModal('customizeShortcutsModal');
+  }
+
+  handleShortcutCheckboxChange(cb) {
+    const checked = Array.from(document.querySelectorAll('#shortcutsOptionsGrid input[type="checkbox"]:checked'));
+    if (checked.length > 6) {
+      cb.checked = false;
+      alert('Você pode selecionar no máximo 6 atalhos para a tela inicial.');
+    }
+    this.updateShortcutsCountText();
+  }
+
+  updateShortcutsCountText() {
+    const checked = document.querySelectorAll('#shortcutsOptionsGrid input[type="checkbox"]:checked');
+    const textEl = document.getElementById('shortcutsSelectedCountText');
+    if (textEl) textEl.innerText = `Selecionados: ${checked.length} de 6`;
+  }
+
+  saveCustomShortcuts() {
+    const checked = Array.from(document.querySelectorAll('#shortcutsOptionsGrid input[type="checkbox"]:checked')).map(cb => cb.value);
+    if (checked.length !== 6) {
+      alert('Por favor, selecione exatamente 6 atalhos para manter a grade equilibrada.');
+      return;
+    }
+    this.dashboardShortcuts = checked;
+    this.saveSyncAction('save_shortcuts', { shortcuts: checked });
+    this.renderDashboardShortcuts();
+    this.closeModal('customizeShortcutsModal');
+    this.showSyncFeedback('success', 'Atalhos da página inicial salvos e sincronizados!');
+  }
+
 }
 
 // Instantiate and expose globally

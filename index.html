@@ -69,6 +69,12 @@
         <span class="shortcut-kbd">Ctrl K</span>
       </button>
 
+      <!-- Real-time Cross-Device Sync Status Indicator -->
+      <div class="sync-status-indicator" id="syncStatusIndicator" onclick="app.triggerManualSync()" title="Sincronização em tempo real entre dispositivos (Clique para sincronizar agora)">
+        <span class="sync-dot status-saved" id="syncStatusDot"></span>
+        <span class="sync-text" id="syncStatusText">Salvo</span>
+      </div>
+
       <!-- Admin Central Management Button (Visible to Freddie Costa) -->
       <button class="sas-top-btn admin-btn" id="adminPaymentsBtn" onclick="app.showAdminModal()" title="Central Única de Gerenciamento do Administrador" style="display: none;">
         <i data-lucide="shield-check" style="width: 15px; height: 15px;"></i>
@@ -452,6 +458,20 @@
                 </div>
               </div>
 
+              <div class="chat-mode-selector-pills">
+                  <button type="button" class="chat-mode-pill active" id="chatModeBtnDefault" onclick="app.setAiChatMode('default')" title="Pergunte à IA: Conversa livre e raciocínio">
+                    <i data-lucide="message-square" style="width: 13px; height: 13px;"></i>
+                    <span>Pergunte à IA</span>
+                  </button>
+                  <button type="button" class="chat-mode-pill" id="chatModeBtnProfessor" onclick="app.setAiChatMode('professor')" title="Modo Professor: Explicações didáticas passo a passo com exemplos">
+                    <i data-lucide="graduation-cap" style="width: 13px; height: 13px;"></i>
+                    <span>Modo Professor</span>
+                  </button>
+                  <button type="button" class="chat-mode-pill" id="chatModeBtnChallenge" onclick="app.setAiChatMode('challenge')" title="Modo Desafio: Questões interativas e raciocínio crítico">
+                    <i data-lucide="swords" style="width: 13px; height: 13px;"></i>
+                    <span>Modo Desafio</span>
+                  </button>
+                </div>
               <div class="chatgpt-topbar-right">
                 <button type="button" class="btn-topbar-new" onclick="app.startNewAiChat()" title="Nova Conversa">
                   <i data-lucide="square-pen" style="width: 16px; height: 16px;"></i>
@@ -843,87 +863,252 @@
 
       <!-- ================= TAB: BIBLIOTECA DE MATERIAIS (ALL-IN-ONE) ================= -->
       <section id="tab-materials" class="tab-pane">
-        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 22px;">
+        
+        <!-- Header Principal com Navegação dos Modos de Aprendizagem -->
+        <div class="tab-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
           <div>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-              <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.75rem; letter-spacing: 0.5px;">ESTUDE+ ALL-IN-ONE</span>
-              <h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;">📚 Biblioteca de Materiais</h2>
+              <span style="background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.75rem; letter-spacing: 0.5px;">ESTUDE+ ESTUDO & WORKSPACE</span>
+              <h2 style="margin: 0; font-size: 1.5rem; font-weight: 800; color: #0f172a;" id="materialsHubMainTitle">📚 Hub de Estudos & Ferramentas</h2>
             </div>
-            <p class="subtitle" style="margin: 0; font-size: 0.9rem; color: #64748b;">
-              Seus materiais conectados: envie conteúdos para gerar <strong>resumos, flashcards, questões, simulados e mapas mentais</strong> com o mesmo contexto.
+            <p class="subtitle" style="margin: 0; font-size: 0.9rem; color: #64748b;" id="materialsHubSubtitle">
+              Biblioteca de conteúdos, cartões de memorização, anotações pessoais sincronizadas e simulados interativos.
             </p>
           </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn-primary" onclick="app.openAddMaterialModal()" style="background: linear-gradient(135deg, #4f46e5, #6366f1); padding: 11px 20px; font-weight: 800; font-size: 0.88rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);">
-              <i data-lucide="plus-circle" style="width: 17px; height: 17px;"></i>
-              <span>Adicionar Novo Material</span>
+
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="materialsHubTopActions">
+            <!-- Ações dinâmicas injetadas por subaba -->
+          </div>
+        </div>
+
+        <!-- Subnavegação em Pílulas Estilo ChatGPT / Notion -->
+        <div class="materials-subnav-bar">
+          <button type="button" class="materials-subnav-btn active" id="subnavBtnLib" onclick="app.switchMaterialsSubtab('library')">
+            <i data-lucide="book-marked"></i>
+            <span>Biblioteca</span>
+          </button>
+          <button type="button" class="materials-subnav-btn" id="subnavBtnFlashcards" onclick="app.switchMaterialsSubtab('flashcards')">
+            <i data-lucide="layers"></i>
+            <span>Cartões de Memorização</span>
+            <span class="subnav-badge" id="badgeFlashcardsCount">0</span>
+          </button>
+          <button type="button" class="materials-subnav-btn" id="subnavBtnNotes" onclick="app.switchMaterialsSubtab('notes')">
+            <i data-lucide="file-text"></i>
+            <span>Minhas Anotações</span>
+            <span class="subnav-badge" id="badgeNotesCount">0</span>
+          </button>
+          <button type="button" class="materials-subnav-btn" id="subnavBtnSimulados" onclick="app.switchMaterialsSubtab('simulados')">
+            <i data-lucide="target"></i>
+            <span>Montar Simulado</span>
+          </button>
+          <button type="button" class="materials-subnav-btn" id="subnavBtnReview" onclick="app.switchMaterialsSubtab('review')">
+            <i data-lucide="zap"></i>
+            <span>Revisão Rápida</span>
+          </button>
+          <button type="button" class="materials-subnav-btn" id="subnavBtnFavorites" onclick="app.switchMaterialsSubtab('favorites')">
+            <i data-lucide="star"></i>
+            <span>Favoritos & Coleções</span>
+            <span class="subnav-badge" id="badgeFavoritesCount">0</span>
+          </button>
+        </div>
+
+        <!-- SUBVIEW 1: BIBLIOTECA DE MATERIAIS -->
+        <div id="materialsSubviewLib" class="materials-subview-pane">
+          <!-- Métricas Rápidas dos Estudos -->
+          <div class="materials-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">📚</div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Meus Materiais</span>
+                <strong id="statTotalMaterials" style="font-size: 1.35rem; color: #0f172a; font-weight: 800;">0</strong>
+              </div>
+            </div>
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🗂️</div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Flashcards Ativos</span>
+                <strong id="statTotalFlashcards" style="font-size: 1.35rem; color: #db2777; font-weight: 800;">0</strong>
+              </div>
+            </div>
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🎯</div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Simulados Feitos</span>
+                <strong id="statTotalSimulados" style="font-size: 1.35rem; color: #059669; font-weight: 800;">0</strong>
+              </div>
+            </div>
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🧠</div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Mapas Mentais</span>
+                <strong id="statTotalMindmaps" style="font-size: 1.35rem; color: #d97706; font-weight: 800;">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Filtros & Busca -->
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="position: relative; flex: 1; min-width: 240px;">
+              <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
+              <input type="text" id="materialsSearchInput" placeholder="Buscar materiais por título, assunto ou matéria..." oninput="app.filterMaterialsList()" style="width: 100%; padding: 10px 14px 10px 38px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;">Disciplina:</span>
+              <select id="materialsSubjectFilter" onchange="app.filterMaterialsList()" style="padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.86rem; font-weight: 700; background: #fff; cursor: pointer; color: #0f172a;">
+                <option value="all">Todas as Disciplinas</option>
+                <option value="Matemática">Matemática</option>
+                <option value="Português">Língua Portuguesa</option>
+                <option value="Ciências">Ciências da Natureza</option>
+                <option value="História">História</option>
+                <option value="Geografia">Geografia</option>
+                <option value="Física">Física</option>
+                <option value="Química">Química</option>
+                <option value="Biologia">Biologia</option>
+                <option value="Inglês">Língua Inglesa</option>
+                <option value="Redação">Redação SAS</option>
+                <option value="Geral">Geral</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Grid de Cards de Materiais -->
+          <div id="materialsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;"></div>
+        </div>
+
+        <!-- SUBVIEW 2: CARTÕES DE MEMORIZAÇÃO (FLASHCARDS) -->
+        <div id="materialsSubviewFlashcards" class="materials-subview-pane" style="display: none;">
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="position: relative; flex: 1; min-width: 240px;">
+              <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
+              <input type="text" id="flashcardsSearchInput" placeholder="Buscar cartões por pergunta ou resposta..." oninput="app.renderFlashcardsView()" style="width: 100%; padding: 10px 14px 10px 38px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <select id="flashcardsSubjectFilter" onchange="app.renderFlashcardsView()" style="padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.86rem; font-weight: 700; background: #fff; cursor: pointer;">
+                <option value="all">Todas as Matérias</option>
+                <option value="Matemática">Matemática</option>
+                <option value="Ciências">Ciências</option>
+                <option value="Português">Português</option>
+                <option value="História">História</option>
+                <option value="Geografia">Geografia</option>
+                <option value="Física">Física</option>
+              </select>
+              <button type="button" class="btn-primary" onclick="app.openAddFlashcardModal()" style="padding: 10px 18px; font-weight: 800; font-size: 0.84rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="plus" style="width: 15px; height: 15px;"></i> Novo Cartão
+              </button>
+            </div>
+          </div>
+          <div id="flashcardsContainer" class="flashcards-grid"></div>
+        </div>
+
+        <!-- SUBVIEW 3: MINHAS ANOTAÇÕES -->
+        <div id="materialsSubviewNotes" class="materials-subview-pane" style="display: none;">
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="position: relative; flex: 1; min-width: 240px;">
+              <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
+              <input type="text" id="notesSearchInput" placeholder="Buscar em anotações pessoais..." oninput="app.renderNotesView()" style="width: 100%; padding: 10px 14px 10px 38px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; outline: none;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <select id="notesSubjectFilter" onchange="app.renderNotesView()" style="padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.86rem; font-weight: 700; background: #fff; cursor: pointer;">
+                <option value="all">Todas as Matérias</option>
+                <option value="Matemática">Matemática</option>
+                <option value="Ciências">Ciências</option>
+                <option value="Português">Português</option>
+                <option value="História">História</option>
+                <option value="Geografia">Geografia</option>
+                <option value="Física">Física</option>
+              </select>
+              <button type="button" class="btn-primary" onclick="app.openAddNoteModal()" style="padding: 10px 18px; font-weight: 800; font-size: 0.84rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="plus" style="width: 15px; height: 15px;"></i> Nova Anotação
+              </button>
+            </div>
+          </div>
+          <div id="notesContainer" class="notes-grid"></div>
+        </div>
+
+        <!-- SUBVIEW 4: MONTAR SIMULADO -->
+        <div id="materialsSubviewSimulados" class="materials-subview-pane" style="display: none;">
+          <div class="simulado-builder-card" id="simuladoBuilderBox">
+            <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">🎯 Montar Simulado Personalizado</h3>
+            <p style="margin: 0 0 20px; font-size: 0.88rem; color: #64748b;">Selecione os parâmetros desejados para montar seu conjunto de questões com gabarito comentado.</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+              <div>
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Disciplina *</label>
+                <select id="simBuilderSubject" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <option value="Ciências">🔬 Ciências da Natureza</option>
+                  <option value="Matemática">📐 Matemática</option>
+                  <option value="Português">✍️ Língua Portuguesa</option>
+                  <option value="História">🏛️ História</option>
+                  <option value="Geografia">🌍 Geografia</option>
+                  <option value="Física">⚡ Física</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Dificuldade</label>
+                <select id="simBuilderDifficulty" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <option value="facil">Conceitual / Fácil</option>
+                  <option value="medio" selected>Médio (Padrão Provas)</option>
+                  <option value="dificil">Desafio / Aprofundamento</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Quantidade de Questões</label>
+                <select id="simBuilderCount" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <option value="5" selected>5 Questões (Rápido - 10 min)</option>
+                  <option value="10">10 Questões (Padrão - 20 min)</option>
+                  <option value="15">15 Questões (Completo - 35 min)</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" class="btn-primary" onclick="app.startCustomSimulado()" style="background: linear-gradient(135deg, #4f46e5, #0284c7); padding: 12px 24px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
+              <i data-lucide="play" style="width: 16px; height: 16px;"></i> Iniciar Simulado Agora
             </button>
           </div>
+
+          <!-- Área Ativa de Execução do Simulado -->
+          <div id="simuladoActiveRunner" style="display: none;"></div>
         </div>
 
-        <!-- Métricas Rápidas dos Estudos -->
-        <div class="materials-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="width: 44px; height: 44px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">📚</div>
-            <div>
-              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Meus Materiais</span>
-              <strong id="statTotalMaterials" style="font-size: 1.35rem; color: #0f172a; font-weight: 800;">0</strong>
+        <!-- SUBVIEW 5: REVISÃO RÁPIDA -->
+        <div id="materialsSubviewReview" class="materials-subview-pane" style="display: none;">
+          <div class="simulado-builder-card">
+            <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">⚡ Revisão Rápida em Tópicos</h3>
+            <p style="margin: 0 0 18px; font-size: 0.88rem; color: #64748b;">Gere sínteses objetivas com 3 perguntas de auto-teste para fixar o essencial antes das provas.</p>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px;">
+              <select id="quickReviewSubject" style="padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff;">
+                <option value="Reino Vegetal e Plantas">🔬 Ciências: Reino Vegetal</option>
+                <option value="Leis de Newton e Força">⚡ Física: Leis de Newton</option>
+                <option value="Porcentagem e Proporção">📐 Matemática: Porcentagem e Frações</option>
+                <option value="Revolução Industrial">🏭 História: Revolução Industrial</option>
+                <option value="Regras de Crase">✍️ Português: Regras de Crase</option>
+              </select>
+              <button type="button" class="btn-primary" onclick="app.generateQuickReviewAction()" style="padding: 10px 20px; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i> Gerar Resumo & Perguntas
+              </button>
             </div>
-          </div>
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="width: 44px; height: 44px; border-radius: 12px; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🗂️</div>
-            <div>
-              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Flashcards Ativos</span>
-              <strong id="statTotalFlashcards" style="font-size: 1.35rem; color: #db2777; font-weight: 800;">0</strong>
-            </div>
-          </div>
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🎯</div>
-            <div>
-              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Simulados Feitos</span>
-              <strong id="statTotalSimulados" style="font-size: 1.35rem; color: #059669; font-weight: 800;">0</strong>
-            </div>
-          </div>
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-            <div style="width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🧠</div>
-            <div>
-              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Mapas Mentais</span>
-              <strong id="statTotalMindmaps" style="font-size: 1.35rem; color: #d97706; font-weight: 800;">0</strong>
-            </div>
+
+            <div id="quickReviewContentArea"></div>
           </div>
         </div>
 
-        <!-- Barra de Filtros & Busca -->
-        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
-          <div style="position: relative; flex: 1; min-width: 240px;">
-            <i data-lucide="search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8;"></i>
-            <input type="text" id="materialsSearchInput" placeholder="Buscar materiais por título, assunto ou matéria..." oninput="app.filterMaterialsList()" style="width: 100%; padding: 10px 14px 10px 38px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; outline: none;">
+        <!-- SUBVIEW 6: FAVORITOS & COLEÇÕES -->
+        <div id="materialsSubviewFavorites" class="materials-subview-pane" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap;">
+            <div>
+              <h3 style="margin: 0 0 4px; font-size: 1.2rem; font-weight: 800; color: #0f172a;">⭐ Meus Conteúdos Favoritos</h3>
+              <p style="margin: 0; font-size: 0.84rem; color: #64748b;">Respostas úteis da IA, materiais favoritados e resumos salvos na sua conta.</p>
+            </div>
+            <button type="button" class="btn-outline" onclick="app.openAddCollectionModal()" style="font-weight: 700; font-size: 0.82rem; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="folder-plus" style="width: 14px; height: 14px;"></i> Nova Coleção
+            </button>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;">Disciplina:</span>
-            <select id="materialsSubjectFilter" onchange="app.filterMaterialsList()" style="padding: 10px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.86rem; font-weight: 700; background: #fff; cursor: pointer; color: #0f172a;">
-              <option value="all">Todas as Disciplinas</option>
-              <option value="Matemática">Matemática</option>
-              <option value="Português">Língua Portuguesa</option>
-              <option value="Ciências">Ciências da Natureza</option>
-              <option value="História">História</option>
-              <option value="Geografia">Geografia</option>
-              <option value="Física">Física</option>
-              <option value="Química">Química</option>
-              <option value="Biologia">Biologia</option>
-              <option value="Inglês">Língua Inglesa</option>
-              <option value="Redação">Redação SAS</option>
-              <option value="Filosofia">Filosofia</option>
-              <option value="Arte">Arte</option>
-              <option value="Geral">Geral</option>
-            </select>
-          </div>
+          <div id="favoritesListContainer"></div>
         </div>
 
-        <!-- Grid de Cards de Materiais -->
-        <div id="materialsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
-          <!-- Renderizado dinamicamente por app.renderMaterialsLibrary() -->
-        </div>
       </section>
 
       <!-- ================= TAB: WORKSPACE CENTRAL INTEGRADO ================= -->
@@ -3421,5 +3606,160 @@
 
   <!-- Script Logic -->
   <script src="app.js?v=20261006_4"></script>
+
+  <!-- ================= MODAL: ADICIONAR / EDITAR FLASHCARD ================= -->
+  <div class="modal-overlay" id="addFlashcardModal">
+    <div class="modal-card" style="max-width: 540px; width: 95%;">
+      <button class="modal-close" onclick="app.closeModal('addFlashcardModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+          🗂️
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;" id="flashcardModalTitle">Novo Cartão de Memorização</h3>
+          <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Pergunta na frente e resposta no verso com sincronização em nuvem</p>
+        </div>
+      </div>
+
+      <form id="addFlashcardForm" onsubmit="app.handleSaveFlashcard(event)">
+        <input type="hidden" id="flashcardEditId" value="">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Disciplina *</label>
+          <select id="flashcardSubject" required style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff;">
+            <option value="Ciências">🔬 Ciências da Natureza</option>
+            <option value="Matemática">📐 Matemática</option>
+            <option value="Português">✍️ Língua Portuguesa</option>
+            <option value="História">🏛️ História</option>
+            <option value="Geografia">🌍 Geografia</option>
+            <option value="Física">⚡ Física</option>
+            <option value="Química">🧪 Química</option>
+            <option value="Geral">📚 Geral</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Frente (Pergunta ou Conceito) *</label>
+          <textarea id="flashcardFront" required rows="3" placeholder="Ex: O que diferencia as briófitas das pteridófitas?" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem;"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Verso (Resposta Explicada) *</label>
+          <textarea id="flashcardBack" required rows="3" placeholder="Ex: As pteridófitas possuem vasos condutores de seiva (xilema e floema), enquanto as briófitas são avasculares." style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addFlashcardModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 800;">Salvar Cartão</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADICIONAR / EDITAR ANOTAÇÃO ================= -->
+  <div class="modal-overlay" id="addNoteModal">
+    <div class="modal-card" style="max-width: 580px; width: 95%;">
+      <button class="modal-close" onclick="app.closeModal('addNoteModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <div style="width: 42px; height: 42px; border-radius: 12px; background: #fdf2f8; color: #db2777; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+          📝
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;" id="noteModalTitle">Nova Anotação Pessoal</h3>
+          <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Suas notas sincronizadas em tempo real entre celular e computador</p>
+        </div>
+      </div>
+
+      <form id="addNoteForm" onsubmit="app.handleSaveNote(event)">
+        <input type="hidden" id="noteEditId" value="">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Título da Anotação *</label>
+          <input type="text" id="noteTitle" required placeholder="Ex: Dicas da professora sobre Leis de Newton" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Disciplina *</label>
+          <select id="noteSubject" required style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff;">
+            <option value="Ciências">🔬 Ciências da Natureza</option>
+            <option value="Matemática">📐 Matemática</option>
+            <option value="Português">✍️ Língua Portuguesa</option>
+            <option value="História">🏛️ História</option>
+            <option value="Geografia">🌍 Geografia</option>
+            <option value="Física">⚡ Física</option>
+            <option value="Química">🧪 Química</option>
+            <option value="Geral">📚 Geral</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Conteúdo / Anotações de Aula *</label>
+          <textarea id="noteContent" required rows="5" placeholder="Escreva aqui suas ideias, resumos ou anotações..." style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem; line-height: 1.5;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addNoteModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 800;">Salvar Anotação</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CRIAR COLEÇÃO PERSONALIZADA ================= -->
+  <div class="modal-overlay" id="addCollectionModal">
+    <div class="modal-card" style="max-width: 480px; width: 95%;">
+      <button class="modal-close" onclick="app.closeModal('addCollectionModal')">&times;</button>
+      <h3 style="margin: 0 0 6px; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Nova Coleção</h3>
+      <p style="margin: 0 0 16px; font-size: 0.82rem; color: #64748b;">Agrupe flashcards, anotações e conteúdos por prova ou tema.</p>
+
+      <form id="addCollectionForm" onsubmit="app.handleSaveCollection(event)">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Nome da Coleção *</label>
+          <input type="text" id="collectionName" required placeholder="Ex: Prova Bimestral 1 SAS" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1;">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 6px;">Descrição (Opcional)</label>
+          <input type="text" id="collectionDesc" placeholder="Ex: Capítulos 1, 2 e 3 de Ciências e Matemática" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1;">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('addCollectionModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 800;">Criar Coleção</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PERSONALIZAR ATALHOS DO INÍCIO ================= -->
+  <div class="modal-overlay" id="customizeShortcutsModal">
+    <div class="modal-card" style="max-width: 580px; width: 95%;">
+      <button class="modal-close" onclick="app.closeModal('customizeShortcutsModal')">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+        <div style="width: 40px; height: 40px; border-radius: 12px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          ⚙️
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;">Personalizar Atalhos do Início</h3>
+          <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Escolha os 6 atalhos rápidos que você mais utiliza para fixar no seu Dashboard</p>
+        </div>
+      </div>
+
+      <div id="shortcutsOptionsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; max-height: 320px; overflow-y: auto;">
+        <!-- Preenchido dinamicamente -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;" id="shortcutsSelectedCountText">Selecionados: 6 de 6</span>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('customizeShortcutsModal')">Cancelar</button>
+          <button type="button" class="btn-primary" onclick="app.saveCustomShortcuts()" style="padding: 10px 20px; font-weight: 800;">Salvar Atalhos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FLOATING UNDO TOAST ================= -->
+  <div id="undoToast" class="undo-toast" style="display: none;">
+    <span id="undoToastMessage">Item excluído.</span>
+    <button type="button" class="undo-toast-btn" onclick="app.undoLastDeletedItem()">Desfazer</button>
+  </div>
+
 </body>
 </html>
