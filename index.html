@@ -16,6 +16,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
   <link rel="stylesheet" href="style.css?v=20261006_4">
 </head>
 <body>
@@ -385,61 +388,141 @@
         </div>
       </section>
 
-      <!-- ================= TAB: ESTUDE+ IA (MINIMALISTA & DIRETO) ================= -->
+      <!-- ================= TAB: ESTUDE+ IA (EXPERIÊNCIA COMPLETA NÍVEL CHATGPT) ================= -->
       <section id="tab-gemini-chat" class="tab-pane">
-        <div class="minimal-chat-wrapper">
+        <div class="chatgpt-layout-container" id="chatgptContainer">
           
-          <!-- Top Chat Header -->
-          <div class="minimal-chat-header">
-            <div class="minimal-chat-brand">
-              <div class="minimal-chat-icon">
-                <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
-              </div>
-              <div>
-                <h3 class="minimal-chat-title">ESTUDE+ IA</h3>
-                <span class="minimal-chat-status">✨ Conversa Natural & Respostas Diretas</span>
+          <!-- SIDEBAR RETRÁTIL DE HISTÓRICO DE CONVERSAS -->
+          <aside class="chatgpt-sidebar" id="chatgptSidebar">
+            <div class="chatgpt-sidebar-header">
+              <button type="button" class="chatgpt-btn-new-chat" onclick="app.startNewAiChat()" title="Iniciar nova conversa">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                <span>Nova conversa</span>
+              </button>
+              <button type="button" class="chatgpt-sidebar-close-mob" onclick="app.toggleChatgptSidebar()" title="Fechar menu">
+                <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+              </button>
+            </div>
+
+            <!-- Título da Seção de Conversas -->
+            <div class="chatgpt-sidebar-label">
+              <span>Conversas Salvas</span>
+              <button type="button" class="chatgpt-btn-refresh-threads" onclick="app.loadAiConversations()" title="Atualizar histórico">
+                <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i>
+              </button>
+            </div>
+
+            <!-- Lista de Conversas do Usuário (Isolamento por Conta) -->
+            <div class="chatgpt-threads-list" id="chatgptThreadsList">
+              <div class="chatgpt-thread-loading">
+                <i data-lucide="loader" style="width: 14px; height: 14px;" class="spin-icon"></i>
+                <span>Carregando conversas...</span>
               </div>
             </div>
+
+            <!-- Rodapé da Sidebar com Status e Limpeza -->
+            <div class="chatgpt-sidebar-footer">
+              <div class="chatgpt-model-info-pill">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #6366f1;"></i>
+                <span id="chatgptModelNameDisplay">Gemini 2.5 Flash</span>
+              </div>
+              <button type="button" class="chatgpt-btn-clear-history" onclick="app.clearAllAiConversations()" title="Limpar todas as conversas">
+                <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+                <span>Limpar histórico</span>
+              </button>
+            </div>
+          </aside>
+
+          <!-- ÁREA PRINCIPAL DA CONVERSA -->
+          <main class="chatgpt-main-view">
             
-            <div class="minimal-chat-actions">
-              <button type="button" class="btn-minimal-key" id="btnGeminiApiKey" onclick="app.configureGeminiApiKey()" title="Conectar Chave Google Gemini API (Opcional)">
-                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
-                <span id="geminiKeyStatusText">Google AI</span>
-              </button>
-              <button type="button" class="btn-minimal-clear" onclick="app.startNewChat()" title="Nova Conversa">
-                <i data-lucide="plus" style="width: 15px; height: 15px;"></i>
-                <span>Nova Conversa</span>
+            <!-- Barra Superior com Controles -->
+            <header class="chatgpt-topbar">
+              <div class="chatgpt-topbar-left">
+                <button type="button" class="chatgpt-btn-toggle-sidebar" onclick="app.toggleChatgptSidebar()" title="Alternar histórico de conversas">
+                  <i data-lucide="panel-left" style="width: 18px; height: 18px;"></i>
+                </button>
+                <div class="chatgpt-conversation-title-wrap">
+                  <h3 class="chatgpt-topbar-title" id="chatgptActiveChatTitle">Nova Conversa</h3>
+                  <span class="chatgpt-topbar-status-badge">
+                    <span class="status-pulse-dot"></span> IA Ativa • Multimodal
+                  </span>
+                </div>
+              </div>
+
+              <div class="chatgpt-topbar-right">
+                <button type="button" class="btn-topbar-new" onclick="app.startNewAiChat()" title="Nova Conversa">
+                  <i data-lucide="square-pen" style="width: 16px; height: 16px;"></i>
+                  <span class="hide-mobile">Nova Conversa</span>
+                </button>
+              </div>
+            </header>
+
+            <!-- Feed de Mensagens com Rolagem Suave -->
+            <div class="chatgpt-messages-stream" id="chatGptConversationStream">
+              <!-- Renderizado dinamicamente -->
+            </div>
+
+            <!-- Indicador Flutuante de Geração / Pensando -->
+            <div class="chatgpt-thinking-bar" id="chatgptThinkingBar" style="display: none;">
+              <div class="chatgpt-thinking-content">
+                <div class="typing-bouncing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span id="chatgptThinkingText">Pensando e raciocinando...</span>
+              </div>
+              <button type="button" class="chatgpt-btn-stop" onclick="app.abortAiGeneration()" title="Interromper geração">
+                <i data-lucide="square" style="width: 13px; height: 13px;"></i>
+                <span>Parar resposta</span>
               </button>
             </div>
-          </div>
 
-          <!-- Messages Feed -->
-          <div class="minimal-chat-feed" id="chatGptConversationStream">
-            <!-- Messages rendered dynamically -->
-          </div>
+            <!-- Área de Digitação & Entrada Multimodal Estilo ChatGPT -->
+            <footer class="chatgpt-bottom-dock">
+              <div class="chatgpt-dock-inner">
+                
+                <!-- Preview de Foto/Imagem Anexada -->
+                <div class="chatgpt-image-preview-card" id="chatImagePreviewCard" style="display: none;">
+                  <img id="chatImagePreviewImg" src="" alt="Foto anexada">
+                  <div class="chatgpt-img-meta">
+                    <strong id="chatImageName">foto.jpg</strong>
+                    <span id="chatImageSize">Pronto para análise visual da questão</span>
+                  </div>
+                  <button type="button" class="chatgpt-btn-remove-img" onclick="app.removeAttachedChatImage()" title="Remover imagem">&times;</button>
+                </div>
 
-          <!-- Input Bar at Bottom -->
-          <div class="minimal-chat-input-area">
-            <form onsubmit="app.handleChatGptSubmit(event)" class="minimal-chat-form">
-              <input 
-                type="text" 
-                id="chatGptInput" 
-                class="minimal-chat-input" 
-                placeholder="Pergunte qualquer coisa (ex: 2+2, capitais, fórmulas, história...)" 
-                autocomplete="off" 
-                required>
-              <button type="button" class="minimal-btn-voice" onclick="app.handleChatVoiceInput()" title="Falar por voz">
-                <i data-lucide="mic" style="width: 17px; height: 17px;"></i>
-              </button>
-              <button type="submit" class="minimal-btn-send" title="Enviar mensagem">
-                <i data-lucide="arrow-up" style="width: 17px; height: 17px;"></i>
-              </button>
-            </form>
-            <div class="minimal-chat-footnote">
-              ESTUDE+ IA &bull; Pergunte qualquer dúvida e receba a resposta direta
-            </div>
-          </div>
+                <!-- Formulário com Textarea Auto-expansível -->
+                <form class="chatgpt-input-form" onsubmit="app.handleChatGptSubmit(event)">
+                  <input type="file" id="chatImageFileInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display: none;" onchange="app.handleChatImageSelected(event)">
+                  
+                  <button type="button" class="chatgpt-btn-clip" onclick="document.getElementById('chatImageFileInput').click()" title="Anexar foto de questão, livro ou prova">
+                    <i data-lucide="paperclip" style="width: 18px; height: 18px;"></i>
+                  </button>
 
+                  <textarea
+                    id="chatGptInput"
+                    class="chatgpt-textarea"
+                    rows="1"
+                    placeholder="Pergunte qualquer coisa ou anexe uma foto de questão... (Shift+Enter para nova linha)"
+                    oninput="app.autoResizeChatInput(this)"
+                    onkeydown="app.handleChatInputKeydown(event)"></textarea>
+
+                  <button type="button" class="chatgpt-btn-voice" onclick="app.handleChatVoiceInput()" title="Ditado por voz">
+                    <i data-lucide="mic" style="width: 18px; height: 18px;"></i>
+                  </button>
+
+                  <button type="submit" class="chatgpt-btn-send" id="btnSendChat" title="Enviar mensagem (Enter)">
+                    <i data-lucide="arrow-up" style="width: 18px; height: 18px;"></i>
+                  </button>
+                </form>
+
+                <div class="chatgpt-footer-disclaimer">
+                  <span>O Estude+ IA utiliza inteligência artificial conectada aos servidores do Google Gemini. Verifique informações importantes.</span>
+                </div>
+              </div>
+            </footer>
+
+          </main>
         </div>
       </section>
 
@@ -1406,6 +1489,9 @@
         <button class="auth-tab-btn" id="tabAdminTrilhasBtn" onclick="app.switchAdminTab('trilhas')" style="white-space: nowrap; font-size: 0.8rem; padding: 8px 12px;">
           <i data-lucide="map" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Trilhas SAS
         </button>
+        <button class="auth-tab-btn" id="tabAdminAiConfigBtn" onclick="app.switchAdminTab('ai_config')" style="white-space: nowrap; font-size: 0.8rem; padding: 8px 12px;">
+          <i data-lucide="sparkles" style="width: 14px; height: 14px; display: inline; vertical-align: middle;"></i> Inteligência Artificial (IA)
+        </button>
       </div>
 
       <!-- TAB CONTENT CONTAINER (Scrollable) -->
@@ -1586,6 +1672,75 @@
               <!-- Renderizado dinamicamente -->
             </div>
           </div>
+        </div>
+
+        <!-- 9. CONFIGURAÇÃO DA INTELIGÊNCIA ARTIFICIAL (GOOGLE GEMINI) -->
+        <div id="adminAiConfigView" style="display: none;">
+          <div style="margin-bottom: 14px;">
+            <h4 style="margin: 0 0 2px; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Configuração Central da Inteligência Artificial</h4>
+            <p class="subtitle" style="margin: 0; font-size: 0.8rem; color: #64748b;">
+              Conecte o Estude+ diretamente ao Google Gemini para alimentar o assistente estilo ChatGPT com respostas inteligentes reais e visão computacional para fotos de questões.
+            </p>
+          </div>
+
+          <!-- Status Card -->
+          <div id="adminAiStatusCard" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <strong style="font-size: 0.92rem; color: #0f172a;">Status do Assistente IA:</strong>
+                    <span id="adminAiStatusBadge" style="background: #e2e8f0; color: #475569; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px;">Verificando...</span>
+                  </div>
+                  <span id="adminAiStatusDetail" style="font-size: 0.78rem; color: #64748b;">Carregando informações do servidor...</span>
+                </div>
+              </div>
+              <button type="button" class="btn-outline" onclick="app.testAiBackendConnection()" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 8px;">
+                <i data-lucide="zap" style="width: 13px; height: 13px;"></i> Testar Conexão Real
+              </button>
+            </div>
+          </div>
+
+          <!-- Form Card -->
+          <form onsubmit="app.handleSaveAdminAiConfig(event)" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+            <div style="margin-bottom: 14px;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                Chave de API do Google Gemini (API Key)
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <input type="password" id="adminAiApiKeyInput" class="form-input" placeholder="Cole aqui sua chave AIzaSy..." style="flex: 1; font-family: monospace; font-size: 0.85rem;">
+                <button type="button" class="btn-outline" onclick="app.toggleAdminAiKeyVisibility()" style="padding: 0 12px;" title="Mostrar/Ocultar">
+                  <i data-lucide="eye" id="adminAiKeyEyeIcon" style="width: 15px; height: 15px;"></i>
+                </button>
+              </div>
+              <p style="font-size: 0.74rem; color: #64748b; margin: 4px 0 0;">
+                Obtenha uma chave gratuita e sem cartão de crédito em <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" style="color: #4f46e5; text-decoration: underline;">aistudio.google.com</a>. A chave fica salva com segurança apenas no servidor.
+              </p>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                Modelo Principal do Google Gemini
+              </label>
+              <select id="adminAiModelSelect" class="form-select" style="width: 100%; font-size: 0.85rem; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recomendado • Ultra-rápido, raciocínio avançado & visão multimodal)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Alta disponibilidade & multimodal)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Geração de texto em alta velocidade)</option>
+              </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button type="button" class="btn-outline" onclick="app.handleClearAdminAiConfig()" style="font-size: 0.8rem; padding: 7px 14px; color: #dc2626; border-color: #fecdd3;">
+                Remover Chave
+              </button>
+              <button type="submit" class="btn-primary" style="background: #4f46e5; font-size: 0.82rem; padding: 8px 18px;">
+                <i data-lucide="check" style="width: 14px; height: 14px;"></i> Salvar Configuração de IA
+              </button>
+            </div>
+          </form>
         </div>
 
       </div>

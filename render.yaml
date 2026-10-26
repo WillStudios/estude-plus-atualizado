@@ -16,3 +16,5 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         value: adm@123
+      - key: GEMINI_API_KEY
+        sync: false

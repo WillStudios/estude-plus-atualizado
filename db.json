@@ -15,7 +15,7 @@
       "streak": 3,
       "bestStreak": 3,
       "createdAt": "2026-09-01T00:00:00.000Z",
-      "lastLogin": "2026-10-26T00:06:11.484Z",
+      "lastLogin": "2026-10-26T18:01:10.694Z",
       "passwordHash": "a84f1dd3c2b569383df69e72446ecf04ae0d667ca45de8a6bebd91f4ce5a357de7181b112c89ffb6367d3e801cb63c2509b2c97a7087441464dcea7dfb6772f9",
       "passwordSalt": "eaedb18c203d18af0d29e2162e62c8b9",
       "lastDeviceType": "Computador / Desktop",
@@ -1751,6 +1751,21 @@
   ],
   "sessions": [
     {
+      "sessionId": "sess_5a9dd1beb6923879d15f3f0784897f56",
+      "userId": "admin_freddie",
+      "userName": "Freddie Pimentel Costa",
+      "userRole": "admin",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T18:01:10.694Z",
+      "createdAt": "2026-10-26T18:01:10.694Z",
+      "lastHeartbeat": 1793037670695,
+      "expiresAt": 1795629670693,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
       "sessionId": "sess_614a5d1449c1715cbb9240f14b55fd43",
       "userId": "admin_freddie",
       "userName": "Freddie Pimentel Costa",
@@ -1870,5 +1885,6 @@
       "ip": "127.0.0.1",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
     }
-  ]
+  ],
+  "aiConversations": []
 }

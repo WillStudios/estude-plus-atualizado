@@ -4036,6 +4036,317 @@ const server = http.createServer((req, res) => {
   }
 
   /* ==========================================================================
+     SISTEMA DE CHATBOT IA PROFISSIONAL ESTUDE+ (NÍVEL CHATGPT / GEMINI)
+     ========================================================================== */
+
+  // 15a. POST /api/ai/chat - Processamento inteligente com Google Gemini (Texto + Imagem + Multi-turn)
+  if (req.method === 'POST' && pathname === '/api/ai/chat') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Acesso não autenticado. Faça login para usar o Assistente IA.' }, 401);
+    }
+
+    parseBody(async (data) => {
+      const message = (data?.message || '').trim();
+      const image = data?.image || null; // { data: base64, mimeType: 'image/jpeg' }
+      const history = Array.isArray(data?.history) ? data.history : [];
+
+      if (!message && !image) {
+        return sendJson({ error: 'Envie uma mensagem de texto ou uma imagem para o assistente.' }, 400);
+      }
+
+      const db = readDb();
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || db.aiConfig?.geminiApiKey || auth.user?.geminiApiKey;
+
+      if (!apiKey) {
+        return sendJson({
+          success: false,
+          error: 'no_api_key',
+          message: '🔑 **Chave do Google Gemini não configurada**\n\nO Assistente IA utiliza os modelos reais do Google Gemini para conversação natural, raciocínio avançado e análise de imagens.\n\nPara ativar o assistente:\n1. Acesse **[aistudio.google.com](https://aistudio.google.com)** e gere uma chave gratuita.\n2. Configure-a no **Painel do Administrador > IA** ou adicione a variável de ambiente `GEMINI_API_KEY` no servidor.',
+          needsConfig: true
+        }, 200);
+      }
+
+      // Monta histórico de mensagens no formato oficial do Gemini
+      const contents = [];
+
+      // Histórico contextual (últimas 12 mensagens para contexto perfeito sem estourar limites)
+      const recentHistory = history.slice(-12);
+      for (const h of recentHistory) {
+        const textContent = (h.text || h.content || '').trim();
+        if (!textContent) continue;
+        const role = (h.role === 'assistant' || h.role === 'model' || h.sender === 'bot') ? 'model' : 'user';
+        contents.push({
+          role,
+          parts: [{ text: textContent }]
+        });
+      }
+
+      // Turno atual do usuário com texto e/ou imagem
+      const userParts = [];
+      if (image && image.data) {
+        const cleanBase64 = String(image.data).replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
+        userParts.push({
+          inlineData: {
+            mimeType: image.mimeType || 'image/jpeg',
+            data: cleanBase64
+          }
+        });
+      }
+      userParts.push({
+        text: message || 'Por favor, analise a imagem enviada em detalhes e responda ao que for necessário.'
+      });
+      contents.push({
+        role: 'user',
+        parts: userParts
+      });
+
+      const SYSTEM_INSTRUCTION = `Você é o Assistente de Inteligência Artificial do Estude+, no nível do ChatGPT.
+Você é inteligente, acolhedor, didático, altamente ágil e versátil.
+
+DIRETRIZES DE ATUAÇÃO:
+1. CONVERSAÇÃO NATURAL E FLUIDA:
+   - Converse com naturalidade e simpatia, sem jargões robóticos ou respostas prontas.
+   - Entenda gírias, erros de digitação, abreviações (ex: "pq", "tb", "vc", "td bem") e linguagem informal.
+   - Interprete perguntas curtas considerando o histórico anterior da conversa.
+   - Adapte a profundidade: seja conciso e direto quando a pergunta for simples e detalhado quando for um assunto complexo.
+   - Pode conversar sobre qualquer assunto: matérias escolares, redações, tecnologia, programação, cultura, piadas, dicas de estudo ou curiosidades.
+
+2. RACIOCÍNIO, MATEMÁTICA E CIÊNCIAS:
+   - Ao resolver problemas de Matemática, Física ou Química, mostre a resolução passo a passo de forma clara e didática.
+   - Destaque o resultado final em negrito.
+   - Use notação matemática clara e organizada.
+
+3. PROGRAMAÇÃO E TECNOLOGIA:
+   - Escreva códigos limpos, funcionais e bem documentados (Python, JavaScript, HTML/CSS, etc.).
+   - Sempre coloque blocos de código com a linguagem especificada (ex: \`\`\`python).
+   - Explique brevemente a lógica implementada.
+
+4. ANÁLISE DE IMAGENS E MULTIMODAL:
+   - Se o usuário enviar uma imagem (foto de questão de prova, página de livro escolar, anotação ou diagrama), analise com alta precisão visual.
+   - Transcreva o enunciado ou identifique a pergunta e forneça a resolução completa e educativa.
+
+5. PRECISÃO E HONESTIDADE:
+   - Nunca invente informações. Se algo for incerto ou faltarem dados para responder, diga educadamente o que falta.
+
+6. FORMATAÇÃO RICA EM MARKDOWN:
+   - Use títulos (##, ###), negrito, listas com marcadores ou numeradas, tabelas em Markdown e blocos de código destacados.`;
+
+      const candidateModels = [
+        (db.aiConfig?.aiModel || 'gemini-2.5-flash'),
+        'gemini-1.5-flash',
+        'gemini-2.0-flash'
+      ];
+
+      let lastError = null;
+      let aiResponseText = null;
+      let usedModel = null;
+
+      for (const model of candidateModels) {
+        try {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 25000);
+
+          const geminiReq = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+                topP: 0.95
+              }
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+
+          if (geminiReq.ok) {
+            const geminiData = await geminiReq.json();
+            const textPart = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (textPart) {
+              aiResponseText = textPart;
+              usedModel = model;
+              break;
+            }
+          } else {
+            const errData = await geminiReq.json().catch(() => ({}));
+            lastError = errData?.error?.message || `Erro HTTP ${geminiReq.status}`;
+            console.warn(`[Gemini Model ${model} Warning]:`, lastError);
+            if (geminiReq.status === 400 && String(lastError).includes('API_KEY_INVALID')) {
+              break;
+            }
+          }
+        } catch (fetchErr) {
+          lastError = fetchErr.message;
+          console.warn(`[Gemini Model ${model} Exception]:`, fetchErr.message);
+        }
+      }
+
+      if (aiResponseText) {
+        return sendJson({
+          success: true,
+          text: aiResponseText,
+          model: usedModel,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      let userFriendlyMsg = 'Não foi possível obter resposta dos servidores de IA no momento. Tente novamente em alguns segundos.';
+      if (String(lastError).includes('API_KEY_INVALID') || String(lastError).includes('API key not valid')) {
+        userFriendlyMsg = '🔑 **Chave do Google Gemini Inválida ou Expirada**\n\nA chave configurada no servidor foi rejeitada pela Google. Verifique a chave no Painel do Administrador ou gere uma nova em [aistudio.google.com](https://aistudio.google.com).';
+      } else if (String(lastError).includes('RESOURCE_EXHAUSTED') || String(lastError).includes('quota') || String(lastError).includes('429')) {
+        userFriendlyMsg = '⏳ **Limite de requisições do Google atingido**\n\nMuitas requisições foram feitas recentemente. Aguarde 30 segundos e tente novamente.';
+      }
+
+      return sendJson({
+        success: false,
+        error: 'ai_service_error',
+        message: userFriendlyMsg,
+        details: lastError
+      }, 502);
+    });
+    return;
+  }
+
+  // 15b. GET /api/ai/conversations - Listar conversas do usuário autenticado (isolamento por conta)
+  if (req.method === 'GET' && pathname === '/api/ai/conversations') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+
+    const db = readDb();
+    const userConvs = (db.aiConversations || [])
+      .filter(c => String(c.userId) === String(auth.user.id))
+      .map(c => ({
+        id: c.id,
+        title: c.title || 'Nova Conversa',
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        messageCount: (c.messages || []).length
+      }))
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+
+    return sendJson({ success: true, conversations: userConvs });
+  }
+
+  // 15c. GET /api/ai/conversations/:id - Carregar conversa específica com suas mensagens
+  const convDetailMatch = pathname.match(/^\/api\/ai\/conversations\/([a-zA-Z0-9_\-]+)$/);
+  if (req.method === 'GET' && convDetailMatch) {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+
+    const convId = convDetailMatch[1];
+    const db = readDb();
+    const conv = (db.aiConversations || []).find(c => c.id === convId && String(c.userId) === String(auth.user.id));
+    if (!conv) {
+      return sendJson({ error: 'Conversa não encontrada ou acesso não autorizado.' }, 404);
+    }
+    return sendJson({ success: true, conversation: conv });
+  }
+
+  // 15d. POST /api/ai/conversations - Salvar/atualizar conversa e mensagens do usuário
+  if (req.method === 'POST' && pathname === '/api/ai/conversations') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+
+    parseBody((data) => {
+      const db = readDb();
+      if (!Array.isArray(db.aiConversations)) db.aiConversations = [];
+
+      const convId = data?.id || ('conv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6));
+      let title = (data?.title || 'Nova Conversa').trim().substring(0, 100);
+      const messages = Array.isArray(data?.messages) ? data.messages : [];
+
+      if (!data?.title && messages.length > 0) {
+        const firstUserMsg = messages.find(m => m.role === 'user' || m.sender === 'user');
+        if (firstUserMsg && (firstUserMsg.text || firstUserMsg.content)) {
+          title = String(firstUserMsg.text || firstUserMsg.content).trim().substring(0, 45);
+        }
+      }
+
+      const existingIdx = db.aiConversations.findIndex(c => c.id === convId && String(c.userId) === String(auth.user.id));
+      const convRecord = {
+        id: convId,
+        userId: auth.user.id,
+        title,
+        messages,
+        createdAt: existingIdx >= 0 ? db.aiConversations[existingIdx].createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingIdx >= 0) {
+        db.aiConversations[existingIdx] = convRecord;
+      } else {
+        db.aiConversations.unshift(convRecord);
+      }
+
+      writeDb(db);
+      return sendJson({ success: true, conversation: convRecord });
+    });
+    return;
+  }
+
+  // 15e. DELETE /api/ai/conversations/:id - Excluir conversa específica
+  if (req.method === 'DELETE' && convDetailMatch) {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) return sendJson({ error: 'Não autenticado' }, 401);
+
+    const convId = convDetailMatch[1];
+    const db = readDb();
+    const beforeLen = (db.aiConversations || []).length;
+    db.aiConversations = (db.aiConversations || []).filter(c => !(c.id === convId && String(c.userId) === String(auth.user.id)));
+
+    if (db.aiConversations.length !== beforeLen) {
+      writeDb(db);
+    }
+    return sendJson({ success: true, deletedId: convId });
+  }
+
+  // 15f. GET & POST /api/admin/ai/config - Configurações de IA pelo Administrador
+  if (pathname === '/api/admin/ai/config') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) return sendJson({ error: 'Acesso restrito ao administrador.' }, 403);
+
+    const db = readDb();
+    if (req.method === 'GET') {
+      const hasEnvKey = Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+      const hasDbKey = Boolean(db.aiConfig?.geminiApiKey);
+      return sendJson({
+        success: true,
+        isConfigured: hasEnvKey || hasDbKey,
+        source: hasEnvKey ? 'environment' : (hasDbKey ? 'database' : 'none'),
+        aiModel: db.aiConfig?.aiModel || 'gemini-2.5-flash',
+        keyPreview: (db.aiConfig?.geminiApiKey ? db.aiConfig.geminiApiKey.substring(0, 6) + '...' + db.aiConfig.geminiApiKey.slice(-4) : (hasEnvKey ? 'Configurada via Variável de Ambiente' : ''))
+      });
+    }
+
+    if (req.method === 'POST') {
+      parseBody((data) => {
+        const apiKey = (data?.geminiApiKey || '').trim();
+        const aiModel = (data?.aiModel || 'gemini-2.5-flash').trim();
+
+        db.aiConfig = db.aiConfig || {};
+        if (apiKey) {
+          db.aiConfig.geminiApiKey = apiKey;
+        } else if (data?.clearKey) {
+          delete db.aiConfig.geminiApiKey;
+        }
+        db.aiConfig.aiModel = aiModel;
+        db.aiConfig.updatedAt = new Date().toISOString();
+        writeDb(db);
+
+        logAudit('update_ai_config', auth.user.username || auth.user.name, { aiModel }, clientIp);
+        return sendJson({ success: true, message: 'Configurações do Assistente IA salvas com sucesso!' });
+      });
+      return;
+    }
+  }
+
+  /* ==========================================================================
      ARQUIVOS ESTÁTICOS COM CACHE SEGURO
      ========================================================================== */
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');

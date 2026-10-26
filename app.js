@@ -18825,8 +18825,13 @@ class EstudePlusApp {
       agenda_sync: { btn: 'tabAdminAgendaSyncBtn', view: 'adminAgendaSyncView' },
       notifications: { btn: 'tabAdminNotificationsBtn', view: 'adminNotificationsView' },
       system_health: { btn: 'tabAdminSystemHealthBtn', view: 'adminSystemHealthView' },
-      trilhas: { btn: 'tabAdminTrilhasBtn', view: 'adminTrilhasView' }
+      trilhas: { btn: 'tabAdminTrilhasBtn', view: 'adminTrilhasView' },
+      ai_config: { btn: 'tabAdminAiConfigBtn', view: 'adminAiConfigView' }
     };
+
+    if (tab === 'ai_config') {
+      this.loadAdminAiConfig();
+    }
 
     Object.keys(tabMap).forEach(key => {
       const cfg = tabMap[key];
@@ -21390,23 +21395,346 @@ startxref
     if (window.lucide) window.lucide.createIcons();
   }
 
-  startNewChat() {
+  /* ==========================================================================
+     SISTEMA DE CHATBOT IA PROFISSIONAL ESTUDE+ (NÍVEL CHATGPT / GEMINI)
+     ========================================================================== */
+
+  initChatGptUI() {
+    if (this._chatgptInitialized) return;
+    this._chatgptInitialized = true;
+
+    this.activeConversationId = null;
+    this.attachedChatImage = null;
+    this.aiAbortController = null;
+    if (!Array.isArray(this.chatGptMessages)) {
+      this.chatGptMessages = [];
+    }
+
+    // Listener para colar imagens diretamente no campo de texto (Ctrl+V)
+    const chatInput = document.getElementById('chatGptInput');
+    if (chatInput) {
+      chatInput.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData)?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              const file = items[i].getAsFile();
+              if (file) {
+                this.processChatImageFile(file);
+                e.preventDefault();
+                break;
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Suporte a arrastar e soltar (drag & drop) de imagens
+    const container = document.getElementById('chatgptContainer');
+    if (container) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        container.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          container.classList.add('chatgpt-dragover');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        container.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          container.classList.remove('chatgpt-dragover');
+        }, false);
+      });
+
+      container.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt?.files;
+        if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+          this.processChatImageFile(files[0]);
+        }
+      });
+    }
+
+    // Carrega a lista de conversas salvas no servidor
+    this.loadAiConversations();
+  }
+
+  /* Renderizador de Markdown e LaTeX / Fórmulas */
+  renderMarkdown(rawText) {
+    if (!rawText) return '';
+    let text = String(rawText);
+
+    // 1. Processa LaTeX math com KaTeX se disponível
+    if (window.katex && typeof window.katex.renderToString === 'function') {
+      try {
+        text = text.replace(/\$\$([\s\S]*?)\$\$/g, (m, tex) => {
+          try {
+            return window.katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false });
+          } catch (e) { return m; }
+        });
+        text = text.replace(/(?<!R)\$([^$\n]+?)\$/g, (m, tex) => {
+          try {
+            return window.katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false });
+          } catch (e) { return m; }
+        });
+      } catch (e) {}
+    }
+
+    // 2. Processa com Marked.js se disponível
+    if (window.marked && typeof window.marked.parse === 'function') {
+      try {
+        window.marked.setOptions({ breaks: true, gfm: true });
+        let html = window.marked.parse(text);
+
+        // Formata blocos de código com barra de copiar
+        html = html.replace(/<pre><code class="language-([a-zA-Z0-9_\-]+)">([\s\S]*?)<\/code><\/pre>/g, (m, lang, code) => {
+          return `
+            <div class="chatgpt-code-block">
+              <div class="chatgpt-code-header">
+                <span>${lang}</span>
+                <button type="button" class="chatgpt-btn-copy-code" onclick="app.copyCodeSnippet(this)">
+                  <i data-lucide="copy" style="width:12px;height:12px;"></i> Copiar código
+                </button>
+              </div>
+              <pre class="chatgpt-code-content"><code>${code}</code></pre>
+            </div>
+          `;
+        });
+
+        html = html.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/g, (m, code) => {
+          return `
+            <div class="chatgpt-code-block">
+              <div class="chatgpt-code-header">
+                <span>código</span>
+                <button type="button" class="chatgpt-btn-copy-code" onclick="app.copyCodeSnippet(this)">
+                  <i data-lucide="copy" style="width:12px;height:12px;"></i> Copiar código
+                </button>
+              </div>
+              <pre class="chatgpt-code-content"><code>${code}</code></pre>
+            </div>
+          `;
+        });
+
+        html = html.replace(/<table>/g, '<table class="chatgpt-table">');
+        return `<div class="chatgpt-markdown">${html}</div>`;
+      } catch (e) {
+        console.warn('Marked parse error, fallback:', e);
+      }
+    }
+
+    // 3. Fallback puro JS
+    return this.fallbackRenderMarkdown(text);
+  }
+
+  fallbackRenderMarkdown(text) {
+    if (!text) return '';
+    let out = String(text);
+
+    out = out.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Code blocks
+    out = out.replace(/\`\`\`([a-zA-Z0-9_\-]*)\n([\s\S]*?)\`\`\`/g, (m, lang, code) => {
+      const cleanLang = lang || 'código';
+      return `
+        <div class="chatgpt-code-block">
+          <div class="chatgpt-code-header">
+            <span>${cleanLang}</span>
+            <button type="button" class="chatgpt-btn-copy-code" onclick="app.copyCodeSnippet(this)">
+              <i data-lucide="copy" style="width:12px;height:12px;"></i> Copiar código
+            </button>
+          </div>
+          <pre class="chatgpt-code-content"><code>${code.trim()}</code></pre>
+        </div>
+      `;
+    });
+
+    // Inline code
+    out = out.replace(/\`([^\`\n]+)\`/g, '<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:0.86rem;color:#e11d48;">$1</code>');
+
+    // Headers
+    out = out.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    out = out.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    out = out.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+    // Bold & Italic
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Blockquote
+    out = out.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+    // Lists
+    out = out.replace(/^\s*[-*+] (.*$)/gim, '<li>$1</li>');
+    out = out.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
+
+    // Linebreaks
+    out = out.replace(/\n/g, '<br>');
+
+    return `<div class="chatgpt-markdown">${out}</div>`;
+  }
+
+  /* Gerenciamento de Conversas e Histórico */
+  async loadAiConversations() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+
+      const res = await fetch('/api/ai/conversations', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        this.userAiConversations = Array.isArray(data.conversations) ? data.conversations : [];
+        this.renderAiConversationsList();
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar conversas do assistente:', err);
+    }
+  }
+
+  renderAiConversationsList() {
+    const listEl = document.getElementById('chatgptThreadsList');
+    if (!listEl) return;
+
+    if (!this.userAiConversations || this.userAiConversations.length === 0) {
+      listEl.innerHTML = `
+        <div class="chatgpt-thread-empty">
+          <i data-lucide="message-square" style="width: 14px; height: 14px;"></i>
+          <span>Nenhuma conversa anterior</span>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    listEl.innerHTML = this.userAiConversations.map(c => {
+      const isActive = this.activeConversationId === c.id;
+      const safeTitle = (c.title || 'Conversa sem título').replace(/"/g, '&quot;');
+      return `
+        <div class="chatgpt-thread-item ${isActive ? 'active' : ''}" onclick="app.selectAiConversation('${c.id}')" title="${safeTitle}">
+          <i data-lucide="message-square" style="width: 13px; height: 13px; flex-shrink: 0; margin-right: 6px;"></i>
+          <span class="chatgpt-thread-title">${safeTitle}</span>
+          <button type="button" class="chatgpt-btn-del-thread" onclick="event.stopPropagation(); app.deleteAiConversation('${c.id}')" title="Excluir conversa">
+            <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async selectAiConversation(convId) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+
+      const res = await fetch(`/api/ai/conversations/${convId}`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.conversation) {
+          this.activeConversationId = data.conversation.id;
+          this.chatGptMessages = Array.isArray(data.conversation.messages) ? data.conversation.messages : [];
+          
+          const titleEl = document.getElementById('chatgptActiveChatTitle');
+          if (titleEl) titleEl.innerText = data.conversation.title || 'Conversa';
+
+          this.renderChatGptStream(this.chatGptMessages);
+          this.renderAiConversationsList();
+
+          const sidebar = document.getElementById('chatgptSidebar');
+          if (sidebar) sidebar.classList.remove('mobile-open');
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao abrir conversa:', err);
+    }
+  }
+
+  startNewAiChat() {
+    this.activeConversationId = null;
     this.chatGptMessages = [];
+    this.removeAttachedChatImage();
+
+    const titleEl = document.getElementById('chatgptActiveChatTitle');
+    if (titleEl) titleEl.innerText = 'Nova Conversa';
+
     this.renderChatGptStream(this.chatGptMessages);
-    const input = document.getElementById('chatGptInput') || document.getElementById('chatGptHeroInput');
+    this.renderAiConversationsList();
+
+    const input = document.getElementById('chatGptInput');
     if (input) {
       input.value = '';
       input.focus();
     }
+
+    const sidebar = document.getElementById('chatgptSidebar');
+    if (sidebar) sidebar.classList.remove('mobile-open');
   }
 
-  loadSavedChat(chatKey) {
-    if (this.chatGptState?.preloadedChats?.[chatKey]) {
-      this.chatGptMessages = [...this.chatGptState.preloadedChats[chatKey].messages];
-      this.renderChatGptStream(this.chatGptMessages);
+  startNewChat() {
+    this.startNewAiChat();
+  }
+
+  async deleteAiConversation(convId) {
+    if (!confirm('Deseja realmente apagar esta conversa permanentemente?')) return;
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+
+      await fetch(`/api/ai/conversations/${convId}`, { method: 'DELETE', headers });
+      if (this.activeConversationId === convId) {
+        this.startNewAiChat();
+      }
+      await this.loadAiConversations();
+    } catch (e) {
+      console.warn('Erro ao excluir conversa:', e);
     }
   }
 
+  async clearAllAiConversations() {
+    if (!confirm('Deseja limpar todo o seu histórico de conversas do assistente?')) return;
+    if (Array.isArray(this.userAiConversations)) {
+      for (const c of this.userAiConversations) {
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          const sessId = localStorage.getItem('estude_session_id');
+          if (sessId) {
+            headers['x-session-id'] = sessId;
+            headers['authorization'] = `Bearer ${sessId}`;
+          }
+          await fetch(`/api/ai/conversations/${c.id}`, { method: 'DELETE', headers });
+        } catch (e) {}
+      }
+    }
+    this.startNewAiChat();
+    await this.loadAiConversations();
+  }
+
+  toggleChatgptSidebar() {
+    const sidebar = document.getElementById('chatgptSidebar');
+    if (!sidebar) return;
+    if (window.innerWidth <= 768) {
+      sidebar.classList.toggle('mobile-open');
+    } else {
+      sidebar.classList.toggle('collapsed');
+    }
+  }
+
+  /* Renderização do Feed de Mensagens (Estilo ChatGPT) */
   renderChatGptStream(messages) {
     const stream = document.getElementById('chatGptConversationStream');
     if (!stream) return;
@@ -21418,55 +21746,58 @@ startxref
             <i data-lucide="lock" style="width: 28px; height: 28px;"></i>
           </div>
           <span style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.72rem; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px;">🔒 BLOQUEADO NO PLANO BASE</span>
-          <h2 style="font-size: 1.5rem; font-weight: 900; color: #0f172a; margin: 12px 0 8px;">Chatbot IA Super Inteligente</h2>
+          <h2 style="font-size: 1.5rem; font-weight: 900; color: #0f172a; margin: 12px 0 8px;">Assistente IA Nível ChatGPT</h2>
           <p style="color: #64748b; font-size: 0.88rem; line-height: 1.6; margin-bottom: 20px;">
-            No <strong>Plano Base</strong>, o Chatbot IA está <strong>bloqueado</strong>. Você pode ativar seus <strong>5 dias grátis de degustação</strong> para experimentar ou assinar o <strong>ESTUDE+ PRO</strong> (a partir de R$ 10,00/mês ou R$ 120,00/ano) para tirar dúvidas 24h por dia com cálculos passo a passo e respostas diretas!
+            O Assistente de Inteligência Artificial completo é um benefício exclusivo do <strong>Plano PRO</strong>. Ative seus <strong>5 dias de degustação gratuita</strong> para experimentar ou assine o plano oficial por apenas R$ 10,00/mês.
           </p>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 24px; text-align: left; font-size: 0.82rem; color: #334155; line-height: 1.7;">
-            <div>✨ <strong>Respostas Diretas:</strong> pergunte <em>2+2</em> e ele responde <em>4.</em></div>
-            <div>📐 <strong>Resolução Passo a Passo:</strong> equações de 1º grau, MMC, frações e fórmulas.</div>
-            <div>🔬 <strong>Grade 7º Ano SAS:</strong> máquinas simples, calor, feudalismo, termos da oração.</div>
-          </div>
           <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-primary" onclick="app.activate5DaysTrial()" style="background: linear-gradient(135deg, #9333ea, #4f46e5); padding: 12px 20px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(147, 51, 234, 0.25);">
+            <button class="btn-primary" onclick="app.activate5DaysTrial()" style="background: linear-gradient(135deg, #9333ea, #4f46e5); padding: 12px 20px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="zap"></i> Ativar 5 Dias Grátis
             </button>
-            <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #059669; padding: 12px 20px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);">
+            <button class="btn-primary" onclick="app.showModal('subscriptionModal')" style="background: #059669; padding: 12px 20px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
               <i data-lucide="crown"></i> Assinar PRO (R$ 10,00/mês)
             </button>
           </div>
         </div>
       `;
-      const inputArea = document.querySelector('.minimal-chat-input-area');
-      if (inputArea) inputArea.style.display = 'none';
+      const bottomDock = document.querySelector('.chatgpt-bottom-dock');
+      if (bottomDock) bottomDock.style.display = 'none';
       if (window.lucide) window.lucide.createIcons();
       return;
-    } else {
-      const inputArea = document.querySelector('.minimal-chat-input-area');
-      if (inputArea) inputArea.style.display = 'block';
-      const input = document.getElementById('chatGptInput');
-      if (input && input.disabled) {
-        input.disabled = false;
-        input.placeholder = 'Pergunte qualquer coisa (ex: 2+2, capitais, fórmulas, história...)';
-      }
     }
 
+    const bottomDock = document.querySelector('.chatgpt-bottom-dock');
+    if (bottomDock) bottomDock.style.display = 'block';
+
+    // Empty State com 4 Cartões de Sugestão
     if (!messages || messages.length === 0) {
+      const studentName = this.currentUser?.nickname || (this.currentUser?.name ? this.currentUser.name.split(' ')[0] : 'Estudante');
       stream.innerHTML = `
-        <div class="minimal-empty-view">
-          <div class="minimal-empty-icon">
-            <i data-lucide="sparkles" style="width: 26px; height: 26px;"></i>
+        <div class="chatgpt-empty-state">
+          <div class="chatgpt-empty-logo">
+            <i data-lucide="bot" style="width: 28px; height: 28px;"></i>
           </div>
-          <h2 class="minimal-empty-title">Como posso te ajudar hoje?</h2>
-          <p class="minimal-empty-subtitle">Respostas diretas e sem enrolação para qualquer matéria, cálculo ou conversa.</p>
-          <div class="minimal-chips-grid">
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('2+2')">📐 2+2</button>
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('Quanto é 15 x 8?')">✖️ 15 x 8</button>
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('Qual a 1ª Lei de Newton?')">⚡ 1ª Lei de Newton</button>
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('Quem descobriu o Brasil?')">🇧🇷 Quem descobriu o Brasil?</button>
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('Qual a capital da França?')">🌍 Capital da França</button>
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('Fórmula da água')">🧪 Fórmula da água</button>
-            <button type="button" class="minimal-chip-btn" onclick="app.sendGeminiTabPrompt('Me conta uma piada')">😂 Me conta uma piada</button>
+          <h2 class="chatgpt-empty-title">Olá, ${studentName}! Em que posso te ajudar hoje?</h2>
+          <p class="chatgpt-empty-desc">
+            Sou o seu assistente de inteligência artificial avançado. Tiro dúvidas, resolvo cálculos com passo a passo, ajudo com redações, leio fotos de questões e converso sobre qualquer assunto.
+          </p>
+          <div class="chatgpt-suggestions-grid">
+            <div class="chatgpt-suggestion-card" onclick="app.sendQuickSuggestion('Me explica a 1ª Lei de Newton com exemplos práticos do dia a dia')">
+              <span class="chatgpt-sug-title">📚 Explicar Matéria</span>
+              <span class="chatgpt-sug-text">"Me explica a 1ª Lei de Newton com exemplos práticos do dia a dia"</span>
+            </div>
+            <div class="chatgpt-suggestion-card" onclick="app.sendQuickSuggestion('Se uma calça custa 120 reais e tem 25% de desconto, quanto eu pago? Mostre o cálculo passo a passo')">
+              <span class="chatgpt-sug-title">📐 Resolver Problema</span>
+              <span class="chatgpt-sug-text">"Se uma calça custa R$ 120 e tem 25% de desconto, quanto eu pago?"</span>
+            </div>
+            <div class="chatgpt-suggestion-card" onclick="app.sendQuickSuggestion('Escreva uma função em Python para saber se uma palavra ou frase é palíndromo')">
+              <span class="chatgpt-sug-title">💻 Código & Lógica</span>
+              <span class="chatgpt-sug-text">"Escreva uma função em Python para saber se uma palavra é palíndromo"</span>
+            </div>
+            <div class="chatgpt-suggestion-card" onclick="document.getElementById('chatImageFileInput').click()">
+              <span class="chatgpt-sug-title">📷 Ler Questão de Prova</span>
+              <span class="chatgpt-sug-text">Clique aqui para anexar uma foto de questão da apostila SAS</span>
+            </div>
           </div>
         </div>
       `;
@@ -21474,23 +21805,45 @@ startxref
       return;
     }
 
+    const userAvatarText = (this.currentUser?.avatar && this.currentUser.avatar.length <= 3) ? this.currentUser.avatar : 'FP';
+    const userPhoto = (this.currentUser?.avatar && this.currentUser.avatar.length > 3) ? this.currentUser.avatar : null;
+
     stream.innerHTML = messages.map((m, idx) => {
-      if (m.sender === 'user') {
+      const isUser = (m.role === 'user' || m.sender === 'user');
+      if (isUser) {
+        const imageThumb = m.image ? `<img src="${m.image}" class="chatgpt-msg-image-thumb" onclick="app.openImageModal('${m.image}')" title="Clique para ampliar">` : '';
+        const userAvatarHtml = userPhoto
+          ? `<img src="${userPhoto}" class="chatgpt-avatar-circle" style="object-fit:cover;">`
+          : `<div class="chatgpt-avatar-circle">${userAvatarText}</div>`;
+
         return `
-          <div class="minimal-msg-row user">
-            <div class="minimal-user-bubble">
-              ${m.text}
+          <div class="chatgpt-msg-row user">
+            ${userAvatarHtml}
+            <div class="chatgpt-msg-content-box">
+              ${imageThumb}
+              <div class="chatgpt-msg-bubble">
+                ${(m.text || m.content || '').replace(/\n/g, '<br>')}
+              </div>
             </div>
           </div>
         `;
       } else {
+        const renderedHtml = this.renderMarkdown(m.text || m.content || '');
         return `
-          <div class="minimal-msg-row bot">
-            <div class="minimal-bot-avatar">
+          <div class="chatgpt-msg-row assistant">
+            <div class="chatgpt-avatar-circle">
               <i data-lucide="bot" style="width: 17px; height: 17px;"></i>
             </div>
-            <div class="minimal-bot-bubble">
-              ${m.text}
+            <div class="chatgpt-msg-content-box" style="flex:1;">
+              <div class="chatgpt-msg-bubble">
+                ${renderedHtml}
+              </div>
+              <div class="chatgpt-msg-actions-bar">
+                <button type="button" class="chatgpt-btn-copy-msg" onclick="app.copyAiMessage(this, ${idx})" title="Copiar resposta">
+                  <i data-lucide="copy" style="width: 13px; height: 13px;"></i>
+                  <span>Copiar</span>
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -21501,6 +21854,7 @@ startxref
     if (window.lucide) window.lucide.createIcons();
   }
 
+  /* Submissão e Chamada Segura ao Backend de IA */
   async handleChatGptSubmit(e) {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.isUserPro()) {
@@ -21509,204 +21863,449 @@ startxref
       this.showModal('subscriptionModal');
       return;
     }
+
     this.initChatGptUI();
 
-    const input = document.getElementById('chatGptInput') || document.getElementById('chatGptHeroInput') || document.getElementById('chatGptDockInput');
-    if (!input) return;
-    const text = input.value.trim();
-    if (!text) return;
-    input.value = '';
+    const input = document.getElementById('chatGptInput');
+    const text = input ? input.value.trim() : '';
+    const imagePayload = this.attachedChatImage;
 
-    if (!this.chatGptMessages) {
-      this.chatGptMessages = [];
+    if (!text && !imagePayload) return;
+
+    if (input) {
+      input.value = '';
+      this.autoResizeChatInput(input);
     }
 
-    // Append user message
-    this.chatGptMessages.push({ sender: 'user', text });
+    this.removeAttachedChatImage();
+
+    // 1. Adiciona mensagem do usuário ao stream
+    const userMsg = {
+      id: 'msg_' + Date.now(),
+      role: 'user',
+      text,
+      image: imagePayload ? imagePayload.dataUrl : null,
+      timestamp: new Date().toISOString()
+    };
+    this.chatGptMessages.push(userMsg);
     this.renderChatGptStream(this.chatGptMessages);
 
-    // 1. If Google Gemini API Key is configured and online, query official Google Gemini API
-    const geminiKey = localStorage.getItem('estude_gemini_api_key');
-    if (geminiKey && navigator.onLine) {
-      const pendingIdx = this.chatGptMessages.length;
-      this.chatGptMessages.push({
-        sender: 'bot',
-        text: '<em>✨ Consultando Google Gemini...</em>'
-      });
-      this.renderChatGptStream(this.chatGptMessages);
+    // 2. Exibe barra de pensando com texto apropriado
+    const thinkingBar = document.getElementById('chatgptThinkingBar');
+    const thinkingText = document.getElementById('chatgptThinkingText');
+    if (thinkingBar) thinkingBar.style.display = 'flex';
+    if (thinkingText) {
+      thinkingText.innerText = imagePayload ? '📷 Analisando imagem e preparando resposta...' : '✨ Pensando e raciocinando...';
+    }
 
-      const geminiResp = await this.askGeminiApi(text);
-      if (geminiResp) {
-        this.chatGptMessages[pendingIdx] = {
-          sender: 'bot',
-          text: geminiResp.replace(/\n/g, '<br>')
-        };
-        this.renderChatGptStream(this.chatGptMessages);
-        return;
-      } else {
-        // If API timed out or had error, remove pending bubble and fallback to built-in natural engine
-        this.chatGptMessages.splice(pendingIdx, 1);
+    const stream = document.getElementById('chatGptConversationStream');
+    if (stream) stream.scrollTop = stream.scrollHeight;
+
+    // 3. Prepara AbortController para cancelamento
+    this.aiAbortController = new AbortController();
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
       }
-    }
 
-    // 2. Instant Built-in Natural Generative Engine (100% natural, direct & works offline)
-    setTimeout(() => {
-      const botResponse = this.generateTutorResponse(text);
-      this.chatGptMessages.push({
-        sender: 'bot',
-        text: botResponse
+      const historyToSend = this.chatGptMessages.slice(0, -1).map(m => ({
+        role: m.role || (m.sender === 'user' ? 'user' : 'assistant'),
+        text: m.text || m.content || ''
+      }));
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: text,
+          history: historyToSend,
+          image: imagePayload ? { data: imagePayload.base64, mimeType: imagePayload.mimeType } : null,
+          conversationId: this.activeConversationId
+        }),
+        signal: this.aiAbortController.signal
       });
-      this.renderChatGptStream(this.chatGptMessages);
-    }, 120);
-  }
 
-  toggleThinkingMode() {
-    this.initChatGptUI();
-    this.chatGptState.isThinkingMode = !this.chatGptState.isThinkingMode;
+      const data = await res.json().catch(() => ({}));
 
-    const btn1 = document.getElementById('chatGptPensarBtn');
-    const btn2 = document.getElementById('chatGptPensarBtnDock');
+      if (thinkingBar) thinkingBar.style.display = 'none';
 
-    [btn1, btn2].forEach(btn => {
-      if (btn) btn.classList.toggle('active', this.chatGptState.isThinkingMode);
-    });
+      if (res.ok && data.success && data.text) {
+        const botMsg = {
+          id: 'msg_' + Date.now(),
+          role: 'assistant',
+          text: data.text,
+          model: data.model || 'gemini-2.5-flash',
+          timestamp: new Date().toISOString()
+        };
+        this.chatGptMessages.push(botMsg);
+        this.renderChatGptStream(this.chatGptMessages);
 
-    if (this.chatGptState.isThinkingMode) {
-      alert('🧠 Modo Pensar Ativado!\n\nO modelo utilizará raciocínio profundo passo a passo em todas as respostas.');
+        if (!this.activeConversationId && text) {
+          const titleEl = document.getElementById('chatgptActiveChatTitle');
+          if (titleEl) titleEl.innerText = text.substring(0, 36) + (text.length > 36 ? '...' : '');
+        }
+
+        await this.autoSaveCurrentConversation();
+      } else {
+        const errorMsg = data.message || 'Não foi possível obter resposta do modelo de IA no momento. Verifique sua conexão e tente novamente.';
+        this.chatGptMessages.push({
+          id: 'msg_err_' + Date.now(),
+          role: 'assistant',
+          text: errorMsg,
+          timestamp: new Date().toISOString()
+        });
+        this.renderChatGptStream(this.chatGptMessages);
+      }
+    } catch (err) {
+      if (thinkingBar) thinkingBar.style.display = 'none';
+      if (err.name === 'AbortError') {
+        this.chatGptMessages.push({
+          id: 'msg_abort_' + Date.now(),
+          role: 'assistant',
+          text: '*Resposta interrompida pelo usuário.*',
+          timestamp: new Date().toISOString()
+        });
+        this.renderChatGptStream(this.chatGptMessages);
+      } else {
+        console.error('AI Request Error:', err);
+        this.chatGptMessages.push({
+          id: 'msg_net_err_' + Date.now(),
+          role: 'assistant',
+          text: '⚠️ **Falha na conexão com o servidor de IA**\n\nNão foi possível alcançar o serviço de processamento. Tente novamente em alguns instantes.',
+          timestamp: new Date().toISOString()
+        });
+        this.renderChatGptStream(this.chatGptMessages);
+      }
+    } finally {
+      this.aiAbortController = null;
     }
   }
 
-  sendChatQuickAction(actionType) {
-    if (!this.isUserPro()) {
-      alert('🔒 Recurso Bloqueado no Plano Base!\n\nO Chatbot IA é exclusivo para assinantes do Plano PRO.');
-      this.switchTab('plans-pricing');
-      this.showModal('subscriptionModal');
+  abortAiGeneration() {
+    if (this.aiAbortController) {
+      this.aiAbortController.abort();
+    }
+    const thinkingBar = document.getElementById('chatgptThinkingBar');
+    if (thinkingBar) thinkingBar.style.display = 'none';
+  }
+
+  async autoSaveCurrentConversation() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+
+      const res = await fetch('/api/ai/conversations', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          id: this.activeConversationId,
+          messages: this.chatGptMessages
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.conversation) {
+          this.activeConversationId = data.conversation.id;
+          await this.loadAiConversations();
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao salvar conversa automaticamente:', e);
+    }
+  }
+
+  /* Manipulação de Imagens e Fotografias */
+  handleChatImageSelected(e) {
+    const file = e.target?.files?.[0];
+    if (file) {
+      this.processChatImageFile(file);
+    }
+    e.target.value = '';
+  }
+
+  processChatImageFile(file) {
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem válido (JPG, PNG, WebP).');
       return;
     }
-    this.initChatGptUI();
-    if (actionType === 'imagem') {
-      const heroInput = document.getElementById('chatGptHeroInput') || document.getElementById('chatGptDockInput');
-      if (heroInput) {
-        heroInput.value = 'Gere uma imagem hiper-realista de um astronauta explorando ruínas maias no espaço';
-        this.handleChatGptSubmit({ preventDefault: () => {} });
-      }
-    } else if (actionType === 'escrever') {
-      const heroInput = document.getElementById('chatGptHeroInput') || document.getElementById('chatGptDockInput');
-      if (heroInput) {
-        heroInput.value = 'Escreva um texto argumentativo impecável sobre o impacto da inteligência artificial na educação moderna';
-        this.handleChatGptSubmit({ preventDefault: () => {} });
-      }
-    } else if (actionType === 'pesquisar') {
-      const heroInput = document.getElementById('chatGptHeroInput') || document.getElementById('chatGptDockInput');
-      if (heroInput) {
-        heroInput.value = 'Pesquise na web as últimas notícias científicas sobre a exploração espacial em 2026';
-        this.handleChatGptSubmit({ preventDefault: () => {} });
-      }
-    } else {
-      alert(`📌 Módulo "${actionType.toUpperCase()}" selecionado!\n\nDisponível com integração direta no ecossistema.`);
-    }
-  }
 
-  toggleChatSidebar() {
-    const sidebar = document.getElementById('chatGptSidebar');
-    if (!sidebar) return;
-    if (window.innerWidth <= 900) {
-      sidebar.classList.toggle('mobile-open');
-    } else {
-      sidebar.classList.toggle('collapsed');
-    }
-  }
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1400;
+        let width = img.width;
+        let height = img.height;
 
-  focusChatSearch() {
-    const query = prompt('🔍 Buscar em todas as conversas anteriores:');
-    if (query) {
-      alert(`Buscando por "${query}" no histórico do ChatGPT...`);
-    }
-  }
-
-  handleChatVoiceInput() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'pt-BR';
-      recognition.interimResults = false;
-      recognition.onstart = () => {
-        alert('🎙️ Ouvindo... Pode falar a sua pergunta agora!');
-      };
-      recognition.onresult = (event) => {
-        const speechText = event.results[0][0].transcript;
-        const input = document.getElementById('chatGptInput') || document.getElementById('chatGptHeroInput') || document.getElementById('chatGptDockInput');
-        if (input) {
-          input.value = speechText;
-          this.handleChatGptSubmit({ preventDefault: () => {} });
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
-      };
-      recognition.onerror = () => {
-        alert('Microfone indisponível ou permissão não concedida no navegador.');
-      };
-      recognition.start();
-    } else {
-      alert('🎙️ A entrada de voz por microfone está disponível nos navegadores Chrome, Edge e no app instalado!');
-    }
-  }
 
-  handleChatAttachment() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,.pdf,.doc,.docx,.txt';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        alert(`📎 Arquivo "${file.name}" anexado com sucesso!\n\nO ChatGPT analisará o conteúdo junto com a sua mensagem.`);
-        const heroInput = document.getElementById('chatGptHeroInput') || document.getElementById('chatGptDockInput');
-        if (heroInput && !heroInput.value) {
-          heroInput.value = `[Arquivo Anexo: ${file.name}] Analise este material para mim: `;
-          heroInput.focus();
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+        const base64Data = compressedDataUrl.split(',')[1];
+
+        this.attachedChatImage = {
+          dataUrl: compressedDataUrl,
+          base64: base64Data,
+          mimeType: 'image/jpeg',
+          name: file.name,
+          size: Math.round(file.size / 1024) + ' KB'
+        };
+
+        const previewCard = document.getElementById('chatImagePreviewCard');
+        const previewImg = document.getElementById('chatImagePreviewImg');
+        const nameEl = document.getElementById('chatImageName');
+        const sizeEl = document.getElementById('chatImageSize');
+
+        if (previewCard && previewImg) {
+          previewImg.src = compressedDataUrl;
+          if (nameEl) nameEl.innerText = file.name;
+          if (sizeEl) sizeEl.innerText = `${this.attachedChatImage.size} • Pronta para análise visual`;
+          previewCard.style.display = 'flex';
         }
-      }
+
+        document.getElementById('chatGptInput')?.focus();
+      };
+      img.src = loadEvt.target.result;
     };
-    input.click();
+    reader.readAsDataURL(file);
   }
 
-  setChatGptMode(mode) {
-    this.initChatGptUI();
-    this.chatGptState.currentMode = mode;
-    const tabChat = document.getElementById('chatGptTabChat');
-    const tabWork = document.getElementById('chatGptTabWork');
-    if (tabChat && tabWork) {
-      tabChat.classList.toggle('active', mode === 'chat');
-      tabWork.classList.toggle('active', mode === 'work');
-    }
-    if (mode === 'work') {
-      alert('💼 Modo + Work Ativado!\n\nEspaço colaborativo para criar documentos, códigos e projetos passo a passo.');
+  removeAttachedChatImage() {
+    this.attachedChatImage = null;
+    const previewCard = document.getElementById('chatImagePreviewCard');
+    if (previewCard) previewCard.style.display = 'none';
+  }
+
+  autoResizeChatInput(textarea) {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 160);
+    textarea.style.height = newHeight + 'px';
+  }
+
+  handleChatInputKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      this.handleChatGptSubmit(e);
     }
   }
 
-  copyChatText(msgIndex) {
-    if (!this.chatGptState.activeChatKey) return;
-    const cur = this.chatGptState.preloadedChats[this.chatGptState.activeChatKey] || this.chatGptState.customConversations[this.chatGptState.activeChatKey];
-    if (cur && cur.messages[msgIndex]) {
-      const cleanText = cur.messages[msgIndex].text.replace(/<[^>]*>?/gm, '');
-      navigator.clipboard.writeText(cleanText).then(() => {
-        alert('📋 Resposta copiada com sucesso para a área de transferência!');
+  copyAiMessage(btn, idx) {
+    if (this.chatGptMessages && this.chatGptMessages[idx]) {
+      const msg = this.chatGptMessages[idx];
+      const textToCopy = msg.text || msg.content || '';
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px;color:#10b981;"></i> <span style="color:#10b981;">Copiado!</span>';
+        if (window.lucide) window.lucide.createIcons();
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          if (window.lucide) window.lucide.createIcons();
+        }, 2000);
       }).catch(() => {});
     }
   }
 
-  regenerateLastResponse() {
-    if (!this.chatGptState.activeChatKey) return;
-    const cur = this.chatGptState.preloadedChats[this.chatGptState.activeChatKey] || this.chatGptState.customConversations[this.chatGptState.activeChatKey];
-    if (cur && cur.messages.length >= 2) {
-      const lastUserMsg = [...cur.messages].reverse().find(m => m.sender === 'user');
-      if (lastUserMsg) {
-        const newResponse = this.generateTutorResponse(lastUserMsg.text + ' (gerar outra versão)');
-        cur.messages.push({
-          sender: 'bot',
-          text: newResponse
-        });
-        this.renderChatGptStream(cur.messages);
+  copyCodeSnippet(btn) {
+    const codeBlock = btn.closest('.chatgpt-code-block');
+    if (codeBlock) {
+      const codeEl = codeBlock.querySelector('code');
+      if (codeEl) {
+        const text = codeEl.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;color:#10b981;"></i> Copiado!';
+          if (window.lucide) window.lucide.createIcons();
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            if (window.lucide) window.lucide.createIcons();
+          }, 2000);
+        }).catch(() => {});
       }
     }
+  }
+
+  sendQuickSuggestion(promptText) {
+    const input = document.getElementById('chatGptInput');
+    if (input) {
+      input.value = promptText;
+      this.handleChatGptSubmit({ preventDefault: () => {} });
+    }
+  }
+
+  /* Painel Administrativo de IA */
+  async loadAdminAiConfig() {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/ai/config', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const badge = document.getElementById('adminAiStatusBadge');
+        const detail = document.getElementById('adminAiStatusDetail');
+        const modelSelect = document.getElementById('adminAiModelSelect');
+
+        if (badge) {
+          if (data.isConfigured) {
+            badge.innerText = 'Ativo • ' + (data.source === 'environment' ? 'Variável de Ambiente' : 'Chave Salva');
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#15803d';
+          } else {
+            badge.innerText = 'Pendente de Chave';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#b91c1c';
+          }
+        }
+
+        if (detail) {
+          detail.innerText = data.isConfigured
+            ? `Modelo padrão: ${data.aiModel || 'gemini-2.5-flash'} (${data.keyPreview || 'Ativa'})`
+            : 'Nenhuma chave de API configurada. O assistente requer uma chave para funcionar.';
+        }
+
+        if (modelSelect && data.aiModel) {
+          modelSelect.value = data.aiModel;
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar configurações de IA do admin:', err);
+    }
+  }
+
+  async handleSaveAdminAiConfig(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const apiKey = document.getElementById('adminAiApiKeyInput')?.value.trim();
+    const aiModel = document.getElementById('adminAiModelSelect')?.value || 'gemini-2.5-flash';
+
+    if (!apiKey) {
+      alert('Por favor, informe a chave de API do Google Gemini.');
+      return;
+    }
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/ai/config', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ geminiApiKey: apiKey, aiModel })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('✔ Chave de API e modelo salvos com sucesso no servidor!');
+        document.getElementById('adminAiApiKeyInput').value = '';
+        await this.loadAdminAiConfig();
+      } else {
+        alert('❌ Erro ao salvar: ' + (data.error || 'Erro no servidor.'));
+      }
+    } catch (err) {
+      alert('❌ Erro de conexão com o servidor.');
+    }
+  }
+
+  async handleClearAdminAiConfig() {
+    if (!confirm('Deseja realmente remover a chave de API do Google Gemini do servidor?')) return;
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/admin/ai/config', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ clearKey: true })
+      });
+
+      if (res.ok) {
+        alert('✔ Chave de API removida do banco de dados.');
+        await this.loadAdminAiConfig();
+      }
+    } catch (err) {
+      alert('❌ Erro ao remover chave.');
+    }
+  }
+
+  async testAiBackendConnection() {
+    alert('⏳ Testando conexão direta com a API do Google Gemini através do backend...');
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = `Bearer ${sessId}`;
+      }
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: 'Diga apenas: Conexão bem-sucedida com Google Gemini!',
+          history: []
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`✨ Teste Bem-Sucedido!\n\nResposta do Modelo (${data.model}):\n"${data.text.trim()}"`);
+      } else {
+        alert(`⚠️ Resposta da API:\n\n${data.message || data.error || 'Falha na conexão.'}`);
+      }
+    } catch (err) {
+      alert('❌ Erro de conexão com o servidor.');
+    }
+  }
+
+  toggleAdminAiKeyVisibility() {
+    const input = document.getElementById('adminAiApiKeyInput');
+    const eye = document.getElementById('adminAiKeyEyeIcon');
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (eye) eye.setAttribute('data-lucide', 'eye-off');
+    } else {
+      input.type = 'password';
+      if (eye) eye.setAttribute('data-lucide', 'eye');
+    }
+    if (window.lucide) window.lucide.createIcons();
   }
 
   sendGeminiTabPrompt(promptText) {
