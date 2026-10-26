@@ -14,7 +14,7 @@ if (fs.existsSync(envPath)) {
       const eqIdx = trimmed.indexOf('=');
       if (eqIdx !== -1) {
         const key = trimmed.substring(0, eqIdx).trim();
-        const val = trimmed.substring(eqIdx + 1).trim();
+        const val = trimmed.substring(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
         if (!process.env[key]) {
           process.env[key] = val;
         }
@@ -492,6 +492,9 @@ function calculatePresence(lastHeartbeat, loginTime) {
 }
 
 function validateAdmin(req) {
+  const adminHeader = req.headers['x-admin-token'];
+  if (adminHeader && adminTokens.has(adminHeader)) return true;
+
   const cookies = parseCookies(req);
   const cookieSessionId = cookies['estude_session'];
   const authHeader = req.headers['authorization'] || '';
@@ -4039,9 +4042,31 @@ const server = http.createServer((req, res) => {
      SISTEMA DE CHATBOT IA PROFISSIONAL ESTUDE+ (NÍVEL CHATGPT / GEMINI)
      ========================================================================== */
 
+  // 15a-0. GET /api/ai/status - Status público e seguro de configuração da IA (sem expor credenciais)
+  if (req.method === 'GET' && pathname === '/api/ai/status') {
+    const db = readDb();
+    const hasEnvKey = Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+    const hasDbKey = Boolean(db.aiConfig?.geminiApiKey);
+    return sendJson({
+      success: true,
+      configured: hasEnvKey || hasDbKey,
+      model: db.aiConfig?.aiModel || 'gemini-2.5-flash',
+      source: hasEnvKey ? 'environment' : (hasDbKey ? 'database' : 'none'),
+      activeModels: [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.5-flash-lite'
+      ]
+    });
+  }
+
   // 15a. POST /api/ai/chat - Processamento inteligente com Google Gemini (Texto + Imagem + Multi-turn)
   if (req.method === 'POST' && pathname === '/api/ai/chat') {
-    const auth = getAuthUser(req);
+    let auth = getAuthUser(req);
+    if (!auth && validateAdmin(req)) {
+      auth = { user: { id: 'admin', name: 'Administrador Freddie', role: 'admin' } };
+    }
     if (!auth || !auth.user) {
       return sendJson({ error: 'Acesso não autenticado. Faça login para usar o Assistente IA.' }, 401);
     }
@@ -4056,7 +4081,8 @@ const server = http.createServer((req, res) => {
       }
 
       const db = readDb();
-      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || db.aiConfig?.geminiApiKey || auth.user?.geminiApiKey;
+      const clientHeaderKey = (req.headers['x-gemini-key'] || data?.apiKey || '').trim();
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || db.aiConfig?.geminiApiKey || auth.user?.geminiApiKey || clientHeaderKey;
 
       if (!apiKey) {
         return sendJson({
@@ -4065,6 +4091,14 @@ const server = http.createServer((req, res) => {
           message: '🔑 **Chave do Google Gemini não configurada**\n\nO Assistente IA utiliza os modelos reais do Google Gemini para conversação natural, raciocínio avançado e análise de imagens.\n\nPara ativar o assistente:\n1. Acesse **[aistudio.google.com](https://aistudio.google.com)** e gere uma chave gratuita.\n2. Configure-a no **Painel do Administrador > IA** ou adicione a variável de ambiente `GEMINI_API_KEY` no servidor.',
           needsConfig: true
         }, 200);
+      }
+
+      // Se a chave válida veio do cliente e ainda não estava salva no banco, salva automaticamente
+      if (clientHeaderKey && clientHeaderKey.startsWith('AIzaSy') && !db.aiConfig?.geminiApiKey && auth.user?.role === 'admin') {
+        db.aiConfig = db.aiConfig || {};
+        db.aiConfig.geminiApiKey = clientHeaderKey;
+        db.aiConfig.updatedAt = new Date().toISOString();
+        writeDb(db);
       }
 
       // Monta histórico de mensagens no formato oficial do Gemini
@@ -4134,15 +4168,18 @@ DIRETRIZES DE ATUAÇÃO:
 
       const candidateModels = [
         (db.aiConfig?.aiModel || 'gemini-2.5-flash'),
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
         'gemini-1.5-flash',
-        'gemini-2.0-flash'
+        'gemini-2.5-flash-lite'
       ];
+      const uniqueModels = [...new Set(candidateModels)];
 
       let lastError = null;
       let aiResponseText = null;
       let usedModel = null;
 
-      for (const model of candidateModels) {
+      for (const model of uniqueModels) {
         try {
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
           const controller = new AbortController();
@@ -4166,11 +4203,18 @@ DIRETRIZES DE ATUAÇÃO:
 
           if (geminiReq.ok) {
             const geminiData = await geminiReq.json();
-            const textPart = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textPart) {
-              aiResponseText = textPart;
-              usedModel = model;
+            const candidate = geminiData.candidates?.[0];
+            if (candidate?.finishReason === 'SAFETY') {
+              lastError = 'A resposta foi bloqueada pelos filtros de segurança do Google Gemini.';
               break;
+            }
+            if (candidate?.content?.parts && Array.isArray(candidate.content.parts)) {
+              const fullText = candidate.content.parts.map(p => p.text || '').filter(Boolean).join('\n\n');
+              if (fullText) {
+                aiResponseText = fullText;
+                usedModel = model;
+                break;
+              }
             }
           } else {
             const errData = await geminiReq.json().catch(() => ({}));
@@ -4199,7 +4243,9 @@ DIRETRIZES DE ATUAÇÃO:
       if (String(lastError).includes('API_KEY_INVALID') || String(lastError).includes('API key not valid')) {
         userFriendlyMsg = '🔑 **Chave do Google Gemini Inválida ou Expirada**\n\nA chave configurada no servidor foi rejeitada pela Google. Verifique a chave no Painel do Administrador ou gere uma nova em [aistudio.google.com](https://aistudio.google.com).';
       } else if (String(lastError).includes('RESOURCE_EXHAUSTED') || String(lastError).includes('quota') || String(lastError).includes('429')) {
-        userFriendlyMsg = '⏳ **Limite de requisições do Google atingido**\n\nMuitas requisições foram feitas recentemente. Aguarde 30 segundos e tente novamente.';
+        userFriendlyMsg = '⏳ **Limite de requisições do Google atingido**\n\nMuitas requisições foram feitas recentemente aos servidores gratuitos do Google Gemini. Aguarde 30 segundos e tente novamente.';
+      } else if (String(lastError).includes('filtros de segurança')) {
+        userFriendlyMsg = '🛡️ **Conteúdo bloqueado por segurança**\n\nA resposta foi contida pelos filtros éticos de segurança do Google Gemini. Reformule sua pergunta de forma diferente.';
       }
 
       return sendJson({

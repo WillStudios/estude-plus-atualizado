@@ -18860,6 +18860,7 @@ class EstudePlusApp {
     else if (tab === 'notifications') this.renderAdminNotificationsList();
     else if (tab === 'system_health') this.renderAdminSystemHealth();
     else if (tab === 'trilhas') this.renderAdminTrilhas();
+    else if (tab === 'ai_config') this.loadAdminAiConfig();
   }
 
   renderAdminPlanRequestsList() {
@@ -21828,7 +21829,49 @@ startxref
           </div>
         `;
       } else {
-        const renderedHtml = this.renderMarkdown(m.text || m.content || '');
+        const text = m.text || m.content || '';
+        const isKeyMissing = text.includes('Chave do Google Gemini não configurada') || text.includes('no_api_key');
+        const isKeyInvalid = text.includes('Chave do Google Gemini Inválida') || text.includes('API_KEY_INVALID');
+
+        let specialCardHtml = '';
+        if (isKeyMissing) {
+          specialCardHtml = '<div style="background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1.5px solid #fed7aa; border-radius: 12px; padding: 14px 16px; margin-top: 10px;">' +
+            '<div style="display: flex; align-items: flex-start; gap: 10px;">' +
+              '<span style="font-size: 1.4rem; line-height: 1;">🔑</span>' +
+              '<div style="flex: 1;">' +
+                '<strong style="color: #9a3412; font-size: 0.88rem; display: block; margin-bottom: 4px;">Configuração Rápida da Chave IA</strong>' +
+                '<p style="color: #7c2d12; font-size: 0.8rem; margin: 0 0 10px; line-height: 1.45;">' +
+                  'Para começar a conversar com IA real e enviar fotos de questões escolares, insira a chave gratuita do Google Gemini:' +
+                '</p>' +
+                '<div style="display: flex; gap: 8px; flex-wrap: wrap;">' +
+                  '<button type="button" class="btn-primary" onclick="app.openAiConfigModal()" style="background: #ea580c; border: none; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: white;">' +
+                    '<i data-lucide="key" style="width: 14px; height: 14px;"></i> Inserir Chave Agora' +
+                  '</button>' +
+                  '<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #c2410c; font-size: 0.8rem; font-weight: 700; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px; padding: 7px 10px;">' +
+                    'Criar chave grátis no Google AI Studio <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>' +
+                  '</a>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        } else if (isKeyInvalid) {
+          specialCardHtml = '<div style="background: #fef2f2; border: 1.5px solid #fecdd3; border-radius: 12px; padding: 14px 16px; margin-top: 10px;">' +
+            '<div style="display: flex; align-items: flex-start; gap: 10px;">' +
+              '<span style="font-size: 1.4rem; line-height: 1;">⚠️</span>' +
+              '<div style="flex: 1;">' +
+                '<strong style="color: #991b1b; font-size: 0.88rem; display: block; margin-bottom: 4px;">Chave Rejeitada pelo Google</strong>' +
+                '<p style="color: #7f1d1d; font-size: 0.8rem; margin: 0 0 10px; line-height: 1.45;">' +
+                  'A chave fornecida foi recusada pelos servidores da Google (API Key not valid). Verifique se copiou a chave completa ou gere uma nova no Google AI Studio.' +
+                '</p>' +
+                '<button type="button" class="btn-primary" onclick="app.openAiConfigModal()" style="background: #dc2626; border: none; padding: 7px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; cursor: pointer; color: white;">' +
+                  'Atualizar Chave' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }
+
+        const renderedHtml = this.renderMarkdown(text);
         return `
           <div class="chatgpt-msg-row assistant">
             <div class="chatgpt-avatar-circle">
@@ -21837,6 +21880,7 @@ startxref
             <div class="chatgpt-msg-content-box" style="flex:1;">
               <div class="chatgpt-msg-bubble">
                 ${renderedHtml}
+                ${specialCardHtml}
               </div>
               <div class="chatgpt-msg-actions-bar">
                 <button type="button" class="chatgpt-btn-copy-msg" onclick="app.copyAiMessage(this, ${idx})" title="Copiar resposta">
@@ -21910,6 +21954,10 @@ startxref
       if (sessId) {
         headers['x-session-id'] = sessId;
         headers['authorization'] = `Bearer ${sessId}`;
+      }
+      const clientKey = localStorage.getItem('estude_gemini_api_key');
+      if (clientKey) {
+        headers['x-gemini-key'] = clientKey;
       }
 
       const historyToSend = this.chatGptMessages.slice(0, -1).map(m => ({
@@ -22227,6 +22275,8 @@ startxref
 
       const data = await res.json();
       if (res.ok && data.success) {
+        localStorage.setItem('estude_gemini_api_key', apiKey);
+        localStorage.setItem('estude_gemini_model', aiModel);
         alert('✔ Chave de API e modelo salvos com sucesso no servidor!');
         document.getElementById('adminAiApiKeyInput').value = '';
         await this.loadAdminAiConfig();
@@ -22306,6 +22356,241 @@ startxref
       if (eye) eye.setAttribute('data-lucide', 'eye');
     }
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  /* Modal de Configuração Rápida da Chave Gemini */
+  openAiConfigModal() {
+    this.showModal('aiApiKeyModal');
+    this.loadAiConfigModalData();
+  }
+
+  closeAiConfigModal() {
+    this.closeModal('aiApiKeyModal');
+    const resBox = document.getElementById('modalAiTestResult');
+    if (resBox) resBox.style.display = 'none';
+  }
+
+  async loadAiConfigModalData() {
+    const dot = document.getElementById('modalAiStatusDot');
+    const statusText = document.getElementById('modalAiStatusText');
+    const detail = document.getElementById('modalAiStatusDetail');
+    const input = document.getElementById('modalAiApiKeyInput');
+    const select = document.getElementById('modalAiModelSelect');
+
+    const localKey = localStorage.getItem('estude_gemini_api_key');
+    const localModel = localStorage.getItem('estude_gemini_model');
+
+    if (select && localModel) {
+      select.value = localModel;
+    }
+
+    try {
+      const res = await fetch('/api/ai/status');
+      if (res.ok) {
+        const data = await res.json();
+        const isConfigured = data.configured || Boolean(localKey);
+
+        if (dot) dot.style.background = isConfigured ? '#10b981' : '#f59e0b';
+        if (statusText) {
+          statusText.innerText = isConfigured
+            ? '🟢 Chave Configurada & Operando'
+            : '⚠️ Nenhuma Chave de API Configurada';
+        }
+        if (detail) {
+          if (data.configured) {
+            const src = data.source === 'environment' ? 'Variável de Ambiente (Render/.env)' : 'Banco de Dados do Servidor';
+            detail.innerText = 'Chave ativa no servidor (' + src + '). Modelo padrão: ' + data.model;
+          } else if (localKey) {
+            detail.innerText = 'Chave salva localmente no navegador (' + localKey.substring(0, 6) + '...' + localKey.slice(-4) + ').';
+          } else {
+            detail.innerText = 'Cole sua chave gratuita abaixo para ativar o Assistente IA para todos os recursos.';
+          }
+        }
+        if (select && data.model && !localModel) {
+          select.value = data.model;
+        }
+        const modelDisp = document.getElementById('chatgptModelNameDisplay');
+        if (modelDisp && (data.model || localModel)) {
+          modelDisp.innerText = (localModel || data.model);
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao consultar /api/ai/status:', err);
+    }
+
+    if (input) {
+      input.value = localKey || '';
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  toggleModalAiKeyVisibility() {
+    const input = document.getElementById('modalAiApiKeyInput');
+    const icon = document.getElementById('modalAiKeyEyeIcon');
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      if (icon) icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+      input.type = 'password';
+      if (icon) icon.setAttribute('data-lucide', 'eye');
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async saveModalAiConfig(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const input = document.getElementById('modalAiApiKeyInput');
+    const select = document.getElementById('modalAiModelSelect');
+    const apiKey = (input ? input.value : '').trim();
+    const aiModel = (select ? select.value : '') || 'gemini-2.5-flash';
+
+    if (!apiKey) {
+      alert('Por favor, informe a chave de API do Google Gemini (começa com AIzaSy...).');
+      return;
+    }
+
+    // 1. Salva localmente
+    localStorage.setItem('estude_gemini_api_key', apiKey);
+    localStorage.setItem('estude_gemini_model', aiModel);
+
+    // 2. Tenta persistir no servidor
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = 'Bearer ' + sessId;
+      }
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+      headers['x-gemini-key'] = apiKey;
+
+      await fetch('/api/admin/ai/config', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ geminiApiKey: apiKey, aiModel })
+      });
+    } catch (err) {
+      console.warn('Persistência no servidor em background:', err);
+    }
+
+    // 3. Atualiza displays
+    const modelDisp = document.getElementById('chatgptModelNameDisplay');
+    if (modelDisp) modelDisp.innerText = aiModel;
+
+    if (Array.isArray(this.chatGptMessages)) {
+      const lastMsg = this.chatGptMessages[this.chatGptMessages.length - 1];
+      if (lastMsg && (String(lastMsg.text).includes('Chave do Google Gemini não configurada') || String(lastMsg.text).includes('Chave do Google Gemini Inválida'))) {
+        this.chatGptMessages.push({
+          id: 'msg_ready_' + Date.now(),
+          role: 'assistant',
+          text: '✨ **Chave do Google Gemini configurada com sucesso!**\n\nO modelo **' + aiModel + '** está pronto para uso. Você pode me fazer perguntas escolares, pedir resumos, tirar dúvidas ou anexar fotos de questões!',
+          timestamp: new Date().toISOString()
+        });
+        this.renderChatGptStream(this.chatGptMessages);
+      }
+    }
+
+    alert('✔ Chave de API do Google Gemini configurada com sucesso!\n\nO Assistente IA agora responderá em tempo real com raciocínio e visão.');
+    this.closeAiConfigModal();
+  }
+
+  async testModalGeminiConnection() {
+    const input = document.getElementById('modalAiApiKeyInput');
+    const select = document.getElementById('modalAiModelSelect');
+    const resultBox = document.getElementById('modalAiTestResult');
+    const keyToTest = (input ? input.value : '').trim() || localStorage.getItem('estude_gemini_api_key');
+    const modelToTest = (select ? select.value : '') || 'gemini-2.5-flash';
+
+    if (!keyToTest) {
+      alert('Por favor, cole sua chave no campo antes de testar.');
+      if (input) input.focus();
+      return;
+    }
+
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = '#eff6ff';
+      resultBox.style.color = '#1d4ed8';
+      resultBox.style.border = '1px solid #bfdbfe';
+      resultBox.innerHTML = '⏳ Enviando requisição de teste para a Google Gemini API...';
+    }
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = 'Bearer ' + sessId;
+      }
+      headers['x-gemini-key'] = keyToTest;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: 'Diga apenas: Conexão bem-sucedida com Google Gemini!',
+          history: [],
+          apiKey: keyToTest
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        if (resultBox) {
+          resultBox.style.display = 'block';
+          resultBox.style.background = '#ecfdf5';
+          resultBox.style.color = '#065f46';
+          resultBox.style.border = '1px solid #a7f3d0';
+          resultBox.innerHTML = '<strong>✨ Sucesso!</strong> Conexão estabelecida com <code>' + (data.model || modelToTest) + '</code>.<br>Resposta da Google: <em>"' + (data.text ? data.text.trim() : 'OK') + '"</em>';
+        }
+      } else {
+        if (resultBox) {
+          resultBox.style.display = 'block';
+          resultBox.style.background = '#fef2f2';
+          resultBox.style.color = '#991b1b';
+          resultBox.style.border = '1px solid #fecdd3';
+          resultBox.innerHTML = '<strong>❌ Erro na Conexão:</strong><br>' + (data.message || data.error || 'A chave não pôde ser validada.');
+        }
+      }
+    } catch (err) {
+      if (resultBox) {
+        resultBox.style.display = 'block';
+        resultBox.style.background = '#fef2f2';
+        resultBox.style.color = '#991b1b';
+        resultBox.style.border = '1px solid #fecdd3';
+        resultBox.innerHTML = '<strong>❌ Falha de Rede:</strong> Não foi possível contatar o servidor local.';
+      }
+    }
+  }
+
+  async clearModalAiConfig() {
+    if (!confirm('Deseja realmente remover a chave de API configurada? O assistente voltará a exigir uma chave para funcionar.')) return;
+    localStorage.removeItem('estude_gemini_api_key');
+    localStorage.removeItem('estude_gemini_model');
+
+    const input = document.getElementById('modalAiApiKeyInput');
+    if (input) input.value = '';
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) {
+        headers['x-session-id'] = sessId;
+        headers['authorization'] = 'Bearer ' + sessId;
+      }
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      await fetch('/api/admin/ai/config', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ clearKey: true })
+      });
+    } catch (e) {}
+
+    await this.loadAiConfigModalData();
+    alert('Chave removida com sucesso.');
   }
 
   sendGeminiTabPrompt(promptText) {

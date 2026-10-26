@@ -422,9 +422,10 @@
 
             <!-- Rodapé da Sidebar com Status e Limpeza -->
             <div class="chatgpt-sidebar-footer">
-              <div class="chatgpt-model-info-pill">
+              <div class="chatgpt-model-info-pill" onclick="app.openAiConfigModal()" style="cursor: pointer;" title="Configurar modelo e chave do Gemini">
                 <i data-lucide="sparkles" style="width: 14px; height: 14px; color: #6366f1;"></i>
                 <span id="chatgptModelNameDisplay">Gemini 2.5 Flash</span>
+                <i data-lucide="chevron-right" style="width: 12px; height: 12px; opacity: 0.6; margin-left: 2px;"></i>
               </div>
               <button type="button" class="chatgpt-btn-clear-history" onclick="app.clearAllAiConversations()" title="Limpar todas as conversas">
                 <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
@@ -451,6 +452,10 @@
               </div>
 
               <div class="chatgpt-topbar-right">
+                <button type="button" class="btn-topbar-new" onclick="app.openAiConfigModal()" title="Configurações e Chave da IA" style="background: rgba(99,102,241,0.08); color: #4f46e5; border-color: rgba(99,102,241,0.25);">
+                  <i data-lucide="key" style="width: 15px; height: 15px;"></i>
+                  <span class="hide-mobile">Chave IA</span>
+                </button>
                 <button type="button" class="btn-topbar-new" onclick="app.startNewAiChat()" title="Nova Conversa">
                   <i data-lucide="square-pen" style="width: 16px; height: 16px;"></i>
                   <span class="hide-mobile">Nova Conversa</span>
@@ -1257,6 +1262,92 @@
           <button type="button" onclick="app.toggleAuthMode('login')" style="background: none; border: none; color: #64748b; font-size: 0.85rem; cursor: pointer;">Já tem uma conta? Fazer login</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAÇÃO DA CHAVE DO GOOGLE GEMINI -->
+  <div class="modal-overlay" id="aiApiKeyModal" style="display: none;">
+    <div class="modal-box" style="max-width: 540px; padding: 24px; border-radius: 18px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);">
+      <button class="modal-close" onclick="app.closeAiConfigModal()" aria-label="Fechar" title="Fechar Janela">&times;</button>
+      
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+          <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;">Configurar Assistente IA</h3>
+          <span style="font-size: 0.78rem; color: #64748b;">Google Gemini API • Raciocínio & Visão Computacional</span>
+        </div>
+      </div>
+
+      <!-- Card de Status Atual -->
+      <div id="modalAiStatusBanner" style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="modalAiStatusDot" style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+            <span id="modalAiStatusText" style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">Verificando conexão com o servidor...</span>
+          </div>
+          <button type="button" class="btn-outline" onclick="app.testModalGeminiConnection()" style="font-size: 0.74rem; padding: 4px 10px; border-radius: 6px; white-space: nowrap;">
+            <i data-lucide="zap" style="width: 12px; height: 12px;"></i> Testar Agora
+          </button>
+        </div>
+        <div id="modalAiStatusDetail" style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">
+          Verificando se o servidor já possui uma chave configurada.
+        </div>
+      </div>
+
+      <!-- Formulário de Configuração -->
+      <form onsubmit="app.saveModalAiConfig(event)">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+            Chave de API do Google Gemini (API Key)
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="modalAiApiKeyInput" class="form-input" placeholder="Cole sua chave AIzaSy..." style="flex: 1; font-family: monospace; font-size: 0.85rem;" autocomplete="off">
+            <button type="button" class="btn-outline" onclick="app.toggleModalAiKeyVisibility()" style="padding: 0 12px;" title="Mostrar/Ocultar Chave">
+              <i data-lucide="eye" id="modalAiKeyEyeIcon" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+          <div style="margin-top: 6px; font-size: 0.74rem; color: #64748b; line-height: 1.45;">
+            👉 <strong>Como obter:</strong> Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #4f46e5; font-weight: 700; text-decoration: underline;">aistudio.google.com/app/apikey</a> com sua conta Google e clique em <em>"Create API key"</em>. É 100% gratuito.
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 6px;">
+            Modelo Principal do Google Gemini
+          </label>
+          <select id="modalAiModelSelect" class="form-select" style="width: 100%; font-size: 0.85rem; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 600;">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Padrão Recomendado • Raciocínio & Visão Multimodal)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Ultra-rápido para chat)</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Multimodal estável)</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Econômico e ágil)</option>
+          </select>
+        </div>
+
+        <!-- Feedback de Teste em Tempo Real -->
+        <div id="modalAiTestResult" style="display: none; padding: 10px 12px; border-radius: 8px; font-size: 0.78rem; margin-bottom: 14px; line-height: 1.45;"></div>
+
+        <!-- Botões de Ação -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn-outline" onclick="app.clearModalAiConfig()" style="font-size: 0.78rem; padding: 8px 14px; color: #dc2626; border-color: #fecdd3;">
+            Remover Chave
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-outline" onclick="app.closeAiConfigModal()" style="font-size: 0.82rem; padding: 8px 16px;">
+              Cancelar
+            </button>
+            <button type="submit" id="btnSaveModalAiConfig" class="btn-primary" style="background: #4f46e5; font-size: 0.82rem; padding: 8px 20px; font-weight: 700;">
+              <i data-lucide="check" style="width: 15px; height: 15px;"></i> Salvar no Servidor
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Dica para Hospedagem Render -->
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #e2e8f0; font-size: 0.74rem; color: #64748b; line-height: 1.5;">
+        ☁️ <strong>Hospedado no Render:</strong> Você também pode definir a variável de ambiente <code>GEMINI_API_KEY</code> diretamente no painel da sua hospedagem (<a href="https://dashboard.render.com" target="_blank" rel="noopener noreferrer" style="color: #4f46e5;">dashboard.render.com</a> &rarr; <em>estudeplus</em> &rarr; <strong>Environment</strong>).
+      </div>
     </div>
   </div>
 
