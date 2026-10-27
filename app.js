@@ -31,11 +31,20 @@ class EstudePlusApp {
     this.activeWorkspaceTab = 'summary';
     this.flashcardsList = [];
     this.notesList = [];
+    this.mindmapsList = [];
+    this.glossaryList = [];
+    this.doubtsList = [];
     this.collectionsList = [];
     this.favoritesList = [];
     this.customSimuladosList = [];
     this.dashboardShortcuts = ['gemini-chat', 'flashcards', 'notes', 'simulado', 'sas-eureka', 'trilhas'];
     this.activeMaterialsSubtab = 'library';
+    this.activeLabTool = 'questions';
+    this.activeMindmap = null;
+    this.activeChallenge = null;
+    this.focusTimer = { running: false, remaining: 1500, total: 1500, timerId: null };
+    this.activeCalendarViewMode = 'cards';
+    this.commandPaletteFilter = 'all';
     this.aiChatMode = 'default';
     this.syncStatus = 'saved';
     this.localSyncVersion = 1;
@@ -13541,70 +13550,122 @@ class EstudePlusApp {
     this.switchTab('trilhas');
   }
 
-  /* ================= EXAMS & CALENDAR (CENA 3) ================= */
+  /* ================= EXAMS & CALENDAR (ORGANIZADOR DE TRABALHOS E PROVAS) ================= */
+  setCalendarViewMode(mode) {
+    this.activeCalendarViewMode = mode;
+    const btnCards = document.getElementById('btnCalViewCards');
+    const btnGrid = document.getElementById('btnCalViewGrid');
+    const cardsContainer = document.getElementById('fullExamsContainer');
+    const monthContainer = document.getElementById('calendarMonthGridContainer');
+
+    if (btnCards && btnGrid) {
+      btnCards.classList.toggle('active', mode === 'cards');
+      btnCards.style.background = mode === 'cards' ? '#fff' : 'transparent';
+      btnCards.style.color = mode === 'cards' ? '#0f172a' : '#64748b';
+      btnGrid.classList.toggle('active', mode === 'month');
+      btnGrid.style.background = mode === 'month' ? '#fff' : 'transparent';
+      btnGrid.style.color = mode === 'month' ? '#0f172a' : '#64748b';
+    }
+
+    if (cardsContainer && monthContainer) {
+      cardsContainer.style.display = mode === 'cards' ? 'block' : 'none';
+      monthContainer.style.display = mode === 'month' ? 'block' : 'none';
+    }
+    this.renderExams();
+  }
+
   renderExams() {
     const container = document.getElementById('fullExamsContainer');
+    const monthContainer = document.getElementById('calendarMonthGridContainer');
     if (!container) return;
 
-    // Data atual em America/Sao_Paulo (formato YYYY-MM-DD)
-    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    if (!Array.isArray(this.state.exams)) {
+      this.state.exams = [];
+    }
 
-    // Se a data já ultrapassou o dia 10 de outubro de 2026
-    if (todayStr > '2026-10-10') {
+    const subjectFilter = document.getElementById('calendarFilterSubject')?.value || 'all';
+    const statusFilter = document.getElementById('calendarFilterStatus')?.value || 'pending';
+
+    let exams = [...this.state.exams];
+    if (subjectFilter !== 'all') {
+      exams = exams.filter(e => e.subject && e.subject.toLowerCase().includes(subjectFilter.toLowerCase()));
+    }
+    if (statusFilter === 'pending') {
+      exams = exams.filter(e => !e.isCompleted);
+    } else if (statusFilter === 'completed') {
+      exams = exams.filter(e => e.isCompleted);
+    }
+
+    // Ordena por data mais próxima
+    exams.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    // Atualiza sumário de contadores
+    const summaryEl = document.getElementById('calendarCountersSummary');
+    if (summaryEl) {
+      const totalPending = (this.state.exams || []).filter(e => !e.isCompleted).length;
+      const totalDone = (this.state.exams || []).filter(e => e.isCompleted).length;
+      summaryEl.innerText = `${totalPending} pendentes • ${totalDone} concluídas`;
+    }
+
+    if (this.activeCalendarViewMode === 'month' && monthContainer) {
+      this.renderCalendarMonthView(monthContainer);
+      return;
+    }
+
+    if (exams.length === 0) {
       container.innerHTML = `
-        <div class="panel-box" style="text-align: center; padding: 50px 24px; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: var(--radius-lg);">
-          <div style="font-size: 3.5rem; margin-bottom: 14px;">📅</div>
-          <h3 style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">Não tem provas agendadas no momento</h3>
-          <p style="color: #64748b; font-size: 0.92rem; max-width: 520px; margin: 0 auto; line-height: 1.6;">
-            Todas as avaliações da AV1 do 3º Trimestre já foram realizadas! Acompanhe as orientações dos professores no Gammon e fique atento ao próximo calendário oficial.
+        <div class="panel-box" style="text-align: center; padding: 48px 20px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 16px;">
+          <div style="font-size: 2.8rem; margin-bottom: 12px;">📅</div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">Nenhum compromisso encontrado</h3>
+          <p style="color: #64748b; font-size: 0.9rem; max-width: 480px; margin: 0 auto 18px; line-height: 1.5;">
+            ${statusFilter === 'completed' ? 'Você ainda não concluiu nenhuma avaliação ou trabalho registrado.' : 'Você não possui provas ou trabalhos pendentes no filtro selecionado.'}
           </p>
+          <button type="button" class="btn-primary" onclick="app.openAddExamModal()" style="padding: 10px 20px; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i> Agendar Prova ou Trabalho
+          </button>
         </div>
       `;
       if (window.lucide) window.lucide.createIcons();
       return;
     }
 
-    // Provas Oficiais da AV1 do 7º Ano (3º Trimestre 2026)
-    const officialExams = [
-      { id: 1, subject: 'Redação', topics: 'Capítulo 9: Carta do leitor (pág. 34 a 53)', date: '2026-10-01', priority: 'Alta' },
-      { id: 2, subject: 'Gramática', topics: 'Cap. 7 Colocação pronominal (pág. 12 a 24), Cap. 8 Charge (pág. 26 a 39), Cap. 9 Adjunto adverbial (pág. 42 a 55), Cap. 10 Aposto e vocativo (pág. 58 a 67)', date: '2026-10-02', priority: 'Alta' },
-      { id: 3, subject: 'Ciências', topics: 'Cap. 7 Características gerais das plantas e animais (pág. 8 a 17 e 24 a 31), Cap. 8 Ecossistemas brasileiros (pág. 36 a 55)', date: '2026-10-05', priority: 'Alta' },
-      { id: 4, subject: 'Filosofia', topics: 'Cap. 11 Igualdade e o Contrato Social (pág. 20 a 24), Cap. 12 O que é a Justiça? (pág. 26 a 30), Cap. 13 Solidariedade e Fraternidade (pág. 32 a 36)', date: '2026-10-05', priority: 'Média' },
-      { id: 5, subject: 'Inglês', topics: 'Climate Change: Simple Present x Present Continuous (pág. 18 a 22), Infectious Diseases: Past Continuous and Past Simple (pág. 36 a 40)', date: '2026-10-06', priority: 'Média' },
-      { id: 6, subject: 'Matemática', topics: 'Cap. 8 Expressões Algébricas e Sequências (pág. 26 a 41), Cap. 9 Equações do 1º grau e sistemas de equações (pág. 44 a 58)', date: '2026-10-07', priority: 'Alta' },
-      { id: 7, subject: 'Arte', topics: 'Cap. 7 Forma e expressão (pág. 16 a 27)', date: '2026-10-08', priority: 'Baixa' },
-      { id: 8, subject: 'História', topics: 'Apostila 2 cap. 8 (pág. 37 a 40), cap. 10 As bases da colonização portuguesa (pág. 52 a 60)', date: '2026-10-08', priority: 'Alta' },
-      { id: 9, subject: 'Geografia', topics: 'Cap. 10 Região Sudeste (pág. 28 a 47), Cap. 11 Região Centro-Oeste (pág. 50 a 69)', date: '2026-10-09', priority: 'Alta' },
-      { id: 10, subject: 'Educação Física', topics: 'Práticas Corporais de Aventura (Apostila 3, pág. 12 a 23)', date: '2026-10-09', priority: 'Baixa' }
-    ];
-
-    // Se não houver exames definidos
-    if (!Array.isArray(this.state.exams)) {
-      this.state.exams = officialExams;
-      this.saveState();
-    }
-
     container.innerHTML = `
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
-        ${this.state.exams.map(exam => {
+        ${exams.map(exam => {
           const days = this.calculateDaysRemaining(exam.date);
           const isUrgent = days >= 0 && days <= 3;
           const isPast = days < 0;
+          const isDone = Boolean(exam.isCompleted);
+          const typeLabel = exam.type || 'Prova';
+
           return `
-            <div class="panel-box" style="border-top: 4px solid ${isPast ? '#94a3b8' : isUrgent ? 'var(--danger)' : 'var(--primary)'}; ${isPast ? 'opacity: 0.8;' : ''}">
+            <div class="panel-box" style="background: #fff; border: 1.5px solid ${isDone ? '#86efac' : isUrgent ? '#fca5a5' : '#e2e8f0'}; border-top: 4px solid ${isDone ? '#16a34a' : isPast ? '#94a3b8' : isUrgent ? '#ef4444' : '#4f46e5'}; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); ${isDone ? 'opacity: 0.85;' : ''}">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <span class="subject-pill math">${exam.subject}</span>
-                <span style="font-size: 0.75rem; font-weight: 800; color: ${isPast ? '#64748b' : isUrgent ? 'var(--danger)' : 'var(--primary)'};">
-                  ${isPast ? 'Realizada' : days === 0 ? 'HOJE' : days === 1 ? 'AMANHÃ' : `Faltam ${days} dias`}
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="subject-pill" style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.76rem; padding: 3px 8px; border-radius: 6px;">${exam.subject}</span>
+                  <span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">${typeLabel}</span>
+                </div>
+                <span style="font-size: 0.78rem; font-weight: 800; color: ${isDone ? '#16a34a' : isPast ? '#64748b' : isUrgent ? '#ef4444' : '#4f46e5'};">
+                  ${isDone ? '✔ Concluída' : isPast ? 'Passou da data' : days === 0 ? 'HOJE' : days === 1 ? 'AMANHÃ' : `Em ${days} dias`}
                 </span>
               </div>
-              <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; line-height: 1.4;">${exam.topics}</h4>
-              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;">
-                Data da Prova: <strong>${this.formatDate(exam.date)}</strong> &bull; Prioridade: <strong>${exam.priority}</strong>
+
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin: 0 0 8px; line-height: 1.4; color: #0f172a; ${isDone ? 'text-decoration: line-through;' : ''}">
+                ${exam.topics}
+              </h4>
+
+              <p style="font-size: 0.82rem; color: #64748b; margin: 0 0 16px;">
+                Data: <strong>${this.formatDate(exam.date)}</strong> &bull; Prioridade: <strong>${exam.priority || 'Média'}</strong>
               </p>
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-light); padding-top: 12px;">
-                <span style="font-size: 0.75rem; color: var(--text-dim);">${isPast ? 'Prova encerrada' : 'Plano de revisão ativo'}</span>
-                <button class="btn-sm" onclick="app.removeExam(${exam.id})" style="color: var(--danger);">Excluir</button>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                <button type="button" class="btn-sm" onclick="app.toggleExamCompleted('${exam.id}')" style="font-size: 0.76rem; font-weight: 800; padding: 6px 12px; border-radius: 6px; border: 1.5px solid ${isDone ? '#86efac' : '#cbd5e1'}; background: ${isDone ? '#dcfce7' : '#fff'}; color: ${isDone ? '#166534' : '#334155'}; cursor: pointer;">
+                  ${isDone ? '✔ Marcar Pendente' : 'Marcar como Concluída'}
+                </button>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="chatgpt-btn-copy-msg" onclick="app.openAddExamModal('${exam.id}')" title="Editar"><i data-lucide="edit-2" style="width: 13px; height: 13px;"></i></button>
+                  <button type="button" class="chatgpt-btn-copy-msg" onclick="app.removeExam('${exam.id}')" title="Excluir"><i data-lucide="trash-2" style="width: 13px; height: 13px; color: #ef4444;"></i></button>
+                </div>
               </div>
             </div>
           `;
@@ -13615,14 +13676,238 @@ class EstudePlusApp {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  renderCalendarMonthView(container) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const monthStr = String(month + 1).padStart(2, '0');
+
+    // Mapear exames por dia do mês atual
+    const examsByDay = {};
+    (this.state.exams || []).forEach(ex => {
+      if (ex.date && ex.date.startsWith(`${year}-${monthStr}`)) {
+        const dayNum = parseInt(ex.date.split('-')[2], 10);
+        if (!examsByDay[dayNum]) examsByDay[dayNum] = [];
+        examsByDay[dayNum].push(ex);
+      }
+    });
+
+    let daysHtml = '';
+    for (let i = 0; i < firstDay; i++) {
+      daysHtml += `<div style="background: #f8fafc; min-height: 85px; border: 1px solid #f1f5f9; border-radius: 8px;"></div>`;
+    }
+    for (let day = 1; day <= totalDays; day++) {
+      const isToday = day === now.getDate();
+      const dayExams = examsByDay[day] || [];
+      daysHtml += `
+        <div style="background: #ffffff; min-height: 85px; border: 1.5px solid ${isToday ? '#4f46e5' : '#e2e8f0'}; border-radius: 8px; padding: 6px; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 0.82rem; font-weight: ${isToday ? '900' : '700'}; color: ${isToday ? '#4f46e5' : '#334155'}; ${isToday ? 'background: #eef2ff; padding: 1px 6px; border-radius: 999px;' : ''}">${day}</span>
+            ${dayExams.length > 0 ? `<span style="font-size: 0.68rem; font-weight: 800; background: #e0e7ff; color: #4338ca; padding: 1px 5px; border-radius: 999px;">${dayExams.length}</span>` : ''}
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px; overflow-y: auto; max-height: 60px;">
+            ${dayExams.map(ex => `
+              <div onclick="app.openAddExamModal('${ex.id}')" title="${ex.subject}: ${ex.topics}" style="font-size: 0.68rem; font-weight: 700; background: #f1f5f9; border-left: 3px solid #4f46e5; padding: 2px 4px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;">
+                ${ex.subject}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a;">${monthNames[month]} de ${year}</h3>
+          <span style="font-size: 0.8rem; color: #64748b;">Visualização Mensal de Provas e Entregas</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-bottom: 8px;">
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">DOM</span>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">SEG</span>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">TER</span>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">QUA</span>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">QUI</span>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">SEX</span>
+          <span style="font-size: 0.75rem; font-weight: 800; color: #64748b;">SÁB</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+          ${daysHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  openAddExamModal(examId = null) {
+    const modal = document.getElementById('addExamTaskModal');
+    if (!modal) return;
+    const form = document.getElementById('addExamTaskForm');
+    if (form) form.reset();
+    document.getElementById('examEditId').value = examId || '';
+
+    if (examId) {
+      const ex = (this.state.exams || []).find(e => String(e.id) === String(examId));
+      if (ex) {
+        document.getElementById('examModalTitle').innerText = 'Editar Prova ou Tarefa';
+        document.getElementById('examSubject').value = ex.subject || 'Matemática';
+        document.getElementById('examType').value = ex.type || 'Prova';
+        document.getElementById('examDate').value = ex.date || '';
+        document.getElementById('examPriority').value = ex.priority || 'Média';
+        document.getElementById('examTopics').value = ex.topics || '';
+      }
+    } else {
+      document.getElementById('examModalTitle').innerText = 'Agendar Prova ou Tarefa';
+      const todayIso = new Date().toISOString().split('T')[0];
+      document.getElementById('examDate').value = todayIso;
+    }
+    this.showModal('addExamTaskModal');
+  }
+
+  handleSaveExamTask(e) {
+    if (e) e.preventDefault();
+    const editId = document.getElementById('examEditId')?.value;
+    const subject = document.getElementById('examSubject')?.value || 'Geral';
+    const type = document.getElementById('examType')?.value || 'Prova';
+    const date = document.getElementById('examDate')?.value;
+    const priority = document.getElementById('examPriority')?.value || 'Média';
+    const topics = document.getElementById('examTopics')?.value.trim();
+
+    if (!date || !topics) {
+      alert('Informe a data e o conteúdo da prova/trabalho.');
+      return;
+    }
+
+    const examItem = {
+      id: editId || ('exam_' + Date.now()),
+      subject,
+      type,
+      date,
+      priority,
+      topics,
+      isCompleted: false,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (!Array.isArray(this.state.exams)) this.state.exams = [];
+    if (editId) {
+      const idx = this.state.exams.findIndex(e => String(e.id) === String(editId));
+      if (idx >= 0) this.state.exams[idx] = { ...this.state.exams[idx], ...examItem };
+    } else {
+      this.state.exams.push(examItem);
+    }
+
+    this.saveState();
+    this.saveSyncAction('save_exam', { exam: examItem });
+    this.closeModal('addExamTaskModal');
+    this.renderExams();
+    this.renderDashboard();
+    this.showSyncFeedback('success', 'Compromisso agendado e salvo na nuvem!');
+  }
+
+  toggleExamCompleted(id) {
+    const ex = (this.state.exams || []).find(e => String(e.id) === String(id));
+    if (!ex) return;
+    ex.isCompleted = !ex.isCompleted;
+    ex.completedAt = ex.isCompleted ? new Date().toISOString() : null;
+    this.saveState();
+    this.saveSyncAction('toggle_exam_completed', { examId: id });
+    this.renderExams();
+    this.renderDashboard();
+  }
+
   removeExam(id) {
-    if (confirm('Deseja realmente remover esta data de prova?')) {
-      this.state.exams = this.state.exams.filter(e => e.id !== id);
+    const ex = (this.state.exams || []).find(e => String(e.id) === String(id));
+    if (!ex) return;
+    if (confirm(`Deseja realmente remover "${ex.topics || ex.subject}" do calendário?`)) {
+      this.state.exams = this.state.exams.filter(e => String(e.id) !== String(id));
       this.saveState();
-      this.syncUserData('push');
+      this.saveSyncAction('delete_exam', { examId: id });
       this.renderExams();
       this.renderDashboard();
+      this.showUndoToast('Compromisso removido do calendário.', 'exam', ex);
     }
+  }
+
+  async requestAiStudySuggestions() {
+    const modal = document.getElementById('aiStudySuggestionsModal');
+    const listEl = document.getElementById('aiStudySuggestionsList');
+    if (!modal || !listEl) return;
+
+    listEl.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: #64748b;">
+        <i data-lucide="loader" style="width: 20px; height: 20px;" class="spin-icon"></i>
+        <p style="margin: 8px 0 0; font-size: 0.9rem;">Analisando suas provas para sugerir um plano de revisão...</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    this.showModal('aiStudySuggestionsModal');
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'suggest_study_plan',
+          exams: this.state.exams || []
+        })
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.suggestions)) {
+        this.pendingStudySuggestions = data.suggestions;
+        listEl.innerHTML = data.suggestions.map((sug, idx) => `
+          <div style="padding: 12px 14px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <input type="checkbox" id="chkSug_${idx}" checked style="margin-top: 3px; accent-color: #4f46e5;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.72rem; padding: 2px 7px; border-radius: 999px;">${sug.subject}</span>
+                <strong style="font-size: 0.92rem; color: #0f172a;">${sug.title}</strong>
+              </div>
+              <p style="margin: 0; font-size: 0.84rem; color: #475569; line-height: 1.4;">${sug.description}</p>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; margin-top: 4px; display: block;">Data sugerida: ${this.formatDate(sug.targetDate)}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        listEl.innerHTML = `<p style="color: #ef4444; font-size: 0.9rem; text-align: center;">Não foi possível gerar sugestões automáticas no momento.</p>`;
+      }
+    } catch (err) {
+      listEl.innerHTML = `<p style="color: #ef4444; font-size: 0.9rem; text-align: center;">Erro de conexão: ${err.message}</p>`;
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  applyAiStudySuggestions() {
+    if (!Array.isArray(this.pendingStudySuggestions)) return;
+    let addedCount = 0;
+
+    this.pendingStudySuggestions.forEach((sug, idx) => {
+      const chk = document.getElementById(`chkSug_${idx}`);
+      if (chk && chk.checked) {
+        const item = {
+          id: 'exam_ai_' + Date.now() + '_' + idx,
+          subject: sug.subject,
+          type: 'Revisão Recomendada',
+          date: sug.targetDate,
+          priority: sug.priority || 'Média',
+          topics: sug.description,
+          isCompleted: false,
+          updatedAt: new Date().toISOString()
+        };
+        this.state.exams.push(item);
+        this.saveSyncAction('save_exam', { exam: item });
+        addedCount++;
+      }
+    });
+
+    this.saveState();
+    this.closeModal('aiStudySuggestionsModal');
+    this.renderExams();
+    this.renderDashboard();
+    alert(`✔ ${addedCount} sessão(ões) de revisão aprovada(s) e adicionada(s) ao seu calendário!`);
   }
 
   /* ================= MASTERY (CENA 8) ================= */
@@ -17541,57 +17826,194 @@ class EstudePlusApp {
     if (cp) cp.style.display = 'none';
   }
 
+  setCommandPaletteFilter(cat) {
+    this.commandPaletteFilter = cat;
+    const pills = ['all', 'personal', 'materials', 'flashcards', 'exams', 'glossary'];
+    pills.forEach(p => {
+      const btn = document.getElementById('cpFilter_' + p);
+      if (btn) btn.classList.toggle('active', p === cat);
+    });
+    const query = document.getElementById('commandPaletteInput')?.value || '';
+    this.handleCommandPaletteInput(query);
+  }
+
   handleCommandPaletteInput(query) {
     const resultsContainer = document.getElementById('commandPaletteResults');
     if (!resultsContainer) return;
     const q = (query || '').toLowerCase().trim();
+    const filterCat = this.commandPaletteFilter || 'all';
 
-    const items = [
-      // Navigation
-      { group: 'Navegação', title: 'Página Inicial (Dashboard)', icon: 'home', action: () => this.switchTab('dashboard'), shortcut: 'Alt 1' },
-      { group: 'Navegação', title: 'Chatbot IA Inteligente', icon: 'bot', action: () => this.switchTab('gemini-chat'), shortcut: 'Alt 2' },
-      { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => this.switchTab('sas-eureka'), shortcut: 'Alt 3' },
-      { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS (Apostilas 1 a 3)', icon: 'map', action: () => this.switchTab('trilhas'), shortcut: 'Alt 4' },
-      { group: 'Navegação', title: 'Planos & Assinatura PRO', icon: 'crown', action: () => this.switchTab('plans-pricing'), shortcut: 'PRO' },
-      { group: 'Navegação', title: 'Calendário de Provas & Avaliações', icon: 'calendar', action: () => this.switchTab('calendar'), shortcut: 'Alt 5' },
-      { group: 'Navegação', title: 'Quiz Diário de 15 Minutos', icon: 'zap', action: () => this.switchTab('quiz') },
+    const items = [];
 
-      // Quick Actions
-      { group: 'Ações Rápidas', title: 'Personalizar Início do Dashboard', icon: 'layout-grid', action: () => this.openCustomizeDashboardModal() },
-      { group: 'Ações Rápidas', title: 'Minhas Preferências de Estudo & Visual', icon: 'sliders', action: () => this.openStudentSettingsModal() },
-      { group: 'Ações Rápidas', title: 'Central de Novidades & Versões', icon: 'sparkles', action: () => this.openNewsCenterModal() },
-      { group: 'Ações Rápidas', title: 'Central de Notificações GAMMON+', icon: 'bell', action: () => this.openGammonNotificationsModal() },
-      { group: 'Ações Rápidas', title: 'Suporte, Dúvidas & Relatar Erro', icon: 'life-buoy', action: () => this.openSupportModal() },
-      { group: 'Ações Rápidas', title: 'Cadastrar Novo TPC', icon: 'plus-circle', action: () => this.showModal('addTpcModal') },
-      { group: 'Ações Rápidas', title: 'Importar Ocorrências Gammon+', icon: 'clipboard-paste', action: () => this.showModal('importOccurrencesModal') },
-      { group: 'Ações Rápidas', title: 'Guia de Atalhos do Teclado', icon: 'keyboard', action: () => this.openShortcutsGuideModal(), shortcut: '?' }
-    ];
+    // 1. Caderno & Notas Pessoais
+    if (filterCat === 'all' || filterCat === 'personal') {
+      (this.notesList || []).forEach(n => {
+        items.push({
+          group: '📝 Meu Caderno & Anotações',
+          title: n.title || 'Anotação sem título',
+          subtitle: (n.content || '').substring(0, 70) + '...',
+          icon: 'file-text',
+          category: 'personal',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('materials');
+            this.switchMaterialsSubtab('notes');
+          }
+        });
+      });
 
-    // If Admin, add Admin Central
-    if (this.currentUser?.role === 'admin' || this.currentUser?.username === 'freddie') {
-      items.push({ group: 'Administração', title: 'Painel Admin Centralizado (Usuários, Assinaturas, Logs)', icon: 'shield-check', action: () => this.showAdminModal() });
+      // Dúvidas
+      (this.doubtsList || []).forEach(d => {
+        items.push({
+          group: '❓ Minhas Dúvidas',
+          title: d.question,
+          subtitle: `Matéria: ${d.subject || 'Geral'} • Status: ${d.isResolved ? 'Resolvida' : 'Pendente'}`,
+          icon: 'help-circle',
+          category: 'personal',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('materials');
+            this.switchMaterialsSubtab('lab');
+            this.switchLabTool('doubts');
+          }
+        });
+      });
     }
 
-    // Add SAS Books
-    (this.sasBooks || []).forEach(b => {
-      items.push({
-        group: 'Apostilas SAS',
-        title: `${b.title} (${b.category || 'SAS'})`,
-        icon: 'book-open',
-        action: () => {
-          this.switchTab('sas-eureka');
-          this.openSasPdfModal(b.id);
-        }
+    // 2. Flashcards de Memorização
+    if (filterCat === 'all' || filterCat === 'flashcards' || filterCat === 'personal') {
+      (this.flashcardsList || []).forEach(fc => {
+        items.push({
+          group: '🗂️ Cartões de Memorização',
+          title: fc.front,
+          subtitle: `Resposta: ${(fc.back || '').substring(0, 60)}... (${fc.subject || 'Geral'})`,
+          icon: 'layers',
+          category: 'flashcards',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('materials');
+            this.switchMaterialsSubtab('flashcards');
+          }
+        });
       });
-    });
+    }
 
-    const filtered = q === '' ? items.slice(0, 10) : items.filter(it => it.title.toLowerCase().includes(q) || (it.group && it.group.toLowerCase().includes(q)));
+    // 3. Provas, Trabalhos e TPCs
+    if (filterCat === 'all' || filterCat === 'exams') {
+      (this.state.exams || []).forEach(ex => {
+        items.push({
+          group: '📅 Provas & Compromissos Escolares',
+          title: `${ex.subject}: ${ex.topics || 'Avaliação'}`,
+          subtitle: `Data: ${this.formatDate(ex.date)} • Prioridade: ${ex.priority || 'Média'}`,
+          icon: 'calendar',
+          category: 'exams',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('calendar');
+          }
+        });
+      });
+
+      (this.state.tpcs || []).forEach(t => {
+        items.push({
+          group: '📋 Tarefas & TPCs (Gammon)',
+          title: `${t.subject}: ${t.title || t.description || 'Tarefa'}`,
+          subtitle: `Entrega: ${this.formatDate(t.dueDate || t.date)}`,
+          icon: 'check-square',
+          category: 'exams',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('dashboard');
+          }
+        });
+      });
+    }
+
+    // 4. Glossário Pessoal
+    if (filterCat === 'all' || filterCat === 'glossary' || filterCat === 'personal') {
+      (this.glossaryList || []).forEach(g => {
+        items.push({
+          group: '📖 Glossário de Termos',
+          title: `${g.term} (${g.subject || 'Geral'})`,
+          subtitle: g.definition || '',
+          icon: 'book-open',
+          category: 'glossary',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('materials');
+            this.switchMaterialsSubtab('lab');
+            this.switchLabTool('glossary');
+          }
+        });
+      });
+    }
+
+    // 5. Materiais & Apostilas
+    if (filterCat === 'all' || filterCat === 'materials') {
+      (this.state.materials || []).forEach(m => {
+        items.push({
+          group: '📚 Biblioteca de Materiais',
+          title: m.title,
+          subtitle: `${m.subject || 'Geral'} • ${m.topic || m.category || 'Material'}`,
+          icon: 'book-marked',
+          category: 'materials',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('materials');
+            this.switchMaterialsSubtab('library');
+          }
+        });
+      });
+
+      (this.sasBooks || []).forEach(b => {
+        items.push({
+          group: '🧭 Apostilas Oficiais SAS',
+          title: `${b.title} (${b.category || 'SAS'})`,
+          subtitle: 'Livro oficial Coleção Asas 2026',
+          icon: 'compass',
+          category: 'materials',
+          action: () => {
+            this.closeCommandPalette();
+            this.switchTab('sas-eureka');
+            this.openSasPdfModal(b.id);
+          }
+        });
+      });
+    }
+
+    // 6. Navegação e Atalhos Rápidos (apenas na busca geral)
+    if (filterCat === 'all') {
+      items.push(
+        { group: 'Navegação', title: 'Página Inicial (Dashboard)', icon: 'home', action: () => { this.closeCommandPalette(); this.switchTab('dashboard'); }, shortcut: 'Alt 1' },
+        { group: 'Navegação', title: 'Chatbot IA Inteligente', icon: 'bot', action: () => { this.closeCommandPalette(); this.switchTab('gemini-chat'); }, shortcut: 'Alt 2' },
+        { group: 'Navegação', title: 'Laboratório de Estudos & Ferramentas', icon: 'flask-conical', action: () => { this.closeCommandPalette(); this.switchTab('materials'); this.switchMaterialsSubtab('lab'); } },
+        { group: 'Navegação', title: 'Modo Desafio de Exercícios', icon: 'swords', action: () => { this.closeCommandPalette(); this.switchTab('materials'); this.switchMaterialsSubtab('challenge'); } },
+        { group: 'Navegação', title: 'Mapas Mentais Interativos', icon: 'git-fork', action: () => { this.closeCommandPalette(); this.switchTab('materials'); this.switchMaterialsSubtab('mindmaps'); } },
+        { group: 'Navegação', title: 'Temporizador Modo Foco', icon: 'timer', action: () => { this.closeCommandPalette(); this.openFocusTimerModal(); } },
+        { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => { this.closeCommandPalette(); this.switchTab('sas-eureka'); }, shortcut: 'Alt 3' },
+        { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS', icon: 'map', action: () => { this.closeCommandPalette(); this.switchTab('trilhas'); }, shortcut: 'Alt 4' },
+        { group: 'Navegação', title: 'Calendário de Provas & Avaliações', icon: 'calendar', action: () => { this.closeCommandPalette(); this.switchTab('calendar'); }, shortcut: 'Alt 5' },
+        { group: 'Navegação', title: 'Minhas Preferências de Estudo & Visual', icon: 'sliders', action: () => { this.closeCommandPalette(); this.openStudentSettingsModal(); } }
+      );
+
+      if (this.currentUser?.role === 'admin' || this.currentUser?.username === 'freddie') {
+        items.push({ group: 'Administração', title: 'Painel Admin Centralizado (Usuários, Assinaturas, Logs)', icon: 'shield-check', action: () => { this.closeCommandPalette(); this.showAdminModal(); } });
+      }
+    }
+
+    const filtered = q === '' 
+      ? items.slice(0, 15) 
+      : items.filter(it => 
+          (it.title && it.title.toLowerCase().includes(q)) || 
+          (it.subtitle && it.subtitle.toLowerCase().includes(q)) || 
+          (it.group && it.group.toLowerCase().includes(q))
+        );
 
     if (filtered.length === 0) {
       resultsContainer.innerHTML = `
         <div style="padding: 24px; text-align: center; color: #64748b;">
           <p style="margin: 0; font-size: 0.9rem;">Nenhum resultado encontrado para "<strong>${query}</strong>"</p>
-          <span style="font-size: 0.78rem;">Tente buscar por "Matemática", "TPC", "Apostila", "Admin" ou "Tema".</span>
+          <span style="font-size: 0.78rem;">Tente buscar por termos escolares, matérias ou conteúdos salvos.</span>
         </div>
       `;
       return;
@@ -17608,15 +18030,18 @@ class EstudePlusApp {
     let actIndex = 0;
 
     Object.keys(grouped).forEach(grp => {
-      html += `<div class="command-palette-group-title">${grp}</div>`;
+      html += `<div class="command-palette-group-title" style="font-size: 0.75rem; font-weight: 800; color: #4338ca; padding: 6px 14px; text-transform: uppercase;">${grp}</div>`;
       grouped[grp].forEach(it => {
         const id = actIndex++;
         window._cpActions[id] = it.action;
         html += `
-          <div class="command-palette-item" onclick="app.executeCommandAction(${id})">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <i data-lucide="${it.icon || 'arrow-right'}" style="width: 16px; height: 16px; color: #4f46e5;"></i>
-              <span style="font-size: 0.88rem; font-weight: 600;">${it.title}</span>
+          <div class="command-palette-item" onclick="app.executeCommandAction(${id})" style="padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <i data-lucide="${it.icon || 'arrow-right'}" style="width: 16px; height: 16px; color: #4f46e5; margin-top: 2px;"></i>
+              <div>
+                <span style="font-size: 0.88rem; font-weight: 700; color: #0f172a; display: block;">${it.title}</span>
+                ${it.subtitle ? `<span style="font-size: 0.75rem; color: #64748b;">${it.subtitle}</span>` : ''}
+              </div>
             </div>
             ${it.shortcut ? `<span class="shortcut-kbd">${it.shortcut}</span>` : `<i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #94a3b8;"></i>`}
           </div>
@@ -18161,6 +18586,9 @@ class EstudePlusApp {
             this.notesList = u.notes;
           }
           if (Array.isArray(u.flashcards)) this.flashcardsList = u.flashcards;
+          if (Array.isArray(u.mindmaps)) this.mindmapsList = u.mindmaps;
+          if (Array.isArray(u.glossary)) this.glossaryList = u.glossary;
+          if (Array.isArray(u.doubts)) this.doubtsList = u.doubts;
           if (Array.isArray(u.collections)) this.collectionsList = u.collections;
           if (Array.isArray(u.favorites)) this.favoritesList = u.favorites;
           if (Array.isArray(u.customSimulados)) this.customSimuladosList = u.customSimulados;
@@ -18244,6 +18672,9 @@ class EstudePlusApp {
           exams: examsList,
           notes: this.notesList || notesList,
           flashcards: this.flashcardsList || [],
+          mindmaps: this.mindmapsList || [],
+          glossary: this.glossaryList || [],
+          doubts: this.doubtsList || [],
           collections: this.collectionsList || [],
           favorites: this.favoritesList || [],
           customSimulados: this.customSimuladosList || [],
@@ -23599,11 +24030,11 @@ startxref
   }
 
   /* ==========================================================================
-     HUB DE ESTUDOS & SUBABAS
+     HUB DE ESTUDOS & SUBABAS (LABORATÓRIO, MAPAS, DESAFIO, FLASHCARDS, ETC)
      ========================================================================== */
   switchMaterialsSubtab(subtab) {
     this.activeMaterialsSubtab = subtab;
-    const tabs = ['lib', 'flashcards', 'notes', 'simulados', 'review', 'favorites'];
+    const tabs = ['lib', 'flashcards', 'notes', 'mindmaps', 'challenge', 'simulados', 'lab', 'favorites'];
     tabs.forEach(t => {
       const cap = t.charAt(0).toUpperCase() + t.slice(1);
       const btn = document.getElementById('subnavBtn' + cap);
@@ -23614,8 +24045,10 @@ startxref
       'library': 'materialsSubviewLib',
       'flashcards': 'materialsSubviewFlashcards',
       'notes': 'materialsSubviewNotes',
+      'mindmaps': 'materialsSubviewMindmaps',
+      'challenge': 'materialsSubviewChallenge',
       'simulados': 'materialsSubviewSimulados',
-      'review': 'materialsSubviewReview',
+      'lab': 'materialsSubviewLab',
       'favorites': 'materialsSubviewFavorites'
     };
 
@@ -23636,14 +24069,18 @@ startxref
     if (sub === 'library') this.renderMaterialsLibrary();
     else if (sub === 'flashcards') this.renderFlashcardsView();
     else if (sub === 'notes') this.renderNotesView();
+    else if (sub === 'mindmaps') this.renderMindmapsView();
+    else if (sub === 'challenge') this.renderChallengeView();
     else if (sub === 'simulados') this.renderSimuladosView();
-    else if (sub === 'review') this.renderQuickReviewView();
+    else if (sub === 'lab') this.renderLabView();
     else if (sub === 'favorites') this.renderFavoritesView();
 
     const bf = document.getElementById('badgeFlashcardsCount');
     if (bf) bf.innerText = (this.flashcardsList || []).length;
     const bn = document.getElementById('badgeNotesCount');
     if (bn) bn.innerText = (this.notesList || []).length;
+    const bmm = document.getElementById('badgeMindmapsCount');
+    if (bmm) bmm.innerText = (this.mindmapsList || []).length;
     const bfav = document.getElementById('badgeFavoritesCount');
     if (bfav) bfav.innerText = (this.favoritesList || []).length;
   }
@@ -23813,6 +24250,90 @@ startxref
     this.saveSyncAction('delete_flashcard', { flashcardId: cardId });
     this.renderFlashcardsView();
     this.showUndoToast('Cartão de memorização excluído.', 'flashcard', card);
+  }
+
+  openAiGenerateFlashcardsModal() {
+    const modal = document.getElementById('aiGenerateFlashcardsModal');
+    if (!modal) return;
+    const previewContainer = document.getElementById('aiFcPreviewContainer');
+    if (previewContainer) previewContainer.style.display = 'none';
+    this.pendingAiFlashcards = [];
+    this.showModal('aiGenerateFlashcardsModal');
+  }
+
+  async handleExecuteAiFlashcards(e) {
+    if (e) e.preventDefault();
+    const subject = document.getElementById('aiFcSubject')?.value || 'Ciências';
+    const count = parseInt(document.getElementById('aiFcCount')?.value, 10) || 4;
+    const topic = document.getElementById('aiFcTopic')?.value?.trim();
+
+    if (!topic) {
+      alert('Informe o tema para os flashcards.');
+      return;
+    }
+
+    const previewContainer = document.getElementById('aiFcPreviewContainer');
+    const previewList = document.getElementById('aiFcPreviewList');
+    if (!previewContainer || !previewList) return;
+
+    previewContainer.style.display = 'block';
+    previewList.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: #64748b;">
+        <i data-lucide="loader" style="width: 20px; height: 20px;" class="spin-icon"></i>
+        <p style="margin: 6px 0 0; font-size: 0.86rem;">A IA está gerando seus cartões didáticos...</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'generate_flashcards',
+          subject,
+          topic,
+          count
+        })
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.cards) && data.cards.length > 0) {
+        this.pendingAiFlashcards = data.cards;
+        previewList.innerHTML = data.cards.map((c, i) => `
+          <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px;">
+            <div style="font-size: 0.76rem; font-weight: 800; color: #db2777; margin-bottom: 2px;">Cartão ${i + 1} • Frente (Pergunta):</div>
+            <div style="font-weight: 700; font-size: 0.88rem; color: #0f172a; margin-bottom: 6px;">${c.front}</div>
+            <div style="font-size: 0.76rem; font-weight: 800; color: #059669; margin-bottom: 2px;">Verso (Resposta):</div>
+            <div style="font-size: 0.84rem; color: #334155; line-height: 1.4;">${c.back}</div>
+          </div>
+        `).join('');
+      } else {
+        previewList.innerHTML = `<p style="color: #ef4444; font-size: 0.86rem; text-align: center;">Não foi possível gerar cartões para este tema. Tente especificar outro assunto.</p>`;
+      }
+    } catch (err) {
+      previewList.innerHTML = `<p style="color: #ef4444; font-size: 0.86rem; text-align: center;">Erro de conexão: ${err.message}</p>`;
+    }
+  }
+
+  confirmSaveAiFlashcards() {
+    if (!Array.isArray(this.pendingAiFlashcards) || this.pendingAiFlashcards.length === 0) return;
+    let saved = 0;
+    this.pendingAiFlashcards.forEach(c => {
+      const card = {
+        id: 'fc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        subject: c.subject || 'Geral',
+        front: c.front,
+        back: c.back,
+        knownState: 'learning',
+        createdAt: new Date().toISOString()
+      };
+      this.flashcardsList.unshift(card);
+      this.saveSyncAction('save_flashcard', { flashcard: card });
+      saved++;
+    });
+    this.closeModal('aiGenerateFlashcardsModal');
+    this.renderFlashcardsView();
+    alert(`✔ ${saved} cartões gerados com sucesso e adicionados ao seu baralho!`);
   }
 
   /* ==========================================================================
@@ -24112,6 +24633,1183 @@ startxref
         </div>
       </div>
     `;
+  }
+
+  /* ==========================================================================
+     MECÂNICA: MAPAS MENTAIS VISUAIS & HIERÁRQUICOS
+     ========================================================================== */
+  renderMindmapsView() {
+    const container = document.getElementById('mindmapWorkspaceContainer');
+    if (!container) return;
+
+    if (!Array.isArray(this.mindmapsList) || this.mindmapsList.length === 0) {
+      // Mapa mental inicial demonstrativo oficial
+      this.mindmapsList = [
+        {
+          id: 'mm_demo_1',
+          title: 'Mapa Mental: Reino Vegetal',
+          subject: 'Ciências',
+          createdAt: new Date().toISOString(),
+          root: {
+            label: 'Reino Vegetal (Plantas)',
+            summary: 'Classificação evolutiva das plantas terrestres',
+            children: [
+              {
+                label: '1. Briófitas (Avasculares)',
+                details: 'Sem vasos condutores; dependem de água para fecundação; gametófito dominante.',
+                examples: 'Musgos e hepáticas.',
+                children: [
+                  { label: 'Transporte Lento', details: 'Absorção e difusão célula a célula limitam o tamanho.' }
+                ]
+              },
+              {
+                label: '2. Pteridófitas (Vasculares)',
+                details: 'Primeiras com xilema e floema; esporófito dominante; sem sementes.',
+                examples: 'Samambaias e avencas.',
+                children: [
+                  { label: 'Soros nas Folhas', details: 'Pontos onde são formados e liberados os esporos reprodutivos.' }
+                ]
+              },
+              {
+                label: '3. Gimnospermas',
+                details: 'Surgimento das sementes nuas e grãos de pólen (independência da água).',
+                examples: 'Araucárias e pinheiros.',
+                children: [
+                  { label: 'Estróbilos', details: 'Estruturas reprodutivas comumente chamadas de pinhas.' }
+                ]
+              },
+              {
+                label: '4. Angiospermas',
+                details: 'Grupo dominante; desenvolvimento de flores vistosas e frutos protetores.',
+                examples: 'Macieira, roseira, gramíneas.',
+                children: [
+                  { label: 'Fruto Verdadeiro', details: 'Desenvolve-se a partir do ovário fecundado para proteger a semente.' }
+                ]
+              }
+            ]
+          }
+        }
+      ];
+    }
+
+    if (!this.activeMindmap && this.mindmapsList.length > 0) {
+      this.activeMindmap = this.mindmapsList[0];
+    }
+
+    container.innerHTML = `
+      <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-weight: 700; font-size: 0.84rem; color: #334155;">Mapa Ativo:</span>
+          <select id="activeMindmapSelect" onchange="app.selectActiveMindmap(this.value)" style="padding: 8px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff;">
+            ${this.mindmapsList.map(m => `
+              <option value="${m.id}" ${this.activeMindmap && this.activeMindmap.id === m.id ? 'selected' : ''}>${m.title} (${m.subject || 'Geral'})</option>
+            `).join('')}
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn-sm" onclick="app.copyMindmapText()" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #cbd5e1; cursor: pointer; font-weight: 700;">
+            <i data-lucide="copy" style="width: 13px; height: 13px;"></i> Copiar em Tópicos
+          </button>
+          <button type="button" class="btn-sm" onclick="app.deleteActiveMindmap()" style="font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1.5px solid #fca5a5; color: #dc2626; cursor: pointer; font-weight: 700;">
+            <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i> Excluir Mapa
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas Interativo -->
+      <div class="mindmap-canvas" id="mindmapCanvas">
+        ${this.renderMindmapNode(this.activeMindmap ? this.activeMindmap.root : null)}
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  selectActiveMindmap(id) {
+    this.activeMindmap = (this.mindmapsList || []).find(m => m.id === id) || null;
+    this.renderMindmapsView();
+  }
+
+  renderMindmapNode(root) {
+    if (!root) {
+      return `<p style="text-align: center; color: #64748b; padding: 40px;">Nenhum nó de mapa mental disponível.</p>`;
+    }
+
+    const branches = root.children || [];
+    return `
+      <div class="mm-tree-wrapper">
+        <div class="mm-central-card">
+          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 2px;">CONCEITO CENTRAL</div>
+          <div>${root.label}</div>
+          ${root.summary ? `<div style="font-size: 0.82rem; font-weight: 500; opacity: 0.95; margin-top: 4px;">${root.summary}</div>` : ''}
+        </div>
+
+        <div class="mm-branches-grid">
+          ${branches.map(b => `
+            <div class="mm-branch-card">
+              <div class="mm-branch-title">
+                <span>🌱</span> ${b.label}
+              </div>
+              <div class="mm-branch-desc">${b.details || ''}</div>
+              ${b.examples ? `<div style="font-size: 0.78rem; font-weight: 700; color: #4338ca; background: #eef2ff; padding: 4px 8px; border-radius: 6px; margin-bottom: 8px;">Ex: ${b.examples}</div>` : ''}
+              
+              ${(b.children && b.children.length > 0) ? `
+                <div class="mm-children-list">
+                  ${b.children.map(c => `
+                    <div class="mm-child-pill">
+                      <strong>${c.label}:</strong> ${c.details || ''}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  openCreateMindmapModal(isAi = false) {
+    this.showModal('addMindmapModal');
+    const input = document.getElementById('mindmapTopicInput');
+    if (input) {
+      input.placeholder = isAi ? 'Ex: Leis de Newton, Revolução Francesa, Biomas...' : 'Digite o conceito central';
+    }
+  }
+
+  async handleSaveMindmap(e) {
+    if (e) e.preventDefault();
+    const subject = document.getElementById('mindmapSubject')?.value || 'Ciências';
+    const topic = document.getElementById('mindmapTopicInput')?.value?.trim();
+    if (!topic) {
+      alert('Informe o tema do mapa mental.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'generate_mindmap',
+          subject,
+          topic
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.root) {
+        const newMap = {
+          id: data.id || ('mm_' + Date.now()),
+          title: data.title || `Mapa Mental: ${topic}`,
+          subject,
+          root: data.root,
+          createdAt: new Date().toISOString()
+        };
+        this.mindmapsList.unshift(newMap);
+        this.activeMindmap = newMap;
+        this.saveSyncAction('save_mindmap', { mindmap: newMap });
+        this.closeModal('addMindmapModal');
+        this.renderMindmapsView();
+        alert('✔ Mapa mental gerado e salvo na sua conta com sucesso!');
+      } else {
+        alert(data.error || 'Erro ao gerar mapa mental.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao gerar mapa mental: ' + err.message);
+    }
+  }
+
+  deleteActiveMindmap() {
+    if (!this.activeMindmap) return;
+    if (confirm(`Deseja realmente excluir "${this.activeMindmap.title}"?`)) {
+      const id = this.activeMindmap.id;
+      this.mindmapsList = this.mindmapsList.filter(m => m.id !== id);
+      this.saveSyncAction('delete_mindmap', { mindmapId: id });
+      this.activeMindmap = this.mindmapsList[0] || null;
+      this.renderMindmapsView();
+    }
+  }
+
+  copyMindmapText() {
+    if (!this.activeMindmap || !this.activeMindmap.root) return;
+    const r = this.activeMindmap.root;
+    let txt = `# ${r.label}\n${r.summary || ''}\n\n`;
+    (r.children || []).forEach(b => {
+      txt += `## ${b.label}\n- ${b.details || ''}\n`;
+      if (b.examples) txt += `  Exemplos: ${b.examples}\n`;
+      (b.children || []).forEach(c => {
+        txt += `  * ${c.label}: ${c.details || ''}\n`;
+      });
+      txt += '\n';
+    });
+    this.copyToClipboard(txt, 'Estrutura do mapa mental copiada!');
+  }
+
+  /* ==========================================================================
+     MECÂNICA: MODO DESAFIO (EXERCÍCIOS PRÁTICOS INTERATIVOS)
+     ========================================================================== */
+  renderChallengeView() {
+    const runner = document.getElementById('challengeActiveRunner');
+    const setup = document.getElementById('challengeSetupBox');
+    if (!this.activeChallenge) {
+      if (setup) setup.style.display = 'block';
+      if (runner) runner.style.display = 'none';
+      return;
+    }
+
+    if (setup) setup.style.display = 'none';
+    if (!runner) return;
+    runner.style.display = 'block';
+
+    const ch = this.activeChallenge;
+    const currentQ = ch.questions[ch.currentIndex];
+    if (!currentQ) return;
+
+    const total = ch.questions.length;
+    const userAns = ch.userAnswers[ch.currentIndex];
+    const isAnswered = userAns !== undefined;
+    const isHintVisible = Boolean(ch.hintsShown[ch.currentIndex]);
+
+    runner.innerHTML = `
+      <div class="simulado-builder-card">
+        <!-- Barra de Progresso do Desafio (Sem rankings/XP) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.76rem; padding: 3px 8px; border-radius: 6px;">
+              ${ch.subject} &bull; ${ch.difficulty}
+            </span>
+            <strong style="margin-left: 8px; font-size: 0.95rem; color: #0f172a;">Questão ${ch.currentIndex + 1} de ${total}</strong>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-sm" onclick="app.showChallengeHint()" style="font-weight: 800; font-size: 0.78rem; padding: 6px 12px; border-radius: 8px; background: #fef3c7; color: #b45309; border: 1.5px solid #fde68a; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+              💡 Pedir Dica
+            </button>
+            <button type="button" class="btn-outline" onclick="app.restartChallenge()" style="font-size: 0.78rem; padding: 6px 12px;">
+              Reiniciar Rodada
+            </button>
+          </div>
+        </div>
+
+        <!-- Dica Pedagógica Sutil (Sem revelar resposta) -->
+        ${isHintVisible ? `
+          <div style="background: #fffbeb; border: 1.5px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 0.86rem; color: #92400e; line-height: 1.4;">
+            <strong>💡 Dica do Professor:</strong> ${currentQ.hint || 'Analise atentamente as condições e premissas fundamentais do conceito.'}
+          </div>
+        ` : ''}
+
+        <!-- Enunciado -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px; margin-bottom: 18px;">
+          <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a; line-height: 1.5;">
+            ${currentQ.q}
+          </h4>
+        </div>
+
+        <!-- Alternativas -->
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+          ${currentQ.options.map((opt, oIdx) => {
+            let extraClass = '';
+            if (isAnswered) {
+              if (oIdx === currentQ.correct) extraClass = 'correct';
+              else if (oIdx === userAns) extraClass = 'wrong';
+            } else if (userAns === oIdx) {
+              extraClass = 'selected';
+            }
+            return `
+              <button type="button" class="simulado-option-btn ${extraClass}" onclick="app.submitChallengeOption(${oIdx})">
+                ${opt}
+              </button>
+            `;
+          }).join('')}
+        </div>
+
+        <!-- Explicação Instantânea pós-resposta -->
+        ${isAnswered ? `
+          <div style="background: ${userAns === currentQ.correct ? '#f0fdf4' : '#fef2f2'}; border: 1.5px solid ${userAns === currentQ.correct ? '#86efac' : '#fca5a5'}; border-left: 4px solid ${userAns === currentQ.correct ? '#16a34a' : '#ef4444'}; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;">
+            <strong style="color: ${userAns === currentQ.correct ? '#166534' : '#991b1b'}; font-size: 0.92rem; display: block; margin-bottom: 4px;">
+              ${userAns === currentQ.correct ? '✔ Resposta Correta!' : '❌ Resposta Incorreta — Entenda o porquê:'}
+            </strong>
+            <p style="margin: 0; font-size: 0.86rem; color: #334155; line-height: 1.5;">${currentQ.explanation}</p>
+          </div>
+        ` : ''}
+
+        <!-- Navegação da Rodada -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn-outline" onclick="app.prevChallengeQuestion()" ${ch.currentIndex === 0 ? 'disabled style="opacity: 0.5;"' : ''}>
+            &larr; Questão Anterior
+          </button>
+          ${ch.currentIndex < total - 1 ? `
+            <button type="button" class="btn-primary" onclick="app.nextChallengeQuestion()" style="padding: 10px 22px; font-weight: 800;">
+              Próxima Questão &rarr;
+            </button>
+          ` : `
+            <button type="button" class="btn-primary" onclick="app.finishChallengeRound()" style="padding: 10px 24px; font-weight: 800; background: #059669; border: none;">
+              Finalizar Rodada
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async startChallengeSession() {
+    const subject = document.getElementById('challengeSubjectSelect')?.value || 'Ciências';
+    const topic = document.getElementById('challengeTopicInput')?.value?.trim() || 'Reino Vegetal';
+    const difficulty = document.getElementById('challengeDifficultySelect')?.value || 'medio';
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'generate_questions',
+          subject,
+          topic,
+          difficulty,
+          count: 4
+        })
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
+        this.activeChallenge = {
+          subject,
+          topic,
+          difficulty,
+          questions: data.questions,
+          currentIndex: 0,
+          userAnswers: {},
+          hintsShown: {}
+        };
+        this.renderChallengeView();
+      } else {
+        alert('Não foi possível carregar as questões do desafio. Tente novamente.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao carregar desafio: ' + err.message);
+    }
+  }
+
+  submitChallengeOption(optIndex) {
+    if (!this.activeChallenge) return;
+    const ch = this.activeChallenge;
+    if (ch.userAnswers[ch.currentIndex] !== undefined) return; // Já respondido
+    ch.userAnswers[ch.currentIndex] = optIndex;
+    this.renderChallengeView();
+  }
+
+  showChallengeHint() {
+    if (!this.activeChallenge) return;
+    this.activeChallenge.hintsShown[this.activeChallenge.currentIndex] = true;
+    this.renderChallengeView();
+  }
+
+  nextChallengeQuestion() {
+    if (!this.activeChallenge) return;
+    if (this.activeChallenge.currentIndex < this.activeChallenge.questions.length - 1) {
+      this.activeChallenge.currentIndex++;
+      this.renderChallengeView();
+    }
+  }
+
+  prevChallengeQuestion() {
+    if (!this.activeChallenge) return;
+    if (this.activeChallenge.currentIndex > 0) {
+      this.activeChallenge.currentIndex--;
+      this.renderChallengeView();
+    }
+  }
+
+  restartChallenge() {
+    this.activeChallenge = null;
+    this.renderChallengeView();
+  }
+
+  finishChallengeRound() {
+    if (!this.activeChallenge) return;
+    let correct = 0;
+    const total = this.activeChallenge.questions.length;
+    this.activeChallenge.questions.forEach((q, idx) => {
+      if (this.activeChallenge.userAnswers[idx] === q.correct) correct++;
+    });
+    alert(`🎯 Rodada de Desafio Concluída!\n\nVocê respondeu ${total} questões práticas e acertou ${correct}.\n\nO foco é aprender com as explicações e consolidar o conteúdo!`);
+    this.restartChallenge();
+  }
+
+  /* ==========================================================================
+     MECÂNICA: LABORATÓRIO DE ESTUDOS INTEGRADO (6 FERRAMENTAS INTELIGENTES)
+     ========================================================================== */
+  switchLabTool(tool) {
+    this.activeLabTool = tool;
+    const tools = ['questions', 'alternative', 'summarizer', 'comparator', 'glossary', 'doubts'];
+    tools.forEach(t => {
+      const cap = t.charAt(0).toUpperCase() + t.slice(1);
+      const btn = document.getElementById('labPill' + cap);
+      if (btn) btn.classList.toggle('active', t === tool);
+
+      const panel = document.getElementById('labTool' + cap + 'View');
+      if (panel) panel.style.display = t === tool ? 'block' : 'none';
+    });
+
+    if (tool === 'glossary') this.renderGlossaryView();
+    if (tool === 'doubts') this.renderDoubtsView();
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  renderLabView() {
+    this.switchLabTool(this.activeLabTool || 'questions');
+  }
+
+  async executeGenerateQuestions() {
+    const subject = document.getElementById('genQuestSubject')?.value || 'Ciências';
+    const topic = document.getElementById('genQuestTopic')?.value?.trim();
+    const difficulty = document.getElementById('genQuestDifficulty')?.value || 'medio';
+    const out = document.getElementById('genQuestResultsContainer');
+    if (!out) return;
+
+    if (!topic) {
+      alert('Informe o tópico da matéria para gerar questões.');
+      return;
+    }
+
+    out.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: #64748b;">
+        <i data-lucide="loader" style="width: 20px; height: 20px;" class="spin-icon"></i>
+        <p style="margin: 8px 0 0; font-size: 0.88rem;">Gerando questões pedagógicas inéditas...</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'generate_questions',
+          subject,
+          topic,
+          difficulty,
+          count: 3
+        })
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.questions)) {
+        out.innerHTML = data.questions.map((q, idx) => `
+          <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 14px;">
+            <p style="font-weight: 800; font-size: 0.95rem; color: #0f172a; margin: 0 0 10px;">
+              <strong>Questão ${idx + 1}:</strong> ${q.q}
+            </p>
+            <div style="margin-bottom: 12px; padding-left: 10px;">
+              ${(q.options || []).map(opt => `<div style="font-size: 0.86rem; color: #334155; margin: 4px 0;">${opt}</div>`).join('')}
+            </div>
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px; font-size: 0.84rem; color: #166534;">
+              <strong>Gabarito & Resolução:</strong> ${q.explanation}
+            </div>
+          </div>
+        `).join('');
+      } else {
+        out.innerHTML = `<p style="color: #ef4444; font-size: 0.88rem; text-align: center;">Não foi possível gerar questões para este tópico.</p>`;
+      }
+    } catch (err) {
+      out.innerHTML = `<p style="color: #ef4444; font-size: 0.88rem; text-align: center;">Erro de conexão: ${err.message}</p>`;
+    }
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async executeAlternativeExplanation() {
+    const topic = document.getElementById('altExpTopicInput')?.value?.trim();
+    const style = document.getElementById('altExpStyleSelect')?.value || 'analogia';
+    const out = document.getElementById('altExpResultContainer');
+    if (!out) return;
+
+    if (!topic) {
+      alert('Informe o conceito que deseja entender.');
+      return;
+    }
+
+    out.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: #64748b;">
+        <i data-lucide="loader" style="width: 20px; height: 20px;" class="spin-icon"></i>
+        <p style="margin: 8px 0 0; font-size: 0.88rem;">Preparando uma explicação alternativa didática...</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'explain_alternative',
+          topic,
+          style
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        out.innerHTML = `
+          <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 18px;">
+            <div style="font-size: 0.92rem; color: #334155; line-height: 1.6; white-space: pre-wrap;">${data.text}</div>
+            <div style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+              <button type="button" class="btn-sm" onclick="app.copyToClipboard('${data.text.replace(/'/g, "\\'")}', 'Explicação copiada!')" style="font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">
+                Copiar Explicação
+              </button>
+              <button type="button" class="btn-sm" onclick="app.saveTextAsNote('${topic}', '${data.text.replace(/'/g, "\\'")}')" style="font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #4f46e5; background: #eef2ff; color: #4338ca; cursor: pointer;">
+                Salvar em Minhas Anotações
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        out.innerHTML = `<p style="color: #ef4444; font-size: 0.88rem; text-align: center;">Não foi possível obter a explicação.</p>`;
+      }
+    } catch (err) {
+      out.innerHTML = `<p style="color: #ef4444; font-size: 0.88rem; text-align: center;">Erro: ${err.message}</p>`;
+    }
+  }
+
+  async executeSmartSummary() {
+    const text = document.getElementById('summarizerTextInput')?.value?.trim();
+    const out = document.getElementById('summarizerResultContainer');
+    if (!out) return;
+
+    if (!text) {
+      alert('Informe o texto para resumir.');
+      return;
+    }
+
+    out.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: #64748b;">
+        <i data-lucide="loader" style="width: 20px; height: 20px;" class="spin-icon"></i>
+        <p style="margin: 8px 0 0; font-size: 0.88rem;">Estruturando resumo inteligente...</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'summarize_content',
+          text
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        out.innerHTML = `
+          <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 18px;">
+            <h4 style="margin: 0 0 10px; color: #4338ca; font-size: 1.15rem; font-weight: 800;">${data.title || 'Resumo'}</h4>
+            <p style="font-size: 0.9rem; color: #475569; margin: 0 0 14px;">${data.overview || ''}</p>
+            
+            <strong style="display: block; font-size: 0.88rem; color: #0f172a; margin-bottom: 6px;">Tópicos Centrais:</strong>
+            <ul style="padding-left: 20px; font-size: 0.88rem; color: #334155; line-height: 1.5; margin: 0 0 14px;">
+              ${(data.keyPoints || []).map(p => `<li>${p}</li>`).join('')}
+            </ul>
+
+            ${(data.rules && data.rules.length > 0) ? `
+              <div style="background: #f8fafc; border-left: 3px solid #6366f1; padding: 8px 12px; border-radius: 6px; font-size: 0.84rem; color: #334155; margin-bottom: 14px;">
+                <strong>Regras & Fórmulas:</strong> ${data.rules.join(' • ')}
+              </div>
+            ` : ''}
+
+            <div style="display: flex; gap: 8px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+              <button type="button" class="btn-sm" onclick="app.saveTextAsNote('${data.title || 'Resumo'}', '${(data.overview || '') + '\\n' + (data.keyPoints || []).join('\\n')}')" style="font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #4f46e5; background: #eef2ff; color: #4338ca; cursor: pointer;">
+                Salvar em Minhas Anotações
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    } catch (err) {
+      out.innerHTML = `<p style="color: #ef4444; font-size: 0.88rem; text-align: center;">Erro: ${err.message}</p>`;
+    }
+  }
+
+  async executeConceptComparison() {
+    const conceptA = document.getElementById('comparatorConceptA')?.value?.trim();
+    const conceptB = document.getElementById('comparatorConceptB')?.value?.trim();
+    const out = document.getElementById('comparatorResultContainer');
+    if (!out) return;
+
+    if (!conceptA || !conceptB) {
+      alert('Informe os dois conceitos para comparar.');
+      return;
+    }
+
+    out.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: #64748b;">
+        <i data-lucide="loader" style="width: 20px; height: 20px;" class="spin-icon"></i>
+        <p style="margin: 8px 0 0; font-size: 0.88rem;">Construindo tabela comparativa detalhada...</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'compare_concepts',
+          conceptA,
+          conceptB
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        out.innerHTML = `
+          <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 18px;">
+            <h4 style="margin: 0 0 14px; font-size: 1.15rem; font-weight: 800; color: #0f172a; text-align: center;">
+              ⚖️ ${data.conceptA} vs ${data.conceptB}
+            </h4>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;">
+                <strong style="color: #4f46e5; font-size: 0.9rem; display: block; margin-bottom: 4px;">${data.conceptA}</strong>
+                <p style="font-size: 0.84rem; color: #334155; margin: 0; line-height: 1.4;">${data.defA || ''}</p>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;">
+                <strong style="color: #0284c7; font-size: 0.9rem; display: block; margin-bottom: 4px;">${data.conceptB}</strong>
+                <p style="font-size: 0.84rem; color: #334155; margin: 0; line-height: 1.4;">${data.defB || ''}</p>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <strong style="display: block; font-size: 0.86rem; color: #059669; margin-bottom: 4px;">O que têm em comum (Semelhanças):</strong>
+              <ul style="padding-left: 20px; font-size: 0.84rem; color: #334155; line-height: 1.4; margin: 0;">
+                ${(data.similarities || []).map(s => `<li>${s}</li>`).join('')}
+              </ul>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <strong style="display: block; font-size: 0.86rem; color: #dc2626; margin-bottom: 4px;">Diferenças Fundamentais:</strong>
+              <ul style="padding-left: 20px; font-size: 0.84rem; color: #334155; line-height: 1.4; margin: 0;">
+                ${(data.differences || []).map(d => `<li>${d}</li>`).join('')}
+              </ul>
+            </div>
+
+            ${data.examPitfall ? `
+              <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; color: #92400e; margin-bottom: 14px;">
+                <strong>⚠️ Pegadinha de Prova:</strong> ${data.examPitfall}
+              </div>
+            ` : ''}
+
+            <button type="button" class="btn-sm" onclick="app.saveTextAsNote('Comparação: ${data.conceptA} vs ${data.conceptB}', 'Diferenças: ${(data.differences || []).join('; ')}')" style="font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #4f46e5; background: #eef2ff; color: #4338ca; cursor: pointer;">
+              Salvar Comparação em Anotações
+            </button>
+          </div>
+        `;
+      }
+    } catch (err) {
+      out.innerHTML = `<p style="color: #ef4444; font-size: 0.88rem; text-align: center;">Erro: ${err.message}</p>`;
+    }
+  }
+
+  setComparatorPreset(a, b) {
+    const inputA = document.getElementById('comparatorConceptA');
+    const inputB = document.getElementById('comparatorConceptB');
+    if (inputA && inputB) {
+      inputA.value = a;
+      inputB.value = b;
+      this.executeConceptComparison();
+    }
+  }
+
+  saveTextAsNote(title, content) {
+    const note = {
+      id: 'note_' + Date.now(),
+      title,
+      subject: 'Geral',
+      content,
+      createdAt: new Date().toISOString()
+    };
+    if (!Array.isArray(this.notesList)) this.notesList = [];
+    this.notesList.unshift(note);
+    this.saveSyncAction('save_note', { note });
+    alert('✔ Salvo no seu Caderno de Anotações!');
+  }
+
+  /* ================= GLOSSÁRIO PESSOAL ================= */
+  renderGlossaryView() {
+    const container = document.getElementById('glossaryItemsContainer');
+    if (!container) return;
+
+    const q = document.getElementById('glossarySearchInput')?.value.toLowerCase().trim() || '';
+    const subj = document.getElementById('glossarySubjectFilter')?.value || 'all';
+
+    let list = this.glossaryList || [];
+    if (subj !== 'all') {
+      list = list.filter(g => g.subject && g.subject.toLowerCase() === subj.toLowerCase());
+    }
+    if (q) {
+      list = list.filter(g => (g.term && g.term.toLowerCase().includes(q)) || (g.definition && g.definition.toLowerCase().includes(q)));
+    }
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 36px 20px; background: #fff; border: 2px dashed #cbd5e1; border-radius: 14px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">📖</div>
+          <h4 style="margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: #0f172a;">Seu Glossário de Termos</h4>
+          <p style="margin: 0 0 16px; color: #64748b; font-size: 0.88rem;">Guarde palavras difíceis e termos científicos para consultar a qualquer momento.</p>
+          <button type="button" class="btn-primary" onclick="app.openAddGlossaryModal()" style="padding: 9px 18px; font-weight: 800; border-radius: 10px;">
+            Adicionar Primeiro Termo
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(item => `
+      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+          <strong style="font-size: 1rem; color: #0f172a;">${item.term}</strong>
+          <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.72rem; padding: 2px 7px; border-radius: 999px;">${item.subject || 'Geral'}</span>
+        </div>
+        <p style="font-size: 0.86rem; color: #334155; line-height: 1.5; margin: 0 0 8px;">${item.definition}</p>
+        ${item.example ? `<div style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-bottom: 10px;">Ex: ${item.example}</div>` : ''}
+        <div style="display: flex; justify-content: flex-end; gap: 6px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+          <button type="button" class="chatgpt-btn-copy-msg" onclick="app.copyToClipboard('${item.term}: ${item.definition}', 'Termo copiado!')" title="Copiar"><i data-lucide="copy" style="width: 13px; height: 13px;"></i></button>
+          <button type="button" class="chatgpt-btn-copy-msg" onclick="app.deleteGlossary('${item.id}')" title="Excluir"><i data-lucide="trash-2" style="width: 13px; height: 13px; color: #ef4444;"></i></button>
+        </div>
+      </div>
+    `).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  openAddGlossaryModal() {
+    const form = document.getElementById('addGlossaryForm');
+    if (form) form.reset();
+    this.showModal('addGlossaryModal');
+  }
+
+  handleSaveGlossary(e) {
+    if (e) e.preventDefault();
+    const term = document.getElementById('glossaryTermInput')?.value?.trim();
+    const subject = document.getElementById('glossarySubjectSelect')?.value || 'Ciências';
+    const definition = document.getElementById('glossaryDefInput')?.value?.trim();
+    const example = document.getElementById('glossaryExInput')?.value?.trim() || '';
+
+    if (!term || !definition) {
+      alert('Informe o termo e a definição.');
+      return;
+    }
+
+    const item = {
+      id: 'gl_' + Date.now(),
+      term,
+      subject,
+      definition,
+      example,
+      createdAt: new Date().toISOString()
+    };
+
+    if (!Array.isArray(this.glossaryList)) this.glossaryList = [];
+    this.glossaryList.unshift(item);
+    this.saveSyncAction('save_glossary', { item });
+    this.closeModal('addGlossaryModal');
+    this.renderGlossaryView();
+    this.showSyncFeedback('success', 'Termo salvo no glossário!');
+  }
+
+  deleteGlossary(id) {
+    this.glossaryList = (this.glossaryList || []).filter(g => g.id !== id);
+    this.saveSyncAction('delete_glossary', { itemId: id });
+    this.renderGlossaryView();
+  }
+
+  /* ================= ORGANIZADOR DE DÚVIDAS ================= */
+  renderDoubtsView() {
+    const container = document.getElementById('doubtsItemsContainer');
+    if (!container) return;
+
+    const list = this.doubtsList || [];
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; background: #fff; border: 2px dashed #cbd5e1; border-radius: 14px;">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">❓</div>
+          <h4 style="margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: #0f172a;">Nenhuma dúvida registrada</h4>
+          <p style="margin: 0 0 16px; color: #64748b; font-size: 0.88rem;">Surgiu uma dúvida durante a aula ou lição de casa? Guarde aqui para tirar com a IA ou com o professor.</p>
+          <button type="button" class="btn-primary" onclick="app.openAddDoubtModal()" style="padding: 9px 18px; font-weight: 800; border-radius: 10px;">
+            Registrar Primeira Dúvida
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = list.map(d => `
+      <div style="background: #ffffff; border: 1.5px solid ${d.isResolved ? '#86efac' : '#e2e8f0'}; border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 260px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.72rem; padding: 2px 7px; border-radius: 999px;">${d.subject}</span>
+            <span style="font-size: 0.75rem; font-weight: 800; color: ${d.isResolved ? '#16a34a' : '#d97706'};">
+              ${d.isResolved ? '✔ Resolvida' : '⏳ Pendente'}
+            </span>
+          </div>
+          <strong style="font-size: 0.98rem; color: #0f172a; display: block; margin-bottom: 4px;">${d.question}</strong>
+          ${d.context ? `<p style="font-size: 0.82rem; color: #64748b; margin: 0 0 8px;">Origem: ${d.context}</p>` : ''}
+          ${d.aiResolution ? `
+            <div style="background: #f8fafc; border-left: 3px solid #4f46e5; padding: 8px 12px; border-radius: 6px; font-size: 0.84rem; color: #334155; margin-top: 8px;">
+              <strong>Explicação da IA:</strong> ${d.aiResolution}
+            </div>
+          ` : ''}
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button type="button" class="btn-sm" onclick="app.resolveDoubtWithAi('${d.id}')" style="font-size: 0.76rem; font-weight: 800; padding: 6px 12px; border-radius: 6px; background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; cursor: pointer;">
+            🤖 Tirar Dúvida com IA
+          </button>
+          <button type="button" class="btn-sm" onclick="app.toggleDoubtResolved('${d.id}')" style="font-size: 0.76rem; font-weight: 700; padding: 6px 10px; border-radius: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; cursor: pointer;">
+            ${d.isResolved ? 'Reabrir' : 'Marcar Resolvida'}
+          </button>
+          <button type="button" class="chatgpt-btn-copy-msg" onclick="app.deleteDoubt('${d.id}')" title="Excluir"><i data-lucide="trash-2" style="width: 13px; height: 13px; color: #ef4444;"></i></button>
+        </div>
+      </div>
+    `).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  openAddDoubtModal() {
+    const form = document.getElementById('addDoubtForm');
+    if (form) form.reset();
+    this.showModal('addDoubtModal');
+  }
+
+  handleSaveDoubt(e) {
+    if (e) e.preventDefault();
+    const question = document.getElementById('doubtQuestionInput')?.value?.trim();
+    const subject = document.getElementById('doubtSubjectSelect')?.value || 'Ciências';
+    const context = document.getElementById('doubtContextInput')?.value?.trim() || '';
+
+    if (!question) {
+      alert('Informe sua dúvida.');
+      return;
+    }
+
+    const doubt = {
+      id: 'dbt_' + Date.now(),
+      question,
+      subject,
+      context,
+      isResolved: false,
+      aiResolution: null,
+      createdAt: new Date().toISOString()
+    };
+
+    if (!Array.isArray(this.doubtsList)) this.doubtsList = [];
+    this.doubtsList.unshift(doubt);
+    this.saveSyncAction('save_doubt', { doubt });
+    this.closeModal('addDoubtModal');
+    this.renderDoubtsView();
+    this.showSyncFeedback('success', 'Dúvida registrada com sucesso!');
+  }
+
+  async resolveDoubtWithAi(id) {
+    const d = (this.doubtsList || []).find(item => item.id === id);
+    if (!d) return;
+
+    try {
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action: 'explain_alternative',
+          topic: d.question,
+          style: 'passo_a_passo'
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        d.aiResolution = data.text;
+        d.isResolved = true;
+        this.saveSyncAction('save_doubt', { doubt: d });
+        this.renderDoubtsView();
+        alert('✔ A IA respondeu sua dúvida com explicação didática passo a passo!');
+      }
+    } catch (err) {
+      alert('Erro ao resolver dúvida com a IA: ' + err.message);
+    }
+  }
+
+  toggleDoubtResolved(id) {
+    const d = (this.doubtsList || []).find(item => item.id === id);
+    if (!d) return;
+    d.isResolved = !d.isResolved;
+    this.saveSyncAction('save_doubt', { doubt: d });
+    this.renderDoubtsView();
+  }
+
+  deleteDoubt(id) {
+    this.doubtsList = (this.doubtsList || []).filter(d => d.id !== id);
+    this.saveSyncAction('delete_doubt', { doubtId: id });
+    this.renderDoubtsView();
+  }
+
+  /* ==========================================================================
+     MECÂNICA: MODO PROFESSOR PARTICULAR NO CHAT IA (AÇÕES DE CONTEXTO REAL)
+     ========================================================================== */
+  sendProfessorPrompt(actionType) {
+    if (!this.isUserPro()) {
+      this.showModal('subscriptionModal');
+      return;
+    }
+
+    // Busca o último tema ou resposta da IA no chat
+    const messages = this.currentAiConversation?.messages || [];
+    const lastBotMsg = messages.slice().reverse().find(m => m.role === 'assistant' || m.role === 'model' || m.sender === 'bot');
+    const topic = lastBotMsg ? (lastBotMsg.text || lastBotMsg.content || '').substring(0, 80) : 'o assunto que estávamos discutindo';
+
+    const prompts = {
+      'easier': `Por favor, explique o que você acabou de dizer de um jeito ainda mais fácil e didático, usando uma analogia simples do dia a dia.`,
+      'example': `Mostre outro exemplo prático e cotidiano sobre este mesmo assunto, detalhando como aplicar na prática.`,
+      'hint': `Me dê uma dica pedagógica sutil para eu resolver ou entender este ponto sem revelar a resposta final.`,
+      'similar_question': `Crie uma questão contextualizada de múltipla escolha parecida sobre esse tema para eu testar meu raciocínio agora mesmo.`,
+      'wrong_options': `Explique detalhadamente por que outras hipóteses ou alternativas comuns costumam estar erradas nesse conteúdo e onde os alunos mais caem em pegadinhas.`,
+      'to_flashcards': `Transforme as informações essenciais dessa explicação em 3 cartões de memorização (flashcards) com pergunta e resposta objetivas.`,
+      'to_mindmap': `Esquematize este assunto em um mapa mental conceitual, destacando o tema central, ramificações e exemplos práticos.`,
+      'to_summary': `Faça um resumo esquematizado e estruturado em tópicos dos pontos centrais desse conteúdo para eu revisar antes da prova.`
+    };
+
+    const textToSend = prompts[actionType] || prompts['easier'];
+    const input = document.getElementById('chatgptMessageInput') || document.getElementById('chatInput');
+    if (input) {
+      input.value = textToSend;
+      this.handleChatGptSubmit(new Event('submit'));
+    }
+  }
+
+  /* ==========================================================================
+     MECÂNICA: MODO FOCO (TEMPORIZADOR DISCRETO DE ESTUDOS)
+     ========================================================================== */
+  openFocusTimerModal() {
+    this.updateFocusTimerUI();
+    this.showModal('focusTimerModal');
+  }
+
+  setFocusDurationPreset(minutes) {
+    document.querySelectorAll('.focus-preset-btn').forEach(b => {
+      b.classList.toggle('active', b.innerText.includes(`${minutes} min`));
+    });
+    this.focusTimer.total = minutes * 60;
+    if (!this.focusTimer.running) {
+      this.focusTimer.remaining = this.focusTimer.total;
+    }
+    this.updateFocusTimerUI();
+  }
+
+  applyCustomFocusDuration() {
+    const val = parseInt(document.getElementById('focusCustomMinutes')?.value, 10);
+    if (val && val > 0 && val <= 180) {
+      this.setFocusDurationPreset(val);
+    }
+  }
+
+  toggleFocusTimer() {
+    if (this.focusTimer.running) {
+      // Pausar
+      clearInterval(this.focusTimer.timerId);
+      this.focusTimer.running = false;
+      this.updateFocusTimerUI();
+    } else {
+      // Iniciar / Retomar
+      this.focusTimer.running = true;
+      if (this.focusTimer.remaining <= 0) {
+        this.focusTimer.remaining = this.focusTimer.total;
+      }
+      this.focusTimer.timerId = setInterval(() => {
+        if (this.focusTimer.remaining > 0) {
+          this.focusTimer.remaining--;
+          this.updateFocusTimerUI();
+        } else {
+          // Concluído
+          this.stopFocusTimer();
+          alert('⏱️ Sessão de Foco Concluída!\n\nExcelente trabalho! Faça uma pausa de 5 minutos para descansar os olhos e hidratar-se.');
+        }
+      }, 1000);
+      this.updateFocusTimerUI();
+    }
+  }
+
+  stopFocusTimer() {
+    clearInterval(this.focusTimer.timerId);
+    this.focusTimer.running = false;
+    this.focusTimer.remaining = this.focusTimer.total;
+    this.updateFocusTimerUI();
+  }
+
+  updateFocusTimerUI() {
+    const m = Math.floor(this.focusTimer.remaining / 60);
+    const s = this.focusTimer.remaining % 60;
+    const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+    const disp = document.getElementById('focusTimerCountdownDisplay');
+    if (disp) disp.innerText = timeStr;
+
+    const badge = document.getElementById('focusTimerStatusBadge');
+    if (badge) {
+      if (this.focusTimer.running) {
+        badge.innerText = 'Sessão de Foco Ativa';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#166534';
+      } else if (this.focusTimer.remaining < this.focusTimer.total) {
+        badge.innerText = 'Pausado';
+        badge.style.background = '#fef3c7';
+        badge.style.color = '#b45309';
+      } else {
+        badge.innerText = 'Pronto para iniciar';
+        badge.style.background = '#e0e7ff';
+        badge.style.color = '#4338ca';
+      }
+    }
+
+    const startBtn = document.getElementById('focusTimerStartBtn');
+    if (startBtn) {
+      startBtn.innerHTML = this.focusTimer.running 
+        ? `<i data-lucide="pause" style="width: 16px; height: 16px;"></i> Pausar` 
+        : `<i data-lucide="play" style="width: 16px; height: 16px;"></i> ${this.focusTimer.remaining < this.focusTimer.total ? 'Retomar' : 'Iniciar Sessão'}`;
+    }
+
+    const stopBtn = document.getElementById('focusTimerStopBtn');
+    if (stopBtn) {
+      stopBtn.style.display = (this.focusTimer.running || this.focusTimer.remaining < this.focusTimer.total) ? 'inline-block' : 'none';
+    }
+
+    // Atualiza widget no topo
+    const topLabel = document.getElementById('topbarFocusLabel');
+    const topBtn = document.getElementById('topbarFocusBtn');
+    if (topLabel && topBtn) {
+      if (this.focusTimer.running) {
+        topLabel.innerText = `⏱️ ${timeStr}`;
+        topBtn.classList.add('active-pulse');
+      } else {
+        topLabel.innerText = 'Modo Foco';
+        topBtn.classList.remove('active-pulse');
+      }
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  /* ==========================================================================
+     MECÂNICA: CRIADOR DE MATERIAIS PERSONALIZADOS (6 ETAPAS)
+     ========================================================================== */
+  openCreateCustomMaterialModal() {
+    const area = document.getElementById('custMatPreviewArea');
+    if (area) area.style.display = 'none';
+    this.showModal('createCustomMaterialModal');
+  }
+
+  async handleExecuteCreateCustomMaterial(e) {
+    if (e) e.preventDefault();
+    const subject = document.getElementById('custMatSubject')?.value || 'Ciências';
+    const format = document.getElementById('custMatFormat')?.value || 'summary';
+    const text = document.getElementById('custMatInputText')?.value?.trim();
+    const difficulty = document.getElementById('custMatDifficulty')?.value || 'medio';
+    const tag = document.getElementById('custMatTag')?.value?.trim() || 'Estudos';
+    const submitBtn = document.getElementById('custMatSubmitBtn');
+
+    if (!text) {
+      alert('Informe o assunto ou forneça o texto base para gerar o material.');
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Gerando Material...';
+    }
+
+    try {
+      let action = 'summarize_content';
+      if (format === 'flashcards') action = 'generate_flashcards';
+      else if (format === 'mindmap') action = 'generate_mindmap';
+      else if (format === 'exercises' || format === 'simulado') action = 'generate_questions';
+
+      const res = await fetch('/api/ai/study-tools', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          action,
+          subject,
+          topic: text,
+          text,
+          difficulty,
+          count: 4
+        })
+      });
+      const data = await res.json();
+      const previewArea = document.getElementById('custMatPreviewArea');
+      const titleInput = document.getElementById('custMatResultTitle');
+      const bodyInput = document.getElementById('custMatResultBody');
+
+      if (previewArea && titleInput && bodyInput) {
+        previewArea.style.display = 'block';
+
+        if (format === 'summary') {
+          titleInput.value = data.title || `Resumo: ${text.substring(0, 30)}`;
+          bodyInput.value = `${data.overview || ''}\n\nPontos Principais:\n${(data.keyPoints || []).map(p => `• ${p}`).join('\n')}\n\nPerguntas para Fixar:\n${(data.questions || []).map(q => `? ${q}`).join('\n')}`;
+        } else if (format === 'flashcards') {
+          titleInput.value = `Baralho de Flashcards: ${text.substring(0, 30)}`;
+          bodyInput.value = (data.cards || []).map((c, i) => `[Cartão ${i + 1}]\nFrente: ${c.front}\nVerso: ${c.back}`).join('\n\n');
+        } else if (format === 'mindmap') {
+          titleInput.value = data.title || `Mapa Mental: ${text.substring(0, 30)}`;
+          bodyInput.value = JSON.stringify(data.root, null, 2);
+        } else {
+          titleInput.value = `Exercícios de Fixação: ${text.substring(0, 30)}`;
+          bodyInput.value = (data.questions || []).map((q, i) => `Questão ${i + 1}: ${q.q}\n${(q.options || []).join('\n')}\nResolução: ${q.explanation}`).join('\n\n');
+        }
+
+        this.generatedMaterialPayload = {
+          title: titleInput.value,
+          subject,
+          tag,
+          format,
+          content: bodyInput.value
+        };
+      }
+    } catch (err) {
+      alert('Erro ao gerar material: ' + err.message);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="sparkles" style="width: 15px; height: 15px;"></i> Gerar Material`;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  }
+
+  async saveGeneratedMaterialToAccount() {
+    const title = document.getElementById('custMatResultTitle')?.value?.trim();
+    const content = document.getElementById('custMatResultBody')?.value?.trim();
+    if (!title || !content) {
+      alert('O material precisa ter um título e um conteúdo.');
+      return;
+    }
+
+    const payload = this.generatedMaterialPayload || {};
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          title,
+          subject: payload.subject || 'Geral',
+          topic: payload.tag || 'Personalizado',
+          content,
+          fileType: 'text'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await this.loadMaterialsLibrary();
+        this.closeModal('createCustomMaterialModal');
+        alert('✔ Material personalizado salvo com sucesso na sua biblioteca de estudos!');
+      } else {
+        alert(data.error || 'Erro ao salvar material.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao salvar: ' + err.message);
+    }
   }
 
   /* ==========================================================================

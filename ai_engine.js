@@ -445,8 +445,415 @@ function generateEducationalEngineResponse(message, history, image, user, extraO
   return defaultAnswer;
 }
 
+/**
+ * LABORATÓRIO DE ESTUDOS — GERADOR ESTRUTURADO DE FERRAMENTAS INTELIGENTES
+ * Gera flashcards, mapas mentais, simulados, resumos, comparações e sugestões com base em IA real ou regras BNCC.
+ */
+function generateStructuredStudyTool(action, params = {}) {
+  const subject = params.subject || 'Geral';
+  const topic = params.topic || params.prompt || params.text || 'Conceitos Fundamentais';
+  const difficulty = params.difficulty || 'medio';
+  const count = parseInt(params.count, 10) || 4;
+  const norm = normalizePrompt(topic + ' ' + (params.text || ''));
+
+  // 1. GERAR FLASHCARDS
+  if (action === 'generate_flashcards') {
+    const cards = [];
+    if (norm.includes('vegetal') || norm.includes('briofita') || norm.includes('pteridofita') || norm.includes('planta')) {
+      cards.push(
+        { front: 'O que diferencia fundamentalmente as briófitas das pteridófitas?', back: 'As pteridófitas possuem vasos condutores de seiva (xilema e floema), enquanto as briófitas são avasculares e de pequeno porte.', subject: 'Ciências' },
+        { front: 'Qual é o habitat obrigatório das briófitas e por quê?', back: 'Locais úmidos e sombreados, pois dependem da água para que os anterozoides nadem até a oosfera na reprodução.', subject: 'Ciências' },
+        { front: 'Quais estruturas novas surgem nas gimnospermas em relação às pteridófitas?', back: 'Surgimento das sementes (ainda nuas, sem fruto) e independência da água para fecundação (grão de pólen).', subject: 'Ciências' },
+        { front: 'Qual é a função exclusiva dos frutos nas angiospermas?', back: 'Proteger as sementes e auxiliar na sua dispersão por meio de animais, vento ou água.', subject: 'Ciências' }
+      );
+    } else if (norm.includes('newton') || norm.includes('forca') || norm.includes('inercia')) {
+      cards.push(
+        { front: 'O que estabelece a 1ª Lei de Newton (Princípio da Inércia)?', back: 'Um corpo em repouso permanece em repouso e um corpo em MRU permanece em MRU, a menos que uma força resultante externa atue sobre ele.', subject: 'Física' },
+        { front: 'Qual é a fórmula matemática fundamental da 2ª Lei de Newton?', back: 'F_res = m × a (A força resultante é igual ao produto da massa pela aceleração adquirida).', subject: 'Física' },
+        { front: 'Por que o par de forças de Ação e Reação (3ª Lei) nunca se anula?', back: 'Porque atuam sempre em corpos diferentes (ex: o pé na bola e a bola no pé).', subject: 'Física' },
+        { front: 'O que acontece com a aceleração se a massa de um corpo dobrar mantendo a mesma força?', back: 'A aceleração cai pela metade, pois aceleração e massa são grandezas inversamente proporcionais.', subject: 'Física' }
+      );
+    } else if (norm.includes('crase') || norm.includes('portugues') || norm.includes('gramatica')) {
+      cards.push(
+        { front: 'O que é gramaticalmente o fenômeno da crase?', back: 'É a contração da preposição "a" exigida por um verbo/nome com o artigo definido feminino "a" (a + a = à).', subject: 'Português' },
+        { front: 'Qual é o teste prático da troca masculina para verificar a crase?', back: 'Substitua o termo feminino por um masculino equivalente: se virar "ao", ocorre crase (Vou à praia -> Vou ao clube).', subject: 'Português' },
+        { front: 'Pode-se usar acento de crase antes de verbos ou palavras masculinas?', back: 'Não! É regra proibitiva geral (Ex: a pé, a cavalo, a partir, disposto a ajudar).', subject: 'Português' }
+      );
+    } else if (norm.includes('industrial') || norm.includes('historia')) {
+      cards.push(
+        { front: 'Qual fator geológico e geográfico impulsionou o pioneirismo inglês na Revolução Industrial?', back: 'A abundância de jazidas de carvão mineral e ferro, além da facilidade de transporte por sua vasta malha hidroviária.', subject: 'História' },
+        { front: 'O que foi a Lei de Cercamento dos Campos (Enclosure Acts)?', back: 'A privatização de terras comunais que expulsou os camponeses para as cidades, criando mão de obra barata para as indústrias.', subject: 'História' },
+        { front: 'Quais duas novas classes sociais surgiram com a industrialização moderna?', back: 'A Burguesia Industrial (proprietária das máquinas e fábricas) e o Proletariado (trabalhadores assalariados).', subject: 'História' }
+      );
+    } else {
+      cards.push(
+        { front: `O que define essencialmente o conceito de "${topic}"?`, back: `É o fundamento que explica os princípios operacionais e regras centrais aplicadas na matéria de ${subject}.`, subject },
+        { front: `Qual é a principal aplicação prática de "${topic}" em questões de prova?`, back: `Identificar a relação de causa e efeito, analisando variáveis e eliminando alternativas falsas.`, subject },
+        { front: `Qual erro conceitual comum os estudantes cometem sobre "${topic}"?`, back: `Confundir os pré-requisitos iniciais com as consequências diretas ou generalizar casos particulares.`, subject },
+        { front: `Como memorizar rapidamente a regra principal de "${topic}"?`, back: `Associar a uma analogia do cotidiano e revisar as três palavras-chave principais do conteúdo.`, subject }
+      );
+    }
+    return {
+      success: true,
+      topic,
+      subject,
+      cards: cards.slice(0, count).map((c, idx) => ({ ...c, id: 'fc_ai_' + Date.now() + '_' + idx }))
+    };
+  }
+
+  // 2. GERAR MAPA MENTAL ESTRUTURADO
+  if (action === 'generate_mindmap') {
+    let rootNode = null;
+    if (norm.includes('vegetal') || norm.includes('planta')) {
+      rootNode = {
+        label: 'Reino Vegetal (Metaphyta)',
+        summary: 'Classificação evolutiva das plantas terrestres',
+        color: '#10b981',
+        children: [
+          {
+            label: '1. Briófitas (Avasculares)',
+            details: 'Sem xilema/floema; transporte por difusão célula a célula; pequeno porte.',
+            examples: 'Musgos e hepáticas.',
+            children: [
+              { label: 'Gametófito Duradouro', details: 'Fase haploide (n) dominante; depende de água para fecundação.' }
+            ]
+          },
+          {
+            label: '2. Pteridófitas (Vasculares Sem Sementes)',
+            details: 'Primeiras plantas com vasos condutores; esporófito (2n) dominante.',
+            examples: 'Samambaias, avencas, xaxins.',
+            children: [
+              { label: 'Esporângios e Soros', details: 'Pontos escuros sob as folhas onde ocorre meiose para formar esporos.' }
+            ]
+          },
+          {
+            label: '3. Gimnospermas (Sementes Nuas)',
+            details: 'Desenvolvimento do grão de pólen (independência da água) e sementes sem fruto.',
+            examples: 'Pinheiro-do-Paraná (Araucária), sequoias e cicadáceas.',
+            children: [
+              { label: 'Estróbilos (Pinhas)', details: 'Órgãos reprodutivos que produzem pólen ou abrigam o óvulo.' }
+            ]
+          },
+          {
+            label: '4. Angiospermas (Flores e Frutos)',
+            details: 'Grupo mais diverso e evoluído; dupla fecundação; proteção das sementes por frutos.',
+            examples: 'Árvores frutíferas, gramíneas, leguminosas e flores ornamentais.',
+            children: [
+              { label: 'Atrativo para Polinizadores', details: 'Pétalas coloridas, néctar e odores que atraem insetos e aves.' }
+            ]
+          }
+        ]
+      };
+    } else if (norm.includes('newton') || norm.includes('mecanica')) {
+      rootNode = {
+        label: 'Dinâmica & Leis de Newton',
+        summary: 'Estudo das forças e suas causas no movimento',
+        color: '#4f46e5',
+        children: [
+          {
+            label: '1ª Lei: Inércia',
+            details: 'Tendência natural dos corpos de manter seu estado de repouso ou de MRU.',
+            examples: 'Passageiro jogado para frente na freada brusca do ônibus.',
+            children: [
+              { label: 'Condição de Equilíbrio', details: 'A soma de todas as forças que atuam no corpo é nula (Fr = 0).' }
+            ]
+          },
+          {
+            label: '2ª Lei: Princípio Fundamental',
+            details: 'A aceleração é diretamente proporcional à força e inversamente à massa.',
+            examples: 'Fr = m × a (Unidade: Newtons no S.I.).',
+            children: [
+              { label: 'Massa como Medida', details: 'Massa é a medida quantitativa da inércia de um corpo.' }
+            ]
+          },
+          {
+            label: '3ª Lei: Ação e Reação',
+            details: 'Toda força de ação gera uma reação oposta de mesma intensidade e direção.',
+            examples: 'Nadador empurrando a água para trás para se mover para a frente.',
+            children: [
+              { label: 'Corpos Distintos', details: 'O par ação-reação NUNCA se anula porque atua em corpos diferentes!' }
+            ]
+          }
+        ]
+      };
+    } else {
+      rootNode = {
+        label: topic,
+        summary: `Mapa mental conceitual de ${subject}`,
+        color: '#6366f1',
+        children: [
+          {
+            label: 'Fundamentos & Definição',
+            details: `Conceitos essenciais que estruturam o tema de ${topic}.`,
+            examples: 'Premissas básicas da BNCC.',
+            children: [
+              { label: 'Origem & Nomenclatura', details: 'Termos e definições padronizadas.' }
+            ]
+          },
+          {
+            label: 'Classificação & Subdivisões',
+            details: 'Como os elementos desse assunto se dividem e se categorizam.',
+            examples: 'Tipos principais e características.',
+            children: [
+              { label: 'Critérios de Diferenciação', details: 'Pontos que distinguem cada categoria.' }
+            ]
+          },
+          {
+            label: 'Aplicações no Cotidiano',
+            details: 'Relação prática com exercícios escolares e situações do dia a dia.',
+            examples: 'Exemplos práticos e experimentos.',
+            children: [
+              { label: 'Resolução de Problemas', details: 'Estratégia para acertar questões de prova.' }
+            ]
+          }
+        ]
+      };
+    }
+    return {
+      success: true,
+      id: 'mm_' + Date.now(),
+      title: `Mapa Mental: ${topic}`,
+      subject,
+      root: rootNode,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  // 3. GERADOR DE QUESTÕES
+  if (action === 'generate_questions') {
+    const qList = [];
+    if (norm.includes('vegetal') || norm.includes('ciencias')) {
+      qList.push(
+        {
+          id: 'q_gen_1',
+          type: 'multiple_choice',
+          q: 'Qual das seguintes características permitiu que as pteridófitas atingissem portes maiores que as briófitas no decorrer da evolução?',
+          options: [
+            'A) Desenvolvimento de flores coloridas para atrair insetos.',
+            'B) Presença de vasos condutores de seiva (xilema e floema).',
+            'C) Produção de sementes protegidas no interior de frutos.',
+            'D) Total independência da água em todos os processos vitais.'
+          ],
+          correct: 1,
+          hint: 'Lembre-se de como a água e os nutrientes circulam em plantas altas.',
+          explanation: 'Os tecidos vasculares (xilema e floema) permitiram o transporte eficiente de água e seiva por longas distâncias, sustentando caules maiores.'
+        },
+        {
+          id: 'q_gen_2',
+          type: 'true_false',
+          q: 'Nas briófitas (como os musgos), a fase dominante e duradoura do ciclo de vida é o esporófito diploide (2n).',
+          options: ['A) Verdadeiro', 'B) Falso'],
+          correct: 1,
+          hint: 'As briófitas são as únicas em que o gametófito verde é a fase persistente.',
+          explanation: 'Falso! Nas briófitas, a fase dominante é o gametófito haploide (n). O esporófito (2n) é efêmero e dependente nutricionalmente dele.'
+        },
+        {
+          id: 'q_gen_3',
+          type: 'multiple_choice',
+          q: 'As araucárias e os pinheiros pertencem ao grupo das Gimnospermas porque:',
+          options: [
+            'A) Não produzem sementes em hipótese alguma.',
+            'B) Possuem sementes nuas que não são envolvidas por frutos verdadeiros.',
+            'C) Não possuem vasos condutores de seiva bruta.',
+            'D) Dependem da água da chuva para que ocorra a fecundação.'
+          ],
+          correct: 1,
+          hint: 'A palavra "gimnos" vem do grego e significa nu/descoberto.',
+          explanation: 'O termo gimnosperma significa exatamente "semente nua", ou seja, as sementes desenvolvem-se nos estróbilos sem ovário que gere frutos.'
+        }
+      );
+    } else {
+      qList.push(
+        {
+          id: 'q_gen_1',
+          type: 'multiple_choice',
+          q: `Sobre os conceitos essenciais de ${topic}, assinale a alternativa cientificamente correta:`,
+          options: [
+            `A) ${topic} atua de forma isolada, sem interagir com outras leis da natureza.`,
+            `B) Os princípios de ${topic} relacionam-se diretamente com causas físicas ou históricas comprovadas.`,
+            `C) Trata-se de uma hipótese desprovida de comprovação experimental.`,
+            `D) Aplica-se exclusivamente em condições ideais de laboratório.`
+          ],
+          correct: 1,
+          hint: 'Busque a alternativa que reconhece a fundamentação e aplicabilidade do conceito.',
+          explanation: `A alternativa B está correta pois sintetiza a base teórica e experimental de ${topic} no currículo escolar.`
+        },
+        {
+          id: 'q_gen_2',
+          type: 'true_false',
+          q: `A correta interpretação de ${topic} exige analisar as condições de contorno e premissas iniciais do problema.`,
+          options: ['A) Verdadeiro', 'B) Falso'],
+          correct: 0,
+          hint: 'Pense se é possível aplicar fórmulas ou teorias sem checar as unidades e premissas.',
+          explanation: 'Verdadeiro! Toda resolução rigorosa exige verificar as premissas e variáveis antes de concluir.'
+        }
+      );
+    }
+    return {
+      success: true,
+      topic,
+      subject,
+      questions: qList.slice(0, count)
+    };
+  }
+
+  // 4. EXPLICAÇÃO ALTERNATIVA
+  if (action === 'explain_alternative') {
+    const style = params.style || 'analogia';
+    let textOut = '';
+    if (style === 'analogia') {
+      textOut = `💡 **Explicação com Analogia do Dia a Dia: ${topic}**\n\n` +
+        `Imagine que o assunto de **${topic}** funciona exatamente como uma rodovia movimentada:\n\n` +
+        `• **A Pista e o Fluxo:** Assim como os carros precisam de faixas bem demarcadas para não bater, as variáveis desse conceito seguem regras estritas.\n` +
+        `• **O Pedágio ou Filtro:** Para passar de uma fase a outra, existe uma condição necessária que deve ser atingida (como o combustível ou o sinal verde).\n` +
+        `• **O Destino Final:** Quando tudo opera em conjunto, o resultado previsto acontece naturalmente sem esforço decorativo.\n\n` +
+        `Assim, quando você encontrar uma questão sobre **${topic}**, não tente decorar fórmulas longas: lembre-se apenas de quem acelera o processo e quem oferece resistência!`;
+    } else if (style === 'passo_a_passo') {
+      textOut = `📋 **Explicação Passo a Passo Lógica: ${topic}**\n\n` +
+        `**Passo 1 — Identificação:** Comece identificando o que o problema ou texto está apresentando de concreto.\n` +
+        `**Passo 2 — Isolamento das Variáveis:** Separe os dados conhecidos das incógnitas que precisam ser encontradas.\n` +
+        `**Passo 3 — Regra de Ouro:** Aplique a propriedade principal que rege **${topic}** sem misturar exceções.\n` +
+        `**Passo 4 — Verificação de Sanidade:** O resultado faz sentido físico e lógico? Se sim, o raciocínio está consolidado!`;
+    } else {
+      textOut = `🎯 **Visão Prática & Esquematizada: ${topic}**\n\n` +
+        `• **O que é em 1 frase:** É o mecanismo que dita como elementos de ${subject} interagem e se transformam.\n` +
+        `• **Onde cai em prova:** Principalmente em questões conceituais que pedem para comparar causas e consequências.\n` +
+        `• **Pegadinha mais comum:** Trocar a causa pelo efeito. Fique sempre atento à ordem cronológica e às forças resultantes.`;
+    }
+    return { success: true, topic, style, text: textOut };
+  }
+
+  // 5. COMPARADOR DE CONCEITOS
+  if (action === 'compare_concepts') {
+    const cA = params.conceptA || 'Conceito A';
+    const cB = params.conceptB || 'Conceito B';
+    const compNorm = normalizePrompt(cA + ' ' + cB);
+
+    if (compNorm.includes('briofita') && compNorm.includes('pteridofita')) {
+      return {
+        success: true,
+        conceptA: 'Briófitas (ex: Musgos)',
+        conceptB: 'Pteridófitas (ex: Samambaias)',
+        defA: 'Plantas pioneiras avasculares, sem tecidos de sustentação e de pequeno porte.',
+        defB: 'Primeiras plantas vasculares da história evolutiva vegetal, possuindo xilema e floema.',
+        similarities: [
+          'Ambos os grupos dependem da água para a fecundação (gametas flagelados nadadores).',
+          'Não produzem sementes, flores e nem frutos verdadeiros (são criptógamas).',
+          'Alternância de gerações (metagênese) com fases haploide e diploide.'
+        ],
+        differences: [
+          'Briófitas são avasculares; pteridófitas possuem vasos condutores completos.',
+          'Nas briófitas, a fase dominante é o Gametófito (n); nas pteridófitas, é o Esporófito (2n).',
+          'Pteridófitas possuem raízes, caule e folhas verdadeiras; briófitas têm apenas rizoides, cauloides e filoides.'
+        ],
+        practicalExample: 'Musgos cobrindo pedras úmidas (milímetros) versus samambaias ornamentais em jardins (metros de comprimento).',
+        examPitfall: 'Cuidado! Dizer que samambaias têm sementes é o erro mais comum. Samambaias produzem ESPOROS nos soros, não sementes!'
+      };
+    } else if (compNorm.includes('mitose') && compNorm.includes('meiose')) {
+      return {
+        success: true,
+        conceptA: 'Mitose',
+        conceptB: 'Meiose',
+        defA: 'Divisão celular equacional que gera duas células-filhas geneticamente idênticas à célula-mãe.',
+        defB: 'Divisão celular reducional que forma quatro células-filhas com metade do número de cromossomos (gametas).',
+        similarities: [
+          'Ambos passam por etapas de Prófase, Metáfase, Anáfase e Telófase.',
+          'Ambos realizam duplicação prévia do DNA durante a interfase (fase S).'
+        ],
+        differences: [
+          'A mitose ocorre em células somáticas para crescimento e regeneração; a meiose ocorre em células germinativas.',
+          'A mitose gera 2 células diploides (2n -> 2n); a meiose gera 4 células haploides (2n -> n).',
+          'Na meiose ocorre crossing-over (recombinação gênica), garantindo variabilidade genética ausente na mitose.'
+        ],
+        practicalExample: 'Cicatrização de um corte na pele (mitose) versus formação de espermatozoides e óvulos (meiose).',
+        examPitfall: 'Atenção para o crossing-over: ele acontece exclusivamente na Prófase I da Meiose, nunca na mitose!'
+      };
+    } else {
+      return {
+        success: true,
+        conceptA: cA,
+        conceptB: cB,
+        defA: `Fundamentação teórica e características definidoras de ${cA}.`,
+        defB: `Fundamentação teórica e características definidoras de ${cB}.`,
+        similarities: [
+          `Ambos pertencem ao mesmo domínio da matéria de ${subject}.`,
+          'Compartilham a mesma base curricular e métodos de resolução analítica.'
+        ],
+        differences: [
+          `${cA} atua prioritariamente sobre condições específicas, enquanto ${cB} expande para outras variáveis.`,
+          'As unidades e coeficientes de aplicação distinguem os dois em problemas práticos.'
+        ],
+        practicalExample: `Aplicação direta em exercícios de sala de aula e situações práticas de ${subject}.`,
+        examPitfall: 'Confundir os nomes ou aplicar as fórmulas de um no contexto do outro.'
+      };
+    }
+  }
+
+  // 6. RESUMIDOR INTELIGENTE
+  if (action === 'summarize_content') {
+    const rawText = params.text || topic;
+    return {
+      success: true,
+      title: `Resumo Estruturado: ${topic}`,
+      subject,
+      overview: `Síntese objetiva e organizada dos pontos mais cobrados sobre ${topic}.`,
+      keyPoints: [
+        `Conceito-chave: Entenda o mecanismo principal de funcionamento antes de memorizar detalhes.`,
+        `Relações diretas: Identifique as grandezas que sobem juntas (proporcionais) e as que se opõem.`,
+        `Exceções à regra: Fique atento aos casos especiais que costumam ser cobrados em pegadinhas de prova.`
+      ],
+      rules: [
+        'Sempre verifique as unidades no S.I. antes de iniciar qualquer cálculo.',
+        'Elimine primeiro as alternativas absurdas que contrariam a teoria básica.'
+      ],
+      questions: [
+        `Como você explicaria a importância de ${topic} com suas próprias palavras?`,
+        `Qual é o detalhe que geralmente passa despercebido pelos alunos nesse conteúdo?`
+      ]
+    };
+  }
+
+  // 7. SUGESTÕES DE ORGANIZAÇÃO DE ESTUDOS COM IA (CALENDÁRIO & PROVAS)
+  if (action === 'suggest_study_plan') {
+    const exams = Array.isArray(params.exams) ? params.exams : [];
+    const suggestions = [];
+
+    exams.forEach((ex, idx) => {
+      suggestions.push({
+        id: 'sug_' + Date.now() + '_' + idx,
+        title: `Revisão Ativa: ${ex.subject || 'Matéria'}`,
+        subject: ex.subject || 'Geral',
+        targetDate: ex.date || new Date().toISOString().split('T')[0],
+        type: 'Revisão Recomendada',
+        description: `Resolver 5 questões e revisar flashcards de "${ex.topics || 'conteúdo da prova'}" para fixação antes da avaliação oficial.`,
+        priority: 'Alta'
+      });
+    });
+
+    if (suggestions.length === 0) {
+      suggestions.push({
+        id: 'sug_' + Date.now(),
+        title: 'Sessão de Treino Diário',
+        subject: 'Matemática',
+        targetDate: new Date().toISOString().split('T')[0],
+        type: 'Treino Prático',
+        description: 'Resolver 3 exercícios de raciocínio lógico e equações no Estude+.',
+        priority: 'Média'
+      });
+    }
+
+    return {
+      success: true,
+      suggestions
+    };
+  }
+
+  return { success: false, error: 'Ação de estudo não reconhecida.' };
+}
+
 module.exports = {
   generateEducationalEngineResponse,
+  generateStructuredStudyTool,
   trySolveMath,
   trySubjectKnowledge,
   tryConversationalChat

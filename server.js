@@ -24,7 +24,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const supabase = require('./supabase_client');
-const { generateEducationalEngineResponse } = require('./ai_engine');
+const { generateEducationalEngineResponse, generateStructuredStudyTool } = require('./ai_engine');
 
 const PORT = process.env.PORT || 8080;
 const DB_FILE = path.join(__dirname, 'db.json');
@@ -794,6 +794,9 @@ function buildSafeUser(u, extra = {}) {
     exams: Array.isArray(u.exams) ? u.exams : [],
     notes: Array.isArray(u.notes) ? u.notes : [],
     flashcards: Array.isArray(u.flashcards) ? u.flashcards : [],
+    mindmaps: Array.isArray(u.mindmaps) ? u.mindmaps : [],
+    glossary: Array.isArray(u.glossary) ? u.glossary : [],
+    doubts: Array.isArray(u.doubts) ? u.doubts : [],
     collections: Array.isArray(u.collections) ? u.collections : [],
     favorites: Array.isArray(u.favorites) ? u.favorites : [],
     customSimulados: Array.isArray(u.customSimulados) ? u.customSimulados : [],
@@ -1451,6 +1454,21 @@ const server = http.createServer((req, res) => {
         u.flashcards = data.flashcards;
       }
 
+      // 7.1. Mapas Mentais
+      if (Array.isArray(data.mindmaps)) {
+        u.mindmaps = data.mindmaps;
+      }
+
+      // 7.2. Glossário Pessoal
+      if (Array.isArray(data.glossary)) {
+        u.glossary = data.glossary;
+      }
+
+      // 7.3. Organizador de Dúvidas
+      if (Array.isArray(data.doubts)) {
+        u.doubts = data.doubts;
+      }
+
       // 8. Coleções Personalizadas
       if (Array.isArray(data.collections)) {
         u.collections = data.collections;
@@ -1586,6 +1604,62 @@ const server = http.createServer((req, res) => {
           const idx = u.customSimulados.findIndex(s => s.id === sim.id);
           if (idx >= 0) u.customSimulados[idx] = { ...u.customSimulados[idx], ...sim };
           else u.customSimulados.unshift({ ...sim, createdAt: sim.createdAt || nowIso });
+        }
+      } else if (action === 'save_mindmap') {
+        if (!Array.isArray(u.mindmaps)) u.mindmaps = [];
+        const mm = payload.mindmap;
+        if (!mm || !mm.id) return sendJson({ error: 'Mapa mental inválido.' }, 400);
+        mm.updatedAt = nowIso;
+        const idx = u.mindmaps.findIndex(m => m.id === mm.id);
+        if (idx >= 0) u.mindmaps[idx] = { ...u.mindmaps[idx], ...mm };
+        else u.mindmaps.unshift({ ...mm, createdAt: mm.createdAt || nowIso });
+      } else if (action === 'delete_mindmap') {
+        if (Array.isArray(u.mindmaps)) {
+          u.mindmaps = u.mindmaps.filter(m => m.id !== payload.mindmapId);
+        }
+      } else if (action === 'save_glossary') {
+        if (!Array.isArray(u.glossary)) u.glossary = [];
+        const item = payload.item;
+        if (!item || !item.id) return sendJson({ error: 'Termo de glossário inválido.' }, 400);
+        item.updatedAt = nowIso;
+        const idx = u.glossary.findIndex(g => g.id === item.id);
+        if (idx >= 0) u.glossary[idx] = { ...u.glossary[idx], ...item };
+        else u.glossary.unshift({ ...item, createdAt: item.createdAt || nowIso });
+      } else if (action === 'delete_glossary') {
+        if (Array.isArray(u.glossary)) {
+          u.glossary = u.glossary.filter(g => g.id !== payload.itemId);
+        }
+      } else if (action === 'save_doubt') {
+        if (!Array.isArray(u.doubts)) u.doubts = [];
+        const doubt = payload.doubt;
+        if (!doubt || !doubt.id) return sendJson({ error: 'Dúvida inválida.' }, 400);
+        doubt.updatedAt = nowIso;
+        const idx = u.doubts.findIndex(d => d.id === doubt.id);
+        if (idx >= 0) u.doubts[idx] = { ...u.doubts[idx], ...doubt };
+        else u.doubts.unshift({ ...doubt, createdAt: doubt.createdAt || nowIso });
+      } else if (action === 'delete_doubt') {
+        if (Array.isArray(u.doubts)) {
+          u.doubts = u.doubts.filter(d => d.id !== payload.doubtId);
+        }
+      } else if (action === 'save_exam') {
+        if (!Array.isArray(u.exams)) u.exams = [];
+        const exam = payload.exam;
+        if (!exam || !exam.id) return sendJson({ error: 'Prova/Tarefa inválida.' }, 400);
+        exam.updatedAt = nowIso;
+        const idx = u.exams.findIndex(e => String(e.id) === String(exam.id));
+        if (idx >= 0) u.exams[idx] = { ...u.exams[idx], ...exam };
+        else u.exams.unshift({ ...exam, createdAt: exam.createdAt || nowIso });
+      } else if (action === 'delete_exam') {
+        if (Array.isArray(u.exams)) {
+          u.exams = u.exams.filter(e => String(e.id) !== String(payload.examId));
+        }
+      } else if (action === 'toggle_exam_completed') {
+        if (Array.isArray(u.exams)) {
+          const ex = u.exams.find(e => String(e.id) === String(payload.examId));
+          if (ex) {
+            ex.isCompleted = !ex.isCompleted;
+            ex.completedAt = ex.isCompleted ? nowIso : null;
+          }
         }
       }
 
@@ -4747,6 +4821,119 @@ DIRETRIZES DE ATUAÇÃO:
         timestamp: new Date().toISOString(),
         cloudDiagnostic: lastError
       });
+    });
+    return;
+  }
+
+  // 15a-1. POST /api/ai/study-tools - Laboratório de Estudos: Flashcards, Mapas Mentais, Questões, Resumos, Comparações
+  if (req.method === 'POST' && pathname === '/api/ai/study-tools') {
+    const auth = getAuthUser(req);
+    if (!auth || !auth.user) {
+      return sendJson({ error: 'Não autenticado. Faça login para acessar o Laboratório de Estudos.' }, 401);
+    }
+
+    parseBody(async (data) => {
+      const action = data?.action;
+      if (!action) {
+        return sendJson({ error: 'Ação de estudo não informada.' }, 400);
+      }
+
+      const db = readDb();
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || db.aiConfig?.geminiApiKey || auth.user?.geminiApiKey;
+
+      // Se temos Gemini API Key e a ação se beneficia de IA generativa dinâmica
+      if (apiKey && (action === 'generate_flashcards' || action === 'generate_questions' || action === 'explain_alternative' || action === 'compare_concepts' || action === 'summarize_content')) {
+        try {
+          const model = db.aiConfig?.aiModel || 'gemini-2.5-flash';
+          let promptInstruction = '';
+
+          if (action === 'generate_flashcards') {
+            promptInstruction = `Você é o tutor inteligente do Estude+. Crie exatamente ${data.count || 4} flashcards de estudo de alto nível para o tema "${data.topic || 'Conceitos'}" (Matéria: ${data.subject || 'Geral'}).
+Retorne APENAS um JSON no formato:
+{
+  "cards": [
+    { "front": "pergunta objetiva na frente", "back": "resposta didática explicada no verso", "subject": "${data.subject || 'Geral'}" }
+  ]
+}`;
+          } else if (action === 'generate_questions') {
+            promptInstruction = `Você é o tutor inteligente do Estude+. Crie exatamente ${data.count || 3} questões de treino sobre "${data.topic || 'Conceitos'}" (Matéria: ${data.subject || 'Geral'}, Dificuldade: ${data.difficulty || 'médio'}).
+Retorne APENAS um JSON no formato:
+{
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple_choice",
+      "q": "Enunciado da questão contextualizada",
+      "options": ["A) Opção 1", "B) Opção 2", "C) Opção 3", "D) Opção 4"],
+      "correct": 1,
+      "hint": "Dica pedagógica sutil sem dar a resposta",
+      "explanation": "Explicação detalhada de por que a alternativa correta é a verdadeira"
+    }
+  ]
+}`;
+          } else if (action === 'explain_alternative') {
+            promptInstruction = `Você é o professor do Estude+. Explique o conceito "${data.topic || 'Geral'}" usando o estilo "${data.style || 'analogia do dia a dia'}". Seja didático, claro e amigável.`;
+          } else if (action === 'compare_concepts') {
+            promptInstruction = `Você é o professor do Estude+. Compare detalhadamente "${data.conceptA}" com "${data.conceptB}" na matéria ${data.subject || 'Geral'}.
+Retorne APENAS um JSON no formato:
+{
+  "conceptA": "${data.conceptA}",
+  "conceptB": "${data.conceptB}",
+  "defA": "Definição clara do primeiro conceito",
+  "defB": "Definição clara do segundo conceito",
+  "similarities": ["Semelhança 1", "Semelhança 2"],
+  "differences": ["Diferença 1", "Diferença 2"],
+  "practicalExample": "Exemplo do cotidiano",
+  "examPitfall": "Pegadinha comum de prova sobre esses dois conceitos"
+}`;
+          } else if (action === 'summarize_content') {
+            promptInstruction = `Você é o assistente de estudos do Estude+. Resuma de forma didática o conteúdo a seguir sobre "${data.topic || 'Assunto'}":
+${data.text || data.topic}
+Retorne APENAS um JSON no formato:
+{
+  "title": "Resumo: ${data.topic || 'Assunto'}",
+  "subject": "${data.subject || 'Geral'}",
+  "overview": "Visão geral em 2 linhas",
+  "keyPoints": ["Ponto 1", "Ponto 2", "Ponto 3"],
+  "rules": ["Regra ou macete 1"],
+  "questions": ["Pergunta de fixação 1"]
+}`;
+          }
+
+          if (promptInstruction) {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const geminiReq = await fetch(geminiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: promptInstruction }] }],
+                generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
+              })
+            });
+
+            if (geminiReq.ok) {
+              const geminiData = await geminiReq.json();
+              const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+              const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+              try {
+                const parsed = JSON.parse(cleaned);
+                return sendJson({ success: true, ...parsed, source: 'gemini' });
+              } catch (parseErr) {
+                if (action === 'explain_alternative') {
+                  return sendJson({ success: true, text: rawText, source: 'gemini' });
+                }
+              }
+            }
+          }
+        } catch (apiErr) {
+          console.warn('[Gemini study tool error, using engine fallback]:', apiErr.message);
+        }
+      }
+
+      // Motor Educacional Autônomo e Confiável do Estude+ (Fallback perfeito sem falhas)
+      const result = generateStructuredStudyTool(action, data);
+      return sendJson({ ...result, source: 'educational_engine' });
     });
     return;
   }
