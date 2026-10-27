@@ -20247,10 +20247,6 @@ class EstudePlusApp {
             <i data-lucide="book-open" style="width: 14px; height: 14px;"></i>
             Definir Celulares como Plano Base
           </button>
-          <button type="button" class="btn-outline" id="btnMasterGammonSync" onclick="app.masterTriggerGammonSync()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); font-size: 0.78rem; font-weight: 700; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
-            Sincronizar Gammon+ Oficial (5 TPCs Recentes)
-          </button>
           <button type="button" class="btn-outline" onclick="app.masterSendBroadcastNotice()" style="color: #fcd34d; border-color: rgba(252, 211, 77, 0.4); background: rgba(252, 211, 77, 0.1); font-size: 0.78rem; font-weight: 700; padding: 8px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
             <i data-lucide="megaphone" style="width: 14px; height: 14px;"></i>
             Enviar Mensagem para Celulares
