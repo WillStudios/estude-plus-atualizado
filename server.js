@@ -60,7 +60,15 @@ function isMockUser(u) {
 function readDb() {
   try {
     if (fs.existsSync(DB_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      let content = fs.readFileSync(DB_FILE, 'utf8');
+      let parsed = null;
+      try {
+        parsed = JSON.parse(content);
+      } catch (parseErr) {
+        console.error('[CRITICAL] db.json corrompido! Tentando restaurar do snapshot mais recente...', parseErr.message);
+        parsed = restoreFromLatestBackup();
+      }
+      if (!parsed) parsed = {};
       if (!Array.isArray(parsed.planRequests)) parsed.planRequests = [];
       if (!Array.isArray(parsed.supportRequests)) parsed.supportRequests = [];
       if (!Array.isArray(parsed.studyReports)) parsed.studyReports = [];
@@ -148,9 +156,84 @@ function readDb() {
   };
 }
 
+const BACKUP_DIR = path.join(__dirname, 'backups');
+if (!fs.existsSync(BACKUP_DIR)) {
+  try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); } catch (e) {}
+}
+
+let lastBackupTimestamp = 0;
+const BACKUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hora entre snapshots de rotina
+
+function createDbBackup(reason = 'routine') {
+  try {
+    if (!fs.existsSync(DB_FILE)) return null;
+    const stats = fs.statSync(DB_FILE);
+    if (stats.size === 0) return null;
+
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `db_backup_${ts}_${reason}.json`;
+    const destPath = path.join(BACKUP_DIR, filename);
+
+    fs.copyFileSync(DB_FILE, destPath);
+
+    // Rotação: manter os 30 snapshots mais recentes
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith('db_backup_') && f.endsWith('.json'))
+      .map(f => ({ name: f, time: fs.statSync(path.join(BACKUP_DIR, f)).mtime.getTime() }))
+      .sort((a, b) => b.time - a.time);
+
+    if (files.length > 30) {
+      for (const oldFile of files.slice(30)) {
+        try { fs.unlinkSync(path.join(BACKUP_DIR, oldFile.name)); } catch (e) {}
+      }
+    }
+
+    lastBackupTimestamp = Date.now();
+    return { success: true, filename, timestamp: new Date().toISOString(), size: stats.size };
+  } catch (err) {
+    console.error('[Backup Error]:', err.message);
+    return null;
+  }
+}
+
+function restoreFromLatestBackup() {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) return null;
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith('db_backup_') && f.endsWith('.json'))
+      .map(f => ({ name: f, time: fs.statSync(path.join(BACKUP_DIR, f)).mtime.getTime() }))
+      .sort((a, b) => b.time - a.time);
+
+    for (const f of files) {
+      try {
+        const fullPath = path.join(BACKUP_DIR, f.name);
+        const content = fs.readFileSync(fullPath, 'utf8');
+        const parsed = JSON.parse(content);
+        if (parsed && Array.isArray(parsed.users)) {
+          console.warn(`[RECOVERY] Restaurando banco de dados a partir do snapshot válido: ${f.name}`);
+          fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), 'utf8');
+          return parsed;
+        }
+      } catch (err) {}
+    }
+  } catch (e) {
+    console.error('[Recovery Error]:', e.message);
+  }
+  return null;
+}
+
 function writeDb(data) {
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    const jsonStr = JSON.stringify(data, null, 2);
+    const tmpFile = DB_FILE + '.tmp';
+    fs.writeFileSync(tmpFile, jsonStr, 'utf8');
+    fs.renameSync(tmpFile, DB_FILE);
+
+    // Snapshot periódico automático
+    if (Date.now() - lastBackupTimestamp > BACKUP_INTERVAL_MS) {
+      createDbBackup('hourly');
+    }
+
     if (supabase && supabase.isConfigured) {
       supabase.syncFromLocalDb(data).catch(err => {
         console.warn('[Supabase Sync Warning]', err.message);
@@ -1394,7 +1477,10 @@ const server = http.createServer((req, res) => {
 
       u.syncVersion = (Number(u.syncVersion) || 0) + 1;
       u.lastSync = new Date().toISOString();
-      writeDb(db);
+      writeDb(dbCurrent);
+
+      // Notificar outros dispositivos conectados do mesmo aluno para sincronização em tempo real
+      broadcastToUser(u.id, 'data_synced', { syncVersion: u.syncVersion, lastSync: u.lastSync });
 
       const safeUser = buildSafeUser(u);
       return sendJson({
@@ -4317,7 +4403,7 @@ const server = http.createServer((req, res) => {
         forceRefreshTimestamp: Date.now()
       };
       writeDb(db);
-      broadcastToAdmins('master_command', db.masterCommands);
+      broadcastToAll('master_command', db.masterCommands);
       return sendJson({ success: true, masterCommands: db.masterCommands });
     });
     return;
@@ -4344,6 +4430,112 @@ const server = http.createServer((req, res) => {
   /* ==========================================================================
      SISTEMA DE CHATBOT IA PROFISSIONAL ESTUDE+ (NÍVEL CHATGPT / GEMINI)
      ========================================================================== */
+
+
+  // GET /api/admin/backup/list - Listar snapshots de backup existentes
+  if (req.method === 'GET' && pathname === '/api/admin/backup/list') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) return sendJson({ error: 'Acesso restrito ao administrador.' }, 403);
+
+    try {
+      if (!fs.existsSync(BACKUP_DIR)) {
+        return sendJson({ success: true, backups: [] });
+      }
+      const files = fs.readdirSync(BACKUP_DIR)
+        .filter(f => f.startsWith('db_backup_') && f.endsWith('.json'))
+        .map(f => {
+          const stats = fs.statSync(path.join(BACKUP_DIR, f));
+          return {
+            filename: f,
+            size: stats.size,
+            formattedSize: (stats.size / 1024).toFixed(1) + ' KB',
+            createdAt: stats.mtime.toISOString()
+          };
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      return sendJson({ success: true, backups: files });
+    } catch (err) {
+      return sendJson({ error: 'Falha ao listar backups: ' + err.message }, 500);
+    }
+  }
+
+  // POST /api/admin/backup/create - Criar snapshot de backup manual
+  if (req.method === 'POST' && pathname === '/api/admin/backup/create') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) return sendJson({ error: 'Acesso restrito ao administrador.' }, 403);
+
+    const result = createDbBackup('manual_admin');
+    if (result && result.success) {
+      return sendJson({ success: true, message: 'Snapshot de backup criado com sucesso!', backup: result });
+    }
+    return sendJson({ error: 'Não foi possível gerar o backup do banco de dados.' }, 500);
+  }
+
+  // POST /api/admin/backup/restore - Restaurar snapshot de backup com proteção anti-ressurreição
+  if (req.method === 'POST' && pathname === '/api/admin/backup/restore') {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) return sendJson({ error: 'Acesso restrito ao administrador.' }, 403);
+
+    parseBody((data) => {
+      const filename = data?.filename;
+      if (!filename || typeof filename !== 'string' || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+        return sendJson({ error: 'Nome de arquivo de backup inválido.' }, 400);
+      }
+
+      const filePath = path.join(BACKUP_DIR, filename);
+      if (!fs.existsSync(filePath)) {
+        return sendJson({ error: 'Arquivo de backup não encontrado.' }, 404);
+      }
+
+      try {
+        const backupContent = fs.readFileSync(filePath, 'utf8');
+        const backupData = JSON.parse(backupContent);
+
+        if (!backupData || !Array.isArray(backupData.users)) {
+          return sendJson({ error: 'Arquivo de backup inválido ou estrutura corrompida.' }, 400);
+        }
+
+        const currentDb = readDb();
+        const tombstones = currentDb.deletedAccountTombstones || [];
+
+        // REGRA DE SEGURANÇA E PRIVACIDADE: O backup JAMAIS ressuscita contas excluídas definitivamente
+        const tombstoneIds = new Set(tombstones.map(t => String(t.id)));
+        const tombstoneUsernames = new Set(tombstones.filter(t => t.username).map(t => String(t.username).toLowerCase()));
+
+        backupData.users = (backupData.users || []).filter(u =>
+          !tombstoneIds.has(String(u.id)) &&
+          (!u.username || !tombstoneUsernames.has(String(u.username).toLowerCase()))
+        );
+
+        // Preserva tombstones atuais
+        backupData.deletedAccountTombstones = tombstones;
+
+        // Garante Administrador Mestre Freddie presente
+        const hasFreddie = backupData.users.some(u => u.username === 'freddie' || u.role === 'admin');
+        if (!hasFreddie) {
+          const currentFreddie = currentDb.users.find(u => u.username === 'freddie' || u.role === 'admin');
+          if (currentFreddie) backupData.users.unshift(currentFreddie);
+        }
+
+        writeDb(backupData);
+
+        // Notificar todos os clientes e painéis
+        broadcastToAll('master_command', { forceRefreshTimestamp: Date.now(), notice: 'Banco de dados restaurado com sucesso.' });
+
+        return sendJson({
+          success: true,
+          message: `Backup "${filename}" restaurado com sucesso! Contas excluídas foram preservadas fora do sistema.`
+        });
+      } catch (err) {
+        return sendJson({ error: 'Falha ao restaurar o backup: ' + err.message }, 500);
+      }
+    });
+    return;
+  }
 
   // 15a-0. GET /api/ai/status - Status público e seguro de configuração da IA (sem expor credenciais)
   if (req.method === 'GET' && pathname === '/api/ai/status') {

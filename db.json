@@ -84,7 +84,7 @@
           "segunda": {
             "subject": "Matemática",
             "room": "Sala 7º Ano",
-            "hasTpc": true
+            "hasTpc": false
           },
           "terca": {
             "subject": "Língua Portuguesa",
@@ -99,7 +99,7 @@
           "quinta": {
             "subject": "Redação",
             "room": "Sala 7º Ano",
-            "hasTpc": true
+            "hasTpc": false
           },
           "sexta": {
             "subject": "Língua Portuguesa",
@@ -127,12 +127,12 @@
           "quinta": {
             "subject": "Língua Inglesa",
             "room": "Sala 7º Ano",
-            "hasTpc": true
+            "hasTpc": false
           },
           "sexta": {
             "subject": "Matemática",
             "room": "Sala 7º Ano",
-            "hasTpc": true
+            "hasTpc": false
           }
         },
         {
@@ -140,7 +140,7 @@
           "segunda": {
             "subject": "Matemática",
             "room": "Sala 7º Ano",
-            "hasTpc": true
+            "hasTpc": false
           },
           "terca": {
             "subject": "Língua Inglesa",
@@ -155,7 +155,7 @@
           "quinta": {
             "subject": "Matemática",
             "room": "Sala 7º Ano",
-            "hasTpc": true
+            "hasTpc": false
           },
           "sexta": {
             "subject": "História",
@@ -527,6 +527,226 @@
         "trilhas"
       ],
       "syncVersion": 2
+    },
+    {
+      "id": "usr_1793049560248_qg3l",
+      "name": "Aluno Teste Persistência",
+      "username": "aluno_persiste_mvprev7d",
+      "email": "aluno_persiste_mvprev7d@estude.app",
+      "passwordHash": "8a0ce46fb1165c5804bdae87aa16a73d4cb86b57a6859df5d78ea1a778a09070abfba03182378aaf35eced4843e451d1ba363196bb8ddc9351f3bca19c179141",
+      "passwordSalt": "f4606cd9d05bf00aea353155405ded73",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "base",
+      "planStatus": "base",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-26T21:19:20.249Z",
+      "lastLogin": "2026-10-26T21:19:20.250Z",
+      "lastDeviceType": "Computador / Desktop",
+      "notes": [
+        {
+          "id": "note_persist_1",
+          "title": "Equações de Calorimetria",
+          "content": "Q = m.c.deltaT",
+          "updatedAt": "2026-10-26T21:19:20.313Z",
+          "createdAt": "2026-10-26T21:19:20.313Z"
+        }
+      ],
+      "syncVersion": 2,
+      "lastSync": "2026-10-26T21:19:20.319Z",
+      "flashcards": [
+        {
+          "id": "card_persist_1",
+          "front": "O que é calor sensível?",
+          "back": "Calor que altera a temperatura",
+          "updatedAt": "2026-10-26T21:19:20.319Z",
+          "createdAt": "2026-10-26T21:19:20.319Z"
+        }
+      ],
+      "loginDays": [
+        "2026-10-26"
+      ]
+    },
+    {
+      "id": "usr_1793049647279_by1u",
+      "name": "Aluno Teste Persistência",
+      "username": "aluno_persiste_mvprgqcx",
+      "email": "aluno_persiste_mvprgqcx@estude.app",
+      "passwordHash": "17e12fb4185d7e8f0e9f32346ad7c2d9608fa6126f9beb6420f317fbd0b744afdc23d4f568867437a8fdcd82cf4a0ad43a69ce810631dbde56133a2471a125b9",
+      "passwordSalt": "d31c066281b5fb6f73a9788e13a48277",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "base",
+      "planStatus": "base",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-26T21:20:47.279Z",
+      "lastLogin": "2026-10-26T21:20:47.281Z",
+      "lastDeviceType": "Computador / Desktop",
+      "notes": [
+        {
+          "id": "note_persist_1",
+          "title": "Equações de Calorimetria",
+          "content": "Q = m.c.deltaT",
+          "updatedAt": "2026-10-26T21:20:47.342Z",
+          "createdAt": "2026-10-26T21:20:47.342Z"
+        }
+      ],
+      "syncVersion": 2,
+      "lastSync": "2026-10-26T21:20:47.349Z",
+      "flashcards": [
+        {
+          "id": "card_persist_1",
+          "front": "O que é calor sensível?",
+          "back": "Calor que altera a temperatura",
+          "updatedAt": "2026-10-26T21:20:47.349Z",
+          "createdAt": "2026-10-26T21:20:47.349Z"
+        }
+      ],
+      "loginDays": [
+        "2026-10-26"
+      ]
+    },
+    {
+      "id": "usr_1793049694402_6aji",
+      "name": "Aluno Teste Persistência",
+      "username": "aluno_persiste_mvprhqpx",
+      "email": "aluno_persiste_mvprhqpx@estude.app",
+      "passwordHash": "bd4e95519f7a214a22f644a8bf33bdac0b2e4a1d795a7d0f62b5420f21afabcff2dc79fa9e473dfbeae9b442ceebbc7c551c5b7cdb0dbb5524805f44f1a1f97f",
+      "passwordSalt": "e2d086285cdc846c2412fc5866233f22",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "base",
+      "planStatus": "base",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-26T21:21:34.402Z",
+      "lastLogin": "2026-10-26T21:21:34.403Z",
+      "lastDeviceType": "Computador / Desktop",
+      "notes": [
+        {
+          "id": "note_persist_1",
+          "title": "Equações de Calorimetria",
+          "content": "Q = m.c.deltaT",
+          "updatedAt": "2026-10-26T21:21:34.467Z",
+          "createdAt": "2026-10-26T21:21:34.467Z"
+        }
+      ],
+      "syncVersion": 2,
+      "lastSync": "2026-10-26T21:21:34.473Z",
+      "flashcards": [
+        {
+          "id": "card_persist_1",
+          "front": "O que é calor sensível?",
+          "back": "Calor que altera a temperatura",
+          "updatedAt": "2026-10-26T21:21:34.473Z",
+          "createdAt": "2026-10-26T21:21:34.473Z"
+        }
+      ],
+      "loginDays": [
+        "2026-10-26"
+      ]
+    },
+    {
+      "id": "usr_1793049758967_42nk",
+      "name": "Aluno Teste Persistência",
+      "username": "aluno_persiste_mvprj4ja",
+      "email": "aluno_persiste_mvprj4ja@estude.app",
+      "passwordHash": "14742513795b339b8be233d222a7842fad67d5d66f7187796e5e8c156163460233da25a7d00314acfbcc64f2ae44a9b07b6cb69dac461646035e13047c09d6b2",
+      "passwordSalt": "f6a374956a8db32cb225603ce4ec5ddb",
+      "role": "student",
+      "isSubscribed": false,
+      "plan": "base",
+      "planStatus": "base",
+      "planName": "Plano Base",
+      "emailVerified": true,
+      "streak": 0,
+      "bestStreak": 0,
+      "dailyGoalMinutes": 15,
+      "studiedDays": [],
+      "todayMinutes": 0,
+      "achievements": [],
+      "createdIp": "127.0.0.1",
+      "createdAt": "2026-10-26T21:22:38.967Z",
+      "lastLogin": "2026-10-26T21:22:38.968Z",
+      "lastDeviceType": "Computador / Desktop",
+      "notes": [
+        {
+          "id": "note_persist_1",
+          "title": "Equações de Calorimetria",
+          "content": "Q = m.c.deltaT",
+          "updatedAt": "2026-10-26T21:22:39.033Z",
+          "createdAt": "2026-10-26T21:22:39.033Z"
+        }
+      ],
+      "syncVersion": 3,
+      "lastSync": "2026-10-26T21:22:39.049Z",
+      "flashcards": [
+        {
+          "id": "card_persist_1",
+          "front": "O que é calor sensível?",
+          "back": "Calor que altera a temperatura",
+          "updatedAt": "2026-10-26T21:22:39.040Z",
+          "createdAt": "2026-10-26T21:22:39.040Z"
+        }
+      ],
+      "nickname": "Físico",
+      "motto": "Rumo à nota 10!",
+      "studentSettings": {
+        "nickname": "Físico",
+        "motto": "Rumo à nota 10!"
+      },
+      "userTpcs": [
+        {
+          "id": "tpc_persist_1",
+          "title": "Exercícios pág 45 a 48 de Física",
+          "status": "pending"
+        }
+      ],
+      "tasks": {
+        "completedTpcIds": [],
+        "userTpcs": [
+          {
+            "id": "tpc_persist_1",
+            "title": "Exercícios pág 45 a 48 de Física",
+            "status": "pending"
+          }
+        ]
+      },
+      "exams": [
+        {
+          "id": 101,
+          "subject": "Física",
+          "topics": "Termologia",
+          "date": "2026-11-10",
+          "priority": "Alta"
+        }
+      ],
+      "loginDays": [
+        "2026-10-26"
+      ]
     }
   ],
   "tpcs": [
@@ -632,7 +852,7 @@
   "masterCommands": {
     "broadcastNotice": "",
     "lockdownActive": false,
-    "forceRefreshTimestamp": 1793048789711
+    "forceRefreshTimestamp": 1793049779424
   },
   "connectedDevices": [],
   "planRequests": [],
@@ -653,6 +873,58 @@
     }
   ],
   "adminNotifications": [
+    {
+      "id": "notif_1793049758979_l8bp",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste Persistência (@aluno_persiste_mvprj4ja) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793049758967_42nk",
+        "username": "aluno_persiste_mvprj4ja"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T21:22:38.979Z"
+    },
+    {
+      "id": "notif_1793049694414_hqtw",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste Persistência (@aluno_persiste_mvprhqpx) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793049694402_6aji",
+        "username": "aluno_persiste_mvprhqpx"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T21:21:34.414Z"
+    },
+    {
+      "id": "notif_1793049647289_aip8",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste Persistência (@aluno_persiste_mvprgqcx) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793049647279_by1u",
+        "username": "aluno_persiste_mvprgqcx"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T21:20:47.289Z"
+    },
+    {
+      "id": "notif_1793049560260_anps",
+      "type": "info",
+      "category": "user",
+      "title": "👤 Novo Aluno Cadastrado",
+      "message": "Aluno Teste Persistência (@aluno_persiste_mvprev7d) acabou de entrar no Estude+ (Computador • Navegador Web).",
+      "meta": {
+        "userId": "usr_1793049560248_qg3l",
+        "username": "aluno_persiste_mvprev7d"
+      },
+      "status": "unread",
+      "createdAt": "2026-10-26T21:19:20.260Z"
+    },
     {
       "id": "notif_1793048752531_t0wf",
       "type": "info",
@@ -1024,6 +1296,87 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "log_1793049779424",
+      "timestamp": "2026-10-26T21:22:59.424Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793049779384_7j34",
+      "details": "Conta \"Aluno B Isolado\" (usr_1793049779384_7j34) excluída definitivamente do sistema por Freddie Pimentel Costa. Todas as dependências e sessões foram expurgadas."
+    },
+    {
+      "id": "log_1793049779417",
+      "timestamp": "2026-10-26T21:22:59.417Z",
+      "type": "user_deleted",
+      "ip": "127.0.0.1",
+      "userId": "usr_1793049779021_y792",
+      "details": "Conta \"Aluno Teste Persistência\" (usr_1793049779021_y792) excluída definitivamente do sistema por Freddie Pimentel Costa. Todas as dependências e sessões foram expurgadas."
+    },
+    {
+      "id": "aud_1793049779162_uq1b",
+      "action": "delete_material",
+      "actor": "aluno_persiste_mvprjk0d",
+      "details": {
+        "materialId": "mat_1793049779075_0tyco"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-26T21:22:59.162Z"
+    },
+    {
+      "id": "aud_1793049779079_0ldn",
+      "action": "create_material",
+      "actor": "aluno_persiste_mvprjk0d",
+      "details": {
+        "materialId": "mat_1793049779075_0tyco",
+        "title": "Resumo de Termodinâmica"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-26T21:22:59.079Z"
+    },
+    {
+      "id": "aud_1793049759025_8w50",
+      "action": "create_material",
+      "actor": "aluno_persiste_mvprj4ja",
+      "details": {
+        "materialId": "mat_1793049759021_r1p3x",
+        "title": "Resumo de Termodinâmica"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-26T21:22:39.025Z"
+    },
+    {
+      "id": "aud_1793049694459_1mxu",
+      "action": "create_material",
+      "actor": "aluno_persiste_mvprhqpx",
+      "details": {
+        "materialId": "mat_1793049694456_50y96",
+        "title": "Resumo de Termodinâmica"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-26T21:21:34.459Z"
+    },
+    {
+      "id": "aud_1793049647335_6fru",
+      "action": "create_material",
+      "actor": "aluno_persiste_mvprgqcx",
+      "details": {
+        "materialId": "mat_1793049647331_xocbi",
+        "title": "Resumo de Termodinâmica"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-26T21:20:47.335Z"
+    },
+    {
+      "id": "aud_1793049560305_i2ss",
+      "action": "create_material",
+      "actor": "aluno_persiste_mvprev7d",
+      "details": {
+        "materialId": "mat_1793049560302_wdcnu",
+        "title": "Resumo de Termodinâmica"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-10-26T21:19:20.305Z"
+    },
     {
       "id": "log_1793048789711",
       "timestamp": "2026-10-26T21:06:29.711Z",
@@ -1504,7 +1857,100 @@
       "confirmedAt": "2026-10-22T17:40:16.873Z"
     }
   ],
-  "materials": [],
+  "materials": [
+    {
+      "id": "mat_1793049759021_r1p3x",
+      "userId": "usr_1793049758967_42nk",
+      "title": "Resumo de Termodinâmica",
+      "subject": "Física",
+      "topic": "Resumo de Termodinâmica",
+      "content": "Primeira e Segunda lei da Termodinâmica aplicadas.",
+      "fileType": "text",
+      "originalFileName": null,
+      "fileSize": "50 B",
+      "status": "ready",
+      "summary": null,
+      "resourcesCount": {
+        "summaries": 0,
+        "flashcards": 0,
+        "questions": 0,
+        "simulados": 0,
+        "mindmaps": 0,
+        "notes": 0
+      },
+      "createdAt": "2026-10-26T21:22:39.021Z",
+      "updatedAt": "2026-10-26T21:22:39.021Z"
+    },
+    {
+      "id": "mat_1793049694456_50y96",
+      "userId": "usr_1793049694402_6aji",
+      "title": "Resumo de Termodinâmica",
+      "subject": "Física",
+      "topic": "Resumo de Termodinâmica",
+      "content": "Primeira e Segunda lei da Termodinâmica aplicadas.",
+      "fileType": "text",
+      "originalFileName": null,
+      "fileSize": "50 B",
+      "status": "ready",
+      "summary": null,
+      "resourcesCount": {
+        "summaries": 0,
+        "flashcards": 0,
+        "questions": 0,
+        "simulados": 0,
+        "mindmaps": 0,
+        "notes": 0
+      },
+      "createdAt": "2026-10-26T21:21:34.456Z",
+      "updatedAt": "2026-10-26T21:21:34.456Z"
+    },
+    {
+      "id": "mat_1793049647331_xocbi",
+      "userId": "usr_1793049647279_by1u",
+      "title": "Resumo de Termodinâmica",
+      "subject": "Física",
+      "topic": "Resumo de Termodinâmica",
+      "content": "Primeira e Segunda lei da Termodinâmica aplicadas.",
+      "fileType": "text",
+      "originalFileName": null,
+      "fileSize": "50 B",
+      "status": "ready",
+      "summary": null,
+      "resourcesCount": {
+        "summaries": 0,
+        "flashcards": 0,
+        "questions": 0,
+        "simulados": 0,
+        "mindmaps": 0,
+        "notes": 0
+      },
+      "createdAt": "2026-10-26T21:20:47.331Z",
+      "updatedAt": "2026-10-26T21:20:47.331Z"
+    },
+    {
+      "id": "mat_1793049560302_wdcnu",
+      "userId": "usr_1793049560248_qg3l",
+      "title": "Resumo de Termodinâmica",
+      "subject": "Física",
+      "topic": "Resumo de Termodinâmica",
+      "content": "Primeira e Segunda lei da Termodinâmica aplicadas.",
+      "fileType": "text",
+      "originalFileName": null,
+      "fileSize": "50 B",
+      "status": "ready",
+      "summary": null,
+      "resourcesCount": {
+        "summaries": 0,
+        "flashcards": 0,
+        "questions": 0,
+        "simulados": 0,
+        "mindmaps": 0,
+        "notes": 0
+      },
+      "createdAt": "2026-10-26T21:19:20.302Z",
+      "updatedAt": "2026-10-26T21:19:20.302Z"
+    }
+  ],
   "flashcards": [],
   "simulados": [],
   "mindmaps": [],
@@ -1567,6 +2013,66 @@
     }
   ],
   "sessions": [
+    {
+      "sessionId": "sess_b0e21fb5a91853a44585a23c4bcde3a2",
+      "userId": "usr_1793049758967_42nk",
+      "userName": "Aluno Teste Persistência",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T21:22:38.968Z",
+      "createdAt": "2026-10-26T21:22:38.968Z",
+      "lastHeartbeat": 1793049758975,
+      "expiresAt": 1795641758974,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
+      "sessionId": "sess_e329ee4f5a0490620e2263561c389356",
+      "userId": "usr_1793049694402_6aji",
+      "userName": "Aluno Teste Persistência",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T21:21:34.403Z",
+      "createdAt": "2026-10-26T21:21:34.403Z",
+      "lastHeartbeat": 1793049694410,
+      "expiresAt": 1795641694410,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
+      "sessionId": "sess_f466bf78c828375dd6fe92bdec68c826",
+      "userId": "usr_1793049647279_by1u",
+      "userName": "Aluno Teste Persistência",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T21:20:47.281Z",
+      "createdAt": "2026-10-26T21:20:47.281Z",
+      "lastHeartbeat": 1793049647286,
+      "expiresAt": 1795641647285,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
+    {
+      "sessionId": "sess_67bde6397d6a73277126b16afbf6ca8d",
+      "userId": "usr_1793049560248_qg3l",
+      "userName": "Aluno Teste Persistência",
+      "userRole": "student",
+      "deviceType": "Computador / Desktop",
+      "deviceLabel": "Computador • Navegador Web",
+      "loginTime": "2026-10-26T21:19:20.250Z",
+      "createdAt": "2026-10-26T21:19:20.250Z",
+      "lastHeartbeat": 1793049560256,
+      "expiresAt": 1795641560255,
+      "rememberMe": true,
+      "ip": "127.0.0.1",
+      "userAgent": ""
+    },
     {
       "sessionId": "sess_5a9dd1beb6923879d15f3f0784897f56",
       "userId": "admin_freddie",
@@ -1709,6 +2215,20 @@
       "username": "aluno_consist_mvpqycir",
       "email": "aluno_consist_mvpqycir@estude.app",
       "deletedAt": "2026-10-26T21:06:29.711Z",
+      "deletedBy": "Freddie Pimentel Costa"
+    },
+    {
+      "id": "usr_1793049779021_y792",
+      "username": "aluno_persiste_mvprjk0d",
+      "email": "aluno_persiste_mvprjk0d@estude.app",
+      "deletedAt": "2026-10-26T21:22:59.417Z",
+      "deletedBy": "Freddie Pimentel Costa"
+    },
+    {
+      "id": "usr_1793049779384_7j34",
+      "username": "aluno_outro_mvprjkb0",
+      "email": "aluno_outro_mvprjkb0@estude.app",
+      "deletedAt": "2026-10-26T21:22:59.424Z",
       "deletedBy": "Freddie Pimentel Costa"
     }
   ]

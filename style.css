@@ -2993,16 +2993,7 @@ body {
 }
 
 .tt-has-tpc {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.68rem;
-  background: #e0f2fe;
-  color: #0369a1;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-top: 4px;
+  display: none !important;
 }
 
 .th-sabado {

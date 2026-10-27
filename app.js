@@ -493,10 +493,10 @@ class EstudePlusApp {
       timetable: [
         {
           time: '07:30 - 08:15',
-          segunda: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: true },
+          segunda: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: false },
           terca: { subject: 'Língua Portuguesa', room: 'Sala 7º Ano', hasTpc: false },
           quarta: { subject: 'Arte', room: 'Sala 7º Ano', hasTpc: false },
-          quinta: { subject: 'Redação', room: 'Sala 7º Ano', hasTpc: true },
+          quinta: { subject: 'Redação', room: 'Sala 7º Ano', hasTpc: false },
           sexta: { subject: 'Língua Portuguesa', room: 'Sala 7º Ano', hasTpc: false }
         },
         {
@@ -504,15 +504,15 @@ class EstudePlusApp {
           segunda: { subject: 'Língua Inglesa', room: 'Sala 7º Ano', hasTpc: false },
           terca: { subject: 'Educação Física', room: 'Ginásio / Quadra', hasTpc: false },
           quarta: { subject: 'História', room: 'Sala 7º Ano', hasTpc: false },
-          quinta: { subject: 'Língua Inglesa', room: 'Sala 7º Ano', hasTpc: true },
-          sexta: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: true }
+          quinta: { subject: 'Língua Inglesa', room: 'Sala 7º Ano', hasTpc: false },
+          sexta: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: false }
         },
         {
           time: '09:00 - 09:45',
-          segunda: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: true },
+          segunda: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: false },
           terca: { subject: 'Língua Inglesa', room: 'Sala 7º Ano', hasTpc: false },
           quarta: { subject: 'Geografia', room: 'Sala 7º Ano', hasTpc: false },
-          quinta: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: true },
+          quinta: { subject: 'Matemática', room: 'Sala 7º Ano', hasTpc: false },
           sexta: { subject: 'História', room: 'Sala 7º Ano', hasTpc: false }
         },
         {
@@ -13751,26 +13751,46 @@ class EstudePlusApp {
     alert('Prova adicionada com sucesso! A IA já ajustou suas revisões diárias.');
   }
 
-  handleNewMaterial(e) {
-    e.preventDefault();
-    const title = document.getElementById('materialTitle').value;
-    const category = document.getElementById('materialCategory').value;
-    const subject = document.getElementById('materialSubject').value;
-    const summary = document.getElementById('materialSummary').value || 'Material adicionado pelo aluno.';
+  async handleNewMaterial(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const title = document.getElementById('materialTitle')?.value?.trim();
+    const category = document.getElementById('materialCategory')?.value || 'Apostilas';
+    const subject = document.getElementById('materialSubject')?.value || 'Geral';
+    const summary = document.getElementById('materialSummary')?.value?.trim() || 'Material adicionado pelo aluno.';
 
-    this.state.materials.unshift({
-      id: Date.now(),
-      title,
-      category,
-      subject,
-      summary
-    });
+    if (!title) {
+      alert('Por favor, informe o título do material.');
+      return;
+    }
 
-    this.saveState();
-    this.renderMaterials();
-    this.closeModal('addMaterialModal');
-    document.getElementById('addMaterialForm').reset();
-    alert('Material cadastrado na sua biblioteca de estudos com sucesso!');
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify({
+          title,
+          subject,
+          topic: category,
+          content: summary,
+          fileType: 'text'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        await this.loadMaterialsLibrary();
+        this.closeModal('addSasMaterialModal');
+        this.closeModal('addMaterialModal');
+        const f1 = document.getElementById('addSasMaterialForm');
+        if (f1) f1.reset();
+        const f2 = document.getElementById('addMaterialForm');
+        if (f2) f2.reset();
+        alert('✔ Material cadastrado e salvo com sucesso no servidor!');
+      } else {
+        alert(data.error || 'Erro ao salvar material no servidor.');
+      }
+    } catch (err) {
+      alert('Erro de conexão ao salvar material: ' + err.message);
+    }
   }
 
   startSmartSession() {
@@ -14142,10 +14162,14 @@ class EstudePlusApp {
 
             <p class="tpc-details" style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0;">${item.details || item.description || ''}</p>
           </div>
-          <div class="tpc-actions-col" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding-left: 14px;">
+          <div class="tpc-actions-col" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 6px; padding-left: 14px;">
             <button class="btn-status-toggle ${isDone ? 'is-done' : 'is-pending'}" onclick="app.toggleTpcStatus('${item.id}')" title="Clique para concluir este TPC" style="cursor: pointer; padding: 10px 16px; font-weight: 700; border-radius: 10px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="${isDone ? 'check-circle' : 'circle'}"></i>
               <span>${isDone ? 'FEITO' : 'NÃO FEITO'}</span>
+            </button>
+            <button type="button" class="btn-outline" onclick="app.deleteTpc('${item.id}')" title="Excluir este TPC permanentemente" style="cursor: pointer; padding: 5px 10px; font-weight: 700; border-radius: 8px; font-size: 0.74rem; color: #dc2626; border-color: #fca5a5; background: #ffffff; display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="trash-2" style="width: 12px; height: 12px; color: #dc2626;"></i>
+              <span>Excluir</span>
             </button>
           </div>
         </div>
@@ -14188,6 +14212,22 @@ class EstudePlusApp {
       }
     }
 
+    this.saveState();
+    this.syncUserData('push');
+    this.renderTpcs();
+    this.renderDashboard();
+    this.refreshBadges();
+  }
+
+  deleteTpc(id) {
+    const item = (this.state.tpcs || []).find(t => String(t.id) === String(id));
+    const title = item ? (item.title || 'este TPC') : 'este TPC';
+    if (!confirm(`Deseja realmente excluir "${title}" permanentemente?`)) return;
+
+    this.state.tpcs = (this.state.tpcs || []).filter(t => String(t.id) !== String(id));
+    if (Array.isArray(this.state.completedTpcIds)) {
+      this.state.completedTpcIds = this.state.completedTpcIds.filter(x => String(x) !== String(id));
+    }
     this.saveState();
     this.syncUserData('push');
     this.renderTpcs();
@@ -14856,6 +14896,13 @@ class EstudePlusApp {
     const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta'];
     const dayLabels = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
     const rows = this.state.timetable || [];
+    if (Array.isArray(rows)) {
+      rows.forEach(r => {
+        days.forEach(d => {
+          if (r && r[d] && r[d].hasTpc) r[d].hasTpc = false;
+        });
+      });
+    }
 
     let html = `
       <table class="timetable-grid-table">
@@ -14878,7 +14925,6 @@ class EstudePlusApp {
               <div class="tt-subject-cell" onclick="app.editTimetableCell(${rowIdx}, '${d}')" title="Clique para editar esta matéria/sala" style="cursor: pointer;">
                 <span class="tt-sub-name">${slot.subject}</span>
                 <span class="tt-sub-room">${slot.room}</span>
-                ${slot.hasTpc ? `<div class="tt-has-tpc"><i data-lucide="check-square" style="width:10px;height:10px;"></i> TPC Ativo</div>` : ''}
               </div>
             </td>
           `;
@@ -14937,6 +14983,7 @@ class EstudePlusApp {
     };
 
     this.saveState();
+    this.syncUserData('push');
     this.renderTimetable();
   }
 
@@ -14989,6 +15036,7 @@ class EstudePlusApp {
     if (newTimetable.length > 0) {
       this.state.timetable = newTimetable;
       this.saveState();
+      this.syncUserData('push');
       this.renderTimetable();
       this.closeModal('importScheduleModal');
       document.getElementById('importScheduleForm').reset();
@@ -16578,6 +16626,24 @@ class EstudePlusApp {
             this.updateUserHeaderUI();
             this.renderPlanStatus();
           }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('data_synced', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const sVer = payload?.data?.syncVersion;
+          if (sVer && sVer > (this.localSyncVersion || 0)) {
+            console.log('[SSE] Dados atualizados em outro dispositivo. Sincronizando...');
+            this.syncUserData('pull');
+          }
+        } catch (err) {}
+      });
+
+      this.userEventSource.addEventListener('master_command', (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          this.applyMasterCommands(payload?.data || {});
         } catch (err) {}
       });
 
@@ -18186,13 +18252,20 @@ class EstudePlusApp {
           deviceType: window.innerWidth < 768 ? 'Celular' : (window.innerWidth < 1024 ? 'Tablet' : 'Computador / PC')
         };
 
+        this.updateSyncIndicator('syncing', 'Salvando no servidor...');
         const res = await fetch('/api/user/sync', {
           method: 'POST',
           headers,
           body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.user && data.user.syncVersion) {
+            this.localSyncVersion = Number(data.user.syncVersion);
+          }
+          this.updateSyncIndicator('saved', 'Salvo na Nuvem');
+        } else {
           const errData = await res.json().catch(() => ({}));
           console.warn('[Sync push failed]', res.status, errData);
           if (errData.accountDeleted) {
@@ -18203,6 +18276,7 @@ class EstudePlusApp {
             this.purgeDeletedUserSession('⚠️ Sua conta foi suspensa pelo administrador.');
             return;
           }
+          this.updateSyncIndicator('offline', 'Pendente (Falha ao salvar no servidor)');
           if (res.status === 401) {
             this.showSyncFeedback('error', 'Sessão expirada. Faça login novamente para salvar suas informações.');
           } else if (res.status === 403) {
@@ -23378,7 +23452,16 @@ startxref
         if (data.syncVersion) this.localSyncVersion = data.syncVersion;
         this.updateSyncIndicator('saved', 'Salvo na Nuvem');
       } else {
-        throw new Error('Servidor retornou status ' + res.status);
+        const errData = await res.json().catch(() => ({}));
+        if (errData.accountDeleted) {
+          this.purgeDeletedUserSession('⚠️ Sua conta foi permanentemente excluída pelo administrador.');
+          return;
+        }
+        if (res.status === 403 && errData.isSuspended) {
+          this.purgeDeletedUserSession('⚠️ Sua conta foi suspensa pelo administrador.');
+          return;
+        }
+        throw new Error(errData.error || ('Servidor retornou status ' + res.status));
       }
     } catch (err) {
       console.warn('[Sync Action Warning]', err.message);
