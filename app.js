@@ -19957,6 +19957,27 @@ class EstudePlusApp {
     } catch (e) {}
   }
 
+  async adminClearAllNotifications() {
+    if (!confirm('Deseja realmente resetar e limpar todas as notificações desta página?')) return;
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const sessId = localStorage.getItem('estude_session_id');
+      if (sessId) headers['x-session-id'] = sessId;
+      headers['x-admin-token'] = 'admin_master_freddie_token_2026';
+
+      await fetch('/api/admin/notifications/clear', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({})
+      });
+      this.adminNotifications = [];
+      await this.loadAdminOverview();
+      this.renderAdminNotificationsList();
+    } catch (e) {
+      alert('Erro ao resetar notificações: ' + e.message);
+    }
+  }
+
   async adminMarkNotificationRead(notificationId) {
     try {
       const headers = { 'Content-Type': 'application/json' };

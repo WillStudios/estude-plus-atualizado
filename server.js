@@ -2876,6 +2876,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // POST /api/admin/notifications/clear - Resetar / limpar todas as notificações
+  if (req.method === 'POST' && (pathname === '/api/admin/notifications/clear' || pathname === '/api/admin/notifications/reset')) {
+    const auth = getAuthUser(req);
+    const isAdmin = validateAdmin(req) || (auth && auth.user && auth.user.role === 'admin');
+    if (!isAdmin) {
+      return sendJson({ error: 'Acesso negado.' }, 403);
+    }
+
+    const db = readDb();
+    db.adminNotifications = [];
+    writeDb(db);
+    return sendJson({ success: true, message: 'Notificações resetadas com sucesso.', unreadCount: 0 });
+  }
+
   // POST /api/support/ticket - Envio de dúvidas, solicitações ou suporte de qualquer dispositivo
   if (req.method === 'POST' && pathname === '/api/support/ticket') {
     const auth = getAuthUser(req);

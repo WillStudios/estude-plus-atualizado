@@ -2130,9 +2130,14 @@
                 Eventos em tempo real de novos cadastros, pedidos do Pro, erros e sincronizações:
               </p>
             </div>
-            <button type="button" class="btn-outline" onclick="app.adminMarkAllNotificationsRead()" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-              <i data-lucide="check-check" style="width: 14px; height: 14px;"></i> Marcar Todas como Lidas
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn-outline" onclick="app.adminMarkAllNotificationsRead()" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="check-check" style="width: 14px; height: 14px;"></i> Marcar Todas como Lidas
+              </button>
+              <button type="button" class="btn-outline" onclick="app.adminClearAllNotifications()" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05);">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Resetar / Limpar Página
+              </button>
+            </div>
           </div>
           <div id="adminNotificationsListContainer"></div>
         </div>
