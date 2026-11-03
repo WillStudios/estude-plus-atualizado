@@ -15222,22 +15222,6 @@ class EstudePlusApp {
 
     html += `</tbody></table>`;
 
-    // Sábados Letivos Information Card
-    html += `
-      <div style="margin-top: 18px; padding: 14px 18px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: var(--radius-md); display: flex; align-items: flex-start; gap: 12px;">
-        <i data-lucide="calendar-days" style="color: #e11d48; width: 22px; height: 22px; flex-shrink: 0; margin-top: 2px;"></i>
-        <div>
-          <h5 style="color: #9f1239; margin-bottom: 4px; font-size: 0.9rem;">Datas Oficiais dos Sábados Letivos Gammon 2026:</h5>
-          <p style="color: #881337; font-size: 0.8rem; margin: 0; line-height: 1.5;">
-            &bull; <strong>28/03 e 25/04:</strong> Matemática, Inglês, Matemática, Ensino Religioso, Geografia, Ciências.<br>
-            &bull; <strong>23/05:</strong> Língua Portuguesa, Ed. Física, Inglês, Português, Geografia, Matemática.<br>
-            &bull; <strong>20/06:</strong> Redação, Inglês, Matemática, Redação, Matemática, História.<br>
-            &bull; <strong>26/09 e 05/12:</strong> Língua Portuguesa, Matemática, História, Ciências, Inglês, Português.
-          </p>
-        </div>
-      </div>
-    `;
-
     container.innerHTML = html;
     if (window.lucide) window.lucide.createIcons();
   }
