@@ -1598,25 +1598,32 @@ const server = http.createServer((req, res) => {
         }
       } else if (action === 'save_custom_simulado') {
         if (!Array.isArray(u.customSimulados)) u.customSimulados = [];
-        const sim = payload.simulado;
+        const sim = payload.simulado || (payload.payload && payload.payload.simulado);
         if (sim && sim.id) {
           sim.updatedAt = nowIso;
           const idx = u.customSimulados.findIndex(s => s.id === sim.id);
           if (idx >= 0) u.customSimulados[idx] = { ...u.customSimulados[idx], ...sim };
           else u.customSimulados.unshift({ ...sim, createdAt: sim.createdAt || nowIso });
+          writeDb(db);
         }
+        return sendJson({ success: true, simulado: sim });
       } else if (action === 'save_mindmap') {
         if (!Array.isArray(u.mindmaps)) u.mindmaps = [];
-        const mm = payload.mindmap;
+        const mm = payload.mindmap || (payload.payload && payload.payload.mindmap);
         if (!mm || !mm.id) return sendJson({ error: 'Mapa mental inválido.' }, 400);
         mm.updatedAt = nowIso;
         const idx = u.mindmaps.findIndex(m => m.id === mm.id);
         if (idx >= 0) u.mindmaps[idx] = { ...u.mindmaps[idx], ...mm };
         else u.mindmaps.unshift({ ...mm, createdAt: mm.createdAt || nowIso });
+        writeDb(db);
+        return sendJson({ success: true, mindmap: mm });
       } else if (action === 'delete_mindmap') {
+        const delId = payload.mindmapId || (payload.payload && payload.payload.mindmapId);
         if (Array.isArray(u.mindmaps)) {
-          u.mindmaps = u.mindmaps.filter(m => m.id !== payload.mindmapId);
+          u.mindmaps = u.mindmaps.filter(m => m.id !== delId);
+          writeDb(db);
         }
+        return sendJson({ success: true, deletedId: delId });
       } else if (action === 'save_glossary') {
         if (!Array.isArray(u.glossary)) u.glossary = [];
         const item = payload.item;
@@ -4856,7 +4863,7 @@ DIRETRIZES DE ATUAÇÃO:
       const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || db.aiConfig?.geminiApiKey || auth.user?.geminiApiKey;
 
       // Se temos Gemini API Key e a ação se beneficia de IA generativa dinâmica
-      if (apiKey && (action === 'generate_flashcards' || action === 'generate_questions' || action === 'explain_alternative' || action === 'compare_concepts' || action === 'summarize_content')) {
+      if (apiKey && (action === 'generate_flashcards' || action === 'generate_questions' || action === 'generate_mindmap' || action === 'explain_alternative' || action === 'compare_concepts' || action === 'summarize_content')) {
         try {
           const model = db.aiConfig?.aiModel || 'gemini-2.5-flash';
           let promptInstruction = '';
@@ -4870,20 +4877,52 @@ Retorne APENAS um JSON no formato:
   ]
 }`;
           } else if (action === 'generate_questions') {
-            promptInstruction = `Você é o tutor inteligente do Estude+. Crie exatamente ${data.count || 3} questões de treino sobre "${data.topic || 'Conceitos'}" (Matéria: ${data.subject || 'Geral'}, Dificuldade: ${data.difficulty || 'médio'}).
-Retorne APENAS um JSON no formato:
+            promptInstruction = `Você é um professor e avaliador experiente do Estude+. Crie exatamente ${data.count || 5} questões de simulado de múltipla escolha estritamente sobre a disciplina "${data.subject || 'Geral'}" e o assunto "${data.topic || 'Conceitos Fundamentais'}" (Nível de dificuldade: ${data.difficulty || 'médio'}).
+DIRETRIZES FUNDAMENTAIS:
+1. RIGOR DE DISCIPLINA: Todas as ${data.count || 5} questões DEVEM pertencer EXCLUSIVAMENTE à matéria "${data.subject}" e ao assunto "${data.topic}". NUNCA inclua questões de outras matérias.
+2. ESTRUTURA: Cada questão deve conter 4 alternativas (A, B, C, D) e indicar o índice da resposta correta (0 para A, 1 para B, 2 para C, 3 para D).
+3. FEEDBACK DIDÁTICO: Forneça uma dica pedagógica sutil (sem revelar a resposta) e uma explicação didática detalhada do gabarito.
+Retorne APENAS um JSON válido no formato:
 {
+  "subject": "${data.subject || 'Geral'}",
+  "topic": "${data.topic || 'Conceitos'}",
   "questions": [
     {
       "id": "q1",
       "type": "multiple_choice",
-      "q": "Enunciado da questão contextualizada",
+      "q": "Enunciado claro e contextualizado da questão",
       "options": ["A) Opção 1", "B) Opção 2", "C) Opção 3", "D) Opção 4"],
-      "correct": 1,
-      "hint": "Dica pedagógica sutil sem dar a resposta",
-      "explanation": "Explicação detalhada de por que a alternativa correta é a verdadeira"
+      "correct": 0,
+      "hint": "Dica de raciocínio pedagógico",
+      "explanation": "Explicação completa e didática do gabarito"
     }
   ]
+}`;
+          } else if (action === 'generate_mindmap') {
+            promptInstruction = `Você é um especialista em pedagogia visual e mapas mentais do Estude+. Crie uma árvore hierárquica completa para um mapa mental estritamente sobre a matéria "${data.subject || 'Geral'}" e o tema "${data.topic || 'Conceitos'}" (Detalhamento: ${data.detailLevel || 'completo'}).
+DIRETRIZES:
+1. FOCO NO TEMA: O mapa deve abordar estritamente "${data.topic}" (${data.subject}).
+2. ESTRUTURA: Crie de 3 a 5 ramificações principais (branches), cada uma com resumo conceitual (details), exemplos práticos do cotidiano e de 2 a 3 subtópicos (children).
+Retorne APENAS um JSON válido no formato:
+{
+  "title": "Mapa Mental: ${data.topic || 'Conceitos'}",
+  "subject": "${data.subject || 'Geral'}",
+  "root": {
+    "label": "${data.topic || 'Conceitos'}",
+    "summary": "Síntese em uma frase do conceito central",
+    "color": "#4f46e5",
+    "children": [
+      {
+        "label": "1. Nome da Ramificação Principal",
+        "details": "Explicação clara e objetiva",
+        "examples": "Exemplo do cotidiano ou aplicação prática",
+        "children": [
+          { "label": "Subtópico A", "details": "Definição do subtópico" },
+          { "label": "Subtópico B", "details": "Definição do subtópico" }
+        ]
+      }
+    ]
+  }
 }`;
           } else if (action === 'explain_alternative') {
             promptInstruction = `Você é o professor do Estude+. Explique o conceito "${data.topic || 'Geral'}" usando o estilo "${data.style || 'analogia do dia a dia'}". Seja didático, claro e amigável.`;

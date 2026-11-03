@@ -504,7 +504,271 @@ function generateStructuredStudyTool(action, params = {}) {
   // 2. GERAR MAPA MENTAL ESTRUTURADO
   if (action === 'generate_mindmap') {
     let rootNode = null;
-    if (norm.includes('vegetal') || norm.includes('planta')) {
+    const sLower = String(subject || '').toLowerCase();
+
+    // MATEMÁTICA: FRAÇÕES
+    if (norm.includes('fracao') || norm.includes('fracoes')) {
+      rootNode = {
+        label: 'Frações e Números Racionais',
+        summary: 'Representação de partes de um todo e operações fundamentais',
+        color: '#2563eb',
+        children: [
+          {
+            label: '1. Conceito e Termos',
+            details: 'Uma fração a/b indica que o todo foi dividido em b partes iguais e foram tomadas a partes.',
+            examples: 'Numerador (em cima: partes tomadas) / Denominador (embaixo: total de partes).',
+            children: [
+              { label: 'Denominador Não Nulo', details: 'O denominador nunca pode ser zero (b ≠ 0).' },
+              { label: 'Significado Geométrico', details: 'Fatias de uma pizza ou divisões de uma barra de chocolate.' }
+            ]
+          },
+          {
+            label: '2. Classificação das Frações',
+            details: 'Próprias, impróprias, aparentes e números mistos.',
+            examples: '3/4 (própria), 5/4 (imprópria), 8/4 = 2 (aparente).',
+            children: [
+              { label: 'Frações Equivalentes', details: 'Multiplicar ou dividir numerador e denominador pelo mesmo número.' },
+              { label: 'Simplificação e Irredutível', details: 'Dividir pelo MDC até não ser mais possível simplificar.' }
+            ]
+          },
+          {
+            label: '3. Adição e Subtração',
+            details: 'Com denominadores iguais somam-se os numeradores; com diferentes, usa-se o MMC.',
+            examples: '1/4 + 2/4 = 3/4; 1/2 + 1/3 = (3+2)/6 = 5/6.',
+            children: [
+              { label: 'Redução ao Mesmo Denominador', details: 'Dividir o MMC pelo denominador e multiplicar pelo numerador.' }
+            ]
+          },
+          {
+            label: '4. Multiplicação e Divisão',
+            details: 'Na multiplicação: reto (num x num, den x den). Na divisão: multiplica pela inversa.',
+            examples: '(2/3) × (4/5) = 8/15; (2/3) ÷ (4/5) = (2/3) × (5/4) = 10/12 = 5/6.',
+            children: [
+              { label: 'Fração de Quantidade', details: 'Calcular 3/5 de 100 = (100 ÷ 5) × 3 = 60.' }
+            ]
+          }
+        ]
+      };
+    }
+    // MATEMÁTICA: EQUAÇÕES
+    else if (norm.includes('equacao') || norm.includes('equacoes') || norm.includes('algebra')) {
+      rootNode = {
+        label: 'Equações de 1º Grau',
+        summary: 'Sentenças matemáticas abertas que expressam uma igualdade entre termos',
+        color: '#3b82f6',
+        children: [
+          {
+            label: '1. Estrutura da Equação',
+            details: 'Forma geral ax + b = 0, onde a ≠ 0. O termo "x" é a incógnita desconhecida.',
+            examples: '2x + 6 = 14 ➔ Incógnita: x; Coeficiente: 2; Termo independente: 6.',
+            children: [
+              { label: 'Membros da Equação', details: '1º membro (à esquerda do igual) e 2º membro (à direita).' }
+            ]
+          },
+          {
+            label: '2. Princípios de Equivalência',
+            details: 'Princípio Aditivo e Princípio Multiplicativo para isolar a incógnita.',
+            examples: 'Somar/subtrair o mesmo valor dos dois lados; multiplicar/dividir ambos os lados.',
+            children: [
+              { label: 'Regra Prática', details: 'Trocou de lado da igualdade, inverte a operação (mais vira menos, vezes vira divisão).' }
+            ]
+          },
+          {
+            label: '3. Resolução Passo a Passo',
+            details: '1) Eliminar parênteses 2) Agrupar incógnitas 3) Isolar a variável 4) Tirar a prova real.',
+            examples: '3x - 5 = 10 ➔ 3x = 15 ➔ x = 5.',
+            children: [
+              { label: 'Conjunto Solução (S)', details: 'O valor encontrado que torna a igualdade verdadeira: S = {5}.' }
+            ]
+          }
+        ]
+      };
+    }
+    // HISTÓRIA: REINO DE MONOMOTAPA
+    else if (norm.includes('monomotapa') || norm.includes('mutapa') || norm.includes('afric')) {
+      rootNode = {
+        label: 'Reino de Monomotapa (Mutapa)',
+        summary: 'Grande império africano dos séculos XV a XVII na África Austral rica em ouro',
+        color: '#b45309',
+        children: [
+          {
+            label: '1. Localização e Origem',
+            details: 'Situado entre os rios Zambeze e Limpopo (atuais Zimbábue e Moçambique). Fundado pelo povo Chona.',
+            examples: 'Herdeiro da tradição do Grande Zimbábue e suas imponentes construções de pedra.',
+            children: [
+              { label: 'Título Mwenemutapa', details: 'Significa "Mestre dos Conquistadores" ou "Senhor dos Senhores".' },
+              { label: 'Rei Divinizado', details: 'O monarca era visto como intermediário sagrado entre os ancestrais e o povo.' }
+            ]
+          },
+          {
+            label: '2. Economia e Ouro',
+            details: 'Mineração e comércio de ouro e marfim em escala continental e internacional.',
+            examples: 'Rotas de caravanas ligavam o interior aos portos do Oceano Índico (Sofala e Quíloa).',
+            children: [
+              { label: 'Parcerias com Árabes-Suaílis', details: 'Troca de ouro e marfim por tecidos, contas de vidro e porcelanas.' },
+              { label: 'Agricultura e Pastoril', details: 'Base alimentar sólida com cultivo de cereais e criação de gado bovino.' }
+            ]
+          },
+          {
+            label: '3. Contato e Conflito com Portugueses',
+            details: 'No século XVI, os portugueses tentaram controlar o monopólio das ricas minas de ouro.',
+            examples: 'Tratados desiguais, conversão forçada de líderes ao catolicismo e pressão militar.',
+            children: [
+              { label: 'Resistência dos Changamires', details: 'Rebeliões contra a dominação europeia que enfraqueceram o império.' },
+              { label: 'Legado Cultural', details: 'Exemplo supremo da sofisticação política e metalúrgica da África pré-colonial.' }
+            ]
+          }
+        ]
+      };
+    }
+    // HISTÓRIA: FEUDALISMO
+    else if (norm.includes('feudal') || norm.includes('idade media')) {
+      rootNode = {
+        label: 'Feudalismo na Europa Medieval',
+        summary: 'Estrutura política, social e econômica predominante na Europa Ocidental dos séculos V ao XV',
+        color: '#7c3aed',
+        children: [
+          {
+            label: '1. Sociedade Estamental',
+            details: 'Sociedade rígida dividida em ordens determinadas pelo nascimento, sem mobilidade.',
+            examples: 'Clero (os que oram), Nobreza (os que lutam), Servos (os que trabalham).',
+            children: [
+              { label: 'Clero e Poder Espiritual', details: 'A Igreja Católica era a maior proprietária de terras e controlava a ideologia.' }
+            ]
+          },
+          {
+            label: '2. Economia Feudal',
+            details: 'Agrária, de subsistência e autossuficiente dentro do feudo.',
+            examples: 'Manso senhorial, manso servil e terras comunais (pastos e florestas).',
+            children: [
+              { label: 'Baixa Circulação Monetária', details: 'Comércio enfraquecido e prevalência da troca natural de produtos.' }
+            ]
+          },
+          {
+            label: '3. Obrigações e Tributos Servis',
+            details: 'Pesados impostos pagos pelos servos em troca do uso da terra e proteção armada.',
+            examples: 'Corveia (dias de trabalho grátis), Talha (parte da colheita) e Banalidades (taxa por moinho/forno).',
+            children: [
+              { label: 'Suserania e Vassalagem', details: 'Aliança militar e fidelidade sagrada entre nobres através da doação de feudos.' }
+            ]
+          }
+        ]
+      };
+    }
+    // GEOGRAFIA: CLIMAS DO BRASIL
+    else if (norm.includes('clima') || norm.includes('climatologia')) {
+      rootNode = {
+        label: 'Climas do Brasil',
+        summary: 'Classificação, fatores determinantes e dinâmicas atmosféricas do território nacional',
+        color: '#0284c7',
+        children: [
+          {
+            label: '1. Clima Equatorial',
+            details: 'Típico da região Amazônica. Elevada temperatura média (25°C a 27°C) e chuvas abundantes o ano todo.',
+            examples: 'Baixa amplitude térmica e forte atuação da Massa Equatorial Continental (mEc).',
+            children: [
+              { label: 'Rios Voadores', details: 'Evapotranspiração da floresta que leva umidade para outras regiões do país.' }
+            ]
+          },
+          {
+            label: '2. Clima Tropical Típico',
+            details: 'Predomina no Centro-Oeste e Sudeste. Duas estações bem definidas: verão chuvoso e inverno seco.',
+            examples: 'Cerrado brasileiro e savanas; temperaturas médias acima de 20°C.',
+            children: [
+              { label: 'Variações Tropicais', details: 'Tropical de Altitude (mais ameno) e Tropical Litorâneo (chuvas de inverno no NE).' }
+            ]
+          },
+          {
+            label: '3. Clima Semiárido',
+            details: 'Típico do Sertão nordestino e Vale do Jequitinhonha. Altas temperaturas e chuvas escassas e irregulares.',
+            examples: 'Polígono das secas, vegetação de Caatinga e rios intermitentes.',
+            children: [
+              { label: 'Pluviometria', details: 'Precipitação média inferior a 800 mm por ano com secas prolongadas.' }
+            ]
+          },
+          {
+            label: '4. Clima Subtropical',
+            details: 'Ocorre ao sul do Trópico de Capricórnio (Região Sul e sul de SP/MS). Quatro estações bem delineadas.',
+            examples: 'Maior amplitude térmica anual do Brasil, geadas e invernos rigorosos.',
+            children: [
+              { label: 'Chuvas Bem Distribuídas', details: 'Sem estação seca estrita, com precipitação regular ao longo dos 12 meses.' }
+            ]
+          }
+        ]
+      };
+    }
+    // GEOGRAFIA: BIOMAS
+    else if (norm.includes('bioma') || norm.includes('vegetacao')) {
+      rootNode = {
+        label: 'Biomas Brasileiros',
+        summary: 'Os seis grandes ecossistemas e domínios morfoclimáticos do Brasil',
+        color: '#059669',
+        children: [
+          {
+            label: '1. Amazônia',
+            details: 'Maior floresta tropical pluvial do planeta, clima equatorial úmido e maior bacia hidrográfica do mundo.',
+            examples: 'Matas de igapó, várzea e terra firme.',
+            children: [ { label: 'Biodiversidade Única', details: 'Abriga um décimo de todas as espécies de fauna e flora do planeta.' } ]
+          },
+          {
+            label: '2. Cerrado',
+            details: 'Segunda maior formação brasileira. Savana tropical com árvores de casca grossa e raízes profundas.',
+            examples: 'Berço das águas que alimenta três grandes bacias hidrográficas (Prata, São Francisco, Tocantins).',
+            children: [ { label: 'Solo Ácido', details: 'Solos profundos e avermelhados com acidez corrigida pela calagem agrícola.' } ]
+          },
+          {
+            label: '3. Caatinga e Mata Atlântica',
+            details: 'Caatinga: único bioma exclusivo do Brasil (semiárido, xerófitas). Mata Atlântica: biodiversidade florestal litorânea.',
+            examples: 'Mandacaru e juazeiro na Caatinga; pau-brasil e mico-leão-dourado na Mata Atlântica.',
+            children: [ { label: 'Hotspot Mundial', details: 'A Mata Atlântica resta com menos de 12% da cobertura original devido à urbanização.' } ]
+          },
+          {
+            label: '4. Pantanal e Pampa',
+            details: 'Pantanal: maior planície inundável do mundo. Pampa: campos sulinos de gramíneas no Rio Grande do Sul.',
+            examples: 'Tuiuiú e jacaré-do-pantanal; pecuária extensiva nos pampas.',
+            children: [ { label: 'Ciclo das Cheias', details: 'O Pantanal varia drasticamente entre períodos secos e cheias sazonais.' } ]
+          }
+        ]
+      };
+    }
+    // PORTUGUÊS: CLASSES GRAMATICAIS
+    else if (norm.includes('classe') || norm.includes('morfologia') || norm.includes('gramat')) {
+      rootNode = {
+        label: 'As 10 Classes de Palavras',
+        summary: 'Classificação morfológica da Língua Portuguesa em classes variáveis e invariáveis',
+        color: '#d97706',
+        children: [
+          {
+            label: '1. Classes Variáveis (Flexionam)',
+            details: 'Palavras que admitem variação em gênero, número, grau ou tempo/modo.',
+            examples: 'Substantivo, Artigo, Adjetivo, Numeral, Pronome e Verbo.',
+            children: [
+              { label: 'Substantivo e Verbo', details: 'Substantivo nomeia os seres; Verbo indica ação, estado ou fenômeno da natureza.' },
+              { label: 'Adjetivo e Pronome', details: 'Adjetivo caracteriza o substantivo; Pronome substitui ou acompanha o nome.' }
+            ]
+          },
+          {
+            label: '2. Classes Invariáveis (Não Flexionam)',
+            details: 'Palavras que mantêm forma fixa independentemente da frase.',
+            examples: 'Advérbio, Preposição, Conjunção e Interjeição.',
+            children: [
+              { label: 'Advérbio', details: 'Modifica o sentido do verbo, do adjetivo ou de outro advérbio (tempo, modo, lugar).' },
+              { label: 'Preposição e Conjunção', details: 'Preposição liga palavras; Conjunção conecta orações estabelecendo relações lógicas.' }
+            ]
+          },
+          {
+            label: '3. Aplicação em Provas e Sintaxe',
+            details: 'A morfologia é a base para o estudo da sintaxe (sujeito, predicado, complementos).',
+            examples: 'O substantivo frequentemente exerce função de núcleo do sujeito.',
+            children: [
+              { label: 'Atenção aos Contextos', details: 'Uma mesma palavra pode mudar de classe dependendo da frase (derivação imprópria).' }
+            ]
+          }
+        ]
+      };
+    }
+    // CIÊNCIAS: REINO VEGETAL
+    else if (norm.includes('vegetal') || norm.includes('planta') || norm.includes('briofita')) {
       rootNode = {
         label: 'Reino Vegetal (Metaphyta)',
         summary: 'Classificação evolutiva das plantas terrestres',
@@ -544,71 +808,120 @@ function generateStructuredStudyTool(action, params = {}) {
           }
         ]
       };
-    } else if (norm.includes('newton') || norm.includes('mecanica')) {
+    }
+    // FÍSICA: LEIS DE NEWTON
+    else if (norm.includes('newton') || norm.includes('dinamica') || norm.includes('mecanica')) {
       rootNode = {
         label: 'Dinâmica & Leis de Newton',
-        summary: 'Estudo das forças e suas causas no movimento',
+        summary: 'Estudo das forças e suas causas fundamentais no movimento dos corpos',
         color: '#4f46e5',
         children: [
           {
-            label: '1ª Lei: Inércia',
-            details: 'Tendência natural dos corpos de manter seu estado de repouso ou de MRU.',
-            examples: 'Passageiro jogado para frente na freada brusca do ônibus.',
+            label: '1ª Lei: Princípio da Inércia',
+            details: 'Todo corpo permanece em repouso ou em MRU a menos que uma força resultante atue sobre ele.',
+            examples: 'Passageiro projetado para frente na freada brusca do ônibus.',
             children: [
-              { label: 'Condição de Equilíbrio', details: 'A soma de todas as forças que atuam no corpo é nula (Fr = 0).' }
+              { label: 'Condição de Equilíbrio', details: 'A soma vetorial de todas as forças aplicadas é nula (Fr = 0).' }
             ]
           },
           {
             label: '2ª Lei: Princípio Fundamental',
-            details: 'A aceleração é diretamente proporcional à força e inversamente à massa.',
-            examples: 'Fr = m × a (Unidade: Newtons no S.I.).',
+            details: 'A aceleração adquirida é diretamente proporcional à força resultante e inversamente à massa.',
+            examples: 'Fórmula: Fr = m × a (onde Força é dada em Newtons, m em kg e a em m/s²).',
             children: [
-              { label: 'Massa como Medida', details: 'Massa é a medida quantitativa da inércia de um corpo.' }
+              { label: 'Massa Inercial', details: 'A massa mede a resistência quantitativa que o corpo oferece à aceleração.' }
             ]
           },
           {
             label: '3ª Lei: Ação e Reação',
-            details: 'Toda força de ação gera uma reação oposta de mesma intensidade e direção.',
-            examples: 'Nadador empurrando a água para trás para se mover para a frente.',
+            details: 'Toda força de ação gera uma reação simultânea de mesma intensidade, mesma direção e sentido oposto.',
+            examples: 'Nadador empurrando a água para trás para avançar para a frente.',
             children: [
-              { label: 'Corpos Distintos', details: 'O par ação-reação NUNCA se anula porque atua em corpos diferentes!' }
-            ]
-          }
-        ]
-      };
-    } else {
-      rootNode = {
-        label: topic,
-        summary: `Mapa mental conceitual de ${subject}`,
-        color: '#6366f1',
-        children: [
-          {
-            label: 'Fundamentos & Definição',
-            details: `Conceitos essenciais que estruturam o tema de ${topic}.`,
-            examples: 'Premissas básicas da BNCC.',
-            children: [
-              { label: 'Origem & Nomenclatura', details: 'Termos e definições padronizadas.' }
-            ]
-          },
-          {
-            label: 'Classificação & Subdivisões',
-            details: 'Como os elementos desse assunto se dividem e se categorizam.',
-            examples: 'Tipos principais e características.',
-            children: [
-              { label: 'Critérios de Diferenciação', details: 'Pontos que distinguem cada categoria.' }
-            ]
-          },
-          {
-            label: 'Aplicações no Cotidiano',
-            details: 'Relação prática com exercícios escolares e situações do dia a dia.',
-            examples: 'Exemplos práticos e experimentos.',
-            children: [
-              { label: 'Resolução de Problemas', details: 'Estratégia para acertar questões de prova.' }
+              { label: 'Corpos Distintos', details: 'O par ação-reação NUNCA se anula porque atua sempre em corpos diferentes!' }
             ]
           }
         ]
       };
     }
+    // CIÊNCIAS: CÉLULA E ORGANELAS
+    else if (norm.includes('celula') || norm.includes('organela') || norm.includes('citologia')) {
+      rootNode = {
+        label: 'Citologia e Estrutura Celular',
+        summary: 'A célula como unidade morfofisiológica fundamental de todos os seres vivos',
+        color: '#06b6d4',
+        children: [
+          {
+            label: '1. Estruturas Básicas',
+            details: 'Membrana plasmática (bicamada fosfolipídica), citoplasma (citosol) e material genético (DNA).',
+            examples: 'Permeabilidade seletiva controlando a entrada de nutrientes e saída de resíduos.',
+            children: [
+              { label: 'Procariontes vs Eucariontes', details: 'Procariontes não têm carioteca (bactérias); eucariontes têm núcleo delimitado.' }
+            ]
+          },
+          {
+            label: '2. Organelas Energéticas',
+            details: 'Mitocôndrias e Cloroplastos responsáveis pela produção e conversão de energia.',
+            examples: 'Mitocôndrias realizam a respiração celular (ATP); Cloroplastos realizam a fotossíntese.',
+            children: [
+              { label: 'Teoria Endossimbiótica', details: 'Possuem DNA próprio e dupla membrana de origem evolutiva ancestral.' }
+            ]
+          },
+          {
+            label: '3. Síntese e Transporte',
+            details: 'Ribossomos (síntese proteica), Retículo Endoplasmático e Complexo Golgiense.',
+            examples: 'O Complexo de Golgi secreta substâncias e empacota vesículas celulares.',
+            children: [
+              { label: 'Lisossomos', details: 'Realizam a digestão intracelular e reciclagem de componentes velhos.' }
+            ]
+          }
+        ]
+      };
+    }
+    // GERAL: GERADOR DINÂMICO PARA QUALQUER MATÉRIA E TÓPICO
+    else {
+      rootNode = {
+        label: topic,
+        summary: `Visão estruturada e conceitual de ${subject}: ${topic}`,
+        color: '#6366f1',
+        children: [
+          {
+            label: `1. Fundamentos & Definição de ${topic}`,
+            details: `Premissas fundamentais que explicam a origem, significado e conceitos de ${topic} na matéria de ${subject}.`,
+            examples: 'Conceitos centrais exigidos nas avaliações e no currículo BNCC.',
+            children: [
+              { label: 'Nomenclatura e Termos Chave', details: 'Terminologia técnica e vocabulário essencial do tema.' },
+              { label: 'Princípio Geral', details: 'A regra ou lei fundamental que rege esse assunto.' }
+            ]
+          },
+          {
+            label: '2. Categorias & Classificações Principais',
+            details: `Como os elementos de ${topic} se organizam, dividem e se relacionam entre si.`,
+            examples: 'Divisões em grupos, fases, tipos ou subcategorias práticas.',
+            children: [
+              { label: 'Critérios de Diferenciação', details: 'Fatores que distinguem cada parte ou fase do processo.' },
+              { label: 'Exceções Notáveis', details: 'Casos particulares comumente cobrados em questões avaliativas.' }
+            ]
+          },
+          {
+            label: '3. Aplicações no Cotidiano & Conexões',
+            details: `Relação direta de ${topic} com fenômenos reais, experimentos ou fatos históricos.`,
+            examples: 'Exemplos observáveis no dia a dia e situações práticas do aluno.',
+            children: [
+              { label: 'Impacto Prático', details: 'Como esse conhecimento resolve problemas e explica o mundo.' }
+            ]
+          },
+          {
+            label: '4. Dicas Pedagógicas & Resolução de Questões',
+            details: 'Estratégias de raciocínio para não cair em pegadinhas nas avaliações do SAS.',
+            examples: 'Atenção aos termos absolutos e análise atenta dos enunciados.',
+            children: [
+              { label: 'Passo a Passo de Resolução', details: 'Isolar dados, aplicar a teoria correspondente e conferir o gabarito.' }
+            ]
+          }
+        ]
+      };
+    }
+
     return {
       success: true,
       id: 'mm_' + Date.now(),
@@ -619,76 +932,732 @@ function generateStructuredStudyTool(action, params = {}) {
     };
   }
 
-  // 3. GERADOR DE QUESTÕES
+  // 3. GERADOR DE QUESTÕES (SIMULADOS E DESAFIOS RIGOROSAMENTE POR MATÉRIA E ASSUNTO)
   if (action === 'generate_questions') {
     const qList = [];
-    if (norm.includes('vegetal') || norm.includes('ciencias')) {
+    const sLower = String(subject || '').toLowerCase();
+
+    // 1. MATEMÁTICA
+    if (sLower.includes('matem') || norm.includes('frac') || norm.includes('equac') || norm.includes('potenc') || norm.includes('geometr') || norm.includes('porcent')) {
+      if (norm.includes('frac')) {
+        qList.push(
+          {
+            id: 'qm_1',
+            type: 'multiple_choice',
+            q: 'Em uma turma de 30 alunos, exatamente 3/5 dos estudantes praticam natação no colégio. Quantos estudantes praticam essa modalidade?',
+            options: ['A) 12 alunos', 'B) 15 alunos', 'C) 18 alunos', 'D) 20 alunos'],
+            correct: 2,
+            hint: 'Calcule a fração de uma quantidade: divida o total pelo denominador e multiplique pelo numerador.',
+            explanation: 'Para calcular 3/5 de 30: primeiro divide-se 30 por 5 = 6. Em seguida, multiplica-se por 3: 6 × 3 = 18 alunos.'
+          },
+          {
+            id: 'qm_2',
+            type: 'multiple_choice',
+            q: 'Qual é o resultado correto da soma das frações 1/2 + 1/3?',
+            options: ['A) 2/5', 'B) 5/6', 'C) 1/6', 'D) 3/6'],
+            correct: 1,
+            hint: 'Denominadores diferentes exigem MMC. O MMC entre 2 e 3 é 6.',
+            explanation: 'Reduzindo ao mesmo denominador comum (6): 1/2 = 3/6 e 1/3 = 2/6. Somando os numeradores: (3 + 2)/6 = 5/6.'
+          },
+          {
+            id: 'qm_3',
+            type: 'multiple_choice',
+            q: 'Qual das seguintes frações é equivalente à fração 12/16 quando totalmente simplificada em sua forma irredutível?',
+            options: ['A) 3/4', 'B) 6/8', 'C) 2/3', 'D) 4/5'],
+            correct: 0,
+            hint: 'Divida o numerador e o denominador pelo Máximo Divisor Comum (MDC = 4).',
+            explanation: 'Dividindo 12 e 16 por 4, temos: 12 ÷ 4 = 3 e 16 ÷ 4 = 4. Portanto, a forma irredutível é 3/4.'
+          },
+          {
+            id: 'qm_4',
+            type: 'multiple_choice',
+            q: 'Ao multiplicar a fração 2/3 pela fração 4/5, obtém-se o valor de:',
+            options: ['A) 6/8', 'B) 8/15', 'C) 10/12', 'D) 8/12'],
+            correct: 1,
+            hint: 'Na multiplicação de frações, multiplica-se numerador por numerador e denominador por denominador.',
+            explanation: '(2 × 4) / (3 × 5) = 8/15. A fração já é irredutível.'
+          },
+          {
+            id: 'qm_5',
+            type: 'multiple_choice',
+            q: 'Uma pizza foi cortada em 8 fatias iguais. Lucas comeu 3 fatias e Mariana comeu 2 fatias. Que fração da pizza sobrou?',
+            options: ['A) 5/8', 'B) 3/8', 'C) 1/4', 'D) 1/2'],
+            correct: 1,
+            hint: 'Some o que foi consumido e subtraia do inteiro (8/8).',
+            explanation: 'Total comido: 3/8 + 2/8 = 5/8. A fração restante é: 8/8 - 5/8 = 3/8 da pizza.'
+          }
+        );
+      } else if (norm.includes('equac') || norm.includes('algebra')) {
+        qList.push(
+          {
+            id: 'qm_eq_1',
+            type: 'multiple_choice',
+            q: 'Resolvendo a equação do primeiro grau 3x + 5 = 20, qual é o valor numérico da incógnita x?',
+            options: ['A) x = 3', 'B) x = 4', 'C) x = 5', 'D) x = 6'],
+            correct: 2,
+            hint: 'Subtraia 5 de ambos os membros e depois divida o resultado por 3.',
+            explanation: '3x = 20 - 5 ➔ 3x = 15 ➔ x = 15 ÷ 3 ➔ x = 5.'
+          },
+          {
+            id: 'qm_eq_2',
+            type: 'multiple_choice',
+            q: 'O dobro de um número somado a 7 é igual a 25. Qual é esse número?',
+            options: ['A) 8', 'B) 9', 'C) 10', 'D) 12'],
+            correct: 1,
+            hint: 'Escreva a equação algébrica correspondente: 2x + 7 = 25.',
+            explanation: '2x + 7 = 25 ➔ 2x = 25 - 7 ➔ 2x = 18 ➔ x = 9.'
+          },
+          {
+            id: 'qm_eq_3',
+            type: 'multiple_choice',
+            q: 'Qual é a solução da equação 5x - 8 = 2x + 7?',
+            options: ['A) x = 3', 'B) x = 5', 'C) x = 7', 'D) x = 15'],
+            correct: 1,
+            hint: 'Agrupe os termos com x no 1º membro e os números no 2º membro.',
+            explanation: '5x - 2x = 7 + 8 ➔ 3x = 15 ➔ x = 5.'
+          },
+          {
+            id: 'qm_eq_4',
+            type: 'multiple_choice',
+            q: 'Em uma promoção com desconto sucessivo, um artigo de R$ 100,00 tem 10% de desconto e depois mais 10% sobre o novo valor. O valor final é:',
+            options: ['A) R$ 80,00', 'B) R$ 81,00', 'C) R$ 82,00', 'D) R$ 85,00'],
+            correct: 1,
+            hint: 'Aplique o primeiro desconto e depois calcule o segundo desconto sobre o saldo restante.',
+            explanation: '100 - 10% = R$ 90,00. Em seguida, 10% de 90 = R$ 9,00. Valor final: 90 - 9 = R$ 81,00.'
+          },
+          {
+            id: 'qm_eq_5',
+            type: 'multiple_choice',
+            q: 'A área de um terreno retangular que mede 12 metros de comprimento por 8 metros de largura é igual a:',
+            options: ['A) 40 m²', 'B) 80 m²', 'C) 96 m²', 'D) 100 m²'],
+            correct: 2,
+            hint: 'A área do retângulo é dada por base × altura.',
+            explanation: 'Área = 12 m × 8 m = 96 m².'
+          }
+        );
+      } else {
+        qList.push(
+          {
+            id: 'qm_gen_1',
+            type: 'multiple_choice',
+            q: `Em relação aos cálculos e propriedades de ${topic} em Matemática, qual é a afirmativa correta?`,
+            options: [
+              'A) A ordem das operações deve respeitar parênteses, potenciação, multiplicação/divisão e adição/subtração.',
+              'B) Toda multiplicação por zero resulta no próprio número original.',
+              'C) Em frações, somam-se diretamente os numeradores e os denominadores sem MMC.',
+              'D) Números negativos ao quadrado resultam sempre em valores negativos.'
+            ],
+            correct: 0,
+            hint: 'Lembre-se da ordem de precedência das operações matemáticas (PEMDAS).',
+            explanation: 'A precedência das operações matemáticas exige resolver primeiro parênteses/colchetes, potências/raízes, multiplicação/divisão e por fim adição/subtração.'
+          },
+          {
+            id: 'qm_gen_2',
+            type: 'multiple_choice',
+            q: `Se aplicarmos uma redução de 20% sobre uma quantia de R$ 150,00 relacionada a um problema de ${topic}, o valor final obtido será de:`,
+            options: ['A) R$ 110,00', 'B) R$ 120,00', 'C) R$ 125,00', 'D) R$ 130,00'],
+            correct: 1,
+            hint: '20% de 150 corresponde a (150 × 20) ÷ 100 = 30.',
+            explanation: 'O desconto é de 20% de 150 = R$ 30,00. O valor final pago é 150 - 30 = R$ 120,00.'
+          },
+          {
+            id: 'qm_gen_3',
+            type: 'multiple_choice',
+            q: `Qual é a propriedade matemática que garante que (a + b) + c = a + (b + c) nos estudos de ${topic}?`,
+            options: ['A) Propriedade Comutativa', 'B) Propriedade Associativa', 'C) Propriedade Distributiva', 'D) Elemento Neutro'],
+            correct: 1,
+            hint: 'Associar termos diferentes mantendo o mesmo resultado final.',
+            explanation: 'A propriedade associativa estabelece que a forma como agrupamos as parcelas em uma adição não altera o resultado final.'
+          },
+          {
+            id: 'qm_gen_4',
+            type: 'multiple_choice',
+            q: `O perímetro de uma figura plana no contexto de ${topic} é definido como:`,
+            options: ['A) O produto da base pela altura.', 'B) A soma das medidas de todos os lados do polígono.', 'C) A metade da área total.', 'D) O quadrado do raio.'],
+            correct: 1,
+            hint: 'Perímetro é o contorno total da figura.',
+            explanation: 'O perímetro é a soma linear de todos os lados que delimitam um polígono geométrico.'
+          },
+          {
+            id: 'qm_gen_5',
+            type: 'multiple_choice',
+            q: `Qual é o resultado da expressão numérica: 2³ + 5 × 2?`,
+            options: ['A) 16', 'B) 18', 'C) 26', 'D) 36'],
+            correct: 1,
+            hint: 'Calcule primeiro a potência (2³ = 8) e a multiplicação (5 × 2 = 10).',
+            explanation: '2³ = 8. 5 × 2 = 10. Somando os dois resultados: 8 + 10 = 18.'
+          }
+        );
+      }
+    }
+    // 2. HISTÓRIA
+    else if (sLower.includes('hist') || norm.includes('monomotapa') || norm.includes('feudal') || norm.includes('revoluc') || norm.includes('colonial') || norm.includes('antiguidade')) {
+      if (norm.includes('monomotapa') || norm.includes('mutapa')) {
+        qList.push(
+          {
+            id: 'qh_m_1',
+            type: 'multiple_choice',
+            q: 'O Reino de Monomotapa (Mutapa) foi um dos mais prósperos impérios africanos pré-coloniais. Em qual região geográfica da África ele se desenvolveu?',
+            options: [
+              'A) Na costa noroeste da África, no deserto do Saara.',
+              'B) Na África Austral, entre as bacias dos rios Zambeze e Limpopo.',
+              'C) No norte da África, às margens do rio Nilo.',
+              'D) Na África Central, na floresta equatorial do Congo.'
+            ],
+            correct: 1,
+            hint: 'Localizava-se no território dos atuais Zimbábue e Moçambique.',
+            explanation: 'O Império de Monomotapa floresceu na África Austral (onde hoje ficam Zimbábue e Moçambique), uma região fértil e riquíssima em jazidas minerais.'
+          },
+          {
+            id: 'qh_m_2',
+            type: 'multiple_choice',
+            q: 'Qual era o principal produto mineral extraído e comercializado pelo Reino de Monomotapa que atraiu mercadores árabes-suaílis e, posteriormente, europeus?',
+            options: ['A) Petróleo cru', 'B) Ouro aluvial e de minas', 'C) Prata e estanho', 'D) Diamantes lapidados'],
+            correct: 1,
+            hint: 'O ouro de Monomotapa abastecia as rotas comerciais do Oceano Índico.',
+            explanation: 'A abundância de ouro nas terras de Monomotapa fez do reino um dos maiores fornecedores do metal precioso para os portos comerciais do Oceano Índico.'
+          },
+          {
+            id: 'qh_m_3',
+            type: 'multiple_choice',
+            q: 'O governante supremo de Monomotapa recebia o título sagrado de Mwenemutapa. Qual era o seu papel na sociedade?',
+            options: [
+              'A) Era um general estrangeiro nomeado pelo Império Otomano.',
+              'B) Era apenas um líder comercial sem funções religiosas ou políticas.',
+              'C) Era o líder político, militar e religioso supremo, reverenciado como divindade e elo com os ancestrais.',
+              'D) Era eleito a cada quatro anos pelos mercadores portugueses.'
+            ],
+            correct: 2,
+            hint: 'A realeza africana possuía forte legitimação sagrada e ligação com o culto aos antepassados.',
+            explanation: 'O Mwenemutapa exercia liderança total: comandava o exército, controlava os tributos e era visto como guardião sagrado da fertilidade das terras e elo com os antepassados espirituais.'
+          },
+          {
+            id: 'qh_m_4',
+            type: 'multiple_choice',
+            q: 'A partir do século XVI, a presença dos navegadores e comerciantes portugueses na região de Monomotapa resultou em:',
+            options: [
+              'A) Imediata expulsão pacífica de todos os colonizadores pelos africanos.',
+              'B) Tentativas constantes de controle militar sobre as minas de ouro e interferência na sucessão real.',
+              'C) Total abandono das rotas comerciais do Oceano Índico.',
+              'D) Aliança militar entre o reino africano e a coroa espanhola contra Portugal.'
+            ],
+            correct: 1,
+            hint: 'Os portugueses cobiçavam o monopólio das ricas minas de ouro.',
+            explanation: 'Os portugueses tentaram se infiltrar politicamente, cobrar tributos e controlar as minas de ouro, gerando conflitos armados e a resistência heróica dos povos locais.'
+          },
+          {
+            id: 'qh_m_5',
+            type: 'multiple_choice',
+            q: 'O que o legado histórico do Reino de Monomotapa comprova sobre a história do continente africano antes da colonização europeia?',
+            options: [
+              'A) Que a África era habitada apenas por tribos nômades isoladas sem conhecimento de metalurgia.',
+              'B) A existência de complexos impérios organizados, com diplomacia, arquitetura monumental e rotas mundiais de comércio.',
+              'C) A total ausência de técnicas agrícolas ou sistemas religiosos.',
+              'D) A dependência total de tecnologias trazidas pela Revolução Industrial.'
+            ],
+            correct: 1,
+            hint: 'Monomotapa desmente mitos coloniais eurocêntricos.',
+            explanation: 'Monomotapa demonstra a sofisticação das civilizações africanas pré-coloniais, com cidades de pedra, comércio internacional, leis e metalurgia avançada.'
+          }
+        );
+      } else if (norm.includes('feudal')) {
+        qList.push(
+          {
+            id: 'qh_feu_1',
+            type: 'multiple_choice',
+            q: 'No sistema feudal europeu, a sociedade era classificada como estamental. Isso significa que:',
+            options: [
+              'A) Havia grande mobilidade social baseada na riqueza pessoal.',
+              'B) A posição social era determinada pelo nascimento, com quase nenhuma mobilidade entre as ordens.',
+              'C) Os servos podiam facilmente ser eleitos cavaleiros e nobres.',
+              'D) Todos os cidadãos participavam das decisões democráticas.'
+            ],
+            correct: 1,
+            hint: 'Em uma sociedade estamental, a ordem social é rígida e hereditária.',
+            explanation: 'A sociedade feudal era dividida em três estamentos fixos (Clero, Nobreza e Servos) sem possibilidade de ascensão social.'
+          },
+          {
+            id: 'qh_feu_2',
+            type: 'multiple_choice',
+            q: 'Qual era o tributo feudal em que o servo era obrigado a trabalhar gratuitamente alguns dias da semana nas terras do senhor (manso senhorial)?',
+            options: ['A) Talha', 'B) Banalidade', 'C) Corveia', 'D) Dízimo'],
+            correct: 2,
+            hint: 'Trata-se do trabalho braçal compulsório nas lavouras do castelo.',
+            explanation: 'A corveia era a prestação de serviços gratuitos (geralmente de 2 a 3 dias por semana) nas terras do senhor feudal.'
+          },
+          {
+            id: 'qh_feu_3',
+            type: 'multiple_choice',
+            q: 'A relação de suserania e vassalagem na Idade Média era um pacto sagrado celebrado exclusivamente entre:',
+            options: ['A) Senhores feudais e camponeses servos.', 'B) Nobres entre si (membros da nobreza feudal).', 'C) O rei e os escravos libertos.', 'D) Mercadores burgueses e artesãos.'],
+            correct: 1,
+            hint: 'Envolvia alianças militares e honra entre nobres através da doação de feudos.',
+            explanation: 'A suserania e vassalagem ocorria exclusivamente entre membros da nobreza, formalizada pelo juramento de homenagem e fidelidade militar recíproca.'
+          },
+          {
+            id: 'qh_feu_4',
+            type: 'multiple_choice',
+            q: 'Qual das seguintes características descreve a economia feudal europeia?',
+            options: ['A) Industrial e exportadora para mercados mundiais.', 'B) Agrária, de subsistência e com circulação monetária restrita.', 'C) Dominada pelo livre mercado e corporações financeiras.', 'D) Totalmente dependente do comércio marítimo com a América.'],
+            correct: 1,
+            hint: 'O feudo produzia tudo o que necessitava para seu consumo interno.',
+            explanation: 'A economia feudal era rural, autossuficiente (de subsistência) e com comércio limitado a trocas diretas em feiras locais.'
+          },
+          {
+            id: 'qh_feu_5',
+            type: 'multiple_choice',
+            q: 'Qual instituição exerceu papel de maior poder político, econômico e cultural durante o feudalismo medieval?',
+            options: ['A) O Senado Romano.', 'B) A Igreja Católica Apostólica Romana.', 'C) Os sindicatos operários.', 'D) O Parlamento Britânico.'],
+            correct: 1,
+            hint: 'Era a maior proprietária de terras e controlava o calendário e a moral social.',
+            explanation: 'A Igreja Católica foi a principal força unificadora e hegemônica da Idade Média na Europa Ocidental.'
+          }
+        );
+      } else {
+        qList.push(
+          {
+            id: 'qh_gen_1',
+            type: 'multiple_choice',
+            q: `No contexto histórico de ${topic}, qual processo social e econômico foi fundamental?`,
+            options: [
+              'A) Transformações nas relações de trabalho e disputas políticas pelo poder.',
+              'B) Completa ausência de registros documentais e fontes materiais.',
+              'C) Isolamento total das populações sem contato com povos vizinhos.',
+              'D) Adoção universal e pacífica de um único modelo cultural.'
+            ],
+            correct: 0,
+            hint: 'A História analisa as ações humanas no tempo e as disputas materiais e ideológicas.',
+            explanation: 'Os eventos históricos envolvem dinâmicas sociais complexas, transformações na produção material e conflitos de interesses entre grupos sociais.'
+          },
+          {
+            id: 'qh_gen_2',
+            type: 'multiple_choice',
+            q: `Ao analisar fontes históricas sobre ${topic}, o historiador deve:`,
+            options: [
+              'A) Aceitar documentos oficiais como verdades absolutas sem contestação.',
+              'B) Cruzar diferentes fontes primárias e secundárias, contextualizando a época de sua produção.',
+              'C) Descartar relatos orais e vestígios arqueológicos.',
+              'D) Priorizar lendas sem base documental comprovada.'
+            ],
+            correct: 1,
+            hint: 'O método histórico exige crítica documental e análise de múltiplos pontos de vista.',
+            explanation: 'A investigação histórica científica analisa criticamente os documentos, considerando o contexto, as intenções do autor e contrapondo com outras evidências.'
+          },
+          {
+            id: 'qh_gen_3',
+            type: 'multiple_choice',
+            q: `Qual foi a principal consequência da Primeira Revolução Industrial para o trabalho humano?`,
+            options: [
+              'A) Diminuição da jornada diária para apenas 4 horas de trabalho.',
+              'B) Surgimento do proletariado fabril e submissão do ritmo humano ao tempo das máquinas.',
+              'C) Retorno maciço da população urbana para as atividades agrícolas no campo.',
+              'D) Proibição imediata do trabalho infantil e feminino nas carvoarias.'
+            ],
+            correct: 1,
+            hint: 'As fábricas impuseram uma disciplina rígida com o uso do relógio mecânico.',
+            explanation: 'A maquinofatura concentrou os operários em galpões industriais com jornadas exaustivas e disciplina fabril rigorosa.'
+          },
+          {
+            id: 'qh_gen_4',
+            type: 'multiple_choice',
+            q: `No Brasil Colonial, qual era o tripé econômico que sustentava o ciclo açucareiro nordestino?`,
+            options: [
+              'A) Pequena propriedade, trabalho assalariado e policultura.',
+              'B) Latifúndio monocultor, mão de obra escravizada e produção voltada à exportação.',
+              'C) Indústria manufatureira, cooperativismo e comércio livre.',
+              'D) Mineração mecanizada, trabalho voluntário e consumo interno.'
+            ],
+            correct: 1,
+            hint: 'Modelo conhecido historicamente como Plantation.',
+            explanation: 'A economia colonial do açúcar assentava-se no modelo de plantation: grandes propriedades de terra (latifúndio), escravidão e monocultura voltada à Europa.'
+          },
+          {
+            id: 'qh_gen_5',
+            type: 'multiple_choice',
+            q: `A Lei de Cercamento dos Campos (Enclosures) na Inglaterra do século XVIII provocou:`,
+            options: [
+              'A) A distribuição gratuita de terras aos camponeses pobres.',
+              'B) O êxodo rural forçado que forneceu mão de obra abundante para as fábricas urbanas.',
+              'C) A extinção imediata de todas as criações de ovelhas britânicas.',
+              'D) A proibição da propriedade privada de terras na Grã-Bretanha.'
+            ],
+            correct: 1,
+            hint: 'Camponeses expulsos das terras comunais migraram para as cidades industriais.',
+            explanation: 'Os cercamentos privatizaram as terras comuns para criação de ovelhas, expulsando os camponeses para as cidades onde tornaram-se operários assalariados.'
+          }
+        );
+      }
+    }
+    // 3. GEOGRAFIA
+    else if (sLower.includes('geog') || norm.includes('clima') || norm.includes('relevo') || norm.includes('bioma') || norm.includes('vegetacao') || norm.includes('cartograf')) {
+      if (norm.includes('clima')) {
+        qList.push(
+          {
+            id: 'qg_cli_1',
+            type: 'multiple_choice',
+            q: 'Qual clima brasileiro caracteriza-se por duas estações do ano bem definidas (verão chuvoso e inverno seco) e predomina na Região Centro-Oeste?',
+            options: ['A) Clima Equatorial', 'B) Clima Tropical Típico (ou Continental)', 'C) Clima Subtropical', 'D) Clima Semiárido'],
+            correct: 1,
+            hint: 'É o clima associado à vegetação de Cerrado.',
+            explanation: 'O Clima Tropical Típico abrange o Brasil Central com invernos secos (maio a setembro) e verões com alto índice pluviométrico.'
+          },
+          {
+            id: 'qg_cli_2',
+            type: 'multiple_choice',
+            q: 'No Sertão nordestino brasileiro, o clima semiárido é caracterizado principalmente por:',
+            options: [
+              'A) Altas temperaturas o ano todo e chuvas escassas e mal distribuídas no tempo.',
+              'B) Temperaturas abaixo de zero no inverno com ocorrência frequente de neve.',
+              'C) Precipitação constante superior a 3.000 mm ao ano sem período seco.',
+              'D) Estações do ano idênticas às do norte da Europa.'
+            ],
+            correct: 0,
+            hint: 'Apresenta índices pluviométricos anuais inferiores a 800 mm e estiagens severas.',
+            explanation: 'O semiárido apresenta elevadas temperaturas, forte evapotranspiração e chuvas irregulares concentradas em poucos meses do ano.'
+          },
+          {
+            id: 'qg_cli_3',
+            type: 'multiple_choice',
+            q: 'A região Amazônica possui clima equatorial. Qual é o principal mecanismo biológico que gera os chamados "rios voadores" que transportam umidade para outras regiões do país?',
+            options: ['A) A evaporação de geleiras andinas.', 'B) A evapotranspiração intensa da vasta floresta densa.', 'C) A queima de biomassa nas fronteiras agrícolas.', 'D) O represamento das usinas hidrelétricas.'],
+            correct: 1,
+            hint: 'As árvores de grande porte bombeiam toneladas de vapor de água diariamente para a atmosfera.',
+            explanation: 'A evapotranspiração de bilhões de árvores na Amazônia alimenta correntes aéreas úmidas (rios voadores) que causam chuvas no Centro-Oeste e Sudeste.'
+          },
+          {
+            id: 'qg_cli_4',
+            type: 'multiple_choice',
+            q: 'O Clima Subtropical no Brasil, caracterizado pelas menores médias térmicas e chuvas bem distribuídas o ano todo, ocorre:',
+            options: ['A) Ao sul do Trópico de Capricórnio (Região Sul).', 'B) No litoral setentrional do Amapá.', 'C) No arquipélago de Fernando de Noronha.', 'D) Exclusivamente no Pantanal mato-grossense.'],
+            correct: 0,
+            hint: 'Ocorre na zona temperada do Sul do país.',
+            explanation: 'O clima subtropical ocorre predominantemente na Região Sul (Paraná, Santa Catarina e Rio Grande do Sul), abaixo do Trópico de Capricórnio.'
+          },
+          {
+            id: 'qg_cli_5',
+            type: 'multiple_choice',
+            q: 'O que diferencia fundamentalmente o conceito geográfico de "tempo meteorológico" do conceito de "clima"?',
+            options: [
+              'A) Tempo é o estado momentâneo da atmosfera em um dado instante; Clima é o padrão atmosférico observado ao longo de cerca de 30 anos.',
+              'B) Não existe nenhuma diferença entre os dois conceitos.',
+              'C) Clima muda a cada hora do dia e tempo permanece inalterado por séculos.',
+              'D) O tempo aplica-se apenas aos oceanos e o clima aos continentes.'
+            ],
+            correct: 0,
+            hint: 'Dizer "hoje está chovendo" é tempo; dizer "o Saara é seco" é clima.',
+            explanation: 'Tempo meteorológico é passageiro e transitório (o estado da atmosfera hoje), enquanto clima é a sucessão habitual dos tempos analisada ao longo de décadas.'
+          }
+        );
+      } else {
+        qList.push(
+          {
+            id: 'qg_gen_1',
+            type: 'multiple_choice',
+            q: `Sobre as dinâmicas socioespaciais e naturais de ${topic} em Geografia, é correto afirmar que:`,
+            options: [
+              'A) O relevo e o clima atuam de forma isolada, sem interferir na ocupação humana.',
+              'B) O espaço geográfico é produto da interação contínua entre a ação humana e os elementos naturais.',
+              'C) As fronteiras e formações naturais permanecem estáticas desde a origem do planeta.',
+              'D) A cartografia dispensa o uso de escalas e projeções nos mapas.'
+            ],
+            correct: 1,
+            hint: 'O espaço geográfico é a natureza transformada pelo trabalho humano.',
+            explanation: 'O espaço geográfico é constituído pela relação dialética entre a sociedade e a natureza mediada pelas técnicas e pelo trabalho.'
+          },
+          {
+            id: 'qg_gen_2',
+            type: 'multiple_choice',
+            q: 'Qual bioma brasileiro é conhecido como a "savana brasileira", caracterizado por solos ácidos, árvores de caules tortuosos e raízes profundas?',
+            options: ['A) Caatinga', 'B) Cerrado', 'C) Pampa', 'D) Pantanal'],
+            correct: 1,
+            hint: 'É considerado o "berço das águas" do Brasil.',
+            explanation: 'O Cerrado é a savana mais biodiversa do mundo e desempenha papel estratégico na recarga dos aquíferos e rios brasileiros.'
+          },
+          {
+            id: 'qg_gen_3',
+            type: 'multiple_choice',
+            q: 'Em uma escala cartográfica de 1:50.000, o que significa a relação numérica entre o mapa e o terreno real?',
+            options: [
+              'A) Cada 1 cm no mapa representa 50.000 cm (ou 500 metros) na realidade.',
+              'B) O mapa é 50.000 vezes maior que a realidade.',
+              'C) A área mapeada possui 50.000 habitantes.',
+              'D) A distância real foi reduzida em 50 vezes apenas.'
+            ],
+            correct: 0,
+            hint: '1 cm no papel equivale a 50.000 cm na realidade.',
+            explanation: 'Na escala 1:50.000, 1 cm desenhado corresponde a 50.000 cm reais (cortando dois zeros temos 500 metros).'
+          },
+          {
+            id: 'qg_gen_4',
+            type: 'multiple_choice',
+            q: 'Qual é o bioma brasileiro que sofreu a mais intensa devastação histórica pela ocupação humana litorânea desde 1500?',
+            options: ['A) Amazônia', 'B) Mata Atlântica', 'C) Pantanal', 'D) Pampa'],
+            correct: 1,
+            hint: 'Abrigava cidades como Salvador, Rio de Janeiro e São Paulo.',
+            explanation: 'A Mata Atlântica cobria grande parte da costa brasileira e sofreu séculos de ciclos econômicos e expansão urbana predatória.'
+          },
+          {
+            id: 'qg_gen_5',
+            type: 'multiple_choice',
+            q: 'O fenômeno geomorfológico causado pelo desgaste e transporte de rochas e solos por ação da água e do vento chama-se:',
+            options: ['A) Tectonismo', 'B) Erosão', 'C) Magmatismo', 'D) Dobramento moderno'],
+            correct: 1,
+            hint: 'Ação externa (exógena) que molda o relevo.',
+            explanation: 'A erosão compreende os processos de desgaste, transporte e sedimentação de partículas de rocha e solo pela ação de chuvas, rios e ventos.'
+          }
+        );
+      }
+    }
+    // 4. PORTUGUÊS
+    else if (sLower.includes('port') || norm.includes('crase') || norm.includes('classe') || norm.includes('gramat') || norm.includes('concord')) {
+      if (norm.includes('classe')) {
+        qList.push(
+          {
+            id: 'qp_cla_1',
+            type: 'multiple_choice',
+            q: 'Na frase "Os alunos estudiosos leram o livro atentamente", a palavra sublinhada "atentamente" classifica-se morfologicamente como:',
+            options: ['A) Adjetivo', 'B) Advérbio de modo', 'C) Substantivo abstrato', 'D) Conjunção subordinativa'],
+            correct: 1,
+            hint: 'Palavras terminadas em "-mente" que indicam o modo como a ação verbal ocorreu são advérbios.',
+            explanation: '"Atentamente" modifica o verbo "leram", indicando a circunstância e o modo da ação, sendo, portanto, um advérbio de modo.'
+          },
+          {
+            id: 'qp_cla_2',
+            type: 'multiple_choice',
+            q: 'Qual das seguintes palavras pertence à classe dos substantivos abstratos?',
+            options: ['A) Caneta', 'B) Caderno', 'C) Coragem', 'D) Árvore'],
+            correct: 2,
+            hint: 'Substantivos abstratos nomeiam sentimentos, qualidades ou ações que dependem de outro ser para existir.',
+            explanation: '"Coragem" é um substantivo abstrato que nomeia uma qualidade e um sentimento que se manifesta nas pessoas.'
+          },
+          {
+            id: 'qp_cla_3',
+            type: 'multiple_choice',
+            q: 'Em qual das alternativas a palavra destacada funciona como ADJETIVO?',
+            options: [
+              'A) O garoto correu muito depressa.',
+              'B) O estudante comprou uma mochila NOVA para as aulas.',
+              'C) Nós partiremos cedo amanhã.',
+              'D) Ela cantou alegremente durante o ensaio.'
+            ],
+            correct: 1,
+            hint: 'O adjetivo caracteriza ou qualifica um substantivo.',
+            explanation: '"Nova" é um adjetivo que caracteriza o substantivo "mochila".'
+          },
+          {
+            id: 'qp_cla_4',
+            type: 'multiple_choice',
+            q: 'As classes de palavras invariáveis na Língua Portuguesa (que nunca mudam de gênero ou número) são:',
+            options: [
+              'A) Substantivo, Adjetivo, Verbo e Artigo.',
+              'B) Advérbio, Preposição, Conjunção e Interjeição.',
+              'C) Pronome, Numeral, Verbo e Substantivo.',
+              'D) Adjetivo, Advérbio, Artigo e Conjunção.'
+            ],
+            correct: 1,
+            hint: 'Palavras que não têm plural nem masculino/feminino.',
+            explanation: 'Advérbios, preposições, conjunções e interjeições são classes morfológicas invariáveis na gramática normativa.'
+          },
+          {
+            id: 'qp_cla_5',
+            type: 'multiple_choice',
+            q: 'Em "Estudou muito, PORÉM não conseguiu nota máxima", a palavra "porém" estabelece sentido de:',
+            options: ['A) Conclusão', 'B) Adição', 'C) Oposição / Adversidade', 'D) Causa'],
+            correct: 2,
+            hint: 'Conjunção coordenativa adversativa (equivale a "mas", "contudo", "todavia").',
+            explanation: '"Porém" é uma conjunção coordenativa adversativa que introduz uma ideia de contraste ou oposição em relação à oração anterior.'
+          }
+        );
+      } else if (norm.includes('texto') || norm.includes('interpret') || norm.includes('compreens')) {
+        qList.push(
+          {
+            id: 'qp_txt_1',
+            type: 'multiple_choice',
+            q: 'Ao realizar a interpretação e compreensão de um texto, qual é a principal diferença entre a informação "explícita" e a informação "implícita"?',
+            options: [
+              'A) A explícita está clara e expressa na superfície do texto; a implícita exige dedução e inferência a partir do contexto.',
+              'B) A explícita é sempre uma mentira do autor; a implícita é a verdade científica.',
+              'C) Não há nenhuma diferença entre elas na leitura crítica.',
+              'D) A implícita sempre aparece em negrito no primeiro parágrafo.'
+            ],
+            correct: 0,
+            hint: 'Explícito = dito diretamente com todas as letras; Implícito = sugerido nas entrelinhas.',
+            explanation: 'Informações explícitas estão expressamente redigidas no texto, enquanto as implícitas demandam que o leitor mobilize seu conhecimento de mundo e faça inferências textuais.'
+          },
+          {
+            id: 'qp_txt_2',
+            type: 'multiple_choice',
+            q: 'Em um texto dissertativo-argumentativo, o elemento que expressa o posicionamento central defendido pelo autor chama-se:',
+            options: ['A) Paródia', 'B) Tese (ou ponto de vista)', 'C) Metáfora isolada', 'D) Desfecho cômico'],
+            correct: 1,
+            hint: 'É a ideia principal sustentada por meio de argumentos e evidências.',
+            explanation: 'A tese é o núcleo do texto argumentativo: representa a opinião crítica ou tese fundamentada que o autor busca demonstrar ao leitor.'
+          },
+          {
+            id: 'qp_txt_3',
+            type: 'multiple_choice',
+            q: 'A coesão textual referencial por anáfora ocorre quando:',
+            options: [
+              'A) Uma palavra retoma ou faz referência a um termo que já foi mencionado anteriormente no texto.',
+              'B) O texto não possui nenhum parágrafo organizado.',
+              'C) Todas as palavras são escritas em caixa alta.',
+              'D) O narrador abandona a história sem finalizá-la.'
+            ],
+            correct: 0,
+            hint: 'Ex: "O cientista publicou a pesquisa. ELE recebeu prêmios internacionais." (ele retoma o cientista).',
+            explanation: 'A anáfora é um recurso coesivo de retomada textual por meio de pronomes ou sinônimos para evitar repetições desnecessárias.'
+          },
+          {
+            id: 'qp_txt_4',
+            type: 'multiple_choice',
+            q: 'O sentido figurado (ou conotativo) das palavras em um texto literário ou publicitário caracteriza-se por:',
+            options: [
+              'A) Uso restrito ao sentido literal e dicionarizado exato.',
+              'B) Atribuição de novos significados poéticos, simbólicos e expressivos dependentes do contexto.',
+              'C) Erro ortográfico deliberado sem valor comunicativo.',
+              'D) Tradução literal de termos estrangeiros.'
+            ],
+            correct: 1,
+            hint: 'Denotação = sentido do dicionário (literal); Conotação = sentido figurado/criativo.',
+            explanation: 'A linguagem conotativa expande o sentido das palavras além da literalidade, conferindo expressividade e multiplicidade de interpretações.'
+          }
+        );
+      } else {
+        qList.push(
+          {
+            id: 'qp_gen_1',
+            type: 'multiple_choice',
+            q: 'Qual é a regra geral que orienta o uso do acento indicativo de crase?',
+            options: [
+              'A) Deve ser utilizada obrigatoriamente antes de qualquer verbo no infinitivo.',
+              'B) É a fusão da preposição "a" com o artigo definido feminino "a" (ou pronomes aquele/aquela).',
+              'C) Ocorre livremente antes de palavras masculinas como "a pé" e "a prazo".',
+              'D) É proibida diante de qualquer palavra feminina.'
+            ],
+            correct: 1,
+            hint: 'Crase é a junção fonética e gráfica de dois "a" (a + a = à).',
+            explanation: 'A crase resulta da contração da preposição "a" exigida pelo termo regente com o artigo "a" que antecede a palavra feminina regida.'
+          },
+          {
+            id: 'qp_gen_2',
+            type: 'multiple_choice',
+            q: 'Assinale a frase em que a crase foi empregada de forma CORRETA segundo a norma culta:',
+            options: [
+              'A) Fui à feira comprar frutas frescas.',
+              'B) Ele começou à correr logo pela manhã.',
+              'C) Comprei o celular à prazo em dez parcelas.',
+              'D) Escrevi uma mensagem de apoio à ele.'
+            ],
+            correct: 0,
+            hint: 'Use o macete: "Fui à feira" ➔ "Fui ao mercado" (troca por masculino gera "ao", portanto tem crase).',
+            explanation: '"Fui à feira": quem vai, vai "a" (preposição) + "a" feira (artigo) = crase. Antes de verbo (correr), palavra masculina (prazo) e pronome pessoal (ele) é proibido.'
+          },
+          {
+            id: 'qp_gen_3',
+            type: 'multiple_choice',
+            q: 'Qual figura de linguagem consiste em atribuir sentimentos ou atitudes humanas a seres inanimados ou irracionais?',
+            options: ['A) Metáfora', 'B) Hipérbole', 'C) Prosopopeia (Personificação)', 'D) Pleonasmo'],
+            correct: 2,
+            hint: 'Ex: "O vento sussurrava segredos pelas frestas da janela".',
+            explanation: 'A prosopopeia ou personificação atribui características humanas (falar, chorar, sussurrar) a objetos inanimados ou animais.'
+          },
+          {
+            id: 'qp_gen_4',
+            type: 'multiple_choice',
+            q: 'Assinale a alternativa que apresenta concordância verbal plenamente CORRETA:',
+            options: [
+              'A) Haviam muitos estudantes na biblioteca ontem.',
+              'B) Fazem três anos que não viajo para a praia.',
+              'C) Havia muitos estudantes na biblioteca ontem.',
+              'D) Sobrou várias dúvidas após a aula de química.'
+            ],
+            correct: 2,
+            hint: 'O verbo "haver" no sentido de existir ou tempo decorrido é impessoal (fica no singular).',
+            explanation: 'O verbo "haver" com significado de "existir" não possui sujeito, devendo permanecer sempre na 3ª pessoa do singular (Havia muitos estudantes).'
+          },
+          {
+            id: 'qp_gen_5',
+            type: 'multiple_choice',
+            q: 'A oração "Chorou rios de lágrimas ao se despedir do melhor amigo" apresenta qual figura de linguagem expressiva?',
+            options: ['A) Eufemismo', 'B) Hipérbole (Exagero intencional)', 'C) Antítese', 'D) Ironia'],
+            correct: 1,
+            hint: '"Rios de lágrimas" denota um exagero desmedido para enfatizar a intensidade do choro.',
+            explanation: 'A hipérbole consiste no exagero deliberado de uma ideia com o objetivo de produzir forte impacto expressivo no leitor.'
+          }
+        );
+      }
+    }
+    // 5. CIÊNCIAS DA NATUREZA (E DEMAIS DISCIPLINAS)
+    else {
       qList.push(
         {
-          id: 'q_gen_1',
+          id: 'qc_1',
           type: 'multiple_choice',
-          q: 'Qual das seguintes características permitiu que as pteridófitas atingissem portes maiores que as briófitas no decorrer da evolução?',
+          q: 'Qual característica evolutiva fundamental permitiu que as pteridófitas (como as samambaias) atingissem portes maiores que as briófitas (musgos)?',
           options: [
-            'A) Desenvolvimento de flores coloridas para atrair insetos.',
-            'B) Presença de vasos condutores de seiva (xilema e floema).',
-            'C) Produção de sementes protegidas no interior de frutos.',
-            'D) Total independência da água em todos os processos vitais.'
+            'A) A presença de flores perfumadas para atrair aves polinizadoras.',
+            'B) O surgimento de vasos condutores de seiva (xilema e floema).',
+            'C) A produção de sementes protegidas no interior de frutos carnudos.',
+            'D) A dependência total da água para respiração celular.'
           ],
           correct: 1,
-          hint: 'Lembre-se de como a água e os nutrientes circulam em plantas altas.',
-          explanation: 'Os tecidos vasculares (xilema e floema) permitiram o transporte eficiente de água e seiva por longas distâncias, sustentando caules maiores.'
+          hint: 'Plantas vasculares possuem "canos condutores" que levam água e seiva a longas alturas.',
+          explanation: 'Os tecidos vasculares (xilema para seiva bruta e floema para seiva elaborada) permitiram transporte rápido por longas distâncias, sustentando caules altos.'
         },
         {
-          id: 'q_gen_2',
-          type: 'true_false',
-          q: 'Nas briófitas (como os musgos), a fase dominante e duradoura do ciclo de vida é o esporófito diploide (2n).',
-          options: ['A) Verdadeiro', 'B) Falso'],
-          correct: 1,
-          hint: 'As briófitas são as únicas em que o gametófito verde é a fase persistente.',
-          explanation: 'Falso! Nas briófitas, a fase dominante é o gametófito haploide (n). O esporófito (2n) é efêmero e dependente nutricionalmente dele.'
-        },
-        {
-          id: 'q_gen_3',
+          id: 'qc_2',
           type: 'multiple_choice',
-          q: 'As araucárias e os pinheiros pertencem ao grupo das Gimnospermas porque:',
+          q: 'Qual organela citoplasmática é responsável pela síntese de energia celular (ATP) através do processo de respiração celular aeróbia?',
+          options: ['A) Complexo de Golgi', 'B) Lisossomo', 'C) Mitocôndria', 'D) Ribossomo'],
+          correct: 2,
+          hint: 'É conhecida como a "usina de força" energética da célula eucarionte.',
+          explanation: 'As mitocôndrias realizam a respiração celular na presença de oxigênio para converter a glicose em moléculas de ATP (energia química para a célula).'
+        },
+        {
+          id: 'qc_3',
+          type: 'multiple_choice',
+          q: 'De acordo com a Primeira Lei de Newton (Princípio da Inércia), qual será o comportamento de um corpo se a resultante de todas as forças que atuam sobre ele for nula?',
           options: [
-            'A) Não produzem sementes em hipótese alguma.',
-            'B) Possuem sementes nuas que não são envolvidas por frutos verdadeiros.',
-            'C) Não possuem vasos condutores de seiva bruta.',
-            'D) Dependem da água da chuva para que ocorra a fecundação.'
+            'A) Ele irá parar imediatamente por falta de aceleração contínua.',
+            'B) Ele manterá seu estado de repouso ou continuará em movimento retilíneo uniforme (MRU).',
+            'C) Ele aumentará de velocidade exponencialmente sem limites.',
+            'D) Ele começará a girar em círculos concêntricos em alta velocidade.'
           ],
           correct: 1,
-          hint: 'A palavra "gimnos" vem do grego e significa nu/descoberto.',
-          explanation: 'O termo gimnosperma significa exatamente "semente nua", ou seja, as sementes desenvolvem-se nos estróbilos sem ovário que gere frutos.'
-        }
-      );
-    } else {
-      qList.push(
-        {
-          id: 'q_gen_1',
-          type: 'multiple_choice',
-          q: `Sobre os conceitos essenciais de ${topic}, assinale a alternativa cientificamente correta:`,
-          options: [
-            `A) ${topic} atua de forma isolada, sem interagir com outras leis da natureza.`,
-            `B) Os princípios de ${topic} relacionam-se diretamente com causas físicas ou históricas comprovadas.`,
-            `C) Trata-se de uma hipótese desprovida de comprovação experimental.`,
-            `D) Aplica-se exclusivamente em condições ideais de laboratório.`
-          ],
-          correct: 1,
-          hint: 'Busque a alternativa que reconhece a fundamentação e aplicabilidade do conceito.',
-          explanation: `A alternativa B está correta pois sintetiza a base teórica e experimental de ${topic} no currículo escolar.`
+          hint: 'Na ausência de força resultante externa (Fr = 0), a velocidade vetorial se conserva inalterada.',
+          explanation: 'Pelo Princípio da Inércia, um corpo livre de força resultante permanece em repouso se já estava parado, ou segue em MRU com velocidade constante.'
         },
         {
-          id: 'q_gen_2',
-          type: 'true_false',
-          q: `A correta interpretação de ${topic} exige analisar as condições de contorno e premissas iniciais do problema.`,
-          options: ['A) Verdadeiro', 'B) Falso'],
+          id: 'qc_4',
+          type: 'multiple_choice',
+          q: 'A fotossíntese realizada pelos vegetais e algas clorofiladas consome e produz, respectivamente:',
+          options: [
+            'A) Consome gás carbônico (CO₂) e água (H₂O); produz glicose e gás oxigênio (O₂).',
+            'B) Consome oxigênio e glicose; produz gás carbônico e nitrogênio.',
+            'C) Consome metano e luz; produz gás carbônico e ácidos.',
+            'D) Consome exclusivamente água pura; produz calor e energia cinética.'
+          ],
           correct: 0,
-          hint: 'Pense se é possível aplicar fórmulas ou teorias sem checar as unidades e premissas.',
-          explanation: 'Verdadeiro! Toda resolução rigorosa exige verificar as premissas e variáveis antes de concluir.'
+          hint: 'Equação química geral: 6 CO₂ + 6 H₂O + Luz Solar ➔ C₆H₁₂O₆ + 6 O₂.',
+          explanation: 'Na fotossíntese, a planta capta CO₂ do ar e água do solo pela luz para gerar matéria orgânica (glicose) e liberar oxigênio para a atmosfera.'
+        },
+        {
+          id: 'qc_5',
+          type: 'multiple_choice',
+          q: 'Por que o par de forças de Ação e Reação formulado na Terceira Lei de Newton NUNCA se anula mutuamente?',
+          options: [
+            'A) Porque possuem intensidades desiguais em qualquer situação.',
+            'B) Porque atuam em sentidos completamente idênticos.',
+            'C) Porque atuam simultaneamente em corpos DIFERENTES.',
+            'D) Porque uma força só surge depois que a outra já desapareceu.'
+          ],
+          correct: 2,
+          hint: 'Ao chutar uma bola, o pé aplica força na bola, e a bola aplica força no pé.',
+          explanation: 'Para que duas forças se anulem, elas precisam atuar sobre o mesmo corpo. Como ação e reação atuam em corpos diferentes, elas nunca se anulam!'
         }
       );
     }
+
     return {
       success: true,
       topic,

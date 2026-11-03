@@ -966,6 +966,11 @@
             <i data-lucide="book-marked"></i>
             <span>Biblioteca</span>
           </button>
+          <button type="button" class="materials-subnav-btn" id="subnavBtnSimulados" onclick="app.switchMaterialsSubtab('simulados')">
+            <i data-lucide="target"></i>
+            <span>Simulados</span>
+            <span class="subnav-badge" id="badgeSimuladosCount">0</span>
+          </button>
           <button type="button" class="materials-subnav-btn" id="subnavBtnFlashcards" onclick="app.switchMaterialsSubtab('flashcards')">
             <i data-lucide="layers"></i>
             <span>Cartões (Flashcards)</span>
@@ -1113,14 +1118,32 @@
           <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;">
             <div>
               <h3 style="margin: 0 0 4px; font-size: 1.2rem; font-weight: 800; color: #0f172a;">🗺️ Mapas Mentais Interativos</h3>
-              <p style="margin: 0; font-size: 0.84rem; color: #64748b;">Organize conceitos e conexões em diagramas hierárquicos para fixação visual</p>
+              <p style="margin: 0; font-size: 0.84rem; color: #64748b;">Organize conceitos e conexões em diagramas hierárquicos coloridos para fixação visual</p>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" class="btn-outline" onclick="app.openCreateMindmapModal(true)" style="padding: 9px 15px; font-weight: 800; font-size: 0.84rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; color: #4f46e5; border-color: #c7d2fe;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;">Filtrar:</span>
+                <select id="mindmapSubjectFilter" onchange="app.handleMindmapFilterChange(this.value)" style="padding: 8px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 0.84rem; background: #fff; color: #334155;">
+                  <option value="todos">🌐 Todas as Matérias</option>
+                  <option value="Matemática">📐 Matemática</option>
+                  <option value="Português">✍️ Língua Portuguesa</option>
+                  <option value="História">🏛️ História</option>
+                  <option value="Geografia">🌍 Geografia</option>
+                  <option value="Ciências">🔬 Ciências da Natureza</option>
+                  <option value="Física">⚡ Física</option>
+                  <option value="Química">🧪 Química</option>
+                  <option value="Biologia">🧬 Biologia</option>
+                  <option value="Inglês">🇬🇧 Língua Inglesa</option>
+                  <option value="Artes">🎨 Artes</option>
+                  <option value="Educação Física">🏃 Educação Física</option>
+                  <option value="Filosofia">💭 Filosofia e Sociologia</option>
+                </select>
+              </div>
+              <button type="button" class="btn-outline" onclick="app.openAiMindmapModal()" style="padding: 9px 15px; font-weight: 800; font-size: 0.84rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; color: #4f46e5; border-color: #c7d2fe;">
                 <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i> Gerar com IA
               </button>
-              <button type="button" class="btn-primary" onclick="app.openCreateMindmapModal(false)" style="padding: 9px 16px; font-weight: 800; font-size: 0.84rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
-                <i data-lucide="plus" style="width: 15px; height: 15px;"></i> Novo Mapa
+              <button type="button" class="btn-primary" onclick="app.openManualMindmapModal()" style="padding: 9px 16px; font-weight: 800; font-size: 0.84rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i> + Novo Mapa Manual
               </button>
             </div>
           </div>
@@ -1169,43 +1192,88 @@
         <!-- SUBVIEW: MONTAR SIMULADO -->
         <div id="materialsSubviewSimulados" class="materials-subview-pane" style="display: none;">
           <div class="simulado-builder-card" id="simuladoBuilderBox">
-            <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">🎯 Montar Simulado Personalizado</h3>
-            <p style="margin: 0 0 20px; font-size: 0.88rem; color: #64748b;">Simule as condições reais de uma avaliação, com contagem regressiva e relatório detalhado de erros e acertos.</p>
+            <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">🎯 Montar Simulado Personalizado por Matéria & Assunto</h3>
+            <p style="margin: 0 0 20px; font-size: 0.88rem; color: #64748b;">Gere questões curriculares BNCC / SAS rigorosamente alinhadas à matéria e conteúdo escolhidos, com temporizador e relatório detalhado.</p>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
               <div>
-                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Disciplina *</label>
-                <select id="simBuilderSubject" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
-                  <option value="Ciências">🔬 Ciências da Natureza</option>
-                  <option value="Matemática">📐 Matemática</option>
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">1. Disciplina *</label>
+                <select id="simBuilderSubject" onchange="app.handleSimuladoSubjectChange(this.value)" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 700;">
+                  <option value="Matemática" selected>📐 Matemática</option>
                   <option value="Português">✍️ Língua Portuguesa</option>
                   <option value="História">🏛️ História</option>
                   <option value="Geografia">🌍 Geografia</option>
+                  <option value="Ciências">🔬 Ciências da Natureza</option>
                   <option value="Física">⚡ Física</option>
+                  <option value="Química">🧪 Química</option>
+                  <option value="Biologia">🧬 Biologia</option>
+                  <option value="Inglês">🇬🇧 Língua Inglesa</option>
+                  <option value="Artes">🎨 Artes</option>
+                  <option value="Educação Física">🏃 Educação Física</option>
+                  <option value="Filosofia">💭 Filosofia e Sociologia</option>
                 </select>
               </div>
 
               <div>
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">2. Assunto ou Conteúdo *</label>
+                <select id="simBuilderTopicSelect" onchange="app.handleSimuladoTopicChange(this.value)" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <!-- Preenchido dinamicamente via app.js -->
+                </select>
+              </div>
+
+              <div id="simBuilderCustomTopicWrapper" style="display: none;">
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Digitar Assunto Específico *</label>
+                <input type="text" id="simBuilderCustomTopic" oninput="app.updateSimuladoSummaryBadge()" placeholder="Ex: Frações equivalentes, Reino de Monomotapa..." style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff;">
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+              <div>
                 <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Dificuldade</label>
-                <select id="simBuilderDifficulty" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
-                  <option value="facil">Conceitual / Fácil</option>
+                <select id="simBuilderDifficulty" onchange="app.updateSimuladoSummaryBadge()" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <option value="facil">Fácil (Fundamentos & Conceitos)</option>
                   <option value="medio" selected>Médio (Padrão Provas)</option>
-                  <option value="dificil">Desafio / Aprofundamento</option>
+                  <option value="dificil">Difícil (Desafio & Aplicação)</option>
                 </select>
               </div>
 
               <div>
                 <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Quantidade de Questões</label>
-                <select id="simBuilderCount" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                <select id="simBuilderCount" onchange="app.updateSimuladoSummaryBadge()" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <option value="3">3 Questões (Fixação Expressa)</option>
                   <option value="5" selected>5 Questões (Rápido - 10 min)</option>
                   <option value="10">10 Questões (Padrão - 20 min)</option>
                   <option value="15">15 Questões (Completo - 35 min)</option>
                 </select>
               </div>
+
+              <div>
+                <label style="font-weight: 700; font-size: 0.84rem; color: #334155; display: block; margin-bottom: 6px;">Modo de Avaliação</label>
+                <select id="simBuilderMode" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem; background: #fff; font-weight: 600;">
+                  <option value="simulado" selected>Simulado Oficial (Gabarito ao Final)</option>
+                  <option value="treino">Modo Treino (Explicação Imediata)</option>
+                </select>
+              </div>
             </div>
 
-            <button type="button" class="btn-primary" onclick="app.startCustomSimulado()" style="background: linear-gradient(135deg, #4f46e5, #0284c7); padding: 12px 24px; font-weight: 800; font-size: 0.92rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
-              <i data-lucide="play" style="width: 16px; height: 16px;"></i> Iniciar Simulado Agora
+            <!-- Resumo Visual Obrigatório antes de Iniciar -->
+            <div id="simuladoSummaryCard" style="background: #f8fafc; border: 1.5px solid #c7d2fe; border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.4rem;">🎯</span>
+                <div>
+                  <div style="font-size: 0.74rem; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.6px;">Resumo da Avaliação Selecionada</div>
+                  <div id="simuladoSummaryText" style="font-size: 0.94rem; font-weight: 700; color: #0f172a; margin-top: 2px;">
+                    Matemática • Assunto: Frações • 5 questões • Médio
+                  </div>
+                </div>
+              </div>
+              <span style="background: #dbeafe; color: #1e40af; font-size: 0.78rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
+                <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> Conteúdo Validado
+              </span>
+            </div>
+
+            <button type="button" class="btn-primary" id="btnStartCustomSimulado" onclick="app.startCustomSimulado()" style="background: linear-gradient(135deg, #4f46e5, #0284c7); padding: 13px 28px; font-weight: 800; font-size: 0.94rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 8px;">
+              <i data-lucide="play" style="width: 17px; height: 17px;"></i> Iniciar Simulado Agora
             </button>
           </div>
 
@@ -4360,32 +4428,123 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: CRIAR MAPA MENTAL ================= -->
-  <div class="modal-overlay" id="addMindmapModal">
-    <div class="modal-card" style="max-width: 520px; width: 95%;">
-      <button class="modal-close" onclick="app.closeModal('addMindmapModal')">&times;</button>
-      <h3 style="margin: 0 0 6px; font-size: 1.2rem; font-weight: 800; color: #0f172a;" id="mindmapModalTitle">Novo Mapa Mental</h3>
-      <p style="margin: 0 0 16px; font-size: 0.82rem; color: #64748b;">Crie um diagrama conceitual estruturado para conectar os tópicos.</p>
+  <!-- ================= MODAL 1: GERAR MAPA MENTAL COM IA ================= -->
+  <div class="modal-overlay" id="aiMindmapModal">
+    <div class="modal-card" style="max-width: 540px; width: 95%;">
+      <button class="modal-close" onclick="app.closeModal('aiMindmapModal')">&times;</button>
+      <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;">✨ Gerar Mapa Mental com IA</h3>
+      <p style="margin: 0 0 18px; font-size: 0.84rem; color: #64748b;">A inteligência artificial estruturará um diagrama hierárquico com ramificações coloridas para o conteúdo escolhido.</p>
 
-      <form id="addMindmapForm" onsubmit="app.handleSaveMindmap(event)">
-        <div style="margin-bottom: 12px;">
-          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 4px;">Disciplina</label>
-          <select id="mindmapSubject" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff;">
-            <option value="Ciências">Ciências</option>
-            <option value="Física">Física</option>
-            <option value="Matemática">Matemática</option>
-            <option value="Português">Português</option>
-            <option value="História">História</option>
-            <option value="Geografia">Geografia</option>
+      <form id="aiMindmapForm" onsubmit="app.handleExecuteAiMindmap(event)">
+        <div style="margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 5px;">1. Disciplina *</label>
+          <select id="aiMindmapSubject" onchange="app.handleAiMindmapSubjectChange(this.value)" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff;">
+            <option value="Matemática" selected>📐 Matemática</option>
+            <option value="Português">✍️ Língua Portuguesa</option>
+            <option value="História">🏛️ História</option>
+            <option value="Geografia">🌍 Geografia</option>
+            <option value="Ciências">🔬 Ciências da Natureza</option>
+            <option value="Física">⚡ Física</option>
+            <option value="Química">🧪 Química</option>
+            <option value="Biologia">🧬 Biologia</option>
+            <option value="Inglês">🇬🇧 Língua Inglesa</option>
+            <option value="Artes">🎨 Artes</option>
+            <option value="Educação Física">🏃 Educação Física</option>
+            <option value="Filosofia">💭 Filosofia e Sociologia</option>
           </select>
         </div>
-        <div style="margin-bottom: 16px;">
-          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 4px;">Conceito Central / Tema *</label>
-          <input type="text" id="mindmapTopicInput" required placeholder="Ex: Reino Vegetal, Leis de Newton, Revolução Industrial..." value="Reino Vegetal" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.9rem;">
+
+        <div style="margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 5px;">2. Assunto ou Conteúdo *</label>
+          <select id="aiMindmapTopicSelect" onchange="app.handleAiMindmapTopicChange(this.value)" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 600; background: #fff;">
+            <!-- Preenchido dinamicamente -->
+          </select>
         </div>
+
+        <div id="aiMindmapCustomTopicWrapper" style="display: none; margin-bottom: 14px;">
+          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 5px;">Digitar Conteúdo Específico *</label>
+          <input type="text" id="aiMindmapCustomTopic" placeholder="Ex: Frações equivalentes, Reino de Monomotapa..." style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.88rem;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 5px;">3. Nível de Detalhamento</label>
+          <select id="aiMindmapDetailLevel" style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 600; background: #fff;">
+            <option value="sintetico">Síntese Essencial (3 ramificações didáticas)</option>
+            <option value="intermediario" selected>Completo Curricular (4 a 5 ramificações com exemplos)</option>
+            <option value="detalhado">Aprofundado / Exaustivo (5+ ramificações com múltiplos subtópicos)</option>
+          </select>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" class="btn-outline" onclick="app.closeModal('addMindmapModal')">Cancelar</button>
-          <button type="submit" class="btn-primary" style="padding: 10px 20px; font-weight: 800; border-radius: 10px;">Criar Mapa Mental</button>
+          <button type="button" class="btn-outline" onclick="app.closeModal('aiMindmapModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btnExecuteAiMindmap" style="padding: 11px 22px; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px;">
+            <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i> Gerar Mapa Mental
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 2: EDITOR DE MAPA MENTAL MANUAL ================= -->
+  <div class="modal-overlay" id="manualMindmapModal">
+    <div class="modal-card" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" onclick="app.closeModal('manualMindmapModal')">&times;</button>
+      <h3 style="margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; color: #0f172a;" id="manualMindmapModalTitle">🗺️ Editor de Mapa Mental Manual</h3>
+      <p style="margin: 0 0 16px; font-size: 0.84rem; color: #64748b;">Construa ou edite seu mapa com ramificações e subtópicos personalizados sem precisar de IA.</p>
+
+      <form id="manualMindmapForm" onsubmit="app.saveManualMindmap(event)">
+        <input type="hidden" id="manualMindmapEditId" value="">
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 4px;">Título do Mapa *</label>
+            <input type="text" id="manualMindmapTitle" required placeholder="Ex: Mapa: Frações e Operações Básicas" style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 600;">
+          </div>
+          <div>
+            <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 4px;">Disciplina</label>
+            <select id="manualMindmapSubject" style="width: 100%; padding: 9px 10px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-weight: 700; background: #fff;">
+              <option value="Matemática">Matemática</option>
+              <option value="Português">Português</option>
+              <option value="História">História</option>
+              <option value="Geografia">Geografia</option>
+              <option value="Ciências">Ciências</option>
+              <option value="Física">Física</option>
+              <option value="Química">Química</option>
+              <option value="Biologia">Biologia</option>
+              <option value="Inglês">Inglês</option>
+              <option value="Artes">Artes</option>
+              <option value="Educação Física">Educação Física</option>
+              <option value="Filosofia">Filosofia</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 4px;">Conceito Central (Nó Principal) *</label>
+          <input type="text" id="manualMindmapCentral" required placeholder="Ex: Frações, Reino de Monomotapa, Climas do Brasil..." style="width: 100%; padding: 9px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.95rem; font-weight: 700; color: #4338ca;">
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="font-weight: 700; font-size: 0.82rem; color: #334155; display: block; margin-bottom: 4px;">Resumo Conceitual / Definição</label>
+          <input type="text" id="manualMindmapSummary" placeholder="Ex: Divisão de um todo em partes proporcionais iguais" style="width: 100%; padding: 8px 12px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.85rem;">
+        </div>
+
+        <!-- Ramificações Dinâmicas -->
+        <div style="margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <label style="font-weight: 800; font-size: 0.9rem; color: #0f172a;">🌱 Ramificações & Subtópicos</label>
+            <button type="button" class="btn-sm" onclick="app.addManualBranch()" style="background: #eef2ff; color: #4f46e5; border: 1.5px solid #c7d2fe; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer;">
+              + Adicionar Ramificação
+            </button>
+          </div>
+          <div id="manualBranchesContainer" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Itens de ramificação gerados dinamicamente via JS -->
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+          <button type="button" class="btn-outline" onclick="app.closeModal('manualMindmapModal')">Cancelar</button>
+          <button type="submit" class="btn-primary" style="padding: 10px 22px; font-weight: 800; border-radius: 10px;">Salvar Mapa Mental</button>
         </div>
       </form>
     </div>
