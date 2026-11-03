@@ -17970,10 +17970,8 @@ class EstudePlusApp {
       items.push(
         { group: 'Navegação', title: 'Página Inicial (Dashboard)', icon: 'home', action: () => { this.closeCommandPalette(); this.switchTab('dashboard'); }, shortcut: 'Alt 1' },
         { group: 'Navegação', title: 'Chatbot IA Inteligente', icon: 'bot', action: () => { this.closeCommandPalette(); this.switchTab('gemini-chat'); }, shortcut: 'Alt 2' },
-        { group: 'Navegação', title: 'Laboratório de Estudos & Ferramentas', icon: 'flask-conical', action: () => { this.closeCommandPalette(); this.switchTab('materials'); this.switchMaterialsSubtab('lab'); } },
         { group: 'Navegação', title: 'Modo Desafio de Exercícios', icon: 'swords', action: () => { this.closeCommandPalette(); this.switchTab('materials'); this.switchMaterialsSubtab('challenge'); } },
         { group: 'Navegação', title: 'Mapas Mentais Interativos', icon: 'git-fork', action: () => { this.closeCommandPalette(); this.switchTab('materials'); this.switchMaterialsSubtab('mindmaps'); } },
-        { group: 'Navegação', title: 'Temporizador Modo Foco', icon: 'timer', action: () => { this.closeCommandPalette(); this.openFocusTimerModal(); } },
         { group: 'Navegação', title: 'Apostilas SAS Eureka (12 Livros)', icon: 'compass', action: () => { this.closeCommandPalette(); this.switchTab('sas-eureka'); }, shortcut: 'Alt 3' },
         { group: 'Navegação', title: 'Trilhas de Aprendizagem SAS', icon: 'map', action: () => { this.closeCommandPalette(); this.switchTab('trilhas'); }, shortcut: 'Alt 4' },
         { group: 'Navegação', title: 'Calendário de Provas & Avaliações', icon: 'calendar', action: () => { this.closeCommandPalette(); this.switchTab('calendar'); }, shortcut: 'Alt 5' },
