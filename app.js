@@ -24954,10 +24954,22 @@ startxref
     if (window.lucide) window.lucide.createIcons();
   }
 
+  detectSubjectFromTopic(topic) {
+    const norm = String(topic || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (/vegetal|planta|celul|fotossint|corpo|ecossist|biolog|ciencia|animal|virus|bacteria/i.test(norm)) return 'Ciências';
+    if (/newton|forca|inerc|veloc|fisic|termic|eletric|movimento|optica|onda/i.test(norm)) return 'Física';
+    if (/fracao|equac|geometr|porcent|funcao|algebra|matemat|triang|angulo|calcul/i.test(norm)) return 'Matemática';
+    if (/crase|verb|substant|conjuncao|concord|gramat|portugues|sintaxe|orac/i.test(norm)) return 'Português';
+    if (/feudal|revoluc|guerra|imperio|roma|grecia|brasil|histor|era\s+vargas/i.test(norm)) return 'História';
+    if (/bioma|relevo|clima|populac|geograf|cartograf|urbaniz/i.test(norm)) return 'Geografia';
+    if (/atomo|reac|tabela\s+period|acid|base|quimic|molecul|soluc/i.test(norm)) return 'Química';
+    return 'Geral';
+  }
+
   async startChallengeSession() {
-    const subject = document.getElementById('challengeSubjectSelect')?.value || 'Ciências';
     const topic = document.getElementById('challengeTopicInput')?.value?.trim() || 'Reino Vegetal';
     const difficulty = document.getElementById('challengeDifficultySelect')?.value || 'medio';
+    const subject = document.getElementById('challengeSubjectSelect')?.value || this.detectSubjectFromTopic(topic);
 
     try {
       const res = await fetch('/api/ai/study-tools', {
